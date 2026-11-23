@@ -1,12 +1,15 @@
 """Caller-substitution authority regressions for Factory-owned C05."""
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 import unittest
 
 from bilqis_mlx.learning.atlas_retention_decision import (
     decide_candidate_retention, issue_factory_retention_decision,
 )
 from bilqis_mlx.runtime.capability_retention import Decision, DecisionStatus
+from bilqis_mlx.learning.atlas_candidate import CandidateTransaction
+from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
 import bilqis_mlx.runtime.factory_retention_owner as owner
 from bilqis_mlx.runtime.factory_retention_owner import (
     FactoryRetentionEvaluation, _cohort, evaluate_factory_retention_candidate,
@@ -47,6 +50,43 @@ class FactoryRetentionOwnerAuthorityTests(unittest.TestCase):
                 parent_solver=object(), candidate_solver=object(),
                 target_capability="B.IDBOOLOPS", policy=object(),
                 cohorts=(), parent_state=object(), candidate_state=object())
+
+    def test_learning_first_owner_uses_bound_session_parent_and_cache(self):
+        candidate = object.__new__(CandidateTransaction)
+        object.__setattr__(candidate, "learning_first", True)
+        source = SimpleNamespace(
+            release=SimpleNamespace(release_sha256="1" * 64),
+            __post_init__=lambda: (_ for _ in ()).throw(
+                AssertionError("learning-first C05 revalidated source context")),
+            require_accepted_runtime=lambda _run_dir: (_ for _ in ()).throw(
+                AssertionError("learning-first C05 rebound accepted runtime")),
+        )
+        parent = object()
+        cache = object()
+        bundle = object()
+        state = object()
+        plan = SimpleNamespace(digest="2" * 64)
+        target_plan = object()
+        rows = object()
+        result = object()
+        with (
+            evidence_mode(strict=False),
+            patch.object(owner, "_training_exclusions", return_value=((), ())),
+            patch.object(owner, "_training_capabilities", return_value=("A.IDENTITY",)),
+            patch.object(owner, "_candidate_from_live_parent",
+                         side_effect=AssertionError("learning-first C05 reloaded parent")),
+            patch.object(owner, "_candidate_from_bound_parent",
+                         return_value=(parent, bundle, state, cache)) as bound,
+            patch.object(owner, "require_current_retention_source_rows",
+                         return_value=(plan, target_plan, rows)),
+            patch.object(owner, "_foundation_retention_evaluation", return_value=result),
+        ):
+            actual = evaluate_factory_retention_candidate(
+                source, candidate, "artifact", "A.IDENTITY",
+                run_dir=Path("unused"), accepted_parent=parent, execution_cache=cache)
+        self.assertIs(actual, result)
+        bound.assert_called_once_with(
+            parent, cache, candidate, canonical_identity_required=False)
 
     def test_factory_entry_rejects_caller_cohorts_and_policy(self):
         with self.assertRaises(TypeError):

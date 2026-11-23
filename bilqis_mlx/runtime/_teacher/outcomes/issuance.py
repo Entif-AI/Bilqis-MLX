@@ -40,12 +40,14 @@ _register_outcome, _require_outcome = _new_outcome_issuer()
 
 def require_issued_outcome(value, evidence):
     _require_outcome(value)
+    candidate = evidence.get('candidate_evidence')
+    candidate_object = candidate.get('object') if isinstance(candidate, dict) else None
     if (value['teacher_visit'] != evidence.get('teacher_visit')
             or value['decision'] != evidence.get('decision')
             or value['decision']['reason'] != evidence.get('retention_reason')
             or evidence.get('candidate_optimizer_step', 0) - evidence.get('retained_optimizer_step', 0) != value['attempted_steps']
             or value['retained_steps'] != 0
-            or value['candidate_evidence'] != evidence.get('candidate_evidence', {}).get('object')):
+            or value['candidate_evidence'] != candidate_object):
         invalid()
 
 
@@ -74,17 +76,74 @@ def selection_context(release, program, grade, phase, scope, diagnostics, capabi
     return context
 
 
-def build_outcome(run_dir, selection, evaluation, decision, candidate_evidence):
+def _outcome_attempt(
+        run_dir, selection, decision, candidate_evidence, learning_summary,
+        identity, context, selected_sha256):
+    selected = None
+    if learning_summary is None:
+        from bilqis_mlx.runtime.bamf_operator.evidence_parts.validation import (
+            read_candidate_horizon_evidence,
+        )
+        payload = read_candidate_horizon_evidence(run_dir, candidate_evidence)
+        proposal, steps = payload['proposal'], payload['steps']
+        persisted_decision = json.loads(json.dumps(
+            decision.to_record(), sort_keys=True, allow_nan=False))
+        if 'selected_teacher' in proposal:
+            selected = restore_teacher_lineage(
+                selection.visit.projection.teacher_state).teacher()
+        if (proposal.get('teacher_visit') != identity.to_record()
+                or proposal.get('selected_policy_key') != identity.policy_key
+                or proposal.get('capability') != identity.capability_id
+                or proposal.get('generation') != identity.generation
+                or proposal.get('accepted_manifest_sha256')
+                   != identity.accepted_manifest_sha256
+                or proposal.get('factory_release_sha256')
+                   != context['factory_release_sha256']
+                or proposal.get('how_context') != context
+                or (proposal.get('selected_teacher') != selected
+                    if 'selected_teacher' in proposal
+                    else proposal.get('selected_teacher_sha256') != selected_sha256)
+                or proposal.get('policy') != selection.policy
+                or payload['outcome'] != {
+                    'accepted': decision.accepted, 'decision': persisted_decision}
+                or len(steps)
+                   != steps[-1]['step'] - proposal['parent_optimizer_step']):
+            invalid()
+        realized = describe(
+            selection.policy, candidate_steps=len(steps),
+            batch_size=len(steps[0]['positions']),
+            policy_controls=[step['controls'] for step in steps],
+            guidance_applied_steps=sum(
+                step['guidance'] is not None for step in steps),
+            enrichment_examples=sum(
+                'enrichment' in item['roles']
+                for step in steps for item in step['positions']))
+        return (
+            selected, payload['attempt_id'], payload['proposal_id'],
+            candidate_evidence['object'], realized, len(steps))
+    attempted_steps = learning_summary.get('candidate_steps')
+    if type(attempted_steps) is not int or attempted_steps < 1:
+        invalid()
+    realized = describe(
+        selection.policy, candidate_steps=attempted_steps,
+        batch_size=learning_summary.get('batch_size'),
+        policy_controls=learning_summary.get('policy_controls'),
+        guidance_applied_steps=learning_summary.get('guidance_applied_steps'),
+        enrichment_examples=learning_summary.get('enrichment_examples'))
+    return (
+        selected, learning_summary.get('attempt_id'), None, None,
+        realized, attempted_steps)
+
+
+def build_outcome(
+        run_dir, selection, evaluation, decision, candidate_evidence, *,
+        learning_summary=None):
     from bilqis_mlx.runtime.accepted_priority_visit_contracts import _require_issued
     from bilqis_mlx.runtime.factory_retention_owner import _require_factory_evaluation
     from bilqis_mlx.learning.atlas_retention_decision import _require_issued_decision
-    from bilqis_mlx.runtime.bamf_operator.evidence_parts.validation import read_candidate_horizon_evidence
-
     _require_issued(selection)
     _require_factory_evaluation(evaluation)
     _require_issued_decision(decision)
-    payload = read_candidate_horizon_evidence(run_dir, candidate_evidence)
-    proposal, steps = payload['proposal'], payload['steps']
     identity = selection.visit.identity
     context = selection.metadata['how_context']
     require_context(context)
@@ -93,26 +152,7 @@ def build_outcome(run_dir, selection, evaluation, decision, candidate_evidence):
         invalid()
     selected_sha256 = selection.visit.projection.teacher_state['c03_lineage'][
         'current_teacher_sha256']
-    selected = None
-    if 'selected_teacher' in proposal:
-        selected = restore_teacher_lineage(
-            selection.visit.projection.teacher_state).teacher()
-    persisted_decision = json.loads(json.dumps(
-        decision.to_record(), sort_keys=True, allow_nan=False))
     if (evaluation.parent_candidate_sha256 != identity.student_sha256
-            or proposal.get('teacher_visit') != identity.to_record()
-            or proposal.get('selected_policy_key') != identity.policy_key
-            or proposal.get('capability') != identity.capability_id
-            or proposal.get('generation') != identity.generation
-            or proposal.get('accepted_manifest_sha256') != identity.accepted_manifest_sha256
-            or proposal.get('factory_release_sha256') != context['factory_release_sha256']
-            or proposal.get('how_context') != context
-            or (proposal.get('selected_teacher') != selected
-                if 'selected_teacher' in proposal
-                else proposal.get('selected_teacher_sha256') != selected_sha256)
-            or proposal.get('policy') != selection.policy
-            or payload['outcome'] != {
-                'accepted': decision.accepted, 'decision': persisted_decision}
             or decision.evidence_sha256 != evaluation.decision.evidence_sha256
             or decision.policy_sha256 != evaluation.decision.policy_sha256
             or decision.parent_generation != evaluation.parent_candidate_sha256
@@ -121,31 +161,30 @@ def build_outcome(run_dir, selection, evaluation, decision, candidate_evidence):
             or decision.accepted != (evaluation.decision.status.value == 'ELIGIBLE')):
         invalid()
     scores = evaluation.decision.outcome_scores
-    if not scores or len(steps) != steps[-1]['step'] - proposal['parent_optimizer_step']:
+    if not scores:
         invalid()
+    (selected, attempt_id, proposal_id, candidate_object, realized,
+     attempted_steps) = _outcome_attempt(
+        run_dir, selection, decision, candidate_evidence, learning_summary,
+        identity, context, selected_sha256)
     cap = identity.capability_id
     coverage = evaluation.decision.baseline_coverage
     protected = (coverage.protected_capabilities(cap) if coverage is not None
                  else tuple(row[0] for row in scores if row[0] != cap))
-    realized = describe(selection.policy, candidate_steps=len(steps),
-        batch_size=len(steps[0]['positions']),
-        policy_controls=[step['controls'] for step in steps],
-        guidance_applied_steps=sum(step['guidance'] is not None for step in steps),
-        enrichment_examples=sum('enrichment' in item['roles'] for step in steps for item in step['positions']))
     selected_teacher_evidence = (
         {'selected_teacher': selected}
         if selected is not None
         else {'selected_teacher_sha256': selected_sha256}
     )
     observation = _IssuedOutcome({
-        'schema': SCHEMA, 'attempt_id': payload['attempt_id'],
-        'proposal_id': payload['proposal_id'], 'candidate_evidence': candidate_evidence['object'],
+        'schema': SCHEMA, 'attempt_id': attempt_id,
+        'proposal_id': proposal_id, 'candidate_evidence': candidate_object,
         'teacher_visit': identity.to_record(), 'context': context,
         **selected_teacher_evidence,
         'selected_policy': selection.policy,
         'effective_policy_key': effective_policy_key(selection.policy),
-        'realized_action': realized, 'attempted_steps': len(steps),
-        'retained_steps': len(steps) if decision.accepted else 0,
+        'realized_action': realized, 'attempted_steps': attempted_steps,
+        'retained_steps': attempted_steps if decision.accepted else 0,
         'decision': decision.to_record(), 'scores': [list(row) for row in scores],
         'protected_capabilities': list(protected),
     })

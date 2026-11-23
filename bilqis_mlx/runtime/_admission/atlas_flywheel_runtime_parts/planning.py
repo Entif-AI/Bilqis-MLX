@@ -73,12 +73,25 @@ def _candidate_frontier_trust_identity(
 
 def _candidate_frontier(
         run_dir: Path, factory_release_sha256: str, *, progress=None):
+    trust_identity = _candidate_frontier_trust_identity(factory_release_sha256)
+    release, _ = _candidate_frontier_from_trust_identity(
+        run_dir, factory_release_sha256, trust_identity, progress=progress)
+    return release
+
+
+def _candidate_frontier_from_trust_identity(
+        run_dir: Path, factory_release_sha256: str,
+        trust_identity: CandidateFrontierTrustIdentity, *, progress=None):
+    """Resolve one frontier from a caller-owned source identity without rehashing it."""
     root = _repo_root()
     builder = root / "lib/ithkuil/src/build_curriculum_frontier.py"
     source_dir = root / "lib/ithkuil/_data/csv"
     output = Path(run_dir) / "candidate-frontier"
-    builder_sha256, input_digest = candidate_frontier_source_identity(
-        source_dir, builder)
+    if (type(trust_identity) is not CandidateFrontierTrustIdentity
+            or trust_identity.factory_release_sha256 != factory_release_sha256):
+        raise ValueError("BAMF_PLANNER_FRONTIER_TRUST_IDENTITY_INVALID")
+    builder_sha256 = trust_identity.builder_sha256
+    input_digest = trust_identity.input_digest
     from bilqis_mlx.runtime.planner_frontier_trust import (
         load_planner_frontier_trust,
         planner_frontier_trust_matches,
@@ -97,7 +110,9 @@ def _candidate_frontier(
             if planner_frontier_trust_matches(trust, release):
                 _frontier_progress(
                     progress, "planner: reusing source candidate frontier")
-                return release
+                return release, CandidateFrontierTrustIdentity(
+                    builder_sha256, input_digest, factory_release_sha256,
+                    trust.frontier_release_sha256, trust.receipt_sha256)
     _frontier_progress(progress, "planner: rebuilding source candidate frontier")
     subprocess.run(
         [sys.executable, str(builder)], check=True, capture_output=True, text=True,
@@ -112,7 +127,9 @@ def _candidate_frontier(
             _invalid as _invalid_frontier_trust,
         )
         _invalid_frontier_trust("BAMF_PLANNER_FRONTIER_TRUST_CONFLICT")
-    return release
+    return release, CandidateFrontierTrustIdentity(
+        builder_sha256, input_digest, factory_release_sha256,
+        trust.frontier_release_sha256, trust.receipt_sha256)
 
 
 def _accepted_selection(run_dir: Path):
@@ -176,11 +193,8 @@ def _persist_ready_realizations(
         source_registry=sources, answer_registry=answers)
     known = {item.candidate_id for item in staged}
     known_capabilities = {item.target_capability_id for item in staged}
-    for semantic_id in candidate.source_eligible_concept_ids:
-        try:
-            capability_id = candidate_realizations.realized_capability_id(semantic_id)
-        except ValueError:
-            continue
+    for semantic_id in candidate_realizations._realized_a08_semantic_ids(candidate):
+        capability_id = candidate_realizations.realized_capability_id(semantic_id)
         if capability_id in known_capabilities:
             continue
         try:

@@ -36,7 +36,8 @@ def _validated_step_decay(candidate, execution, spec, extents):
             or spec.digest != custody.topology_digest
             or extents.digest != custody.extents_digest):
         invalid()
-    decay = reconcile_b01_optimizer_manifest(candidate.optimizer, spec, extents)
+    from bilqis_mlx.runtime.model_topology_v2 import expected_bamf_shapes
+    decay = {item.name: item.decay for item in expected_bamf_shapes(spec, extents)}
     if (execution.run_id != custody.run_id
             or execution.generation != custody.generation + 1
             or (custody.manifest_sha256 is not None
@@ -230,7 +231,7 @@ def learning_first_candidate_step(
     optimizer = _adamw_update(
         candidate.optimizer, gradients, update_mask, teacher_hparams,
         decay=decay, loss_bearing=True, max_norm=max_norm,
-        participation_authority=authority)
+        participation_authority=authority, learning_first=True)
     if optimizer is candidate.optimizer:
         return candidate
     return _issue_transaction(

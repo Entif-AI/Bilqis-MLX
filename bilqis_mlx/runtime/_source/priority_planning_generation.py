@@ -131,7 +131,8 @@ def bind_priority_planning_generation(source_context, parent, atlas_artifact_pat
     elif (not is_authenticated_generation_feature_context(authenticated)
             or authenticated.selection.path != str(atlas_artifact_path)):
         _invalid_source_batch('BAMF_PRIORITY_PLANNING_GENERATION_INVALID')
-    authenticated.__post_init__()
+    if strict:
+        authenticated.__post_init__()
     if parent.run_identity is None:
         _invalid_source_batch('BAMF_PRIORITY_PLANNING_GENERATION_INVALID')
     from bilqis_mlx.runtime.accepted_correction_runtime import (

@@ -132,10 +132,14 @@ def execute_factory_logical_batch(
         parameters, prepared, source_context, feature_snapshot, generation, cache,
         resource_plan, *, salience_supervision=None, mentor_supervision=None):
     """Execute each compatible C08 group with one MLX gradient launch."""
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    strict = strict_evidence_enabled()
     learning_first_cache = getattr(prepared, "learning_first_cache", None)
-    task_hits_before = int(getattr(learning_first_cache, "task_hits", 0))
-    task_misses_before = int(getattr(learning_first_cache, "task_misses", 0))
-    row_inputs_started = time.perf_counter()
+    task_hits_before = int(getattr(learning_first_cache, "task_hits", 0)) if strict else 0
+    task_misses_before = int(getattr(learning_first_cache, "task_misses", 0)) if strict else 0
+    row_inputs_started = time.perf_counter() if strict else None
     rows = tuple(_row_execution_inputs(
         source_context, compiled, feature_snapshot, generation,
         learning_first_cache=learning_first_cache,
@@ -144,7 +148,8 @@ def execute_factory_logical_batch(
                 compiled.sources[0].source_row,
                 prepared.training_batch.rows[index].model_input.eligibility_digest)))
         for index, compiled in enumerate(prepared.compiled_rows))
-    row_execution_inputs_wall_seconds = time.perf_counter() - row_inputs_started
+    row_execution_inputs_wall_seconds = (
+        time.perf_counter() - row_inputs_started if strict else 0.0)
     bound = tuple(item[0] for item in rows)
     authorities = tuple(item[1] for item in rows)
     targets = tuple(item[2] for item in rows)
@@ -182,15 +187,16 @@ def execute_factory_logical_batch(
 
     gradient = accumulate_logical_batch_gradients(
         resource_plan, execute_row, execute_group=execute_group)
-    observation = dict(
-        getattr(gradient, "_performance_observation", {}) or {})
-    observation["c08_row_execution_inputs_wall_seconds"] = float(
-        row_execution_inputs_wall_seconds)
-    observation["learning_first_task_cache_hits"] = int(
-        getattr(learning_first_cache, "task_hits", 0)) - task_hits_before
-    observation["learning_first_task_cache_misses"] = int(
-        getattr(learning_first_cache, "task_misses", 0)) - task_misses_before
-    attach_performance_observation(gradient, observation)
+    if strict:
+        observation = dict(
+            getattr(gradient, "_performance_observation", {}) or {})
+        observation["c08_row_execution_inputs_wall_seconds"] = float(
+            row_execution_inputs_wall_seconds)
+        observation["learning_first_task_cache_hits"] = int(
+            getattr(learning_first_cache, "task_hits", 0)) - task_hits_before
+        observation["learning_first_task_cache_misses"] = int(
+            getattr(learning_first_cache, "task_misses", 0)) - task_misses_before
+        attach_performance_observation(gradient, observation)
     return gradient, authorities, targets
 
 

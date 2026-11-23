@@ -17,6 +17,7 @@ _CACHE_LIMIT = 8
 _COMPILE_ENV = "BILQIS_MLX_COMPILE_STABLE_KERNEL"
 _DEFAULT_ENABLED = True
 _CACHE = OrderedDict()
+_SEEN = set()
 _HITS = 0
 _MISSES = 0
 
@@ -97,7 +98,7 @@ def _compile_route(kernel):
             kernel,
             salience_hidden=hidden,
             refinement_routing_loss=None,
-            return_logits=True,
+            return_logits=False,
         )
 
     return mx.compile(numerical_route)
@@ -116,6 +117,10 @@ def learning_first_compiled_route(
         _HITS += 1
         _CACHE.move_to_end(key)
         return compiled, "hit"
+    if key not in _SEEN:
+        _SEEN.add(key)
+        _MISSES += 1
+        return None, "cold"
     compiled = _compile_route(kernel)
     _MISSES += 1
     _CACHE[key] = compiled
@@ -137,6 +142,7 @@ def compiled_route_cache_stats() -> dict:
 def _reset_compiled_route_cache_for_tests() -> None:
     global _HITS, _MISSES
     _CACHE.clear()
+    _SEEN.clear()
     _HITS = 0
     _MISSES = 0
 

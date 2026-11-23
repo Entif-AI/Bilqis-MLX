@@ -12,6 +12,7 @@ from bilqis_mlx.runtime.teacher_observation_capture import store_sidecar
 from .support import (
     EVIDENCE_SCHEMA, PERSISTENCE_SCHEMA, REFERENCE_SCHEMA, _ROLE_FIELDS,
     _SHA256_HEX_LENGTH, _SIDECAR_ROOT, _invalid, _plain, candidate_attempt_id,
+    prepare_candidate_evidence_root,
 )
 from .multifidelity import (
     configure_multifidelity as _configure_multifidelity,
@@ -102,7 +103,7 @@ class CandidateEvidenceCapture:
     def _row_refs(self, rows):
         return [self._object_ref(row) for row in rows]
 
-    def delivery(self, release, capability, step, rows, **evidence):
+    def _materialize_delivery(self, release, capability, step, rows, evidence):
         if (type(step) is not int or step < 1
                 or not isinstance(capability, str) or not capability
                 or capability != self.proposal["capability"]
@@ -116,6 +117,9 @@ class CandidateEvidenceCapture:
         controls = evidence.get("controls", {})
         if type(seed) is not int or seed < 0 or not isinstance(controls, dict):
             _invalid("BAMF_C16_3_EVIDENCE_DELIVERY_INVALID")
+        if "delivered_content_sha256" not in controls:
+            from bilqis_mlx.factory.teaching import content_digest
+            controls = {**controls, "delivered_content_sha256": content_digest(rows)}
         role_ids = {}
         for name, role in _ROLE_FIELDS:
             group = evidence.get(name, ())
@@ -170,6 +174,9 @@ class CandidateEvidenceCapture:
             "controls": _plain(controls),
             "mentors": _plain(evidence.get("mentors")),
         })
+
+    def delivery(self, release, capability, step, rows, **evidence):
+        self._materialize_delivery(release, capability, step, rows, evidence)
 
     def learning_methodology(self) -> tuple[dict, ...]:
         """Advisory only; never included in the C16.3 hashed custody payload."""
@@ -231,6 +238,7 @@ class CandidateEvidenceCapture:
             return self._finalized[1]
 
         digest = state._fingerprint(payload)
+        prepare_candidate_evidence_root(self.run_dir)
         path = self.run_dir / _SIDECAR_ROOT / f"{digest}.json"
         if not path.parent.is_dir():
             _invalid("BAMF_C16_3_EVIDENCE_ROOT_INVALID")

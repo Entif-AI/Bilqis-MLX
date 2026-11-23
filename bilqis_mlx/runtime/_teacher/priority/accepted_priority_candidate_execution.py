@@ -107,7 +107,11 @@ def _candidate_delivery_setup(
         selection, source_context, prepared_source_rows,
         prepared_enrichment_rows, prepared_rehearsal_rows, rehearsal_by_id,
         rehearsal_bindings, rehearsal_authorities, observation, teacher_hparams, **fresh):
-    started = time.perf_counter()
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    strict = strict_mode_enabled()
+    started = time.perf_counter() if strict else None
     policy = selection.policy
     lr = policy.get('lr') if isinstance(policy, dict) else None
     if (type(teacher_hparams) is not AdamWHyperparameters
@@ -118,7 +122,10 @@ def _candidate_delivery_setup(
         selection, source_context, prepared_source_rows, prepared_enrichment_rows,
         prepared_rehearsal_rows, rehearsal_by_id, rehearsal_bindings,
         rehearsal_authorities, observation, **fresh)
-    return policy, hparams, delivery_inputs, time.perf_counter() - started
+    return (
+        policy, hparams, delivery_inputs,
+        time.perf_counter() - started if strict else 0.0,
+    )
 
 
 def _currentness_for_step(

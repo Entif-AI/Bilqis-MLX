@@ -18,7 +18,7 @@ from bilqis_mlx.runtime.accepted_priority_visit import (
 from bilqis_mlx.runtime.bamf_bundle.admission import bind_accepted_execution_cache
 from bilqis_mlx.runtime.factory_candidate_training import FactoryDeliveryObservation
 from bilqis_mlx.runtime.factory_retention_owner import (
-    bind_current_retention_source_rows, bind_factory_baseline_successor,
+    bind_current_retention_protection_plan, bind_factory_baseline_successor,
     derive_current_plasticity_escape_state, evaluate_factory_retention_candidate,
     measure_current_retention_shadow_target,
 )
@@ -211,6 +211,8 @@ def candidate_horizon_execution(
     candidate_executor = (
         execute_accepted_priority_candidate
         if strict else execute_learning_first_priority_candidate)
+    if type(cache) is AcceptedExecutionCache:
+        bind_current_retention_protection_plan(context, parent, cache)
     rehearsal_plan = (
         compile_rehearsal_plan(run_dir, parent, cache, context, selection)
         if type(cache) is AcceptedExecutionCache else None)
@@ -282,8 +284,6 @@ def execute_selected_visit(
     if host_cache is None and not strict:
         invalid("BAMF_LEARNING_FIRST_SESSION_CACHE_REQUIRED")
     adviser_cache = host_cache if host_cache is not None else bind_accepted_execution_cache(run_dir)
-    if host_cache is not None:
-        bind_current_retention_source_rows(context, host_cache, capability)
     adviser_pool = None
     if strict:
         from bilqis_mlx.runtime.championship_advisers import prepare_championship_adviser_pool

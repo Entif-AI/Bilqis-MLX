@@ -42,14 +42,14 @@ class HotPathProbe:
         from bilqis_mlx.runtime import backbone_group_numerical as group
         from bilqis_mlx.runtime import backbone_identity as identity
         from bilqis_mlx.runtime import depth_contracts as depth
-        from bilqis_mlx.learning.atlas_readout.decoder import prediction
+        from bilqis_mlx.learning.atlas_readout.decoder import prediction_issuance
 
         group_trace = group.run_backbone_group_trace
         content_digest = group._content_digest
         tree_digest = identity.bamf_parameter_tree_digest
         depth_tree_digest = depth.bamf_parameter_tree_digest
         generation_digest = depth.execution_generation_digest
-        logit_fingerprint = prediction._logit_fingerprint
+        logit_fingerprint = prediction_issuance._logit_fingerprint
         mx_eval = mx.eval
 
         def counted_group(*args, **kwargs):
@@ -83,7 +83,7 @@ class HotPathProbe:
             stack.enter_context(patch.object(identity, "bamf_parameter_tree_digest", counted_tree(tree_digest)))
             stack.enter_context(patch.object(depth, "bamf_parameter_tree_digest", counted_tree(depth_tree_digest)))
             stack.enter_context(patch.object(depth, "execution_generation_digest", counted_tree(generation_digest)))
-            stack.enter_context(patch.object(prediction, "_logit_fingerprint", counted_readback(logit_fingerprint)))
+            stack.enter_context(patch.object(prediction_issuance, "_logit_fingerprint", counted_readback(logit_fingerprint)))
             stack.enter_context(patch.object(mx, "eval", counted_eval))
             result = step()
         elapsed = time.perf_counter() - started

@@ -60,7 +60,11 @@ def _selected_priority_result(
         planning_offer, source_materialization_wall_seconds,
         planning_offer_fanout_wall_seconds):
     capability = option.context.capability_id
-    diagnostics = {'teacher_epoch_digest': contract_digest(epoch)}
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    strict = strict_mode_enabled()
+    diagnostics = {'teacher_epoch_digest': contract_digest(epoch)} if strict else {}
     if salience_evidence is not None:
         diagnostics['salience_evidence'] = salience_evidence
     key, policy, metadata = select_visit_policy(
@@ -85,20 +89,22 @@ def _selected_priority_result(
         capability_id=capability,
         policy_key=key)
     recorded = record_teacher_visit_identity(selected.teacher_state, identity)
-    planning_authority = getattr(planning_offer, 'source_authority', None)
-    planning_receipt = getattr(planning_authority, 'content_sha256', None)
-    ranking_evidence = {
-        **priority_features,
-        'dispatch_tier': int(dispatch_tier),
-        'eligible_since': option.eligible_since,
-        'downstream_unlocks': option.downstream_unlocks,
-        'stable_id': option.stable_id,
-        'salience_inputs_digest': option.salience_inputs_digest,
-        'planning_source_receipt_sha256': planning_receipt,
-        'planning_source_each': planning_offer.source_each,
-        'selected_source_receipt_sha256': offer.source_authority.content_sha256,
-        'selected_source_each': offer.source_each,
-    }
+    ranking_evidence = None
+    if strict:
+        planning_authority = getattr(planning_offer, 'source_authority', None)
+        planning_receipt = getattr(planning_authority, 'content_sha256', None)
+        ranking_evidence = {
+            **priority_features,
+            'dispatch_tier': int(dispatch_tier),
+            'eligible_since': option.eligible_since,
+            'downstream_unlocks': option.downstream_unlocks,
+            'stable_id': option.stable_id,
+            'salience_inputs_digest': option.salience_inputs_digest,
+            'planning_source_receipt_sha256': planning_receipt,
+            'planning_source_each': planning_offer.source_each,
+            'selected_source_receipt_sha256': offer.source_authority.content_sha256,
+            'selected_source_each': offer.source_each,
+        }
     recorded = record_teacher_visit_authority(recorded, identity)
     visit = _issue_bound_visit(recorded, identity)
     return _issue_result(
@@ -129,7 +135,16 @@ def _accepted_context(run_dir, source_context, school, lawful_frontier,
         cache, _authenticated = require_generation(
             planning_generation, source_context, parent)
         if getattr(lawful_frontier, '_planning_generation', None) is not planning_generation:
-            _invalid('BAMF_PRIORITY_LAWFUL_FRONTIER_BINDING_DRIFT')
+            if strict_mode_enabled():
+                _invalid('BAMF_PRIORITY_LAWFUL_FRONTIER_BINDING_DRIFT')
+            from bilqis_mlx.runtime._learning_first.priority_frontier import (
+                can_reuse_learning_first_phase_authority,
+            )
+            if (getattr(lawful_frontier, 'admitted_release_sha256', None)
+                    != source_context.release.release_sha256
+                    or not can_reuse_learning_first_phase_authority(
+                        run_dir, lawful_frontier)):
+                _invalid('BAMF_PRIORITY_LAWFUL_FRONTIER_BINDING_DRIFT')
         expected = planning_generation.parent_candidate_identity_sha256
     if getattr(getattr(school, 'current_student', None), 'sha256', None) != expected:
         _invalid('BAMF_PRIORITY_STUDENT_DRIFT')

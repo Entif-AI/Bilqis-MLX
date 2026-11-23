@@ -92,3 +92,64 @@ def test_same_id_different_source_bytes_cannot_close(monkeypatch, tmp_path):
             teacher, run_dir=tmp_path, wrapper=wrapper, source_context=context,
             selection=selection, assessment=assessment, instruments=(drifted,))
     assert failure.value.context["reason"] == "BAMF_WEAKNESS_RESOLUTION_ASSESSED_ROW_DRIFT"
+
+
+def test_learning_first_weakness_closes_from_compact_historical_source_ids(
+        monkeypatch, tmp_path):
+    fresh_row = {
+        "id": "fresh:0", "capability": CAPABILITY,
+        "shape": ["edge", 2], "answer_kind": "typed-z",
+    }
+    rejected = {
+        "id": "old", "capability": CAPABILITY,
+        "shape": ["edge", 2], "answer_kind": "typed-z",
+    }
+    context = _SourceContext((fresh_row,))
+    selection = _selection_for_context(context)
+    strict = _weakness_record(selection, rejected)
+    weakness = {
+        **strict,
+        "candidate_evidence_sha256": None,
+        "historical_source_ids": [rejected["id"]],
+    }
+    weakness["weakness_evidence_sha256"] = weakness_replay._digest({
+        key: value for key, value in weakness.items()
+        if key != "weakness_evidence_sha256"
+    })
+    evidence = {
+        "capability": CAPABILITY,
+        "retention_reason": "NO_MEASURABLE_TARGET_GAIN",
+        "candidate_evidence": None,
+        "how_outcome": {"outcome_sha256": "f" * 64},
+        "structural_weaknesses": [weakness],
+    }
+    teacher = weakness_replay.apply_rejection_weaknesses({}, evidence, "9" * 64)
+    wrapper = weakness_replay.carried_structural_weaknesses(teacher)[0]
+
+    cases, contexts = _cases(CAPABILITY, "Z", 1, "fresh")
+    cohort = EvaluationCohort(
+        EvidenceKind.FRESH_TARGET, cases, ((CAPABILITY, "Z"),),
+        "1" * 64, "2" * 64, "3" * 64, "4" * 64,
+        ("training-family",), ("training-episode",),
+        case_census_digest(cases), evidence_stage=EvidenceStage.FOUNDATION_ACQUISITION)
+    assessment = evaluate_capabilities(
+        _solver(contexts, {cases[0].case_id}), cohort, "5" * 64)
+
+    class _Instrument:
+        def __init__(self, source_row):
+            self.case = cases[0]
+            self.source_row = source_row
+            self.compiled_case = SimpleNamespace(task_template=SimpleNamespace(
+                source_row_id=source_row["id"], capability_id=CAPABILITY,
+                release_sha256=context.release.release_sha256,
+                source_row_sha256=source_content_digest((_source_view(source_row),)),
+            ))
+
+    monkeypatch.setattr(
+        "bilqis_mlx.runtime.factory_complete_solver.FactoryEvaluationInstrument",
+        _Instrument)
+    closed = weakness_replay.resolve_structural_weakness(
+        teacher, run_dir=tmp_path, wrapper=wrapper, source_context=context,
+        selection=selection, assessment=assessment,
+        instruments=(_Instrument(fresh_row),))
+    assert weakness_replay.carried_structural_weaknesses(closed) == ()

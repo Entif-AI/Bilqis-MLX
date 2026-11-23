@@ -17,6 +17,7 @@ from bilqis_mlx.learning.atlas_engram import MotifManifest
 from bilqis_mlx.learning.atlas_engram_transaction import MotifAllocationSnapshot
 from bilqis_mlx.learning.atlas_plasticity import PlasticityPolicy
 from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree
+from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
 from bilqis_mlx.runtime.capability_retention import CompleteSolver
 from bilqis_mlx.runtime._factory_parent_assessment_cache import (
     clear_parent_assessment_cache, factory_parent_assessment_identity,
@@ -146,6 +147,31 @@ class ParentAssessmentIdentityIntegrationTests(unittest.TestCase):
         self.assertTrue(receipt.reused)
         self.assertEqual(assessment.generation_digest, PARENT)
         self.assertEqual(len(self.calls), calls_after_fill)
+
+    def test_learning_first_parent_identity_reuses_accepted_cache_digest(self):
+        state = _state(RAW_IDENTITY_SCHEME)
+        parent = SimpleNamespace(
+            run_id=self.cache.run_id, generation=self.cache.generation,
+            retained_state=state, implementation_sha256="5" * 64,
+            topology=SimpleNamespace(digest="6" * 64),
+            extents=SimpleNamespace(digest="7" * 64),
+            correction_frontier={}, semantic_abi={}, compiler_features={},
+            evaluation_contract={},
+        )
+        self.cache._candidate_identity_sha256 = "8" * 64
+        with (
+            evidence_mode(strict=False),
+            patch(
+                "bilqis_mlx.runtime._factory_parent_assessment_cache."
+                "require_accepted_execution_cache", return_value=self.cache),
+            patch(
+                "bilqis_mlx.runtime._factory_parent_assessment_cache."
+                "candidate_identity_for_canonical_consumer",
+                side_effect=AssertionError("learning-first rehashed accepted parent")),
+        ):
+            identity = factory_parent_assessment_identity(
+                self.context, parent, self.cache, self.cohort, None, PARENT)
+        self.assertEqual(identity.parent_candidate_sha256, "8" * 64)
 
 
 if __name__ == "__main__":

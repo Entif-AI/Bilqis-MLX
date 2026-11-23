@@ -1,9 +1,9 @@
 """Metadata-only ordinary teaching priority."""
 from dataclasses import dataclass
+from pathlib import Path
 
 from bilqis_mlx.learning.atlas_salience import DispatchTier
 from bilqis_mlx.learning.salience_contracts import ActionKind
-from bilqis_mlx.semantics.domains import contract_digest
 
 
 @dataclass(frozen=True)
@@ -28,6 +28,41 @@ class LearningFirstPriorityFrontier:
     options: tuple[LearningFirstPriorityOption, ...]
     evidence: tuple = ()
 
+
+
+
+def can_reuse_learning_first_phase_authority(run_dir, frontier) -> bool:
+    """Reuse phase-start legality while the current cadence still has a move.
+
+    A retained learner publication changes accepted model/optimizer identity, but it
+    does not change the active generated-grade/source topology.  The persisted
+    cadence journal is the authority for which phase members were already attempted.
+    Once that phase is exhausted we force a fresh learner-relative frontier so
+    completion and recovery ranking can observe the new learner.
+    """
+    if frontier is None:
+        return False
+    from bilqis_mlx.runtime.active_grade_cadence_custody import read_current_cadence
+    state = read_current_cadence(Path(run_dir))
+    if state is None:
+        return False
+    if (state.active_grade_activation_sha256
+            != frontier.active_grade_activation_sha256
+            or state.active_grade_definition_sha256
+            != frontier.active_grade_definition_sha256):
+        return False
+    attempted = set(state.attempted_capability_ids)
+    complete = {
+        item.capability_id for item in frontier.capabilities
+        if getattr(item.disposition, "value", item.disposition) == "EVIDENCE_COMPLETE"
+    }
+    ready = set(frontier.ready_capability_ids)
+    return any(
+        capability in ready
+        and capability not in attempted
+        and capability not in complete
+        for capability in state.phase_capability_ids
+    )
 
 def planning_unlocks(capability_id, planning):
     selection = planning.selection
@@ -58,14 +93,9 @@ def learning_first_priority_frontier(
         eligible_since = max(
             last_selected.get(stable_id, 0),
             rejection_recency.get(stable_id, 0))
-        inputs_digest = contract_digest((
-            "bilqis.bamf.learning-first-priority/v1", release_sha256,
-            intent.accepted_manifest_sha256, intent.generation_binding,
-            intent.source_binding_digest, stable_id, eligible_since,
-            unlocks, int(tier)))
         option = LearningFirstPriorityOption(
             stable_id, LearningFirstPriorityContext(stable_id), eligible_since,
-            unlocks, tier, inputs_digest)
+            unlocks, tier, "")
         ranked.append((tier, eligible_since, stable_id, option))
     ranked.sort(key=lambda item: item[:3])
     return now, LearningFirstPriorityFrontier(tuple(item[3] for item in ranked))
@@ -73,6 +103,7 @@ def learning_first_priority_frontier(
 
 __all__ = (
     'LearningFirstPriorityContext', 'LearningFirstPriorityOption',
-    'LearningFirstPriorityFrontier', 'planning_unlocks',
+    'LearningFirstPriorityFrontier', 'can_reuse_learning_first_phase_authority',
+    'planning_unlocks',
     'learning_first_priority_frontier',
 )

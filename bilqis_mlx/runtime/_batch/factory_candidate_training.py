@@ -64,27 +64,34 @@ def _prepare_candidate_step_inputs(
         semantic_context,
         prepared_source, accepted_cache, selected_source_authority,
         learning_first_cache, prepared_learning_first_source_inputs,
+        prepared_learning_first_source_identity,
         pipeline_host_preparation_wall_seconds,
         pipeline_host_overlap_wall_seconds,
         pipeline_host_wait_wall_seconds, pipeline_accelerator_wait_for_host_wall_seconds):
-    start = time.perf_counter()
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    strict = strict_mode_enabled()
+    start = time.perf_counter() if strict else 0.0
     if candidate_step_started_at is None:
-        candidate_step_started_at = start
-    binding_started = time.perf_counter()
+        candidate_step_started_at = time.perf_counter() if strict else 0.0
+    binding_started = time.perf_counter() if strict else None
     cache, generation = _candidate_cache_and_generation(
         run_dir, source_context, parent, candidate, currentness_transaction,
         accepted_cache=accepted_cache)
-    stage_metrics = _candidate_stage_metrics(
-        candidate_step_started_at, currentness_binding_wall_seconds,
-        source_lane_wait_wall_seconds, source_lesson_materialization_wall_seconds,
-        mentor_observation_wall_seconds, progress_emission_wall_seconds,
-        observer_begin_step_wall_seconds, candidate_delivery_setup_wall_seconds,
-        pipeline_host_preparation_wall_seconds, pipeline_host_overlap_wall_seconds,
-        pipeline_host_wait_wall_seconds,
-        pipeline_accelerator_wait_for_host_wall_seconds,
-        time.perf_counter() - binding_started)
+    stage_metrics = (
+        _candidate_stage_metrics(
+            candidate_step_started_at, currentness_binding_wall_seconds,
+            source_lane_wait_wall_seconds, source_lesson_materialization_wall_seconds,
+            mentor_observation_wall_seconds, progress_emission_wall_seconds,
+            observer_begin_step_wall_seconds, candidate_delivery_setup_wall_seconds,
+            pipeline_host_preparation_wall_seconds, pipeline_host_overlap_wall_seconds,
+            pipeline_host_wait_wall_seconds,
+            pipeline_accelerator_wait_for_host_wall_seconds,
+            time.perf_counter() - binding_started)
+        if strict else {"candidate_step_started_at": candidate_step_started_at})
     semantic_context_materialized_in_step = semantic_context is None
-    pre_neural_started = time.perf_counter()
+    pre_neural_started = time.perf_counter() if strict else None
     prepared = prepare_factory_training_batch(
         source_context, parent, atlas_artifact_path, feature_artifact_path,
         delivered_rows, generation, capability=capability, delivery=delivery,
@@ -99,14 +106,16 @@ def _prepare_candidate_step_inputs(
         prepared_source=prepared_source,
         selected_source_authority=selected_source_authority,
         learning_first_cache=learning_first_cache,
-        prepared_learning_first_source_inputs=prepared_learning_first_source_inputs)
-    prepared_observation = getattr(prepared, "_performance_observation", {})
-    if isinstance(prepared_observation, dict):
+        prepared_learning_first_source_inputs=prepared_learning_first_source_inputs,
+        prepared_learning_first_source_identity=prepared_learning_first_source_identity)
+    prepared_observation = (
+        getattr(prepared, "_performance_observation", {}) if strict else {})
+    if strict and isinstance(prepared_observation, dict):
         stage_metrics.update({
             name: float(value) for name, value in prepared_observation.items()
             if name.startswith(("factory_", "pipeline_"))
         })
-    salience_started = time.perf_counter()
+    salience_started = time.perf_counter() if strict else None
     supervision = None
     if salience_provider is not None:
         from bilqis_mlx.runtime.salience_training import prepare_salience_training
@@ -114,12 +123,13 @@ def _prepare_candidate_step_inputs(
             _invalid("BAMF_SALIENCE_PROVIDER_REQUIRED")
         prepared, supervision = prepare_salience_training(
             prepared, source_context, salience_provider(prepared))
-    stage_metrics["salience_preparation_wall_seconds"] = (
-        time.perf_counter() - salience_started if salience_provider is not None
-        else 0.0)
-    stage_metrics["pre_neural_source_compile_wall_seconds"] = (
-        float(upstream_pre_neural_source_compile_wall_seconds)
-        + time.perf_counter() - pre_neural_started)
+    if strict:
+        stage_metrics["salience_preparation_wall_seconds"] = (
+            time.perf_counter() - salience_started if salience_provider is not None
+            else 0.0)
+        stage_metrics["pre_neural_source_compile_wall_seconds"] = (
+            float(upstream_pre_neural_source_compile_wall_seconds)
+            + time.perf_counter() - pre_neural_started)
     return (
         start, cache, generation, stage_metrics, prepared, supervision,
         semantic_context_materialized_in_step,
@@ -178,11 +188,17 @@ def _candidate_mentor_supervision(
 def _require_mentor_supervision_timed(
         mentor_supervision, observation, parent, cache, teacher_strategy,
         source_seed, stage_metrics):
+    if mentor_supervision is None:
+        return
     started = time.perf_counter()
     _require_mentor_supervision_current(
         mentor_supervision, observation, parent, cache, teacher_strategy, source_seed)
-    stage_metrics["mentor_supervision_currentness_wall_seconds"] = (
-        time.perf_counter() - started)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    if strict_mode_enabled():
+        stage_metrics["mentor_supervision_currentness_wall_seconds"] = (
+            time.perf_counter() - started)
 
 
 def execute_factory_candidate_step(
@@ -208,6 +224,7 @@ def execute_factory_candidate_step(
     candidate_delivery_setup_wall_seconds: float = 0.0, semantic_context=None,
     prepared_source=None, accepted_cache=None, selected_source_authority=None,
     learning_first_cache=None, prepared_learning_first_source_inputs=None,
+    prepared_learning_first_source_identity=None,
     pipeline_host_preparation_wall_seconds: float = 0.0,
     pipeline_host_overlap_wall_seconds: float = 0.0,
     pipeline_host_wait_wall_seconds: float = 0.0,
@@ -240,6 +257,7 @@ def execute_factory_candidate_step(
         semantic_context,
         prepared_source, accepted_cache, selected_source_authority,
         learning_first_cache, prepared_learning_first_source_inputs,
+        prepared_learning_first_source_identity,
         pipeline_host_preparation_wall_seconds,
         pipeline_host_overlap_wall_seconds,
         pipeline_host_wait_wall_seconds,

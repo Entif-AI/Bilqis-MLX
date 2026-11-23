@@ -2,6 +2,7 @@ from pathlib import Path
 import json
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.curriculum.scheduler import next_capability, start_new, visit
 from bilqis_mlx.factory.autonomy import (
@@ -47,6 +48,19 @@ class LiveAutonomyPlanningTests(unittest.TestCase):
             release = compile_live_release(course)
             plan = build_live_autonomy_plan(release, LEGACY)
             self.assertEqual(plan.coverage_debt, ())
+
+    def test_prevalidated_live_plan_does_not_reverify_owner_release(self):
+        from bilqis_mlx.runtime._autonomy_live.planning import (
+            build_live_autonomy_plan_prevalidated,
+        )
+
+        release = compile_live_release(self.a)
+        with patch.object(
+                type(release), "verify",
+                side_effect=AssertionError("prevalidated planning reverified release")):
+            plan = build_live_autonomy_plan_prevalidated(release, LEGACY)
+
+        self.assertEqual(plan.factory_release_sha256, release.release_sha256)
 
     def test_composite_and_identification_dependencies_survive_live_plan(self):
         release = compile_live_release(self.identified)

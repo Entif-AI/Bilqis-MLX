@@ -3986,3 +3986,33 @@ verification behavior and remains independently testable. This boundary does not
 weaken atomic publication, cold-resume validation, source truth, retention
 protection, or accepted model+optimizer custody; it removes repeated proof of an
 accepted generation that has not changed.
+
+## ADR-155 | 2026-11-23 | Ordinary BAMF skips non-learning evidence instead of deferring it
+
+**Status:** Accepted by direct owner correction on 2026-11-23 through issue #1566.
+
+**Problem:** An attempted ADR-153 repair moved candidate-evidence construction from
+the optimizer-step hot path to retention finalization. That still paid the same
+hashing, row copying, provenance reconstruction, sidecar persistence, and cold-proof
+work during an ordinary visit. The owner explicitly rejected this interpretation:
+non-strict work that is not necessary for learning has zero ordinary-path budget and
+must be skipped, not deferred.
+
+**Decision:** Without `--strict-mode`, BAMF MUST NOT construct or persist the full
+candidate-evidence artifact merely because a later evidence consumer can use it.
+Ordinary execution retains only facts that can change numerical learning, retention,
+future teaching policy, structural-weakness replay, accepted publication, or
+cold-resume correctness. Evidence-plane hashes, provenance objects, receipt trees,
+sidecars, replay validation, and equivalent proof scaffolding remain strict-only.
+
+Learning-relevant replay is not evidence ceremony. In particular, a rejected lesson's
+provider-classified structural weakness and the rejected source identities needed to
+require a later fresh-equivalent success remain part of ordinary learning because
+they change future lesson selection and weakness resolution. Ordinary mode carries
+that compact learning state directly; it does not require a full candidate-evidence
+artifact to do so.
+
+**Acceptance:** Behavioral tests must prove that ordinary candidate execution can
+retain/reject, update future teacher policy, and carry structural-weakness debt while
+full candidate-evidence construction/persistence is absent. Strict mode must continue
+to exercise and validate the complete evidence path.

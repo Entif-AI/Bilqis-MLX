@@ -99,6 +99,50 @@ class BoundaryChainingTests(unittest.TestCase):
         self.assertEqual(len(producer._trace_boundaries), 4)
         self.assertEqual(producer._receipts, ())
 
+    def test_trace_horizon_uses_prevalidated_depth_views_at_all_boundaries(self):
+        producer = self.producer(completed=0)
+        producer._trace = True
+        producer._trace_boundaries = (object(),)
+        producer._motif_manifest = None
+        producer._execution_binding = object()
+        producer._generation = "generation"
+        producer._topology = SimpleNamespace(depth_groups=3)
+        views = tuple(
+            SimpleNamespace(boundary_group=group)
+            for group in (1, 2, 3)
+        )
+        selected = object()
+        adapted = object()
+
+        with (
+            patch.object(
+                backbone, "_prevalidated_depth_parameter_view",
+                side_effect=views) as prevalidated,
+            patch.object(
+                backbone, "depth_parameter_view",
+                side_effect=AssertionError("trace used strict depth view")),
+            patch.object(
+                producer_session, "source_depth_select",
+                return_value=selected),
+            patch.object(
+                producer_session, "adapter_parameter_view",
+                return_value=object()),
+            patch.object(
+                producer_session, "adapter_forward",
+                return_value=adapted),
+            patch.object(backbone, "source_depth_select", return_value=selected),
+            patch.object(backbone, "adapter_parameter_view", return_value=object()),
+            patch.object(backbone, "adapter_forward", return_value=adapted),
+        ):
+            actual = backbone.finalize_source_backbone_hidden(producer)
+
+        self.assertIs(actual, adapted)
+        self.assertEqual(
+            tuple(call.kwargs["boundary_group"]
+                  for call in prevalidated.call_args_list),
+            (1, 2, 3),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

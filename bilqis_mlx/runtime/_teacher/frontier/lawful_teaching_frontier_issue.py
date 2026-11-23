@@ -54,6 +54,28 @@ def _validate_epoch(epoch, planning_generation, source_context, parent):
     return source
 
 
+def _validate_learning_first_epoch(
+        epoch, planning_generation, source_context, parent):
+    """Check exact process-owned epoch bindings without replaying strict proof."""
+    release = source_context.release
+    snapshot, closure = epoch.snapshot, epoch.closure
+    source = epoch.source_authority
+    if (
+        planning_generation._source_context is not source_context
+        or planning_generation._parent is not parent
+        or epoch.current_release.release_sha256 != release.release_sha256
+        or planning_generation.release_sha256 != release.release_sha256
+        or snapshot.admitted_factory_release_sha256 != release.release_sha256
+        or closure.snapshot_sha256 != snapshot.snapshot_sha256
+        or snapshot.rights_epoch != source.frontier.rights_epoch
+        or snapshot.correction_generation
+           != source.frontier.correction_generation
+        or snapshot.policy_epoch != source.policy.policy_epoch
+    ):
+        _invalid("BAMF_LEARNER_FRONTIER_EPOCH_DRIFT")
+    return source
+
+
 def _bind_frontier_currentness(root, epoch, active_grade):
     from bilqis_mlx.runtime.frontier_autonomy_currentness import (
         _bind_autonomy_currentness,
@@ -69,16 +91,8 @@ def _bind_frontier_currentness(root, epoch, active_grade):
     return autonomy, active_grade_witness
 
 
-def _issue_lawful_teaching_frontier_from_epoch(
-        epoch, source_context, parent, planning_generation, *, planning_cache=None):
-    """Seal one already-derived accepted A09 epoch for an internal consumer."""
-    from bilqis_mlx.runtime.priority_planning_owner import PriorityPlanningEpoch
-    if type(epoch) is not PriorityPlanningEpoch:
-        _invalid("BAMF_LEARNER_FRONTIER_EPOCH_INVALID")
-    source = _validate_epoch(
-        epoch, planning_generation, source_context, parent)
+def _active_grade_context(root, epoch, strict):
     from bilqis_mlx.runtime.active_generated_grade import ensure_active_generated_grade
-    root = Path(source_context.run_dir)
     try:
         active_grade = ensure_active_generated_grade(root)
     except BilqisError as failure:
@@ -89,19 +103,49 @@ def _issue_lawful_teaching_frontier_from_epoch(
             activate_initial_grade_bootstrap,
         )
         active_grade = activate_initial_grade_bootstrap(root, epoch)
-    active_grade_members = tuple(
+    members = tuple(
         (member.capability_id, member.semantic_id)
-        for member in active_grade.definition.members
+        for member in active_grade.definition.members)
+    if strict:
+        autonomy, active_currentness = _bind_frontier_currentness(
+            root, epoch, active_grade)
+    else:
+        autonomy = active_currentness = None
+    return active_grade, members, autonomy, active_currentness
+
+
+def _issue_lawful_teaching_frontier_from_epoch(
+        epoch, source_context, parent, planning_generation, *, planning_cache=None):
+    """Seal one already-derived accepted A09 epoch for an internal consumer."""
+    from bilqis_mlx.runtime.priority_planning_owner import PriorityPlanningEpoch
+    if type(epoch) is not PriorityPlanningEpoch:
+        _invalid("BAMF_LEARNER_FRONTIER_EPOCH_INVALID")
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
     )
-    autonomy_currentness, active_grade_currentness = _bind_frontier_currentness(
-        root, epoch, active_grade)
+    strict = strict_mode_enabled()
+    source = (
+        _validate_epoch(epoch, planning_generation, source_context, parent)
+        if strict else
+        _validate_learning_first_epoch(
+            epoch, planning_generation, source_context, parent)
+    )
+    root = Path(source_context.run_dir)
+    (active_grade, active_grade_members, autonomy_currentness,
+     active_grade_currentness) = _active_grade_context(root, epoch, strict)
     active_members = _active_member_projection(
         epoch.current_release, active_grade)
+    checkpoint_sha256 = (
+        epoch.checkpoint.sha256 if strict
+        else planning_generation.parent_candidate_identity_sha256)
+    optimizer_step = (
+        epoch.checkpoint.optimizer_step if strict
+        else parent.retained_state.optimizer_step)
     mastered = evidence_complete_capabilities(
         epoch.current_release, epoch.evidence_ledger,
         plan=epoch.autonomy_plan,
-        current_checkpoint_sha256=epoch.checkpoint.sha256,
-        current_optimizer_step=epoch.checkpoint.optimizer_step)
+        current_checkpoint_sha256=checkpoint_sha256,
+        current_optimizer_step=optimizer_step)
     capabilities = _capabilities(
         epoch.current_release, epoch.snapshot, epoch.closure,
         epoch.autonomy_plan, mastered,
@@ -124,8 +168,8 @@ def _issue_lawful_teaching_frontier_from_epoch(
         accepted_manifest_sha256=planning_generation.accepted_manifest_sha256,
         accepted_correction_frontier_sha256=(
             planning_generation.correction_frontier_sha256),
-        accepted_checkpoint_sha256=epoch.checkpoint.sha256,
-        accepted_optimizer_step=epoch.checkpoint.optimizer_step,
+        accepted_checkpoint_sha256=checkpoint_sha256,
+        accepted_optimizer_step=optimizer_step,
         candidate_identity_sha256=(
             planning_generation.parent_candidate_identity_sha256),
         admitted_release_sha256=epoch.current_release.release_sha256,
@@ -162,16 +206,26 @@ def issue_lawful_teaching_frontier(
     """Issue a sealed frontier from current accepted learner/source/A09 owners."""
     from bilqis_mlx.runtime.priority_source_offer import (
         _require_planning_generation,
+        _require_planning_generation_identity,
         bind_priority_planning_generation,
     )
     if planning_generation is None:
         planning_generation = bind_priority_planning_generation(
             source_context, parent, atlas_artifact_path)
-    _require_planning_generation(planning_generation, source_context, parent)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    strict = strict_mode_enabled()
+    require_generation = (
+        _require_planning_generation
+        if strict else _require_planning_generation_identity)
+    require_generation(planning_generation, source_context, parent)
     from bilqis_mlx.runtime.priority_planning_owner import (
         build_priority_planning_epoch,
     )
     epoch = build_priority_planning_epoch(
-        run_dir, source_context, atlas_artifact_path, progress)
+        run_dir, source_context, atlas_artifact_path, progress,
+        authenticated_features=planning_generation._authenticated_features,
+        planning_generation=planning_generation)
     return _issue_lawful_teaching_frontier_from_epoch(
         epoch, source_context, parent, planning_generation)

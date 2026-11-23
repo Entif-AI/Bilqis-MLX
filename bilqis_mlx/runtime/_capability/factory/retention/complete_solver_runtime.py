@@ -15,6 +15,10 @@ class _FactoryCompleteSolverBuilder:
         scalar_proposer, proposal_from_output, batched_outputs, invalid,
         parameters=None,
     ) -> None:
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_evidence_enabled,
+        )
+        self.strict_evidence = strict_evidence_enabled()
         self.source_context = source_context
         self.candidate = candidate
         self.artifact_path = artifact_path
@@ -31,6 +35,8 @@ class _FactoryCompleteSolverBuilder:
         self.telemetry = {
             "shared_backbone_launches": 0,
             "shared_backbone_rows": 0,
+            "shared_backbone_padded_positions": 0,
+            "shared_backbone_attention_cells": 0,
             "scalar_neural_launches": 0,
             "largest_shared_rows": 0,
             "largest_shared_positions": 0,
@@ -65,11 +71,24 @@ class _FactoryCompleteSolverBuilder:
         return batch, plan, authority
 
     def register_context(self, authority, proposer):
-        context = SolveContext(authority.binding, neural_proposer=proposer)
         from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
             strict_evidence_enabled,
         )
-        if strict_evidence_enabled():
+        strict = strict_evidence_enabled()
+        instrument = self.by_goal.get(authority.goal.goal_id)
+        preflight = (
+            None if strict or instrument is None
+            else instrument.prevalidated_exact_result
+        )
+        context = SolveContext(
+            authority.binding, source_binding_digest=authority.source_binding_sha256,
+            neural_proposer=proposer,
+            retain_validated_compositions=strict,
+            prevalidated_source_authority=(preflight is not None),
+            prevalidated_exact_goal=(
+                None if preflight is None else instrument.case.goal),
+            prevalidated_exact_result=preflight)
+        if strict:
             self.source_context.register_solve_context(context)
         return context
 
@@ -79,7 +98,8 @@ class _FactoryCompleteSolverBuilder:
             execution_binding=self.execution_binding)
 
         def proposer(request):
-            self.telemetry["scalar_neural_launches"] += 1
+            if self.strict_evidence:
+                self.telemetry["scalar_neural_launches"] += 1
             return scalar(request)
 
         return self.register_context(authority, proposer)
@@ -113,8 +133,12 @@ class _FactoryCompleteSolverBuilder:
         return context
 
     def on_launch(self, rows, positions):
+        if not self.strict_evidence:
+            return
         self.telemetry["shared_backbone_launches"] += 1
         self.telemetry["shared_backbone_rows"] += rows
+        self.telemetry["shared_backbone_padded_positions"] += rows * positions
+        self.telemetry["shared_backbone_attention_cells"] += rows * positions * positions
         self.telemetry["largest_shared_rows"] = max(
             self.telemetry["largest_shared_rows"], rows)
         self.telemetry["largest_shared_positions"] = max(
@@ -149,7 +173,10 @@ class _FactoryCompleteSolverBuilder:
         budget = SolveBudget(DAGBudget(), max_neural_calls=1)
         return CompleteSolver(
             self.context_for, budget,
-            contexts_for=self.contexts_for, telemetry_for=lambda: dict(self.telemetry))
+            contexts_for=self.contexts_for,
+            telemetry_for=(
+                (lambda: dict(self.telemetry)) if self.strict_evidence
+                else (lambda: {})))
 
 
 def build_factory_complete_solver(source_context, candidate, artifact_path, instruments, **deps):

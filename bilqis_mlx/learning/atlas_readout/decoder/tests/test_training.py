@@ -5,6 +5,7 @@ from unittest.mock import patch
 import numpy as np
 import mlx.core as mx
 import bilqis_mlx.learning.atlas_readout.decoder.prediction as prediction
+import bilqis_mlx.learning.atlas_readout.decoder.prediction_issuance as prediction_issuance
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_readout import (
     predict_typed, answer_loss, AnswerPlan, DecisionOutput, ControlAction, DecisionKind,
@@ -13,7 +14,8 @@ from bilqis_mlx.learning.atlas_readout import (
 from bilqis_mlx.learning.atlas_readout.decoder.tests.helpers import case
 from bilqis_mlx.learning.atlas_readout.decoder.tests.test_prediction import role_plan
 from bilqis_mlx.learning.atlas_readout.decoder.prediction import (
-    attest_issued_output, attest_issued_outputs, issued_output,
+    attest_issued_output, attest_issued_outputs, attested_issued_output,
+    issued_output,
 )
 from bilqis_mlx.learning.atlas_readout.decoder.replay import predict_typed_replay
 from bilqis_mlx.runtime.autodiff_trace import defer_host_tensor_validation
@@ -45,13 +47,19 @@ class DecoderTrainingTests(unittest.TestCase):
                 mx.array((0.25,0.75),dtype=mx.float32)),),
             (DecisionOutput('op','op.b'),),prediction.DecodeStatus.COMPLETE,
             prediction.ExecutionMode.INFERENCE,None,False)
-        with patch.object(prediction,'deepcopy',wraps=prediction.deepcopy) as copied:
+        with patch.object(prediction_issuance,'deepcopy',wraps=prediction_issuance.deepcopy) as copied:
             issued=prediction._issue_output(
                 output,fingerprint=False,freeze_meaning=False)
         self.assertIs(issued,output)
         self.assertEqual(copied.call_count,0)
+        self.assertFalse(attested_issued_output(output))
         self.assertFalse(issued_output(output))
+        self.assertTrue(prediction.live_issued_output(output))
         self.assertTrue(attest_issued_output(output))
+        with patch.object(
+                prediction_issuance,'_logit_fingerprint',
+                side_effect=AssertionError('attested identity re-fingerprinted logits')):
+            self.assertTrue(attested_issued_output(output))
         self.assertTrue(issued_output(output))
 
     def test_trace_replay_batch_attestation_fingerprints_all_outputs_once(self):
@@ -61,8 +69,8 @@ class DecoderTrainingTests(unittest.TestCase):
             outputs=tuple(predict_typed_replay(
                 memory,context,plan,semantics,params,baseline) for _ in range(2))
         with patch.object(
-                prediction,'_batched_logit_fingerprints',
-                wraps=prediction._batched_logit_fingerprints) as fingerprints:
+                prediction_issuance,'_batched_logit_fingerprints',
+                wraps=prediction_issuance._batched_logit_fingerprints) as fingerprints:
             self.assertTrue(attest_issued_outputs(outputs))
         self.assertEqual(fingerprints.call_count,1)
         self.assertTrue(all(issued_output(output) for output in outputs))
@@ -132,7 +140,7 @@ class DecoderTrainingTests(unittest.TestCase):
         baseline=predict_typed(memory,context,plan,semantics,params)
         with defer_host_tensor_validation():
             with (patch(
-                    'bilqis_mlx.learning.atlas_readout.decoder.prediction._logit_fingerprint',
+                    'bilqis_mlx.learning.atlas_readout.decoder.prediction_issuance._logit_fingerprint',
                     side_effect=AssertionError('fingerprint entered replay trace')),
                   patch(
                     'bilqis_mlx.learning.atlas_readout.decoder.prediction.mx.argmax',
@@ -184,7 +192,7 @@ class DecoderTrainingTests(unittest.TestCase):
         def objective(hidden):
             with defer_host_tensor_validation():
                 with (patch(
-                        'bilqis_mlx.learning.atlas_readout.decoder.prediction._logit_fingerprint',
+                        'bilqis_mlx.learning.atlas_readout.decoder.prediction_issuance._logit_fingerprint',
                         side_effect=AssertionError('logit fingerprint entered trace')),
                       patch('bilqis_mlx.learning.atlas_readout.decoder.prediction.mx.argmax',
                             side_effect=AssertionError('argmax readback entered trace'))):

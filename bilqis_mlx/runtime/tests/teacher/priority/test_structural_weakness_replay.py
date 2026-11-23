@@ -241,7 +241,7 @@ def test_rejected_candidate_evidence_compiles_provider_owned_weakness(
         _synthetic_course, _synthetic_registry,
     )
     from bilqis_mlx.runtime.source_execution import SourceExecutionContext
-    from bilqis_mlx.runtime.bamf_operator import evidence_validation
+    from bilqis_mlx.runtime.bamf_operator.evidence_parts import validation as evidence_validation
 
     course = _synthetic_course(1)
     curriculum, bindings = from_legacy_course(course)
@@ -294,6 +294,57 @@ def test_rejected_candidate_evidence_compiles_provider_owned_weakness(
     assert records[0]["weakness_class"]["classifier_id"] == "fixture.weakness.z/v1"
     assert records[0]["candidate_evidence_sha256"] == "e" * 64
     assert row["id"] not in str(records[0])
+
+
+def test_learning_first_rejection_keeps_weakness_signal_without_candidate_evidence(
+        tmp_path):
+    from bilqis_mlx.factory.adapters import SourceAdapterRegistry
+    from bilqis_mlx.factory.curriculum_definition import from_legacy_course
+    from bilqis_mlx.factory.executable_release import compile_executable_factory_release
+    from bilqis_mlx.factory.execution import CurriculumProfile
+    from bilqis_mlx.factory.tests.test_executable_release import _answers
+    from bilqis_mlx.factory.tests.test_execution_plan import (
+        _synthetic_course, _synthetic_registry,
+    )
+    from bilqis_mlx.runtime.source_execution import SourceExecutionContext
+
+    course = _synthetic_course(1)
+    curriculum, bindings = from_legacy_course(course)
+    registered = next(iter(_synthetic_registry()._by_generator.values()))
+    registered = replace(
+        registered,
+        descriptor=replace(
+            registered.descriptor,
+            weakness_classifier_id="fixture.weakness.z/v1",
+            weakness_classifier_sha256="7" * 64),
+        weakness_classifier=lambda row: {"family": "fixture-z", "gold": row["gold"]},
+    )
+    sources = SourceAdapterRegistry((registered,))
+    graph = {"tokens": ["fixture.padding", "cogal.value.false", "cogal.value.true"]}
+    release = compile_executable_factory_release(
+        curriculum, bindings, CurriculumProfile.full(), sources, _answers(),
+        source_root=None, graph=graph, verification_seed=17)
+    context = SourceExecutionContext(
+        release, graph, None, sources, _answers(), run_dir=tmp_path)
+    row = context.draw_rows(seed=19, capability="Z.C0", each=1)[0]
+    selection = _selection(capability="Z.C0")
+    how = dict(selection.metadata["how_context"])
+    how["factory_release_sha256"] = release.release_sha256
+    selection = _issue_result(
+        "TEACHER_SELECTED", "Z.C0", selection.offer, selection.visit,
+        selection.policy, {"how_context": how}, "Z", (), str(tmp_path),
+        _frontier(capability="Z.C0"),
+    )
+
+    records = weakness_replay.derive_live_rejected_weaknesses(
+        context, selection, (row,),
+        rejection_reason="NO_MEASURABLE_TARGET_GAIN",
+        outcome_sha256="f" * 64)
+
+    assert len(records) == 1
+    assert records[0]["candidate_evidence_sha256"] is None
+    assert records[0]["historical_source_ids"] == [row["id"]]
+    assert records[0]["weakness_class"]["classifier_id"] == "fixture.weakness.z/v1"
 
 
 def replace_registered_without_classifier(context):

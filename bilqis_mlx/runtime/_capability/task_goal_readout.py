@@ -8,7 +8,9 @@ from bilqis_mlx.learning.atlas_readout import (
 )
 from bilqis_mlx.learning.atlas_readout.plan import ROUTE_MODALITY
 from bilqis_mlx.semantics.frame_schema import SourceSpan
-from bilqis_mlx.learning.atlas_readout.decoder.prediction import issued_output
+from bilqis_mlx.learning.atlas_readout.decoder.prediction import (
+    issued_output, live_issued_output,
+)
 from bilqis_mlx.runtime.atlas_model import BamfCompiledBatch, forward_bamf
 from bilqis_mlx.runtime.cognitive_solver import NeuralProposal, NeuralRequest
 from bilqis_mlx.semantics.cognitive_dag import DAGNode, TaskGoal
@@ -139,8 +141,16 @@ def proposal_from_task_goal_output(
     output: ModelOutput,
 ) -> NeuralProposal:
     """Turn one live B10 route choice into the exact C04 proposal it selected."""
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    output_valid = (
+        issued_output(output)
+        if strict_evidence_enabled()
+        else live_issued_output(output)
+    ) if type(output) is ModelOutput else False
     if (type(goal) is not TaskGoal or type(request) is not NeuralRequest
-            or type(output) is not ModelOutput or not issued_output(output)):
+            or type(output) is not ModelOutput or not output_valid):
         _invalid("BAMF_C04_TASK_GOAL_ROUTE_OUTPUT_INVALID")
     route = task_goal_route_decisions(goal)
     route_ids = {item.decision_id for item in route}
@@ -175,9 +185,6 @@ def proposal_from_task_goal_output(
         expression_or_holes=replace(goal.expression_or_holes, nodes=tuple(nodes)),
     )
     route_record = tuple((key, committed[key]) for key in sorted(committed))
-    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
-        strict_evidence_enabled,
-    )
     if strict_evidence_enabled():
         receipt = contract_digest({
             "schema": "bilqis.mlx.b10-task-goal-route/v1",

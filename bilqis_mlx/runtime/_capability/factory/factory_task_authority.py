@@ -84,8 +84,13 @@ class FactoryTaskAuthority:
                          or not self.training_authority_sha256))
                 or self.goal.goal_id != self.source_row_id
                 or self.goal.semantic_release != self.binding.task.semantic_release
-                or self.goal.scope != self.binding.task.scope
-                or contract_digest(self.binding) != self.source_binding_sha256):
+                or self.goal.scope != self.binding.task.scope):
+            _invalid("BAMF_C04_FACTORY_TASK_AUTHORITY_INVALID")
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_evidence_enabled,
+        )
+        if (strict_evidence_enabled()
+                and contract_digest(self.binding) != self.source_binding_sha256):
             _invalid("BAMF_C04_FACTORY_TASK_AUTHORITY_INVALID")
 
     @property
@@ -172,14 +177,25 @@ def rebind_factory_task_authority(
             or type(template) is not FactoryTaskTemplate
             or not isinstance(generation_binding, str) or not generation_binding):
         _invalid("BAMF_C04_FACTORY_TASK_REBIND_INVALID")
-    source_context.__post_init__()
-    compiled_batch.__post_init__()
-    validate_factory_task_template(source_context, compiled_batch, template)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    strict = strict_evidence_enabled()
     source = compiled_batch.sources[0]
     row = source.source_row
     row_id = row.get("id")
     capability_id = row.get("capability")
-    row_sha256 = source_content_digest((row,))
+    if strict:
+        source_context.__post_init__()
+        compiled_batch.__post_init__()
+        validate_factory_task_template(source_context, compiled_batch, template)
+        row_sha256 = source_content_digest((row,))
+    else:
+        # Learning-first execution consumes a template already issued from this
+        # immutable row/binding. Re-running SourceExecutionContext/B11/template
+        # proof here repays strict ceremony once per C05 case. Preserve only the
+        # cheap identity relations needed to keep the numerical task coherent.
+        row_sha256 = template.source_row_sha256
     generation, release_sha256, training_sha256 = _generation_authority(
         source_context, compiled_batch, row_id, capability_id, row_sha256,
         generation_binding)
@@ -188,7 +204,8 @@ def rebind_factory_task_authority(
             or template.source_row_id != row_id
             or template.goal.semantic_release
             != compiled_batch.compiled.features.semantic_release
-            or template.source_binding_sha256 != contract_digest(template.binding)):
+            or (strict and template.source_binding_sha256
+                != contract_digest(template.binding))):
         _invalid("BAMF_C04_FACTORY_TASK_REBIND_DRIFT")
     return _issue_authority(template, generation, training_sha256, row_sha256)
 

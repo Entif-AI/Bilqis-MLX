@@ -1,5 +1,6 @@
 """Contracts for Atlas projection snapshots."""
 import unittest
+from unittest.mock import patch
 from bilqis_mlx.semantics.tests.atlas.projection.helpers import (
     AtlasArtifactSelection,
     BilqisError,
@@ -19,6 +20,24 @@ from bilqis_mlx.semantics.tests.atlas.projection.helpers import (
 
 
 class AtlasProjectionSnapshotsTests(unittest.TestCase):
+    def test_process_owned_snapshot_reuse_skips_repeat_pin_and_materialization(self):
+        from bilqis_mlx.semantics.atlas import snapshot as snapshot_module
+        from bilqis_mlx.semantics.atlas_projection import FrozenAtlasSnapshot
+
+        selection = AtlasArtifactSelection(
+            "/already-authenticated", "0" * 64, "1" * 64, "2" * 64)
+        authenticated = object.__new__(FrozenAtlasSnapshot)
+        with snapshot_module.reuse_pinned_atlas_snapshot(
+                selection, authenticated), patch.object(
+                    snapshot_module, "_require_registered_source_pin",
+                    side_effect=AssertionError("process-owned reuse rechecked pin")), patch.object(
+                    snapshot_module, "load_atlas_snapshot",
+                    side_effect=AssertionError("process-owned reuse rematerialized Atlas")):
+            self.assertIs(
+                snapshot_module.load_pinned_atlas_snapshot(selection),
+                authenticated,
+            )
+
     def test_pinned_selection_revalidates_mutated_fields(self):
         class WrappedText(str):
             pass

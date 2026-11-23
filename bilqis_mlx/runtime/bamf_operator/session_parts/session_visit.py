@@ -83,33 +83,45 @@ def _publish_accepted(
     parent, selection = prepared.parent, prepared.selection
     step, decision, retained = prepared.step, prepared.decision, prepared.retained
     successor = prepared.successor
-    if observer is not None:
-        observer.update(phase="PUBLISHING")
-    emit_progress(progress, "publishing accepted successor checkpoint")
+    from .evidence_mode import strict_mode_enabled
+    strict = strict_mode_enabled()
+    runtime_observer = observer if strict else None
+    if runtime_observer is not None:
+        runtime_observer.update(phase="PUBLISHING")
+    if strict:
+        emit_progress(progress, "publishing accepted successor checkpoint")
     _assert_current(run_authority_binding)
     publication_observer = None
-    if observer is not None:
-        publication_observer = lambda metrics: observer.update(**{
+    if runtime_observer is not None:
+        publication_observer = lambda metrics: runtime_observer.update(**{
             "publication_" + key: value
             for key, value in metrics.to_record().items()
         })
-    with measure_phase(observer, "publishing_wall_seconds"):
+    if strict:
+        with measure_phase(runtime_observer, "publishing_wall_seconds"):
+            accept_publish(
+                run_dir, successor, retained, decision=decision,
+                feature_sha256=successor.extents.factor_map_digest,
+                reserve_gib=reserve_gib,
+                training_authorities=step.transaction.training_authorities,
+                publication_observer=publication_observer)
+    else:
         accept_publish(
             run_dir, successor, retained, decision=decision,
             feature_sha256=successor.extents.factor_map_digest,
             reserve_gib=reserve_gib,
             training_authorities=step.transaction.training_authorities,
-            publication_observer=publication_observer)
-    if load_generation is not None:
+            publication_observer=None)
+    if strict and load_generation is not None:
         load_generation(run_dir)
     cadence = _cadence(selection)
     if cadence is not None and record_cadence_attempt is not None:
         record_cadence_attempt(
             run_dir, cadence, prepared.capability, "RETAINED")
     health = getattr(prepared, "learning_health", None)
-    if observer is not None and isinstance(health, dict):
-        observer.learning_health_by_capability[health["capability_id"]] = health
-        observer.update(learning_health=health)
+    if runtime_observer is not None and isinstance(health, dict):
+        runtime_observer.learning_health_by_capability[health["capability_id"]] = health
+        runtime_observer.update(learning_health=health)
     return "ACCEPTED"
 
 

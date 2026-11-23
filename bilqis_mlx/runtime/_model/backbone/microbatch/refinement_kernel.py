@@ -89,12 +89,19 @@ def _slot_inputs(producer, row_batches, selections, slot, width):
 
 
 def _batched_refine_slot(
-        params, state, seeds, role, members, member_counts, passes):
+        params, state, seeds, role, members, member_counts, passes, *,
+        max_passes=None):
     """Run one selected-frame slot for every row without rowwise kernels."""
+    if max_passes is None:
+        max_passes = MAX_LOCAL_PASSES
+    if (type(max_passes) is not int or not 0 <= max_passes <= MAX_LOCAL_PASSES):
+        _invalid("B11_REFINEMENT_PASS_LIMIT_INVALID")
+    if max_passes == 0:
+        return state
     keys = members @ params["refine.key"].T
     values = members @ params["refine.value"].T
     member_mask = mx.arange(members.shape[1])[None, :] < member_counts[:, None]
-    for pass_index in range(MAX_LOCAL_PASSES):
+    for pass_index in range(max_passes):
         query = _norm(
             state + seeds + role, params["refine.norm"]) @ params["refine.query"].T
         scores = mx.sum(query[:, None, :] * keys, axis=-1) / (INNER ** .5)
@@ -113,8 +120,31 @@ def _batched_refine_slot(
 
 def batched_refine_hidden(params, row_batches, producer, hidden, selections):
     """Apply selected local refinement with one batched kernel per selection slot."""
-    refined, _routing = batched_refine_hidden_with_routing(
-        params, row_batches, producer, hidden, selections)
+    slots = max((0 if item is None else len(item[1]) for item in selections), default=0)
+    if slots == 0:
+        return hidden
+    pass_limits = tuple(max((
+        0 if selection is None or slot >= len(selection[1])
+        else selection[1][slot].passes
+        for selection in selections), default=0) for slot in range(slots))
+    if not any(pass_limits):
+        return hidden
+    role = _role_batch(params, row_batches, selections)
+    refined = hidden
+    rows = mx.arange(hidden.shape[0])
+    for slot, max_passes in enumerate(pass_limits):
+        if max_passes == 0:
+            continue
+        positions, passes, member_counts, members, seeds = _slot_inputs(
+            producer, row_batches, selections, slot, hidden.shape[-1])
+        state = refined[rows, positions]
+        state = _batched_refine_slot(
+            params, state, seeds, role, members, member_counts, passes,
+            max_passes=max_passes)
+        position_mask = (
+            mx.arange(refined.shape[1])[None, :] == positions[:, None])
+        position_mask = position_mask & (passes[:, None] > 0)
+        refined = mx.where(position_mask[..., None], state[:, None, :], refined)
     return refined
 
 
@@ -140,7 +170,11 @@ def batched_refine_hidden_with_routing(
             for selection in selections), dtype=mx.bool_)
         routing.append((route_logits, passes, selected))
         state = _batched_refine_slot(
-            params, state, seeds, role, members, member_counts, passes)
+            params, state, seeds, role, members, member_counts, passes,
+            max_passes=max((
+                0 if selection is None or slot >= len(selection[1])
+                else selection[1][slot].passes
+                for selection in selections), default=0))
         position_mask = (
             mx.arange(refined.shape[1])[None, :] == positions[:, None])
         position_mask = position_mask & (passes[:, None] > 0)

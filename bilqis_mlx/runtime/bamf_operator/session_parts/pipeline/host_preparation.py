@@ -45,7 +45,8 @@ def learning_first_prepare_step(execute_candidate, selection, context):
         return prepare_learning_first_source_inputs_ahead(
             context, authenticated, lesson.delivered,
             source_seed=selection.offer.source_seed,
-            source_each=len(lesson.direct) + len(lesson.enrichment))
+            source_each=len(lesson.direct) + len(lesson.enrichment),
+            source_identity=getattr(lesson, "prefetch_identity", None))
 
     return prepare
 

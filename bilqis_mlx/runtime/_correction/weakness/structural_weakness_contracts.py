@@ -91,11 +91,14 @@ def _validate_context(record: dict) -> dict:
 
 
 def validate_weakness_evidence(record: dict) -> dict:
-    if not isinstance(record, dict) or set(record) != {
+    required = {
         "schema", "state", "freshness", "capability_id", "weakness_class",
         "context", "candidate_evidence_sha256", "outcome_sha256",
         "retention_reason", "weakness_evidence_sha256",
-    } or record.get("schema") != EVIDENCE_SCHEMA:
+    }
+    allowed = required | {"historical_source_ids"}
+    if (not isinstance(record, dict) or not required <= set(record)
+            or not set(record) <= allowed or record.get("schema") != EVIDENCE_SCHEMA):
         _invalid("BAMF_WEAKNESS_EVIDENCE_INVALID")
     if (record.get("state") != "UNRESOLVED"
             or record.get("freshness") != "FRESH_EQUIVALENT_REQUIRED"):
@@ -106,6 +109,17 @@ def validate_weakness_evidence(record: dict) -> dict:
     except (TypeError, ValueError) as exc:
         _invalid("BAMF_WEAKNESS_CLASS_INVALID")
         raise AssertionError from exc
+    historical_ids = record.get("historical_source_ids")
+    if historical_ids is not None and (
+            not isinstance(historical_ids, list)
+            or any(not isinstance(item, str) or not item for item in historical_ids)):
+        _invalid("BAMF_WEAKNESS_EVIDENCE_INVALID")
+    candidate_sha = record.get("candidate_evidence_sha256")
+    if candidate_sha is not None and (
+            not isinstance(candidate_sha, str) or len(candidate_sha) != SHA256_LENGTH):
+        _invalid("BAMF_WEAKNESS_EVIDENCE_INVALID")
+    if candidate_sha is None and historical_ids is None:
+        _invalid("BAMF_WEAKNESS_EVIDENCE_INVALID")
     if (weakness.capability_id != record.get("capability_id")
             or context["capability_id"] != record.get("capability_id")
             or record["weakness_evidence_sha256"] != _digest({

@@ -6,8 +6,8 @@ import unittest
 from unittest.mock import patch
 
 from bilqis_mlx.data_plane import DataPlane
-from bilqis_mlx.runtime import atlas_flywheel_runtime
 from bilqis_mlx.runtime.atlas_flywheel_runtime import _candidate_frontier
+from bilqis_mlx.runtime.atlas_flywheel_runtime_parts import planning as frontier_planning
 from bilqis_mlx.runtime import planner_frontier_trust
 
 
@@ -30,7 +30,7 @@ class CandidateFrontierRuntimeTests(unittest.TestCase):
         self.addCleanup(self.plane_patch.stop)
 
     def _count_builder(self):
-        original = atlas_flywheel_runtime.subprocess.run
+        original = frontier_planning.subprocess.run
         calls = []
 
         def counted(*args, **kwargs):
@@ -38,7 +38,7 @@ class CandidateFrontierRuntimeTests(unittest.TestCase):
             return original(*args, **kwargs)
 
         return calls, patch.object(
-            atlas_flywheel_runtime.subprocess, "run", side_effect=counted)
+            frontier_planning.subprocess, "run", side_effect=counted)
 
     def test_unchanged_frontier_reuses_trusted_release_without_builder(self):
         calls, builder = self._count_builder()
@@ -90,12 +90,12 @@ class CandidateFrontierRuntimeTests(unittest.TestCase):
                 changed.verify()
                 calls = []
                 with patch.object(
-                        atlas_flywheel_runtime,
+                        frontier_planning,
                         "candidate_frontier_source_identity",
                         return_value=(builder_sha256, input_digest)), patch.object(
-                            atlas_flywheel_runtime, "load_candidate_frontier",
+                            frontier_planning, "load_candidate_frontier",
                             return_value=changed), patch.object(
-                                atlas_flywheel_runtime.subprocess, "run",
+                                frontier_planning.subprocess, "run",
                                 side_effect=lambda *args, **kwargs: calls.append(args[0])):
                     result = _candidate_frontier(
                         self.run_dir, _FACTORY_RELEASE_A)

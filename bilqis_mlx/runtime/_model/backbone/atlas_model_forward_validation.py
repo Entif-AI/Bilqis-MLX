@@ -9,6 +9,7 @@ from .atlas_model_contracts import (
     BamfMicrobatchGradientExecution, _MICROBATCH_EXECUTION_ISSUER, _invalid,
 )
 from bilqis_mlx.runtime.model_topology_v2 import validate_bamf_parameters
+from bilqis_mlx.runtime.model_topology_v2 import expected_bamf_shapes
 from .microbatch.forward_preflight import (
     microbatch_trace_from_hidden, microbatch_trace_preflight,
     validate_decode_row_custody, validate_decode_row_input, validate_task_plan_custody,
@@ -104,12 +105,41 @@ def _issue_microbatch_gradient(executions, mean_loss, gradients, *, finite_attes
     return result
 
 
+def _validate_learning_first_gradient_structure(backend, batch, gradients):
+    if not isinstance(gradients, dict) or not gradients:
+        _invalid("B11_MICROBATCH_GRADIENT_EXECUTION_INVALID")
+    declared = {
+        item.name: item for item in expected_bamf_shapes(
+            backend.topology, batch.compiled.extents)
+    }
+    if not set(gradients) <= set(declared):
+        _invalid("B11_MICROBATCH_GRADIENT_EXECUTION_INVALID")
+    for name, value in gradients.items():
+        item = declared[name]
+        if (not isinstance(value, mx.array) or value.dtype != mx.float32
+                or value.shape != item.shape):
+            _invalid("B11_MICROBATCH_GRADIENT_EXECUTION_INVALID")
+
+
 def finalize_microbatch_gradient(
     backend, batch, row_batches, preflight_executions,
     executions, mean_loss, gradients, *, answer_plans=None, route_trajectory=None,
     learning_first=False, numerical_finite_attested=False,
 ):
     """Verify row evidence, numerical parity and issue one microbatch result."""
+    if learning_first:
+        executions, _reference_executions, _validation_sync_count = (
+            _resolve_postflight_evidence(
+                row_batches, preflight_executions, executions,
+                answer_plans=answer_plans, route_trajectory=route_trajectory,
+                learning_first=True))
+        if type(executions) is not tuple or len(executions) != len(row_batches):
+            _invalid("B11_MICROBATCH_EXECUTION_MISSING")
+        _validate_learning_first_gradient_structure(backend, batch, gradients)
+        return _issue_microbatch_gradient(
+            executions, mean_loss, gradients,
+            finite_attested=numerical_finite_attested)
+
     finalize_started = time.perf_counter()
     from bilqis_mlx.learning.atlas_readout.decoder.prediction import (
         attest_issued_outputs,
@@ -123,9 +153,12 @@ def finalize_microbatch_gradient(
     if type(executions) is not tuple or len(executions) != len(row_batches):
         _invalid("B11_MICROBATCH_EXECUTION_MISSING")
     stage_started = time.perf_counter()
-    if not attest_issued_outputs(tuple(execution.output for execution in executions)):
+    if (not learning_first
+            and not attest_issued_outputs(tuple(
+                execution.output for execution in executions))):
         _invalid("B11_MICROBATCH_OUTPUT_ATTESTATION_FAILED")
-    output_attestation_seconds = time.perf_counter() - stage_started
+    output_attestation_seconds = (
+        time.perf_counter() - stage_started if not learning_first else 0.0)
     stage_started = time.perf_counter()
     validation_sync_count += _validate_postflight_loss(
         mean_loss, reference_executions, learning_first=learning_first)
@@ -143,6 +176,8 @@ def finalize_microbatch_gradient(
             trajectory_validation_seconds),
         "b11_postflight_output_attestation_wall_seconds": float(
             output_attestation_seconds),
+        "b11_postflight_output_attestation_readback_count": int(
+            not learning_first),
         "b11_postflight_loss_validation_wall_seconds": float(
             loss_validation_seconds),
         "b11_postflight_gradient_structure_wall_seconds": float(

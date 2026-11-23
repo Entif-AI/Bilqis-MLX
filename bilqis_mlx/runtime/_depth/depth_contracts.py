@@ -49,6 +49,7 @@ SUMMARY_SCHEMA = "bilqis.mlx.depth-summary/v1"
 DIAGNOSTICS_SCHEMA = "bilqis.mlx.depth-diagnostics/v1"
 PARAMETER_VIEW_SCHEMA = "bilqis.mlx.depth-parameter-view/v1"
 _VIEW_SEAL = object()
+_PREVALIDATED_VIEW_ISSUER = object()
 SOURCE_ORDER = ("h0", "g1", "g2", "g3")
 COMPLETED_LAYERS = (0, 4, 8, 12)
 
@@ -74,6 +75,7 @@ class DepthParameterView(Mapping[str, mx.array]):
     _full_parameters: Mapping[str, mx.array] | None = None
     _extents: GenerationExtents | None = None
     _execution_binding: object | None = field(default=None, repr=False, compare=False)
+    _issuance: object | None = field(default=None, repr=False, compare=False)
     _feature_parameters: Mapping[str, mx.array] = field(init=False, repr=False, compare=False)
     schema_version: str = PARAMETER_VIEW_SCHEMA
 
@@ -85,19 +87,22 @@ class DepthParameterView(Mapping[str, mx.array]):
                 or not isinstance(self._tensors, Mapping)
                 or set(self._tensors) != set(PARAMETER_SHAPES)
                 or not isinstance(self._full_parameters, Mapping)
-                or type(self._extents) is not GenerationExtents):
+                or type(self._extents) is not GenerationExtents
+                or self._issuance not in (None, _PREVALIDATED_VIEW_ISSUER)):
             _invalid()
-        validate_bamf_parameters(ModelTopologySpecV2(), self._extents, self._full_parameters)
-        if self._execution_binding is not None:
-            require_execution_generation_binding(
-                self._execution_binding, self._full_parameters,
-                spec=ModelTopologySpecV2(), extents=self._extents)
+        if self._issuance is None:
+            validate_bamf_parameters(ModelTopologySpecV2(), self._extents, self._full_parameters)
+            if self._execution_binding is not None:
+                require_execution_generation_binding(
+                    self._execution_binding, self._full_parameters,
+                    spec=ModelTopologySpecV2(), extents=self._extents)
         if any(self._tensors[local] is not self._full_parameters[path]
                for local, path in _depth_names(self.boundary_group).items()):
             _invalid()
         full_parameters = self._full_parameters
         object.__setattr__(self, "_tensors", MappingProxyType(dict(self._tensors)))
-        if getattr(self._execution_binding, "_parameters", None) is not full_parameters:
+        if (self._issuance is None
+                and getattr(self._execution_binding, "_parameters", None) is not full_parameters):
             full_parameters = MappingProxyType(dict(full_parameters))
         object.__setattr__(self, "_full_parameters", full_parameters)
         object.__setattr__(self, "_feature_parameters", MappingProxyType({
@@ -154,6 +159,37 @@ def depth_parameter_view(
     return DepthParameterView(
         {local: parameters[name] for local, name in names.items()},
         boundary_group, _VIEW_SEAL, parameters, extents, execution_binding)
+
+
+def _prevalidated_depth_parameter_view(
+    parameters: Mapping[str, mx.array], *, spec: ModelTopologySpecV2,
+    extents: GenerationExtents, boundary_group: int, execution_binding=None,
+) -> DepthParameterView:
+    """Borrow one depth boundary after the owning execution already bound B01."""
+    if (type(spec) is not ModelTopologySpecV2
+            or type(extents) is not GenerationExtents
+            or type(boundary_group) is not int
+            or not MIN_COMPLETED_GROUPS <= boundary_group <= MAX_COMPLETED_GROUPS
+            or not isinstance(parameters, Mapping)):
+        _invalid()
+    names = _depth_names(boundary_group)
+    tensors = {}
+    for local, name in names.items():
+        value = parameters.get(name)
+        if (not isinstance(value, mx.array)
+                or value.shape != PARAMETER_SHAPES[local]
+                or value.dtype != mx.float32):
+            _invalid()
+        tensors[local] = value
+    return DepthParameterView(
+        tensors,
+        boundary_group,
+        _VIEW_SEAL,
+        parameters,
+        extents,
+        execution_binding,
+        _PREVALIDATED_VIEW_ISSUER,
+    )
 
 
 @dataclass(frozen=True)

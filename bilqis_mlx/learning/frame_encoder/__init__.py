@@ -39,7 +39,7 @@ from .contracts import (
     COMPILED_VECTORS_SCHEMA, FrameEncoderInput, AtomicSourceHandle, AtomicEncoderInput, FrameEncoding,
 )
 from .compiled import (
-    _compiled_groups, CompiledEncoderInput,
+    _compiled_groups, _prevalidated_combined_encoder_input, CompiledEncoderInput,
 )
 from .vectors import (
     MemberEmbedding, AtomicFrameEmbedding, CompiledEmbeddingVectors,

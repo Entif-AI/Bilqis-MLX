@@ -91,10 +91,20 @@ def _node(composition, binding: OperatorBinding) -> ArtifactNode:
 class OperatorCompositionArtifactOwner:
     """Retain correction holds across repeated Factory solver calls."""
 
-    def __init__(self, binding: OperatorBinding, compositions: tuple, fallback=None):
+    def __init__(
+            self, binding: OperatorBinding, compositions: tuple, fallback=None, *,
+            binding_digest: str | None = None):
         if type(binding) is not OperatorBinding or type(compositions) is not tuple:
             _invalid("BAMF_C09_OPERATOR_COMPOSITION_OWNER_INVALID")
-        self._binding_digest = contract_digest(binding)
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_evidence_enabled,
+        )
+        if binding_digest is None or strict_evidence_enabled():
+            actual = contract_digest(binding)
+            if binding_digest is not None and actual != binding_digest:
+                _invalid("BAMF_C09_OPERATOR_COMPOSITION_BINDING_DRIFT")
+            binding_digest = actual
+        self._binding_digest = binding_digest
         owned = (*compositions, *((fallback,) if fallback is not None else ()))
         self._compositions = {
             item.qualification_receipt_sha256: item for item in owned}

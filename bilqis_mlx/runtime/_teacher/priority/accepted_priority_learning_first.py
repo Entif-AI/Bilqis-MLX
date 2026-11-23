@@ -1,6 +1,5 @@
 """Training-first execution for one accepted C03 priority visit."""
 from pathlib import Path
-import time
 
 from bilqis_mlx.runtime.atlas_training_contracts import BamfVisitProvenance
 from bilqis_mlx.runtime.factory_candidate_training import execute_factory_candidate_step
@@ -33,6 +32,14 @@ def _learning_first_delivery(
     return parent, semantic_context, policy, hparams, delivery_inputs, setup_seconds
 
 
+def _learning_first_step_start(candidate_step_started_at, candidate_visit):
+    if candidate_step_started_at is None:
+        candidate_step_started_at = 0.0
+    if candidate_visit is not None:
+        _invalid("BAMF_LEARNING_FIRST_CANDIDATE_VISIT_FORBIDDEN")
+    return candidate_step_started_at
+
+
 def execute_learning_first_priority_candidate(
         selection, source_context, atlas_artifact_path, feature_artifact_path, *,
         teacher_hparams, observation, optimizer_step_seed, max_norm,
@@ -50,6 +57,7 @@ def execute_learning_first_priority_candidate(
         observer_begin_step_wall_seconds=0.0, candidate_visit=None,
         accepted_cache=None, learning_first_cache=None,
         prepared_learning_first_source_inputs=None,
+        prepared_learning_first_source_identity=None,
         pipeline_host_preparation_wall_seconds=0.0,
         pipeline_host_overlap_wall_seconds=0.0,
         pipeline_host_wait_wall_seconds=0.0,
@@ -59,10 +67,8 @@ def execute_learning_first_priority_candidate(
     _require_issued(selection)
     if selection.status != "TEACHER_SELECTED":
         return selection
-    if candidate_step_started_at is None:
-        candidate_step_started_at = time.perf_counter()
-    if candidate_visit is not None:
-        _invalid("BAMF_LEARNING_FIRST_CANDIDATE_VISIT_FORBIDDEN")
+    candidate_step_started_at = _learning_first_step_start(
+        candidate_step_started_at, candidate_visit)
     (
         parent, semantic_context, policy, hparams, delivery_inputs,
         candidate_delivery_setup_wall_seconds,
@@ -106,9 +112,11 @@ def execute_learning_first_priority_candidate(
         observer_begin_step_wall_seconds=observer_begin_step_wall_seconds,
         candidate_delivery_setup_wall_seconds=candidate_delivery_setup_wall_seconds,
         semantic_context=semantic_context, prepared_source=None,
-        accepted_cache=accepted_cache, selected_source_authority=offer.source_authority,
+        accepted_cache=accepted_cache, selected_source_authority=None,
         learning_first_cache=learning_first_cache,
         prepared_learning_first_source_inputs=prepared_learning_first_source_inputs,
+        prepared_learning_first_source_identity=(
+            prepared_learning_first_source_identity),
         pipeline_host_preparation_wall_seconds=pipeline_host_preparation_wall_seconds,
         pipeline_host_overlap_wall_seconds=pipeline_host_overlap_wall_seconds,
         pipeline_host_wait_wall_seconds=pipeline_host_wait_wall_seconds,

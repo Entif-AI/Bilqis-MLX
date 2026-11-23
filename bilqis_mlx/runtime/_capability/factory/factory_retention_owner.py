@@ -256,14 +256,22 @@ def evaluate_factory_retention_candidate(
     *,
     run_dir: Path, observer=None, plasticity_escape=None,
     mastery_debt_min_utility: float = 0.05,
+    accepted_parent=None, execution_cache=None,
 ):
     """Run C05 with no caller-selected solver, cohort, policy or coverage map."""
     if (type(candidate) is not CandidateTransaction
             or not isinstance(target_capability, str) or not target_capability
             or not isinstance(run_dir, Path)):
         _invalid("BAMF_C05_FACTORY_OWNER_INPUT_INVALID")
-    source_context.__post_init__()
-    source_context.require_accepted_runtime(run_dir)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    strict = strict_mode_enabled()
+    if strict:
+        source_context.__post_init__()
+        source_context.require_accepted_runtime(run_dir)
+    elif accepted_parent is None or execution_cache is None:
+        _invalid("BAMF_C05_LEARNING_FIRST_SESSION_STATE_REQUIRED")
     release = source_context.release
     training = _training_exclusions(candidate)
     if getattr(candidate, "learning_first", False):
@@ -274,15 +282,27 @@ def evaluate_factory_retention_candidate(
              for authority in candidate.training_authorities
              if authority is not None):
         _invalid("BAMF_C05_TARGET_NOT_OWNED_BY_TRAINING")
-    parent, candidate_bundle, candidate_state, cache = _candidate_from_live_parent(
-        run_dir, candidate)
-    plan, target_plan, cached_rows = require_current_retention_source_rows(
-        cache, release, target_capability)
+    if strict:
+        parent, candidate_bundle, candidate_state, cache = _candidate_from_live_parent(
+            run_dir, candidate)
+    else:
+        parent, candidate_bundle, candidate_state, cache = _candidate_from_bound_parent(
+            accepted_parent, execution_cache, candidate,
+            canonical_identity_required=False)
+    if strict:
+        plan, target_plan, cached_rows = require_current_retention_source_rows(
+            cache, release, target_capability)
+    else:
+        cached_rows = bind_current_retention_source_rows(
+            source_context, cache, target_capability)
+        plan = require_retention_protection_plan(cache, release)
+        target_plan = plan.for_target(target_capability)
 
     if CURRENT_EVIDENCE_STAGE is EvidenceStage.FOUNDATION_ACQUISITION:
         return _foundation_retention_evaluation(
             source_context, parent, candidate_bundle, candidate_state, artifact_path,
             release, plan, target_plan, training, cached_rows, cache,
+            parent_identity_sha256=candidate._parent_identity_sha256,
             mastery_debt_min_utility=mastery_debt_min_utility,
             **({"observer": observer} if observer is not None else {}))
     instruments = _local_retention_instruments(
@@ -295,6 +315,7 @@ def evaluate_factory_retention_candidate(
         source_context, parent, candidate_bundle, candidate_state, artifact_path,
         target_capability, target_group, lesson_capabilities, release, groups,
         training, instruments, cache,
+        parent_identity_sha256=candidate._parent_identity_sha256,
         protected_capabilities=target_plan.protected_capability_ids,
         retention_protection_plan_sha256=plan.digest,
         plasticity_escape=plasticity_escape,

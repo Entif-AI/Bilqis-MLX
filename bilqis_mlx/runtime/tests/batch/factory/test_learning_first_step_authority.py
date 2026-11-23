@@ -77,10 +77,9 @@ def test_latest_step_token_is_o1_and_revokes_previous_epoch():
     assert first != second
     with pytest.raises(BilqisError):
         step_authority.require_learning_first_step_authority(first)
-    metrics = step_authority.learning_first_step_authority_metrics_snapshot()
-    assert metrics["learning_first_step_token_issues"] == 2
-    assert metrics["learning_first_step_token_hits"] == 1
-    assert metrics["learning_first_step_token_misses"] == 1
+    # Ordinary authority is a correctness fence, not a telemetry surface.
+    # Issuing/requiring tokens must not manufacture hot-path accounting.
+    assert not any(step_authority.learning_first_step_authority_metrics_snapshot().values())
 
 
 def test_speculative_token_cannot_validate_accepted_parent_parameters():
@@ -216,6 +215,5 @@ def test_bound_candidate_drift_fails_closed_instead_of_reissuing():
             step_authority.bind_learning_first_step_authority(
                 cache, parent, candidate, source)
 
-    metrics = step_authority.learning_first_step_authority_metrics_snapshot()
-    assert metrics["learning_first_step_token_issues"] == 1
+    assert not any(step_authority.learning_first_step_authority_metrics_snapshot().values())
     assert first not in (None, "")

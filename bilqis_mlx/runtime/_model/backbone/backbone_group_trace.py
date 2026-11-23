@@ -127,9 +127,6 @@ class BackboneTraceSession:
     def advance(self, *, next_input=None):
         if len(self._results) >= self._spec.depth_groups:
             _invalid()
-        require_execution_generation_binding(
-            self._execution_binding, self._parameters,
-            spec=self._spec, extents=self._extents)
         if next_input is not None:
             if (not self._results or type(next_input) is not mx.array
                     or next_input.shape != self._hidden.shape

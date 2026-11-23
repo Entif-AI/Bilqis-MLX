@@ -1,5 +1,4 @@
 """Ordinary metadata-ranked priority selection and selected-source materialization."""
-import time
 
 from bilqis_mlx.runtime.atlas_memory_retry import OOM_EXHAUSTED
 from bilqis_mlx.runtime.priority_source_offer import materialize_priority_source_intent
@@ -31,7 +30,6 @@ def select_learning_first_priority_visit(
         if grade is None:
             invalid('BAMF_PRIORITY_PROGRAM_INVALID')
         planning_offer = by_id[option.stable_id]
-        started = time.perf_counter()
         try:
             offer = materialize_priority_source_intent(
                 planning_offer, source_context, parent,
@@ -41,7 +39,6 @@ def select_learning_first_priority_visit(
         except ValueError:
             holds.append((option.stable_id, 'SOURCE_OFFER_HELD'))
             continue
-        materialization_wall = max(0.0, time.perf_counter() - started)
         priority_features = {
             'schema': 'bilqis.bamf.learning-first-priority-features/v1',
             'known': [False, False, False],
@@ -51,8 +48,7 @@ def select_learning_first_priority_visit(
             option.dispatch_tier, option, offer, school, engine, rng,
             learning_settings, program, grade, None, holds, lawful_frontier,
             total_capabilities, plasticity_escape, priority_features,
-            cadence_authorization, planning_offer, materialization_wall,
-            planning_offer_fanout_wall_seconds)
+            cadence_authorization, planning_offer, None, None)
     return issue_result(
         'NO_ADMISSIBLE_TEACHING', None, None, None, None, cadence_metadata,
         None, sorted(holds), run_dir, lawful_frontier,

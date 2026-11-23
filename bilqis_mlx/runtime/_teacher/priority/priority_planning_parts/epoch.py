@@ -12,7 +12,9 @@ from bilqis_mlx.runtime.priority_planning_parts.cache import (
 )
 
 
-def _semantic_candidate(run_dir, selection, atlas_snapshot, adapters, progress):
+def _semantic_candidate(
+        run_dir, selection, atlas_snapshot, adapters, progress, *,
+        persist_memo=True):
     from bilqis_mlx.factory.skos_curriculum import (
         LearnedFrontier, _compile_semantic_curriculum_snapshot,
         compile_semantic_curriculum,
@@ -31,24 +33,27 @@ def _semantic_candidate(run_dir, selection, atlas_snapshot, adapters, progress):
         atlas_snapshot, adapters, frontier_state)
         if atlas_snapshot is not None else compile_semantic_curriculum(
             selection, adapters, frontier_state))
-    persist_candidate_memo(run_dir, selection, adapters, candidate)
+    if persist_memo:
+        persist_candidate_memo(run_dir, selection, adapters, candidate)
     return candidate
 
 
 def _static_planning_products(
         run_dir, source_context, current, selection, feature_receipt, source,
-        atlas_snapshot, planning_cache, progress):
+        atlas_snapshot, planning_cache, progress, *, learning_first=False):
     from bilqis_mlx.factory.skos_curriculum import SOURCE_FAMILY_ADAPTERS
     from bilqis_mlx.runtime.atlas_flywheel_runtime import (
-        _candidate_frontier,
+        _candidate_frontier_from_trust_identity,
         _candidate_frontier_trust_identity,
         _persist_ready_realizations,
     )
-    from bilqis_mlx.runtime._autonomy_live.planning import build_live_autonomy_plan
+    from bilqis_mlx.runtime._autonomy_live.planning import (
+        build_live_autonomy_plan,
+        build_live_autonomy_plan_prevalidated,
+    )
 
-    frontier_trust_identity = (
-        _candidate_frontier_trust_identity(current.release_sha256)
-        if planning_cache is not None else None)
+    frontier_trust_identity = _candidate_frontier_trust_identity(
+        current.release_sha256)
     key = (
         _static_key(
             current, selection, feature_receipt, source,
@@ -76,20 +81,29 @@ def _static_planning_products(
 
     if planning_cache is not None:
         planning_cache.static_misses += 1
-    candidate = _semantic_candidate(
-        run_dir, selection, atlas_snapshot, SOURCE_FAMILY_ADAPTERS, progress)
-    frontier = _candidate_frontier(
-        run_dir, current.release_sha256, progress=progress)
-    _emit_progress(
-        progress, "planner: staging source-valid candidate realizations")
-    staged = _persist_ready_realizations(
-        run_dir, current, candidate, frontier, source_context.graph)
-    plan = build_live_autonomy_plan(current, source_context.source_root)
+    from contextlib import nullcontext
+    if learning_first and atlas_snapshot is not None:
+        from bilqis_mlx.semantics.atlas.snapshot import reuse_pinned_atlas_snapshot
+        atlas_scope = reuse_pinned_atlas_snapshot(selection, atlas_snapshot)
+    else:
+        atlas_scope = nullcontext()
+    with atlas_scope:
+        candidate = _semantic_candidate(
+            run_dir, selection, atlas_snapshot, SOURCE_FAMILY_ADAPTERS, progress,
+            persist_memo=not learning_first)
+        frontier, frontier_trust_identity = _candidate_frontier_from_trust_identity(
+            run_dir, current.release_sha256, frontier_trust_identity, progress=progress)
+        _emit_progress(
+            progress, "planner: staging source-valid candidate realizations")
+        staged = _persist_ready_realizations(
+            run_dir, current, candidate, frontier, source_context.graph)
+        plan_builder = (
+            build_live_autonomy_plan_prevalidated if learning_first
+            else build_live_autonomy_plan)
+        plan = plan_builder(current, source_context.source_root)
     if planning_cache is None:
         return key, candidate, frontier, staged, plan
 
-    frontier_trust_identity = _candidate_frontier_trust_identity(
-        current.release_sha256)
     if (frontier_trust_identity.frontier_release_sha256 is None
             or frontier_trust_identity.receipt_sha256 is None
             or frontier.release_sha256
@@ -113,10 +127,11 @@ def _static_planning_products(
 
 def _planning_snapshot(
         candidate, source, frontier, current, staged, feature_receipt, key,
-        planning_cache, progress):
+        planning_cache, progress, *, learning_first=False):
     from bilqis_mlx.factory.atlas_frontier import PlannerBudget
     from bilqis_mlx.factory.atlas_runtime_snapshot import (
         build_accepted_executable_snapshot,
+        build_accepted_executable_snapshot_prevalidated,
     )
 
     snapshot_key = (
@@ -133,7 +148,10 @@ def _planning_snapshot(
     if planning_cache is not None:
         planning_cache.snapshot_misses += 1
     _emit_progress(progress, "planner: building bounded executable snapshot")
-    snapshot = build_accepted_executable_snapshot(
+    builder = (
+        build_accepted_executable_snapshot_prevalidated
+        if learning_first else build_accepted_executable_snapshot)
+    snapshot = builder(
         candidate, source.frontier, source.policy, frontier, current, staged,
         budget=PlannerBudget(9, 16, 1000),
         admission_receipt_sha256=feature_receipt.acceptance_sha256,
@@ -152,10 +170,15 @@ def _planning_snapshot(
 
 def _planning_closure(
         snapshot, candidate, current, plan, checkpoint, ledger,
-        planning_cache, progress):
-    from bilqis_mlx.factory.atlas_frontier_closure import resolve_frontier_closure
+        planning_cache, progress, *, learning_first=False):
+    from bilqis_mlx.factory.atlas_frontier_closure import (
+        resolve_frontier_closure,
+        resolve_frontier_closure_prevalidated,
+    )
 
-    closure_key = _closure_key(snapshot, current, plan, checkpoint, ledger)
+    closure_key = _closure_key(
+        snapshot, current, plan, checkpoint, ledger,
+        learning_first=learning_first)
     if planning_cache is not None and planning_cache._closure_key == closure_key:
         planning_cache.closure_hits += 1
         closure = planning_cache._closure
@@ -167,7 +190,10 @@ def _planning_closure(
     if planning_cache is not None:
         planning_cache.closure_misses += 1
     _emit_progress(progress, "planner: resolving frontier closure")
-    closure = resolve_frontier_closure(
+    resolver = (
+        resolve_frontier_closure_prevalidated
+        if learning_first else resolve_frontier_closure)
+    closure = resolver(
         snapshot, candidate.census, current_release=current,
         evidence_ledger=ledger, autonomy_plan=plan,
         checkpoint_sha256=checkpoint.sha256,
@@ -183,7 +209,8 @@ def _planning_closure(
 
 def build_priority_planning_epoch(
         run_dir, source_context, atlas_artifact_path, progress=None, *,
-        authenticated_features=None, planning_cache=None):
+        authenticated_features=None, planning_cache=None,
+        planning_generation=None):
     """Derive the exact accepted A09 epoch once for planning/frontier consumers."""
     from bilqis_mlx.factory.atlas_delta_adapter import (
         AtlasCoverageEpoch, _accepted_requested_keys,
@@ -203,6 +230,10 @@ def build_priority_planning_epoch(
     )
 
     planning_cache = _require_cache(planning_cache, run_dir)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    learning_first = not strict_mode_enabled()
     _emit_progress(progress, "planner: resolving accepted atlas selection")
     if authenticated_features is None:
         selection, feature_receipt = _accepted_selection(run_dir)
@@ -219,21 +250,31 @@ def build_priority_planning_epoch(
     source = issue_source_context_transition_authority(selection)
     key, candidate, frontier, staged, plan = _static_planning_products(
         run_dir, source_context, current, selection, feature_receipt, source,
-        atlas_snapshot, planning_cache, progress)
+        atlas_snapshot, planning_cache, progress, learning_first=learning_first)
     snapshot = _planning_snapshot(
         candidate, source, frontier, current, staged, feature_receipt, key,
-        planning_cache, progress)
+        planning_cache, progress, learning_first=learning_first)
     _emit_progress(progress, "planner: reconciling accepted planning state")
     ledger = reconcile_live_autonomy_state(run_dir, current, plan)
-    checkpoint = _accepted_checkpoint(run_dir)
+    if learning_first and planning_generation is not None:
+        from bilqis_mlx.learning.champions import Checkpoint
+        checkpoint = Checkpoint(
+            planning_generation.parent_candidate_identity_sha256,
+            f"bamf-bundles/{planning_generation.accepted_manifest_sha256}",
+            planning_generation._parent.retained_state.optimizer_step,
+            True,
+        )
+    else:
+        checkpoint = _accepted_checkpoint(run_dir)
     closure = _planning_closure(
         snapshot, candidate, current, plan, checkpoint, ledger,
-        planning_cache, progress)
+        planning_cache, progress, learning_first=learning_first)
     accepted_credit = read_accepted_atlas_obligation_credit(run_dir)
     epoch = AtlasCoverageEpoch(
         snapshot, closure, frontier, current, staged,
         accepted_credit=accepted_credit)
-    epoch.verify()
+    if not learning_first:
+        epoch.verify()
     return PriorityPlanningEpoch(
         current, candidate, snapshot, closure, _accepted_requested_keys(epoch),
         accepted_credit, plan, ledger, checkpoint, source)

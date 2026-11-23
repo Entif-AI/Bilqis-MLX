@@ -127,6 +127,8 @@ def _progress_result(
     direct_uncovered: int,
     prior: FrontierProgress | None = None,
     staged_receipt: StagedSelectionReceipt | None = None,
+    *,
+    verify_result: bool = True,
 ) -> FrontierProgress:
     counts = _counts(closure)
     if prior is None:
@@ -148,7 +150,8 @@ def _progress_result(
     result = replace(
         provisional, progress_sha256=provisional.expected_digest())
     _issue_frontier_progress(result, owner)
-    result.verify()
+    if verify_result:
+        result.verify()
     return result
 
 
@@ -241,3 +244,44 @@ def plan_frontier_progress(
     return _progress_result(
         snapshot, planning_snapshot, closure, status, proposal, pending_receipt_sha256,
         direct_uncovered, prior, staged_receipt)
+
+
+def plan_frontier_progress_prevalidated(
+    snapshot: CurriculumSnapshot,
+    closure: FrontierClosure,
+    selection: FrontierDeltaSelection | None = None,
+) -> FrontierProgress:
+    """Plan from immutable owner-derived inputs without revalidating their derivation."""
+    if closure.snapshot_sha256 != snapshot.snapshot_sha256:
+        _fail("BAMF_PLANNER_PROGRESS_CLOSURE_MISMATCH")
+    current = current_obligations(closure)
+    credited, pending_receipt_sha256, pending, pending_invalidated = (
+        set(), None, None, False)
+    planning_snapshot = snapshot
+    counts = _counts(closure)
+    direct_uncovered = _direct_uncovered_count(snapshot)
+    held = len(closure.source_holds)
+    proposal = selection.selection_sha256 if selection is not None else None
+    if pending is not None and pending != snapshot.admitted_factory_release_sha256:
+        status = FrontierStatus.LEASE_REQUIRED
+        proposal = None
+    elif selection is not None:
+        selected_key = (
+            selection.selected_semantic_id,
+            obligation_digest(selection.selected_obligations),
+        )
+        status = (FrontierStatus.FIXED_POINT
+                  if selected_key in credited
+                  else FrontierStatus.PROPOSAL)
+    else:
+        if has_unrequested_ready(closure, credited, current):
+            if pending_invalidated:
+                status = FrontierStatus.REPLAN_REQUIRED
+            else:
+                _fail("BAMF_PLANNER_PROGRESS_SELECTION_REQUIRED")
+        else:
+            status = _status_without_new_proposal(
+                snapshot, counts, credited, current, held, direct_uncovered)
+    return _progress_result(
+        snapshot, planning_snapshot, closure, status, proposal,
+        pending_receipt_sha256, direct_uncovered, verify_result=False)

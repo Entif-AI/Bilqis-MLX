@@ -119,7 +119,8 @@ def test_learning_first_callback_is_selected_without_touching_strict_execution()
         callback = learning_first_prepare_step(learning_executor, selection, context)
         assert callback(1, lesson) == "prepared"
     prepare.assert_called_once_with(
-        context, authenticated, (row,), source_seed=17, source_each=1)
+        context, authenticated, (row,), source_seed=17, source_each=1,
+        source_identity=None)
 
 
 def test_candidate_horizon_discovers_learning_first_pipeline_automatically():

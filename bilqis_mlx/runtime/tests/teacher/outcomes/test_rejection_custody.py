@@ -85,7 +85,7 @@ def _structural_weakness_evidence(evidence):
 
 
 class NativeRejectionOutcomeTests(NativeSourceFixture, unittest.TestCase):
-    def fixture(self, *, accepted=False):
+    def fixture(self, *, accepted=False, learning_first=False):
         parent = self.parent()
         original_teacher = selection_teacher()
         with patch('bilqis_mlx.control_plane.tests.cp07.native_source_support.selection_teacher', return_value=original_teacher):
@@ -119,19 +119,32 @@ class NativeRejectionOutcomeTests(NativeSourceFixture, unittest.TestCase):
         with patch.object(factory_fixture, 'Mock', side_effect=fixture_mock):
             evaluation = factory_fixture._evaluate_foundation_owner(*fixture)
         decision = issue_factory_retention_decision(evaluation)
-        prepare_candidate_evidence_root(self.run)
-        capture = CandidateEvidenceCapture(self.run, selection, generation=parent.generation,
-                  accepted_manifest_sha256=identity.accepted_manifest_sha256,
-                  candidate_attempt_ordinal=1, parent_optimizer_step=parent.retained_state.optimizer_step)
-        execution = SimpleNamespace(teaching_option_ids=(cap,), provider_id='fixture',
-                                    provider_implementation_sha256='f' * 64, variation_axes=('seed',))
-        release = SimpleNamespace(release_sha256=release_sha,
-                    execution_plan=SimpleNamespace(capability_map={cap: execution}))
-        row = {'id': 'row', 'capability': cap, 'tokens': [1]}
-        capture.delivery(release, cap, parent.retained_state.optimizer_step + 1, (row,),
-                         seed=17, controls={"delivered_content_sha256": content_digest((row,))}, option_rows=())
-        evidence_ref = capture.finalize(accepted=accepted, decision=decision.to_record())
-        observation = build_outcome(self.run, selection, evaluation, decision, evidence_ref)
+        if learning_first:
+            evidence_ref = None
+            observation = build_outcome(
+                self.run, selection, evaluation, decision, None,
+                learning_summary={
+                    'attempt_id': 'learning-first:' + identity.visit_id,
+                    'candidate_steps': 1,
+                    'batch_size': 1,
+                    'policy_controls': ({},),
+                    'guidance_applied_steps': 0,
+                    'enrichment_examples': 0,
+                })
+        else:
+            prepare_candidate_evidence_root(self.run)
+            capture = CandidateEvidenceCapture(self.run, selection, generation=parent.generation,
+                      accepted_manifest_sha256=identity.accepted_manifest_sha256,
+                      candidate_attempt_ordinal=1, parent_optimizer_step=parent.retained_state.optimizer_step)
+            execution = SimpleNamespace(teaching_option_ids=(cap,), provider_id='fixture',
+                                        provider_implementation_sha256='f' * 64, variation_axes=('seed',))
+            release = SimpleNamespace(release_sha256=release_sha,
+                        execution_plan=SimpleNamespace(capability_map={cap: execution}))
+            row = {'id': 'row', 'capability': cap, 'tokens': [1]}
+            capture.delivery(release, cap, parent.retained_state.optimizer_step + 1, (row,),
+                             seed=17, controls={"delivered_content_sha256": content_digest((row,))}, option_rows=())
+            evidence_ref = capture.finalize(accepted=accepted, decision=decision.to_record())
+            observation = build_outcome(self.run, selection, evaluation, decision, evidence_ref)
         evidence = {'schema': 'bilqis.bamf.c16.3-rejection/v2',
             'rejection_attempt_ordinal': 1, 'rejection_journal_ordinal': 1,
             'visit_id': identity.visit_id, 'teacher_visit': identity.to_record(),
@@ -144,6 +157,21 @@ class NativeRejectionOutcomeTests(NativeSourceFixture, unittest.TestCase):
         cache = SimpleNamespace(run_id=parent.run_id, generation=parent.generation,
                                 accepted_manifest_sha256=identity.accepted_manifest_sha256)
         return parent, teacher, cache, evidence
+
+    def test_learning_first_rejection_replays_without_candidate_evidence(self):
+        from bilqis_mlx.runtime.outcomes import replay
+
+        parent, teacher, cache, evidence = self.fixture(learning_first=True)
+        self.assertIsNone(evidence["candidate_evidence"])
+        self.assertIsNone(evidence["how_outcome"]["candidate_evidence"])
+        record_bamf_rejection(self.run, parent, evidence)
+        hot = replay.replay_rejected_outcomes(self.run, parent, cache, teacher)
+        self.assertEqual(hot['causal_experiment']['events'], 1)
+        import bilqis_mlx.runtime.priority_rejection_replay as projection
+        projection._projection.cache_clear()
+        cold = importlib.reload(replay).replay_rejected_outcomes(
+            self.run, parent, cache, teacher)
+        self.assertEqual(hot, cold)
 
     def test_committed_rejection_replays_exactly_once_after_cold_reload(self):
         from bilqis_mlx.runtime.outcomes import replay

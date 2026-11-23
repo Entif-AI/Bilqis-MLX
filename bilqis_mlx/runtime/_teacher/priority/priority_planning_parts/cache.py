@@ -48,6 +48,7 @@ class PriorityPlanningCache:
     planning_generation_misses: int = 0
     learning_first_epoch_hits: int = 0
     learning_first_epoch_misses: int = 0
+    learning_first_publication_reuses: int = 0
     source_materialization_cache: PrioritySourceMaterializationCache = field(
         default_factory=PrioritySourceMaterializationCache, repr=False)
     _static_key: tuple | None = field(default=None, init=False, repr=False)
@@ -64,6 +65,7 @@ class PriorityPlanningCache:
     _planning_generation_key: tuple | None = field(default=None, init=False, repr=False)
     _planning_generation: object | None = field(default=None, init=False, repr=False)
     _learning_first_epoch_key: tuple | None = field(default=None, init=False, repr=False)
+    _learning_first_authority_key: tuple | None = field(default=None, init=False, repr=False)
     _learning_first_epoch: object | None = field(default=None, init=False, repr=False)
     _learning_first_planning: object | None = field(default=None, init=False, repr=False)
     _learning_first_lawful_frontier: object | None = field(
@@ -86,6 +88,7 @@ class PriorityPlanningCache:
             "planning_generation_misses": self.planning_generation_misses,
             "learning_first_epoch_hits": self.learning_first_epoch_hits,
             "learning_first_epoch_misses": self.learning_first_epoch_misses,
+            "learning_first_publication_reuses": self.learning_first_publication_reuses,
         }
         metrics.update({
             "source_materialization_" + name: value
@@ -122,21 +125,36 @@ def _static_key(
     )
 
 
-def _closure_key(snapshot, current, plan, checkpoint, ledger):
-    from bilqis_mlx.factory.autonomy import evidence_complete_capabilities
-
-    mastered = evidence_complete_capabilities(
-        current, ledger, plan=plan,
-        current_checkpoint_sha256=checkpoint.sha256,
-        current_optimizer_step=checkpoint.optimizer_step,
-    )
+def _closure_key(
+        snapshot, current, plan, checkpoint, ledger, *, learning_first=False):
+    if learning_first:
+        receipts = ledger.receipts
+        interventions = ledger.interventions
+        rejected = ledger.rejected_attempts
+        evidence_identity = (
+            ledger.factory_release_sha256,
+            ledger.autonomy_plan_sha256,
+            len(receipts),
+            None if not receipts else receipts[-1].evidence_id,
+            len(interventions),
+            None if not interventions else interventions[-1].intervention_id,
+            len(rejected),
+            None if not rejected else rejected[-1].attempt_id,
+        )
+    else:
+        from bilqis_mlx.factory.autonomy import evidence_complete_capabilities
+        evidence_identity = evidence_complete_capabilities(
+            current, ledger, plan=plan,
+            current_checkpoint_sha256=checkpoint.sha256,
+            current_optimizer_step=checkpoint.optimizer_step,
+        )
     return (
         snapshot.snapshot_sha256,
         current.release_sha256,
         plan.digest(),
         checkpoint.sha256,
         checkpoint.optimizer_step,
-        mastered,
+        evidence_identity,
     )
 
 

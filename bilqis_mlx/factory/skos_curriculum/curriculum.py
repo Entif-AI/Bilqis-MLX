@@ -7,7 +7,7 @@ from .adapters import SourceFamilyAdapter, SOURCE_FAMILY_ADAPTERS
 from .common import (_fail, _SHA, _load_pinned, LEARNED_FRONTIER_SCHEMA,
     CURRICULUM_CANDIDATE_SCHEMA, LEARNING_UNVERIFIED, SOURCE_PROJECTION_ONLY)
 from .inventory import _inventory_source_families
-from .lesson_compiler import _compile_source_constructive_lessons_snapshot
+from .lesson_compiler import _compile_source_constructive_lessons_from_census
 from .lesson_types import SourceConstructiveLesson
 from .serialization import _strict_source_bytes
 from .types import FamilyObligation, SemanticFamilyInventory
@@ -131,8 +131,8 @@ def _compile_semantic_curriculum_snapshot(
             item.family_id for item in source_adapters)),
         unverified_exposure_claims=learned_frontier.claimed_exposed,
         unverified_qualification_claims=learned_frontier.claimed_qualified,
-        source_lessons=_compile_source_constructive_lessons_snapshot(
-            atlas, census=census).lessons)
+        source_lessons=_compile_source_constructive_lessons_from_census(
+            atlas, census).lessons)
 
 
 def compile_semantic_curriculum(

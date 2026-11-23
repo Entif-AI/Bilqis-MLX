@@ -57,9 +57,17 @@ def build_live_autonomy_plan(
 ) -> AutonomyPlan:
     """Compile the strongest currently source-proven autonomy plan."""
     release.verify()
+    return build_live_autonomy_plan_prevalidated(release, source_root)
+
+
+def build_live_autonomy_plan_prevalidated(
+    release: FactoryRelease, source_root: Path,
+) -> AutonomyPlan:
+    """Compile a plan from a process-owned release whose authority is already proven."""
+    from ...factory._autonomy.planning import compile_autonomy_plan_prevalidated
     if not isinstance(release, FactoryRelease):
         source_registry = live_source_registry()
-        return compile_autonomy_plan(
+        return compile_autonomy_plan_prevalidated(
             release, supplemental_evidence=source_registry.evidence_dependencies(
                 None, release=release))
     registry = load_registry(REGISTRY_SNAPSHOT)
@@ -71,7 +79,7 @@ def build_live_autonomy_plan(
             for edge in discovered["obligations"]):
         discovered = audit_pinned_micro_generator(
             discovered, Path(source_root), max_rounds=8, each=24)
-    return compile_autonomy_plan(
+    return compile_autonomy_plan_prevalidated(
         release, discovered,
         supplemental_evidence=source_registry.evidence_dependencies(
             release.course),

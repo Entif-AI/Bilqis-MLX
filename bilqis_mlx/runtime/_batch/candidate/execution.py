@@ -132,7 +132,7 @@ def _execute_training_and_admission(
                     prepared.compiled_rows[0].sources[0].source_row,
                     prepared.training_batch.rows[0].model_input.eligibility_digest)))
         authorities, target_rows = (authority,), (targets,)
-        optimizer_started = time.perf_counter()
+        optimizer_started = time.perf_counter() if strict else None
         transaction = (
             admit_uninterrupted_candidate_step(
                 Path(run_dir), parent, loss_bearing_target=True,
@@ -155,14 +155,14 @@ def _execute_training_and_admission(
                 generation, neural_cache, resource_plan,
                 salience_supervision=salience_supervision,
                 mentor_supervision=mentor_supervision)
-            logical_batch_wall_seconds = gradient.wall_seconds
+            logical_batch_wall_seconds = gradient.wall_seconds if strict else 0.0
         else:
             gradient, authorities, target_rows, logical_batch_wall_seconds = (
                 _execute_distributed_batch(
                     run_dir, source_context, parent, prepared, feature_context,
                     generation, parameters, neural_cache, resource_plan, salience_supervision,
                     mentor_supervision, distributed_profile, distributed_executor))
-        optimizer_started = time.perf_counter()
+        optimizer_started = time.perf_counter() if strict else None
         transaction = (
             admit_uninterrupted_candidate_step(
                 Path(run_dir), parent, loss_bearing_target=True,
@@ -182,4 +182,4 @@ def _execute_training_and_admission(
                        gradient.materialization_barriers, gradient.scalar_fallback_rows,
                        logical_batch_wall_seconds)
     return (gradient, authorities, target_rows, transaction, loss_total, c08_metrics,
-            time.perf_counter() - optimizer_started)
+            time.perf_counter() - optimizer_started if strict else 0.0)

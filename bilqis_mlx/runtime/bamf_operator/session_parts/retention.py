@@ -27,14 +27,23 @@ def _observe_retention_scope(observer, decision):
 
 def _rejected_structural_weaknesses(
         run_dir, context, selection, candidate_evidence, decision, how_outcome):
+    from .evidence_mode import strict_evidence_enabled
     from bilqis_mlx.runtime.source_execution import SourceExecutionContext
     if not isinstance(context, SourceExecutionContext):
         return ()
+    if strict_evidence_enabled():
+        from bilqis_mlx.runtime.structural_weakness_replay import (
+            derive_rejected_weaknesses,
+        )
+        return derive_rejected_weaknesses(
+            run_dir, context, selection, candidate_evidence,
+            rejection_reason=decision.reason,
+            outcome_sha256=how_outcome["outcome_sha256"])
     from bilqis_mlx.runtime.structural_weakness_replay import (
-        derive_rejected_weaknesses,
+        derive_live_rejected_weaknesses,
     )
-    return derive_rejected_weaknesses(
-        run_dir, context, selection, candidate_evidence,
+    return derive_live_rejected_weaknesses(
+        context, selection, selection.offer.rows(),
         rejection_reason=decision.reason,
         outcome_sha256=how_outcome["outcome_sha256"])
 
@@ -121,18 +130,46 @@ def _retention_resource(
     resource = resource_observation(
         run_dir, tuple(steps), getattr(context, "_source_preparation_metrics", None),
         identity_metrics=identity_metrics)
+    persistence = (
+        candidate_evidence.get("persistence", {})
+        if isinstance(candidate_evidence, dict) else {})
     resource.update({
-        "evidence_bytes_written": candidate_evidence["persistence"]["bytes_written"],
-        "evidence_file_fsyncs": candidate_evidence["persistence"]["file_fsyncs"],
-        "evidence_directory_fsyncs": candidate_evidence["persistence"]["directory_fsyncs"],
-        "evidence_objects": candidate_evidence["persistence"]["evidence_objects"],
-        "evidence_persistence_seconds": candidate_evidence["persistence"]["persistence_seconds"],
+        "evidence_bytes_written": persistence.get("bytes_written", 0),
+        "evidence_file_fsyncs": persistence.get("file_fsyncs", 0),
+        "evidence_directory_fsyncs": persistence.get("directory_fsyncs", 0),
+        "evidence_objects": persistence.get("evidence_objects", 0),
+        "evidence_persistence_seconds": persistence.get("persistence_seconds", 0.0),
     })
     final_cost = getattr(steps[-1], "realized_cost", {}) if steps else {}
     loss_total = final_cost.get("loss_total") if isinstance(final_cost, dict) else None
     if type(loss_total) in (int, float):
         resource["loss_total"] = float(loss_total)
     return resource
+
+
+def _retention_progress_observer(observer, progress, emit_progress, fields):
+    if observer is not None:
+        observer.update(**fields)
+    completed = fields.get("retention_completed") if isinstance(fields, dict) else None
+    total = fields.get("retention_total") if isinstance(fields, dict) else None
+    subject = fields.get("retention_subject") if isinstance(fields, dict) else None
+    role = fields.get("retention_role") if isinstance(fields, dict) else None
+    if (type(completed) is int and type(total) is int
+            and isinstance(subject, str) and isinstance(role, str)):
+        emit_progress(
+            progress, f"retention {completed}/{total}: {subject} · {role}")
+
+
+def _finalize_retention_evidence(
+        strict, observer, capture, run_dir, decision, measure_observed_phase_fn):
+    if not strict:
+        return None, capture.summary()
+    with measure_observed_phase_fn(observer, "evidence_finalization_wall_seconds"):
+        candidate_evidence = capture.finalize(
+            accepted=decision.accepted, decision=decision.to_record())
+    _complete_observer_evidence(
+        observer, capture, run_dir, candidate_evidence, decision)
+    return candidate_evidence, None
 
 
 def retention_result(
@@ -144,29 +181,26 @@ def retention_result(
         prepared_visit_type, emit_progress,
         measure_observed_phase_fn, derive_plasticity_escape=None):
     step = steps[-1]
-    if observer is not None:
+    from .evidence_mode import strict_mode_enabled
+    strict = strict_mode_enabled()
+    if strict and observer is not None:
         observer.update(phase="RETENTION")
-    emit_progress(progress, "evaluating retention evidence")
-    with measure_observed_phase_fn(observer, "retention_wall_seconds"):
+    if strict:
+        emit_progress(progress, "evaluating retention evidence")
+    from contextlib import nullcontext
+    retention_phase = (
+        measure_observed_phase_fn(observer, "retention_wall_seconds")
+        if strict else nullcontext())
+    with retention_phase:
         release = getattr(context, "release", None)
         plasticity_escape = (
             derive_plasticity_escape(parent, selection, release)
             if derive_plasticity_escape is not None and release is not None else None)
-        def retention_observer(fields):
-            if observer is not None:
-                observer.update(**fields)
-            completed = fields.get("retention_completed") if isinstance(fields, dict) else None
-            total = fields.get("retention_total") if isinstance(fields, dict) else None
-            subject = fields.get("retention_subject") if isinstance(fields, dict) else None
-            role = fields.get("retention_role") if isinstance(fields, dict) else None
-            if (type(completed) is int and type(total) is int
-                    and isinstance(subject, str) and isinstance(role, str)):
-                emit_progress(
-                    progress,
-                    f"retention {completed}/{total}: {subject} · {role}")
-
+        retention_observer = lambda fields: _retention_progress_observer(
+            observer, progress, emit_progress, fields)
         evaluation = evaluate_candidate(
             context, step.transaction, atlas_path, capability, run_dir=run_dir,
+            accepted_parent=parent, execution_cache=cache,
             **({"plasticity_escape": plasticity_escape}
                if plasticity_escape is not None else {}),
             **({"observer": retention_observer} if observer is not None else {}))
@@ -179,22 +213,25 @@ def retention_result(
                     getattr(evaluation, "decision", None), "blocking_capability", None),
                 blocking_scope=getattr(
                     getattr(evaluation, "decision", None), "blocking_scope", None)))
-        identity_metrics = identity_delta(identity_before)
+        identity_metrics = identity_delta(identity_before) if strict else None
         retained = (
             evaluation.candidate_state if decision.accepted else evaluation.parent_state)
-    with measure_observed_phase_fn(observer, "evidence_finalization_wall_seconds"):
-        candidate_evidence = capture.finalize(
-            accepted=decision.accepted, decision=decision.to_record())
-    _complete_observer_evidence(
-        observer, capture, run_dir, candidate_evidence, decision)
-    resource = _retention_resource(
-        run_dir, steps, context, identity_metrics, candidate_evidence,
-        resource_observation)
-    _distributed_retention_metrics(steps, evaluation, decision, observer, resource)
+    candidate_evidence, learning_summary = _finalize_retention_evidence(
+        strict, observer, capture, run_dir, decision, measure_observed_phase_fn)
+    resource = (
+        _retention_resource(
+            run_dir, steps, context, identity_metrics, candidate_evidence,
+            resource_observation)
+        if strict else None)
+    if strict:
+        _distributed_retention_metrics(
+            steps, evaluation, decision, observer, resource)
     from bilqis_mlx.runtime.outcomes.issuance import (
         build_outcome, carry_credit_to_successor, credited_visit,
     )
-    how_outcome = build_outcome(run_dir, selection, evaluation, decision, candidate_evidence)
+    how_outcome = build_outcome(
+        run_dir, selection, evaluation, decision, candidate_evidence,
+        learning_summary=learning_summary)
     structural_weaknesses = (() if decision.accepted else _rejected_structural_weaknesses(
         run_dir, context, selection, candidate_evidence, decision, how_outcome))
     successor, learning_health = _accepted_successor(
@@ -216,12 +253,13 @@ def retention_result(
         rejection_attempt_ordinal=rejection_attempt_ordinal)
 
 
-def _instruction_event(run_dir, parent, cache, capability):
+def _instruction_event(run_dir, parent, cache, capability, *, teacher_state=None):
     from bilqis_mlx.errors import BilqisError
     try:
         from bilqis_mlx.learning.teacher_lineage import instruction_history
         from bilqis_mlx.runtime.priority_rejection_replay import rejection_recency
-        history_state, seen = instruction_history(parent.teacher_state)
+        history_state, seen = instruction_history(
+            parent.teacher_state if teacher_state is None else teacher_state)
         _, rejected = rejection_recency(run_dir, parent, cache)
         return {
             "event": "BAMF_INSTRUCTION_HISTORY",
@@ -249,7 +287,9 @@ def _accepted_successor(
     if not decision.accepted:
         return None, None
     learned_visit = credited_visit(selection.visit, how_outcome)
-    instruction_event = _instruction_event(run_dir, parent, cache, capability)
+    instruction_event = _instruction_event(
+        run_dir, parent, cache, capability,
+        teacher_state=selection.visit.projection.teacher_state)
     from .evidence_mode import strict_evidence_enabled
     learning_health = None
     health_state = None

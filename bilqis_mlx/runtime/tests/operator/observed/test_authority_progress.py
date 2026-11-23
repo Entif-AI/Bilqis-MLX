@@ -71,3 +71,52 @@ def test_c05_progress_uses_actual_owner_blocker_before_issued_token_loses_it():
     assert result.status == 'REJECTED'
     assert any('blocking capability Z.established' in message for message in messages)
     assert any('PROTECTED_CAPABILITY_REGRESSION' in message for message in messages)
+
+
+def test_learning_first_retention_skips_candidate_evidence_finalization():
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
+
+    decision = N(
+        accepted=False, reason='NO_MEASURABLE_TARGET_GAIN',
+        to_record=lambda: {
+            'decision': 'REJECT', 'reason': 'NO_MEASURABLE_TARGET_GAIN',
+        })
+    evaluation = N(
+        parent_state=object(), candidate_state=object(),
+        decision=N(blocking_capability=None))
+    capture = N(
+        finalize=lambda **_kw: (_ for _ in ()).throw(
+            AssertionError('ordinary mode finalized candidate evidence')),
+        summary=lambda: {
+            'attempt_id': 'attempt:learning-first',
+            'candidate_steps': 1,
+            'batch_size': 1,
+            'policy_controls': ({},),
+            'guidance_applied_steps': 0,
+            'enrichment_examples': 0,
+        })
+    step = N(
+        transaction=object(),
+        realized_cost={
+            'wall_seconds': 1.0, 'optimizer_steps': 1,
+            'candidate_optimizer_steps': 1, 'c08_memory_budget_bytes': 1,
+        })
+    outcome = {'outcome_sha256': 'f' * 64}
+    with evidence_mode(strict=False), patch(
+            'bilqis_mlx.runtime.outcomes.issuance.build_outcome',
+            return_value=outcome) as build:
+        result = retention_result(
+            Path('/unused'), object(), N(), None, object(), 'new.target', object(),
+            (step,), capture, 1, 1, None, None, None,
+            evaluate_candidate=lambda *a, **kw: evaluation,
+            issue_decision=lambda e: decision, identity_delta=lambda old: {},
+            resource_observation=lambda *a, **kw: {}, derive_successor=lambda *a, **kw: None,
+            bind_baseline_successor=lambda evaluation, successor: successor,
+            finalize_generation_authority=lambda *a, **kw: None,
+            prepared_visit_type=lambda *args, **kw: N(status=args[0], **kw),
+            emit_progress=lambda *_args: None,
+            measure_observed_phase_fn=lambda *a: nullcontext())
+    assert result.status == 'REJECTED'
+    assert result.candidate_evidence is None
+    assert result.how_outcome is outcome
+    assert build.call_args.kwargs['learning_summary']['candidate_steps'] == 1

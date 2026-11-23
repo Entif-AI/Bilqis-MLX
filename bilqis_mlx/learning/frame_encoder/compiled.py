@@ -176,6 +176,8 @@ class CompiledEncoderInput:
                 strict_evidence_enabled,
             )
             if strict_evidence_enabled():
+                if type(self.packed_frame_artifact_owner) is not PackedFrameArtifactOwner:
+                    _invalid()
                 for row in self.compiled.rows:
                     self.packed_frame_artifact_owner.require_row(row)
             return
@@ -203,6 +205,44 @@ class CompiledEncoderInput:
                     handles.append(AtomicSourceHandle(projection, position.frame_handle, source.members[0].source_handle))
             atomic_handles.append(tuple(handles))
         object.__setattr__(self, "atomic_handles", tuple(atomic_handles))
+
+
+def _prevalidated_combined_encoder_input(
+        compiled, compiler_configs, features, extents, inputs, *,
+        source_asts=None, partial_forest_receipts=None):
+    """Combine already-derived row geometry for ordinary numerical execution.
+
+    This carries no packed-frame authority. Strict mode must reconstruct and
+    validate the normal ``CompiledEncoderInput`` instead.
+    """
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if (strict_evidence_enabled() or type(inputs) is not tuple or not inputs
+            or any(type(item) is not CompiledEncoderInput for item in inputs)
+            or any(item.features != features or item.extents != extents
+                   for item in inputs)
+            or len(compiled.rows) != len(inputs)
+            or len(compiler_configs) != len(inputs)):
+        _invalid()
+    value = object.__new__(CompiledEncoderInput)
+    for name, item in (
+        ("compiled", compiled),
+        ("compiler_configs", compiler_configs),
+        ("features", features),
+        ("extents", extents),
+        ("source_asts", source_asts),
+        ("partial_forest_receipts", partial_forest_receipts),
+        ("member_requests", tuple(part for source in inputs for part in source.member_requests)),
+        ("atomic_handles", tuple(part for source in inputs for part in source.atomic_handles)),
+        ("_groups", tuple(part for source in inputs for part in source._groups)),
+        ("_projections", tuple(part for source in inputs for part in source._projections)),
+        ("packed_frame_artifact_owner", None),
+        ("schema_version", "bilqis.mlx.compiled-encoder-input/v1"),
+    ):
+        object.__setattr__(value, name, item)
+    value.__post_init__()
+    return value
 
 
 def _compiled_encoder_input_with_packed_owner(

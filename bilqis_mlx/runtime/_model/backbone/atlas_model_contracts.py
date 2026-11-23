@@ -72,6 +72,7 @@ class _ForwardRegistry:
 
 _FORWARD_ISSUANCE = _ForwardRegistry()
 _LOSS_EXECUTION_ISSUER = object()
+_LEARNING_PARTICIPATION_ISSUER = object()
 _MICROBATCH_EXECUTION_ISSUER = object()
 _MICROBATCH_MIN_ROWS = 2
 
@@ -145,6 +146,51 @@ class BamfLossExecution:
 
 
 @dataclass(frozen=True, init=False)
+class BamfLearningParticipationExecution:
+    """Learning-first row ancestry without rebuilding a numerical loss."""
+
+    generation_binding: str
+    visible_identity_rows: tuple[tuple[int, int], ...]
+    feedback_identity_rows: tuple[tuple[int, int], ...]
+    semantic_denominator_identity_rows: tuple[tuple[int, int], ...]
+    feature_rows: tuple[tuple[str, int], ...]
+    semantic_denominator_feature_rows: tuple[tuple[str, int], ...]
+    role_read_feature_rows: tuple[tuple[str, int], ...]
+    local_slot_rows: tuple[int, ...]
+    dense_parameter_names: tuple[str, ...]
+    motif_reads: tuple
+    schema_version: str = "bilqis.mlx.b11-learning-participation/v1"
+    _issuance: object = field(init=False, repr=False, compare=False)
+
+    def __init__(self, *args, **kwargs):
+        _invalid("B11_LEARNING_PARTICIPATION_CALLER_CONSTRUCTION_FORBIDDEN")
+
+    def __post_init__(self):
+        if (
+            getattr(self, "_issuance", None) is not _LEARNING_PARTICIPATION_ISSUER
+            or not isinstance(self.generation_binding, str)
+            or not self.generation_binding
+            or self.visible_identity_rows
+            != tuple(sorted(set(self.visible_identity_rows)))
+            or self.feedback_identity_rows
+            != tuple(sorted(set(self.feedback_identity_rows)))
+            or self.semantic_denominator_identity_rows
+            != tuple(sorted(set(self.semantic_denominator_identity_rows)))
+            or self.feature_rows != tuple(sorted(set(self.feature_rows)))
+            or self.semantic_denominator_feature_rows
+            != tuple(sorted(set(self.semantic_denominator_feature_rows)))
+            or self.role_read_feature_rows
+            != tuple(sorted(set(self.role_read_feature_rows)))
+            or self.local_slot_rows != tuple(sorted(set(self.local_slot_rows)))
+            or self.dense_parameter_names
+            != tuple(sorted(set(self.dense_parameter_names)))
+            or type(self.motif_reads) is not tuple
+            or self.schema_version != "bilqis.mlx.b11-learning-participation/v1"
+        ):
+            _invalid("B11_LEARNING_PARTICIPATION_INVALID")
+
+
+@dataclass(frozen=True, init=False)
 class BamfGradientExecution:
     """One exact MLX value-and-grad dispatch over one B11-issued loss."""
 
@@ -173,9 +219,9 @@ class BamfGradientExecution:
 
 @dataclass(frozen=True, init=False)
 class BamfMicrobatchGradientExecution:
-    """One MLX value-and-grad dispatch over multiple row-scoped B11 losses."""
+    """One MLX value-and-grad dispatch plus row-scoped learning ancestry."""
 
-    executions: tuple[BamfLossExecution, ...]
+    executions: tuple[BamfLossExecution | BamfLearningParticipationExecution, ...]
     gradients: Mapping
     mean_loss: mx.array
     schema_version: str = "bilqis.mlx.b11-microbatch-gradient-execution/v1"
@@ -190,8 +236,15 @@ class BamfMicrobatchGradientExecution:
             getattr(self, "_issuance", None) is not _MICROBATCH_EXECUTION_ISSUER
             or type(self.executions) is not tuple
             or len(self.executions) < _MICROBATCH_MIN_ROWS
-            or any(type(item) is not BamfLossExecution for item in self.executions)
-            or len({item.output.generation_binding for item in self.executions}) != 1
+            or any(type(item) not in (
+                BamfLossExecution, BamfLearningParticipationExecution)
+                for item in self.executions)
+            or len({type(item) for item in self.executions}) != 1
+            or len({
+                item.output.generation_binding
+                if type(item) is BamfLossExecution else item.generation_binding
+                for item in self.executions
+            }) != 1
             or not isinstance(self.gradients, Mapping)
             or not self.gradients
             or any(not isinstance(value, mx.array) for value in self.gradients.values())
@@ -203,7 +256,10 @@ class BamfMicrobatchGradientExecution:
         ):
             _invalid("B11_MICROBATCH_GRADIENT_EXECUTION_INVALID")
         for execution in self.executions:
-            require_bamf_loss_execution(execution)
+            if type(execution) is BamfLossExecution:
+                require_bamf_loss_execution(execution)
+            else:
+                execution.__post_init__()
 
 
 def _issue_loss_execution(output, loss, record, participation, *, salience_heads=(),
@@ -243,6 +299,27 @@ def _issue_loss_execution(output, loss, record, participation, *, salience_heads
     return execution
 
 
+def _issue_learning_participation_execution(record, participation):
+    execution = object.__new__(BamfLearningParticipationExecution)
+    for name, value in (
+        ("generation_binding", record.generation_binding),
+        ("visible_identity_rows", record.visible_identity_rows),
+        ("feedback_identity_rows", participation[0]),
+        ("semantic_denominator_identity_rows", participation[1]),
+        ("feature_rows", record.feature_rows),
+        ("semantic_denominator_feature_rows", participation[2]),
+        ("role_read_feature_rows", participation[3]),
+        ("local_slot_rows", record.local_slot_rows),
+        ("dense_parameter_names", tuple(sorted(set(record.dense_parameter_names)))),
+        ("motif_reads", record.motif_reads),
+        ("schema_version", "bilqis.mlx.b11-learning-participation/v1"),
+        ("_issuance", _LEARNING_PARTICIPATION_ISSUER),
+    ):
+        object.__setattr__(execution, name, value)
+    execution.__post_init__()
+    return execution
+
+
 def require_bamf_loss_execution(execution):
     if type(execution) is not BamfLossExecution:
         _invalid("B11_LOSS_EXECUTION_REQUIRED")
@@ -256,6 +333,7 @@ def require_bamf_loss_execution(execution):
 __all__ = (
     "BamfCompiledBatch",
     "BamfActiveSemanticRows",
+    "BamfLearningParticipationExecution",
     "BamfLossExecution",
     "BamfGradientExecution",
     "BamfMicrobatchGradientExecution",

@@ -270,14 +270,23 @@ def factory_parent_assessment_identity(
         or accepted_cache.generation_binding != parent_generation
     ):
         _invalid("BAMF_C05_PARENT_ASSESSMENT_ACCEPTED_GENERATION_DRIFT")
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    parent_candidate_sha256 = getattr(
+        accepted_cache, "_candidate_identity_sha256", None)
+    if strict_evidence_enabled():
+        parent_candidate_sha256 = candidate_identity_for_canonical_consumer(
+            parent.retained_state)
+    elif not _sha(parent_candidate_sha256):
+        _invalid("BAMF_C05_PARENT_ASSESSMENT_ACCEPTED_IDENTITY_REQUIRED")
     return ParentAssessmentCacheIdentity(
         run_id=accepted_cache.run_id,
         accepted_generation=accepted_cache.generation,
         accepted_manifest_sha256=accepted_cache.accepted_manifest_sha256,
         accepted_generation_binding=accepted_cache.generation_binding,
         parent_generation_sha256=parent_generation,
-        parent_candidate_sha256=candidate_identity_for_canonical_consumer(
-            parent.retained_state),
+        parent_candidate_sha256=parent_candidate_sha256,
         factory_release_sha256=release.release_sha256,
         semantic_catalog_sha256=release.semantic_catalog_sha256,
         source_authority_registry_sha256=(

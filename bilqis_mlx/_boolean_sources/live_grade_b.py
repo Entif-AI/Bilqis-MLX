@@ -117,11 +117,17 @@ def live_course(grade_a: Course, legacy_root: Path) -> Course:
 
 
 def _logic_source(legacy_root: Path):
-    source_attestation(legacy_root)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    strict = strict_mode_enabled()
+    if strict:
+        source_attestation(legacy_root)
     logic = importlib.import_module("bilqis_logic.kernel")
-    expected = Path(legacy_root).resolve() / "bilqis_logic/kernel.py"
-    if Path(logic.__file__).resolve() != expected:
-        raise ErrorBus.legacy_error(SOURCE.BOOLEAN.BOOLEAN_SOURCE_ROOT_MISMATCH)
+    if strict:
+        expected = Path(legacy_root).resolve() / "bilqis_logic/kernel.py"
+        if Path(logic.__file__).resolve() != expected:
+            raise ErrorBus.legacy_error(SOURCE.BOOLEAN.BOOLEAN_SOURCE_ROOT_MISMATCH)
     return logic
 
 
@@ -210,10 +216,14 @@ def draw_connectives(legacy_root: Path, graph: dict, *, seed: int,
             or each < MINIMUM_BOOLEAN_SAMPLE_ROWS or each % 2):
         raise ValueError("GRADE_B_BALANCED_EVEN_SAMPLE_REQUIRED")
     logic = _logic_source(legacy_root)
-    _, _, source_graph, _, _ = read_sources(legacy_root)
-    if (graph["tokens"][:len(source_graph["tokens"])] != source_graph["tokens"] or
-            len(graph["tokens"]) < len(source_graph["tokens"])):
-        raise ValueError("GRADE_B_FROZEN_TOKEN_PREFIX_MISMATCH")
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    if strict_mode_enabled():
+        _, _, source_graph, _, _ = read_sources(legacy_root)
+        if (graph["tokens"][:len(source_graph["tokens"])] != source_graph["tokens"] or
+                len(graph["tokens"]) < len(source_graph["tokens"])):
+            raise ValueError("GRADE_B_FROZEN_TOKEN_PREFIX_MISMATCH")
     selected = (CONNECTIVES if capability is None else
                 (capability.removeprefix("B."),))
     if not selected or any(op not in CONNECTIVES for op in selected):

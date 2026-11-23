@@ -15,6 +15,7 @@ from ...runtime.backbone_identity import (
 )
 from ...runtime.block_attnres import SOURCE_ORDER, depth_select, source_depth_select
 from ...runtime.block_attnres import depth_parameter_view
+from ...runtime.depth_contracts import _prevalidated_depth_parameter_view
 from ...runtime.model_topology_v2 import ModelTopologySpecV2
 from ...semantics.domains import contract_digest
 from .backbone_receipts import (
@@ -137,12 +138,16 @@ def complete_source_backbone_producer(producer):
     """
     if type(producer) is not _SourceBackboneProducerSession:
         _invalid_producer_receipt()
+    depth_view = (
+        _prevalidated_depth_parameter_view if producer._trace
+        else depth_parameter_view
+    )
     while len(producer._session.results) < producer._topology.depth_groups:
         completed = len(producer._session.results)
         if completed == 0:
             producer.advance()
             continue
-        view = depth_parameter_view(
+        view = depth_view(
             producer._parameters,
             spec=producer._topology,
             extents=producer._compiled.extents,
@@ -162,7 +167,11 @@ def complete_source_backbone_producer(producer):
 def finalize_source_backbone_hidden(producer):
     """Return the final B11 hidden after g3 selection and adapter application."""
     complete_source_backbone_producer(producer)
-    view = depth_parameter_view(
+    depth_view = (
+        _prevalidated_depth_parameter_view if producer._trace
+        else depth_parameter_view
+    )
+    view = depth_view(
         producer._parameters,
         spec=producer._topology,
         extents=producer._compiled.extents,

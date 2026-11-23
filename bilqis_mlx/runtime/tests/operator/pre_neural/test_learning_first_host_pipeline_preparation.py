@@ -2,6 +2,7 @@
 from dataclasses import replace
 import importlib
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.factory.teaching import content_digest, describe_delivered_teaching
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
@@ -12,6 +13,7 @@ from bilqis_mlx.runtime.factory_training_bridge import (
     prepare_factory_training_batch,
 )
 from bilqis_mlx.runtime.factory_training_preparation import (
+    _prepared_ahead_matches,
     prepare_learning_first_source_inputs_ahead,
 )
 from bilqis_mlx.runtime.tests.batch.training.visit_provenance_support import visit_provenance
@@ -100,6 +102,23 @@ class LearningFirstHostPipelinePreparationTests(
             pipelined._performance_observation["pipeline_prepared_ahead_used"], 1)
         self.assertEqual(
             pipelined._performance_observation["pipeline_discarded_prefetch_work"], 0)
+
+    def test_validated_source_packet_identity_skips_downstream_content_rehash(self):
+        _parent, context, _atlas_path, _feature_path, rows, _delivery, _generation = (
+            self._case())
+        source_identity = "a" * 64
+        with evidence_mode(strict=False):
+            ahead = prepare_learning_first_source_inputs_ahead(
+                context, context._accepted_feature_context, rows,
+                source_seed=12345, source_each=4,
+                source_identity=source_identity)
+            with patch(
+                    "bilqis_mlx.runtime.factory_training_preparation.content_digest",
+                    side_effect=AssertionError("validated packet was rehashed")):
+                self.assertTrue(_prepared_ahead_matches(
+                    ahead, context, context._accepted_feature_context, rows,
+                    source_seed=12345, source_each=4,
+                    source_identity=source_identity))
 
     def test_identity_drift_discards_and_recomputes_exactly(self):
         parent, context, atlas_path, feature_path, rows, delivery, generation = self._case()

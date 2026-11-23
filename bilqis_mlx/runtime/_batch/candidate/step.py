@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from functools import partial
 import time
 
 from bilqis_mlx.errors import BilqisError
@@ -54,7 +55,11 @@ def _capture_candidate_result(
         prepared, resource_plan, authorities, target_rows, gradient, transaction,
         cost, source_context, observation, capability, delivered_rows, generation,
         capture_diagnostics, start, candidate_step_started_at):
-    evidence_started = time.perf_counter()
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    strict = strict_mode_enabled()
+    evidence_started = time.perf_counter() if strict else None
     capture_realized_delivery(
         prepared.training_batch, source_context, observation.capture,
         capability, observation.step, tuple(delivered_rows),
@@ -65,35 +70,84 @@ def _capture_candidate_result(
         seed=observation.seed, cost=cost, prior=observation.prior,
         fresh_support=observation.fresh_support,
         mentors=observation.mentors)
-    cost["evidence_capture_wall_seconds"] = time.perf_counter() - evidence_started
-    cost["wall_seconds"] = time.perf_counter() - start
-    cost["candidate_step_wall_seconds"] = (
-        time.perf_counter() - candidate_step_started_at)
-    exclusive_wall_seconds = sum(float(cost.get(name, 0.0) or 0.0) for name in (
-        "observer_begin_step_wall_seconds", "source_lane_wait_wall_seconds",
-        "source_lesson_materialization_wall_seconds", "pipeline_host_wait_wall_seconds",
-        "mentor_observation_wall_seconds",
-        "progress_emission_wall_seconds", "currentness_binding_wall_seconds",
-        "candidate_delivery_setup_wall_seconds", "factory_request_validation_wall_seconds",
-        "factory_semantic_context_wall_seconds", "factory_prepared_source_validation_wall_seconds",
-        "factory_training_compile_wall_seconds", "factory_b11_binding_wall_seconds",
-        "factory_motif_planning_wall_seconds", "factory_result_construction_wall_seconds",
-        "salience_preparation_wall_seconds", "mentor_supervision_currentness_wall_seconds",
-        "mentor_evidence_validation_wall_seconds", "resource_plan_wall_seconds",
-        "prepared_feature_context_wall_seconds", "c08_row_execution_inputs_wall_seconds",
-        "c08_logical_batch_wall_seconds", "c08_result_construction_wall_seconds",
-        "candidate_training_orchestration_wall_seconds", "optimizer_admission_wall_seconds",
-        "motif_staging_wall_seconds", "candidate_reporting_wall_seconds",
-        "evidence_capture_wall_seconds",
-    ))
-    cost["candidate_unattributed_wall_seconds"] = max(
-        0.0, cost["candidate_step_wall_seconds"] - exclusive_wall_seconds)
-    diagnostics = _reporting_diagnostics(gradient, capture_diagnostics)
+    if strict:
+        cost["evidence_capture_wall_seconds"] = time.perf_counter() - evidence_started
+        cost["wall_seconds"] = time.perf_counter() - start
+        cost["candidate_step_wall_seconds"] = (
+            time.perf_counter() - candidate_step_started_at)
+        exclusive_wall_seconds = sum(float(cost.get(name, 0.0) or 0.0) for name in (
+            "observer_begin_step_wall_seconds", "source_lane_wait_wall_seconds",
+            "source_lesson_materialization_wall_seconds", "pipeline_host_wait_wall_seconds",
+            "mentor_observation_wall_seconds",
+            "progress_emission_wall_seconds", "currentness_binding_wall_seconds",
+            "candidate_delivery_setup_wall_seconds", "factory_request_validation_wall_seconds",
+            "factory_semantic_context_wall_seconds", "factory_prepared_source_validation_wall_seconds",
+            "factory_training_compile_wall_seconds", "factory_b11_binding_wall_seconds",
+            "factory_motif_planning_wall_seconds", "factory_result_construction_wall_seconds",
+            "salience_preparation_wall_seconds", "mentor_supervision_currentness_wall_seconds",
+            "mentor_evidence_validation_wall_seconds", "resource_plan_wall_seconds",
+            "prepared_feature_context_wall_seconds", "c08_row_execution_inputs_wall_seconds",
+            "c08_logical_batch_wall_seconds", "c08_result_construction_wall_seconds",
+            "candidate_training_orchestration_wall_seconds", "optimizer_admission_wall_seconds",
+            "motif_staging_wall_seconds", "candidate_reporting_wall_seconds",
+            "evidence_capture_wall_seconds",
+        ))
+        cost["candidate_unattributed_wall_seconds"] = max(
+            0.0, cost["candidate_step_wall_seconds"] - exclusive_wall_seconds)
+        diagnostics = _reporting_diagnostics(gradient, capture_diagnostics)
+    else:
+        cost = {}
+        diagnostics = None
     return FactoryCandidateStep(
         prepared, resource_plan,
         authorities[0] if len(authorities) == 1 else authorities,
         target_rows[0] if len(target_rows) == 1 else target_rows,
         diagnostics, transaction, cost)
+
+
+def _execute_candidate_plan(
+        plan, *, run_dir, source_context, parent, prepared, feature_context,
+        generation, cache, teacher_hparams, max_norm, candidate,
+        currentness_transaction, salience_supervision, mentor_supervision,
+        distributed_profile, distributed_executor, finalize_candidate,
+        memory_budget):
+    (gradient, authorities, target_rows, transaction, loss_total, c08_metrics,
+     optimizer_seconds) = _execute_training_and_admission(
+        run_dir, source_context, parent, prepared, feature_context, generation,
+        cache, plan, teacher_hparams, max_norm, candidate, currentness_transaction,
+        salience_supervision, mentor_supervision, distributed_profile,
+        distributed_executor)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    strict_evidence = strict_evidence_enabled()
+    if not strict_evidence and distributed_profile is None:
+        issue_learning_first_step_authority(
+            cache, parent, transaction, source_context)
+    motif_started = time.perf_counter() if strict_evidence else None
+    if finalize_candidate and strict_evidence:
+        transaction = _stage_retained_motifs(
+            run_dir, parent, cache, transaction, prepared, plan, memory_budget,
+            currentness_transaction=currentness_transaction)
+    motif_seconds = (
+        time.perf_counter() - motif_started
+        if finalize_candidate and motif_started is not None else 0.0)
+    return (
+        gradient, authorities, target_rows, transaction, loss_total,
+        c08_metrics, optimizer_seconds, motif_seconds)
+
+
+def _require_current_candidate(
+        *, run_dir, source_context, parent, candidate, currentness_transaction,
+        accepted_cache):
+    if currentness_transaction is not None:
+        from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (
+            refresh_accepted_currentness,
+        )
+        refresh_accepted_currentness(currentness_transaction, parent)
+    return _candidate_cache_and_generation(
+        run_dir, source_context, parent, candidate, currentness_transaction,
+        accepted_cache=accepted_cache)
 
 
 def _execute_prepared_candidate(
@@ -107,76 +161,75 @@ def _execute_prepared_candidate(
         semantic_context_materialized_in_step=False,
         stage_metrics=None, distributed_profile=None, distributed_executor=None,
         finalize_candidate=True) -> FactoryCandidateStep:
-    stage_metrics = dict(stage_metrics or {})
-    mentor_evidence_started = time.perf_counter()
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    strict = strict_mode_enabled()
+    stage_metrics = dict(stage_metrics or {}) if strict else {
+        "candidate_step_started_at": (stage_metrics or {}).get(
+            "candidate_step_started_at", 0.0)
+    }
+    mentor_evidence_started = time.perf_counter() if strict else None
     if mentor_supervision is not None:
         try:
             mentor_supervision.require_evidence(
                 observation.mentors, observation.guidance)
         except BilqisError:
             _invalid("FACTORY_MENTOR_EVIDENCE_DRIFT")
-    stage_metrics["mentor_evidence_validation_wall_seconds"] = (
-        time.perf_counter() - mentor_evidence_started
-        if mentor_supervision is not None else 0.0)
-    identity_before = candidate_identity_metrics_snapshot()
-    step_authority_before = learning_first_step_authority_metrics_snapshot()
-    resource_plan_started = time.perf_counter()
+    if strict:
+        stage_metrics["mentor_evidence_validation_wall_seconds"] = (
+            time.perf_counter() - mentor_evidence_started
+            if mentor_supervision is not None else 0.0)
+    identity_before = candidate_identity_metrics_snapshot() if strict else None
+    step_authority_before = (
+        learning_first_step_authority_metrics_snapshot() if strict else None)
+    resource_plan_started = time.perf_counter() if strict else None
     resource_plan, memory_budget = _resource_plan(prepared, parent, memory_budget)
-    stage_metrics["resource_plan_wall_seconds"] = (
-        time.perf_counter() - resource_plan_started)
-    feature_context_started = time.perf_counter()
+    if strict:
+        stage_metrics["resource_plan_wall_seconds"] = (
+            time.perf_counter() - resource_plan_started)
+    feature_context_started = time.perf_counter() if strict else None
     feature_context = _prepared_feature_context(prepared, semantic_context)
-    stage_metrics["prepared_feature_context_wall_seconds"] = (
-        time.perf_counter() - feature_context_started)
-    def execute(plan):
-        (gradient, authorities, target_rows, transaction, loss_total, c08_metrics,
-         optimizer_seconds) = _execute_training_and_admission(
-            run_dir, source_context, parent, prepared, feature_context, generation,
-            cache, plan, teacher_hparams, max_norm, candidate, currentness_transaction,
-            salience_supervision, mentor_supervision, distributed_profile,
-            distributed_executor)
-        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
-            strict_evidence_enabled,
-        )
-        if not strict_evidence_enabled() and distributed_profile is None:
-            issue_learning_first_step_authority(
-                cache, parent, transaction, source_context)
-        motif_started = time.perf_counter()
-        if finalize_candidate and strict_evidence_enabled():
-            transaction = _stage_retained_motifs(
-                run_dir, parent, cache, transaction, prepared, plan, memory_budget,
-                currentness_transaction=currentness_transaction)
-        motif_seconds = time.perf_counter() - motif_started if finalize_candidate else 0.0
-        return (gradient, authorities, target_rows, transaction, loss_total,
-                c08_metrics, optimizer_seconds, motif_seconds)
+    if strict:
+        stage_metrics["prepared_feature_context_wall_seconds"] = (
+            time.perf_counter() - feature_context_started)
+    execute = partial(
+        _execute_candidate_plan,
+        run_dir=run_dir, source_context=source_context, parent=parent,
+        prepared=prepared, feature_context=feature_context, generation=generation,
+        cache=cache, teacher_hparams=teacher_hparams, max_norm=max_norm,
+        candidate=candidate, currentness_transaction=currentness_transaction,
+        salience_supervision=salience_supervision,
+        mentor_supervision=mentor_supervision,
+        distributed_profile=distributed_profile,
+        distributed_executor=distributed_executor,
+        finalize_candidate=finalize_candidate, memory_budget=memory_budget)
+    require_current = partial(
+        _require_current_candidate, run_dir=run_dir, source_context=source_context,
+        parent=parent, candidate=candidate,
+        currentness_transaction=currentness_transaction,
+        accepted_cache=accepted_cache)
 
-    def require_current():
-        if currentness_transaction is not None:
-            from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (
-                refresh_accepted_currentness,
-            )
-            refresh_accepted_currentness(currentness_transaction, parent)
-        return _candidate_cache_and_generation(
-            run_dir, source_context, parent, candidate, currentness_transaction,
-            accepted_cache=accepted_cache)
-
-    retry_started = time.perf_counter()
+    retry_started = time.perf_counter() if strict else None
     result, resource_plan, retry = execute_with_oom_retry(
         execute, resource_plan, parent=parent, candidate=candidate, prepared=prepared,
         budget=memory_budget, cache=cache, require_current=require_current)
-    retry_wall_seconds = time.perf_counter() - retry_started
+    retry_wall_seconds = time.perf_counter() - retry_started if strict else 0.0
     (gradient, authorities, target_rows, transaction, loss_total, c08_metrics,
      optimizer_wall_seconds, motif_seconds) = result
-    stage_metrics["optimizer_admission_wall_seconds"] = optimizer_wall_seconds
-    stage_metrics["motif_staging_wall_seconds"] = motif_seconds
-    stage_metrics["candidate_terminal_step"] = finalize_candidate
-    stage_metrics["retry_wall_seconds"] = retry_wall_seconds
-    cost = _candidate_cost(
-        start, stage_metrics, gradient, loss_total, prepared, resource_plan,
-        memory_budget, transaction, feature_context,
-        semantic_context_materialized_in_step, c08_metrics, retry, identity_before)
-    from .step_authority import learning_first_step_authority_metrics_delta
-    cost.update(learning_first_step_authority_metrics_delta(step_authority_before))
+    if strict:
+        stage_metrics["optimizer_admission_wall_seconds"] = optimizer_wall_seconds
+        stage_metrics["motif_staging_wall_seconds"] = motif_seconds
+        stage_metrics["candidate_terminal_step"] = finalize_candidate
+        stage_metrics["retry_wall_seconds"] = retry_wall_seconds
+        cost = _candidate_cost(
+            start, stage_metrics, gradient, loss_total, prepared, resource_plan,
+            memory_budget, transaction, feature_context,
+            semantic_context_materialized_in_step, c08_metrics, retry, identity_before)
+        from .step_authority import learning_first_step_authority_metrics_delta
+        cost.update(learning_first_step_authority_metrics_delta(step_authority_before))
+    else:
+        cost = {}
     return _capture_candidate_result(
         prepared, resource_plan, authorities, target_rows, gradient, transaction,
         cost, source_context, observation, capability, delivered_rows, generation,

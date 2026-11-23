@@ -30,11 +30,14 @@ def observe(observer, **fields):
 
 
 def elapsed(observer, field, started):
+    if observer is None or started is None:
+        return
     observe(observer, **{field: max(0.0, time.perf_counter() - started)})
 
 
 def solver_profile(observer, prefix, *solvers):
-    shared = scalar = 0
+    shared = scalar = rows = padded = attention = 0
+    largest_rows = largest_positions = 0
     for solver in solvers:
         telemetry_for = getattr(solver, "telemetry_for", None)
         if not callable(telemetry_for):
@@ -47,17 +50,29 @@ def solver_profile(observer, prefix, *solvers):
             continue
         shared += int(telemetry.get("shared_backbone_launches", 0) or 0)
         scalar += int(telemetry.get("scalar_neural_launches", 0) or 0)
+        rows += int(telemetry.get("shared_backbone_rows", 0) or 0)
+        padded += int(telemetry.get("shared_backbone_padded_positions", 0) or 0)
+        attention += int(telemetry.get("shared_backbone_attention_cells", 0) or 0)
+        largest_rows = max(
+            largest_rows, int(telemetry.get("largest_shared_rows", 0) or 0))
+        largest_positions = max(
+            largest_positions, int(telemetry.get("largest_shared_positions", 0) or 0))
     observe(
         observer,
         **{f"{prefix}_shared_backbone_launches": shared,
+           f"{prefix}_shared_backbone_rows": rows,
+           f"{prefix}_shared_backbone_padded_positions": padded,
+           f"{prefix}_shared_backbone_attention_cells": attention,
+           f"{prefix}_largest_shared_rows": largest_rows,
+           f"{prefix}_largest_shared_positions": largest_positions,
            f"{prefix}_scalar_neural_launches": scalar},
     )
 
 
-def comparison_epoch(release, plan, target_plan, instruments, parent, cache):
+def comparison_epoch(release, plan, target_plan, cases, parent, cache):
     target_cases = tuple(
-        item.case for item in instruments
-        if item.case.capability_id == target_plan.target_capability_id)
+        case for case in cases
+        if case.capability_id == target_plan.target_capability_id)
     if not target_cases:
         _invalid("BAMF_C05_RETENTION_PROTECTION_SCOPE_INVALID")
     return BaselineComparisonEpoch(

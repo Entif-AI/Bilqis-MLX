@@ -88,6 +88,7 @@ def _pipeline_kwargs(pipeline, ordinal):
     pipeline.submit(ordinal + 1)
     return {
         "prepared_learning_first_source_inputs": host.prepared_source_inputs,
+        "prepared_learning_first_source_identity": host.source_identity,
         "pipeline_host_preparation_wall_seconds": host.preparation_wall_seconds,
         "pipeline_host_overlap_wall_seconds": host.overlap_wall_seconds,
         "pipeline_host_wait_wall_seconds": host.host_wait_wall_seconds,
@@ -170,7 +171,8 @@ def _case(root: Path, *, pipelined: bool):
         def prepare(_ordinal, lesson):
             return prepare_learning_first_source_inputs_ahead(
                 context, semantic_context, lesson.delivered,
-                source_seed=source_seed, source_each=LOGICAL_ROWS)
+                source_seed=source_seed, source_each=LOGICAL_ROWS,
+                source_identity=lesson.prefetch_identity)
 
         pipeline = CandidateHostPreparationPipeline(
             lane, HORIZON, prepare, metrics)

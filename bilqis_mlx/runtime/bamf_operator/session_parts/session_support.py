@@ -75,12 +75,12 @@ class BamfOperatorResult:
 
 def _execution_context(
         run_dir: Path, *, currentness_metrics=None, performance_metrics=None):
-    started = time.perf_counter()
+    started = time.perf_counter() if performance_metrics is not None else None
     host = AcceptedRuntimeHost(run_dir, currentness_metrics=currentness_metrics)
     if performance_metrics is not None:
         performance_metrics["accepted_runtime_host_wall_seconds"] = max(
             0.0, time.perf_counter() - started)
-    started = time.perf_counter()
+    started = time.perf_counter() if performance_metrics is not None else None
     parent = load_accepted_generation(run_dir)
     if performance_metrics is not None:
         performance_metrics["accepted_generation_load_wall_seconds"] = max(
@@ -92,15 +92,18 @@ def _execution_context(
         )
         bind_accepted_currentness_transaction(
             run_dir, parent, host._accepted_cache, metrics=currentness_metrics)
-    started = time.perf_counter()
+    started = time.perf_counter() if performance_metrics is not None else None
     context = host.source_context(source_root=LEGACY_SOURCE.resolve())
     if performance_metrics is not None:
         performance_metrics["accepted_source_context_wall_seconds"] = max(
             0.0, time.perf_counter() - started)
-    for event in getattr(parent, "outbox", ()):
-        if isinstance(event, dict) and event.get("event") == "BAMF_C16_3_ACCEPTED":
-            validate_candidate_horizon_event(run_dir, event, context.release)
-    started = time.perf_counter()
+    if strict_mode_enabled():
+        for event in getattr(parent, "outbox", ()):
+            if (isinstance(event, dict)
+                    and event.get("event") == "BAMF_C16_3_ACCEPTED"
+                    and isinstance(event.get("candidate_evidence"), dict)):
+                validate_candidate_horizon_event(run_dir, event, context.release)
+    started = time.perf_counter() if performance_metrics is not None else None
     authenticated = bind_accepted_execution_feature_context(
         run_dir, parent, None)
     if performance_metrics is not None:

@@ -21,21 +21,41 @@ def _source_lesson_evidence(
     })
 
 
-def _compile_source_constructive_lessons_snapshot(
+def _ordered_other(
+    ordered: tuple[str, ...],
+    position: int,
+    own_index: int,
+) -> str:
+    """Select from one ordered set with a known member removed."""
+    width = len(ordered) - 1
+    if width < 1:
+        raise ValueError("source lesson contrast pool exhausted")
+    selected = position % width
+    if selected >= own_index:
+        selected += 1
+    return ordered[selected]
+
+
+def _compile_source_constructive_lessons_from_census(
     atlas: FrozenAtlasSnapshot,
-    *, census: SemanticFamilyInventory | None = None,
+    census: SemanticFamilyInventory,
 ) -> SourceConstructiveLessonSet:
-    """Compile only facts provable from A01; other families remain debt."""
-    authoritative = _inventory_source_families(atlas)
-    if (census is not None
-            and (type(census) is not SemanticFamilyInventory
-                 or _strict_source_bytes(census)
-                 != _strict_source_bytes(authoritative))):
+    """Compile lessons from a census already derived by the current owner call."""
+    if type(census) is not SemanticFamilyInventory:
         _fail("BAMF_LESSON_CENSUS_DRIFT")
-    census = authoritative
     by_id = {item.semantic_id: item for item in census.concepts}
     eligible = census.source_eligible_concept_ids
     position = {identifier: index for index, identifier in enumerate(eligible)}
+    authority_groups = {False: [], True: []}
+    authority_index = {}
+    for identifier in eligible:
+        source_refs = by_id[identifier].source_refs
+        authority = bool(source_refs and source_refs[0].startswith("abi:"))
+        authority_index[identifier] = len(authority_groups[authority])
+        authority_groups[authority].append(identifier)
+    authority_groups = {
+        key: tuple(value) for key, value in authority_groups.items()
+    }
     relations = tuple(sorted(
         (edge.source_semantic_id, edge.predicate, edge.target_semantic_id)
         for edge in atlas.relations
@@ -45,6 +65,11 @@ def _compile_source_constructive_lessons_snapshot(
     relations_by_source: dict[str, tuple[str, str, str]] = {}
     for triple in relations:
         relations_by_source.setdefault(triple[0], triple)
+    first_relation = relations[0] if relations else None
+    first_other_relation = (
+        next((item for item in relations if item[0] != first_relation[0]), None)
+        if first_relation is not None else None
+    )
     lessons = []
     uncovered = []
     for obligation in census.obligations:
@@ -52,15 +77,14 @@ def _compile_source_constructive_lessons_snapshot(
         family = obligation.family_id
         if family == "positive_identity" and len(eligible) > 1:
             source_ref = by_id[semantic_id].source_refs[0]
-            same_authority = tuple(
-                identifier for identifier in eligible
-                if identifier != semantic_id
-                and by_id[identifier].source_refs
-                and by_id[identifier].source_refs[0].startswith("abi:")
-                   == source_ref.startswith("abi:"))
-            pool = same_authority or tuple(
-                identifier for identifier in eligible if identifier != semantic_id)
-            contrast_id = pool[position[semantic_id] % len(pool)]
+            authority = source_ref.startswith("abi:")
+            group = authority_groups[authority]
+            if len(group) > 1:
+                contrast_id = _ordered_other(
+                    group, position[semantic_id], authority_index[semantic_id])
+            else:
+                contrast_id = _ordered_other(
+                    eligible, position[semantic_id], position[semantic_id])
             positive = ("identity", semantic_id, source_ref)
             contrast = ("identity", contrast_id, by_id[contrast_id].source_refs[0])
             modality = "SEMANTIC_ID"
@@ -73,10 +97,11 @@ def _compile_source_constructive_lessons_snapshot(
             if positive is None:
                 uncovered.append(obligation)
                 continue
-            # A second true relation from the queried source is not a
-            # negative example without a separate predicate/target cue.
-            contrast = next(
-                (item for item in relations if item[0] != semantic_id), None)
+            contrast = (
+                first_relation
+                if first_relation is not None and first_relation[0] != semantic_id
+                else first_other_relation
+            )
             if contrast is None:
                 uncovered.append(obligation)
                 continue
@@ -98,3 +123,18 @@ def _compile_source_constructive_lessons_snapshot(
     return SourceConstructiveLessonSet(
         atlas.release_sha256, census.digest, tuple(lessons),
         tuple(uncovered), tuple(census.source_held))
+
+
+def _compile_source_constructive_lessons_snapshot(
+    atlas: FrozenAtlasSnapshot,
+    *, census: SemanticFamilyInventory | None = None,
+) -> SourceConstructiveLessonSet:
+    """Compile only facts provable from A01; other families remain debt."""
+    authoritative = _inventory_source_families(atlas)
+    if (census is not None
+            and (type(census) is not SemanticFamilyInventory
+                 or _strict_source_bytes(census)
+                 != _strict_source_bytes(authoritative))):
+        _fail("BAMF_LESSON_CENSUS_DRIFT")
+    return _compile_source_constructive_lessons_from_census(
+        atlas, authoritative)

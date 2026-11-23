@@ -34,7 +34,8 @@ from .factory_task_authority import (
     FactoryTaskAuthority, rebind_factory_task_authority,
 )
 from .factory_task_template import (
-    FactoryTaskTemplate, factory_task_template, factory_task_template_matches,
+    FactoryTaskTemplate, _factory_task_template_from_validated,
+    factory_task_template, factory_task_template_matches,
 )
 
 
@@ -60,6 +61,10 @@ class CompiledFactoryEvaluationCase:
         return compiled_case_identity_record(**dict(self.identity_items))
 
     def __post_init__(self) -> None:
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_evidence_enabled,
+        )
+        strict = strict_evidence_enabled()
         if (not isinstance(self.compiler_configs, tuple)
                 or len(self.compiler_configs) != 1
                 or not isinstance(self.source_asts, tuple)
@@ -68,9 +73,11 @@ class CompiledFactoryEvaluationCase:
                 or len(self.partial_forest_receipts) != 1
                 or type(self.task_template) is not FactoryTaskTemplate
                 or type(self.identity_items) is not tuple
-                or compiled_case_identity_digest(self.identity_record)
-                != self.identity_sha256):
+                or (strict and compiled_case_identity_digest(self.identity_record)
+                    != self.identity_sha256)):
             _invalid("BAMF_C05_COMPILED_CASE_INVALID")
+        if not strict:
+            return
         self.compiled_rows.__post_init__()
         self.task_template.__post_init__()
         identity = self.identity_record
@@ -139,7 +146,11 @@ def compile_factory_evaluation_batch(
     authenticated = (_authenticated if _authenticated is not None else
                      authenticate_bamf_execution_feature_context(
                          candidate, artifact_path, source_context.run_dir))
-    authenticated.__post_init__()
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if strict_evidence_enabled() or not _release_prevalidated:
+        authenticated.__post_init__()
     execution = source_context.execution_for(row["capability"])
     profile_parameters = (dict(execution.provider_parameters)
                           if execution.provider_parameters else None)
@@ -194,13 +205,27 @@ def compile_factory_evaluation_case(
     authenticated = (authenticated if authenticated is not None else
                      authenticate_bamf_execution_feature_context(
                          candidate, artifact_path, source_context.run_dir))
-    authenticated.__post_init__()
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    strict = strict_evidence_enabled()
+    learning_first_prevalidated = release_prevalidated and not strict
+    if not learning_first_prevalidated:
+        authenticated.__post_init__()
     batch = compile_factory_evaluation_batch(
         source_context, candidate, artifact_path, row,
         source_seed=source_seed, source_each=source_each,
         _authenticated=authenticated,
         _release_prevalidated=release_prevalidated)
-    task_template = factory_task_template(source_context, batch)
+    task_template = (
+        _factory_task_template_from_validated(source_context, batch)
+        if learning_first_prevalidated
+        else factory_task_template(source_context, batch))
+    if learning_first_prevalidated:
+        return CompiledFactoryEvaluationCase(
+            batch.compiled.compiled, batch.compiled.compiler_configs,
+            batch.compiled.source_asts, batch.compiled.partial_forest_receipts,
+            task_template, (), "")
     config = batch.compiled.compiler_configs[0]
     compiler_sha256 = candidate.compiler_features.get("compiler_sha256")
     if not isinstance(compiler_sha256, str) or not compiler_sha256:

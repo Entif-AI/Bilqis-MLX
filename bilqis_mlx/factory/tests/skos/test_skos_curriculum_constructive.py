@@ -57,6 +57,50 @@ DEFINITIONS = (
 from bilqis_mlx.factory.tests.test_skos_curriculum import _snapshot
 
 class SemanticFamilyConstructiveTests(unittest.TestCase):
+    def test_owner_compiler_inventories_snapshot_once(self):
+        from bilqis_mlx.factory.skos_curriculum import curriculum as curriculum_module
+        from bilqis_mlx.factory.skos_curriculum import lesson_compiler
+
+        snapshot = _snapshot()
+        frontier = LearnedFrontier(snapshot.release_sha256)
+        inventory = curriculum_module._inventory_source_families
+        with patch.object(
+                curriculum_module, "_inventory_source_families",
+                wraps=inventory) as owner_inventory, patch.object(
+                    lesson_compiler, "_inventory_source_families",
+                    side_effect=AssertionError(
+                        "owner compiler redundantly reinventoried its own snapshot")):
+            candidate = curriculum_module._compile_semantic_curriculum_snapshot(
+                snapshot, SOURCE_FAMILY_ADAPTERS, frontier)
+
+        self.assertEqual(owner_inventory.call_count, 1)
+        self.assertEqual(candidate.census.semantic_release, snapshot.release_sha256)
+
+    def test_identity_contrast_selection_preserves_historical_ordering(self):
+        snapshot = _snapshot()
+        census = inventory_source_families(snapshot)
+        compiled = compile_source_constructive_lessons(snapshot, census=census)
+        by_id = {item.semantic_id: item for item in census.concepts}
+        eligible = census.source_eligible_concept_ids
+        position = {identifier: index for index, identifier in enumerate(eligible)}
+
+        for lesson in compiled.lessons:
+            if lesson.family_id != "positive_identity":
+                continue
+            semantic_id = lesson.semantic_id
+            source_ref = by_id[semantic_id].source_refs[0]
+            same_authority = tuple(
+                identifier for identifier in eligible
+                if identifier != semantic_id
+                and by_id[identifier].source_refs
+                and by_id[identifier].source_refs[0].startswith("abi:")
+                   == source_ref.startswith("abi:"))
+            pool = same_authority or tuple(
+                identifier for identifier in eligible
+                if identifier != semantic_id)
+            expected = pool[position[semantic_id] % len(pool)]
+            self.assertEqual(lesson.contrast_fact[1], expected)
+
     def test_source_identity_and_attested_relation_constructive_checkers(self):
         definitions = tuple(
             (identifier, source, AtlasRelation(REL, "urn:lex:root")

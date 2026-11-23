@@ -175,7 +175,8 @@ class ObservationCapture:
         self.selection_route = "AUTONOMY_EXISTING_FIRST_RELEASED_OPTION" if selected else "ORDINARY_DIRECT"
 
     def delivery(self, release, capability, step, rows, *, option_rows, priority,
-                 preservation, support, enrichment, guidance, controls, seed, prior=(), mentors=None):
+                 preservation, support, enrichment, guidance, controls, seed, prior=(),
+                 fresh_support=(), mentors=None):
         if not self.enabled:
             return
         source_ids = {row["id"] for row in option_rows}
@@ -186,6 +187,7 @@ class ObservationCapture:
                  "preservation": {row["id"] for row in preservation},
                  "retention_support": {row["id"] for row in support},
                  "enrichment": {row["id"] for row in enrichment},
+                 "fresh_support": {row["id"] for row in fresh_support},
                  "prior_rehearsal": {row["id"] for row in prior}}
         positioned = []
         for row in rows:

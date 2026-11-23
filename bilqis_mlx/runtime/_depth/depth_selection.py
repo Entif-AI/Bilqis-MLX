@@ -128,10 +128,31 @@ def _producer_summaries(producer, boundary_group, params):
                 or params.generation_digest != producer._generation):
             _invalid()
         sources = producer._trace_boundaries[:boundary_group + 1]
-        summaries = tuple(DepthSummary(
-            SOURCE_ORDER[index], index * 4,
-            hidden if index == 0 else _rms_norm(hidden, params["norm"]),
-        ) for index, hidden in enumerate(sources))
+        norm = params["norm"]
+        cached_norm = getattr(producer, "_trace_depth_norm_parameter", None)
+        cached_sources = getattr(producer, "_trace_depth_summary_sources", ())
+        cached_values = getattr(producer, "_trace_depth_summary_values", ())
+        if cached_norm is None:
+            producer._trace_depth_norm_parameter = norm
+        elif cached_norm is not norm:
+            _invalid()
+        if len(cached_sources) != len(cached_values):
+            _invalid()
+        new_sources = list(cached_sources)
+        new_values = list(cached_values)
+        for index, hidden in enumerate(sources[1:]):
+            if index < len(new_sources):
+                if new_sources[index] is not hidden:
+                    _invalid()
+                continue
+            new_sources.append(hidden)
+            new_values.append(_rms_norm(hidden, norm))
+        producer._trace_depth_summary_sources = tuple(new_sources)
+        producer._trace_depth_summary_values = tuple(new_values)
+        summaries = (DepthSummary(SOURCE_ORDER[0], 0, sources[0]), *(
+            DepthSummary(SOURCE_ORDER[index], index * 4, value)
+            for index, value in enumerate(new_values[:boundary_group], 1)
+        ))
         return summaries, sources[boundary_group]
     receipts = _SourceBackboneProducerSession._validated_receipts(producer, boundary_group)
     # One source selection has one sealed parameter view. Rehashing the entire
@@ -187,26 +208,31 @@ def source_depth_select_with_diagnostics(producer, params):
             or any(not 0 < len(row) <= encoded.global_seeds.shape[1]
                    for row in encoded.features)):
         _invalid()
-    rows = []
-    for row in encoded.features:
-        values = []
-        padded = row + (None,) * (encoded.global_seeds.shape[1] - len(row))
-        for factor in padded:
-            if factor is None:
-                values.append(mx.zeros((WIDTH,), dtype=mx.float32))
-            elif type(factor) in (FrameFactorTerms, EmptyFrameFactorTerms):
-                if (factor.feature_digest != producer._compiled.features.digest
-                        or factor.semantic_release
-                        != producer._compiled.features.semantic_release
-                        or factor.type_role768.shape != (WIDTH,)
-                        or factor.type_role768.dtype != mx.float32):
+    type_role = getattr(producer, "_trace_source_depth_type_role", None)
+    if type_role is None or not producer._trace:
+        rows = []
+        for row in encoded.features:
+            values = []
+            padded = row + (None,) * (encoded.global_seeds.shape[1] - len(row))
+            for factor in padded:
+                if factor is None:
+                    values.append(mx.zeros((WIDTH,), dtype=mx.float32))
+                elif type(factor) in (FrameFactorTerms, EmptyFrameFactorTerms):
+                    if (factor.feature_digest != producer._compiled.features.digest
+                            or factor.semantic_release
+                            != producer._compiled.features.semantic_release
+                            or factor.type_role768.shape != (WIDTH,)
+                            or factor.type_role768.dtype != mx.float32):
+                        _invalid()
+                    values.append(factor.type_role768)
+                else:
                     _invalid()
-                values.append(factor.type_role768)
-            else:
-                _invalid()
-        rows.append(mx.stack(tuple(values)))
+            rows.append(mx.stack(tuple(values)))
+        type_role = mx.stack(tuple(rows))
+        if producer._trace:
+            producer._trace_source_depth_type_role = type_role
     numerical = _DepthFeatureValues(
-        encoded.global_seeds, mx.stack(tuple(rows)),
+        encoded.global_seeds, type_role,
         producer._compiled.features.semantic_release,
         producer._compiled.features.digest, params.boundary_group)
     output, alpha, gate = _depth_components(

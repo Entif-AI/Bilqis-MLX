@@ -14,9 +14,11 @@ from bilqis_mlx.learning.atlas_retention_decision import (
     issue_factory_retention_decision,
 )
 from bilqis_mlx.runtime.baseline.lifecycle import BaselineLifecycleState
+from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
 from bilqis_mlx.runtime.capability_retention import Decision, DecisionStatus
 import bilqis_mlx.runtime.factory_retention_owner as owner
 import bilqis_mlx.runtime._factory_retention_support as retention_support
+import bilqis_mlx.runtime.retention.screen as retention_screen
 from bilqis_mlx.runtime.factory_retention_owner import FactoryRetentionEvaluation
 from bilqis_mlx.runtime.tests.capability.factory.retention.diagnostics.factory_retention_fixed_diagnostic import (
     _optimizer_delta_summary,
@@ -135,6 +137,39 @@ class FactoryRetentionOwnerShadowTests(unittest.TestCase):
 
         self.assertEqual(result, (parent, "successor", preview, cache))
 
+    def test_learning_first_bound_parent_uses_step_authority_not_full_identity(self):
+        retained = SimpleNamespace(custody=SimpleNamespace(
+            run_id="run", generation=3, manifest_sha256="1" * 64,
+            topology_digest="2" * 64, extents_digest="3" * 64))
+        preview = object()
+        transaction = SimpleNamespace(
+            learning_first=True, update_steps=2, parent=retained,
+            _parent_identity_sha256="4" * 64, motif_transition=None)
+        parent = SimpleNamespace(
+            retained_state=retained, topology=SimpleNamespace(digest="2" * 64),
+            extents=SimpleNamespace(digest="3" * 64))
+        cache = SimpleNamespace(
+            run_id="run", generation=3, accepted_manifest_sha256="1" * 64,
+            _candidate_identity_sha256="4" * 64)
+        with (
+            evidence_mode(strict=False),
+            patch.object(
+                retention_support, "candidate_identity_for_canonical_consumer",
+                side_effect=AssertionError("learning-first full parent identity hash")),
+            patch.object(
+                retention_support, "current_learning_first_step_authority_for_candidate",
+                return_value="5" * 64) as current_token,
+            patch.object(retention_support, "resolve_candidate", return_value=preview),
+            patch.object(
+                retention_support, "bind_candidate_identity_or_fallback",
+                side_effect=AssertionError("learning-first candidate identity bind")),
+            patch.object(retention_support, "derive_successor_bundle", return_value="successor"),
+        ):
+            result = retention_support._candidate_from_bound_parent(
+                parent, cache, transaction, canonical_identity_required=False)
+        self.assertEqual(result, (parent, "successor", preview, cache))
+        current_token.assert_called_once_with(transaction)
+
     def test_retention_boundary_still_mints_canonical_candidate_identity(self):
         retained = object()
         preview = object()
@@ -185,6 +220,73 @@ class FactoryRetentionOwnerShadowTests(unittest.TestCase):
         self.assertEqual(summary["readout"]["nonzero_gradient_parameters"], 1)
         self.assertEqual(summary["readout"]["changed_parameters"], 1)
         self.assertEqual(summary["readout"]["zero_gradient_changed_parameters"], 0)
+
+    def test_learning_first_rejection_issuer_uses_step_token_without_full_state_hash(self):
+        decision = Decision(
+            DecisionStatus.REJECT, "NO_MEASURABLE_TARGET_GAIN",
+            "1" * 64, "2" * 64, "3" * 64, "4" * 64)
+        parent_state = object()
+        parameters = object()
+        candidate_state = SimpleNamespace(optimizer=SimpleNamespace(parameters=parameters))
+        parent = SimpleNamespace(baseline_evidence=None, retained_state=parent_state)
+        candidate = SimpleNamespace(
+            retained_state=candidate_state, transition={}, parent_manifest_sha256="5" * 64)
+        cache = SimpleNamespace(_candidate_identity_sha256="6" * 64)
+        result = (decision, parent, candidate, cache, None, None, None)
+        raw_issue = Mock(return_value=object())
+        foundation, _, _ = retention_screen.bind_factory_evaluation_issuer(
+            raw_issue, owner.CURRENT_EVIDENCE_STAGE)
+
+        with (
+            evidence_mode(strict=False),
+            patch.object(retention_screen, "foundation_local_retention_screen",
+                         return_value=result),
+            patch.object(
+                retention_screen, "candidate_identity_for_canonical_consumer",
+                side_effect=AssertionError("rejected learning-first candidate full hash")),
+            patch.object(
+                retention_screen, "candidate_identity_binding_for_state",
+                side_effect=AssertionError("rejected learning-first candidate identity proof")),
+            patch.object(
+                retention_screen, "current_learning_first_step_authority_for_parameters",
+                return_value="7" * 64) as current_token,
+        ):
+            issued = foundation()
+
+        self.assertIsNotNone(issued)
+        args = raw_issue.call_args.args
+        self.assertEqual(args[1], "6" * 64)
+        self.assertEqual(args[2], "7" * 64)
+        current_token.assert_called_once_with(parameters)
+
+    def test_learning_first_rejection_issuer_accepts_bound_parent_identity_when_cache_copy_absent(self):
+        decision = Decision(
+            DecisionStatus.REJECT, "NO_MEASURABLE_TARGET_GAIN",
+            "1" * 64, "2" * 64, "3" * 64, "4" * 64)
+        parent_state = object()
+        parameters = object()
+        candidate_state = SimpleNamespace(optimizer=SimpleNamespace(parameters=parameters))
+        parent = SimpleNamespace(baseline_evidence=None, retained_state=parent_state)
+        candidate = SimpleNamespace(
+            retained_state=candidate_state, transition={}, parent_manifest_sha256="5" * 64)
+        cache = SimpleNamespace(_candidate_identity_sha256=None)
+        result = (decision, parent, candidate, cache, None, None, None)
+        raw_issue = Mock(return_value=object())
+        foundation, _, _ = retention_screen.bind_factory_evaluation_issuer(
+            raw_issue, owner.CURRENT_EVIDENCE_STAGE)
+
+        with (
+            evidence_mode(strict=False),
+            patch.object(retention_screen, "foundation_local_retention_screen",
+                         return_value=result),
+            patch.object(
+                retention_screen, "current_learning_first_step_authority_for_parameters",
+                return_value="7" * 64),
+        ):
+            issued = foundation(parent_identity_sha256="6" * 64)
+
+        self.assertIsNotNone(issued)
+        self.assertEqual(raw_issue.call_args.args[1], "6" * 64)
 
     def test_foundation_owner_draws_only_the_fresh_target_before_local_protection(self):
         fixture = _foundation_owner_fixture()

@@ -6,6 +6,7 @@ from weakref import WeakKeyDictionary
 
 from ..cognitive_operators.authorization import (
     _check_grant, _independent_applicability, _number_domain,
+    _validated_number_domain,
 )
 from ..cognitive_operators.execution import _compute_after_authorization
 from ..cognitive_operators.registry import OperatorBinding, operator_grant_digest
@@ -120,11 +121,16 @@ def execute_dag(
     *,
     memo: PureOperationMemo | None = None,
     operation_limit: int | None = None,
+    source_binding_digest: str | None = None,
+    prevalidated_source_authority: bool = False,
 ) -> DAGResult:
     """Run one fully source-validated typed DAG without neural or gold inputs."""
-    if memo is not None and not isinstance(memo, PureOperationMemo):
+    if ((memo is not None and not isinstance(memo, PureOperationMemo))
+            or type(prevalidated_source_authority) is not bool):
         _invalid("BAMF_DAG_MEMO_INVALID")
-    order, prepared, visible, selected, unresolved = _prepare(goal, binding)
+    order, prepared, visible, selected, unresolved = _prepare(
+        goal, binding,
+        prevalidated_source_authority=prevalidated_source_authority)
     if operation_limit is not None and (
             type(operation_limit) is not int
             or not 0 <= operation_limit <= goal.budget.max_operations):
@@ -133,7 +139,7 @@ def execute_dag(
     compute_limit = (goal.budget.max_operations if operation_limit is None
                      else operation_limit)
     release = binding.task.semantic_release
-    source_digest = contract_digest(binding)
+    source_digest = source_binding_digest or contract_digest(binding)
     output_type = next(
         node.expected_output_type for node in program.nodes
         if node.node_id == program.output_node_id)
@@ -161,11 +167,13 @@ def execute_dag(
     lineage: dict[str, str] = {}
     for node in order:
         spec, refs = prepared[node.node_id]
-        _check_grant(
-            "source:operator:" + spec.operator_id,
-            operator_grant_digest(spec), binding)
+        if not prevalidated_source_authority:
+            _check_grant(
+                "source:operator:" + spec.operator_id,
+                operator_grant_digest(spec), binding)
         numeric = (
-            _number_domain(binding)
+            (_validated_number_domain(binding)
+             if prevalidated_source_authority else _number_domain(binding))
             if spec.applicability == "FINITE_NUMBER" else None)
         inputs = tuple(
             results[ref.result_node_id] if ref.kind is RefKind.RESULT
@@ -175,30 +183,37 @@ def execute_dag(
             return unresolved_answer(node.node_id, node.expected_output_type)
         if (node.operator_id is None
                 and _independent_applicability(
-                    spec, inputs, binding) is False):
+                    spec, inputs, binding,
+                    source_prevalidated=prevalidated_source_authority) is False):
             return unresolved_answer(node.node_id, node.expected_output_type)
-        dependencies = tuple(
-            _dependency_record(ref, value, binding, lineage)
-            for ref, value in zip(refs, inputs)) + _consulted_dependencies(
-                spec.operator_id, inputs, binding)
-        authority = (
-            binding.task, binding.policy,
-            binding.frontier.rights_epoch,
-            binding.frontier.correction_generation,
-            _grant_record("source:operator:" + spec.operator_id, binding),
-            numeric,
-            _grant_record(binding.numeric_source_handle, binding)
-            if numeric is not None else None,
-        )
-        key = PureOperationMemo.key(
-            operator=spec, dependencies=dependencies, authority=authority)
+        key = node.node_id
+        if not prevalidated_source_authority:
+            dependencies = tuple(
+                _dependency_record(ref, value, binding, lineage)
+                for ref, value in zip(refs, inputs)) + _consulted_dependencies(
+                    spec.operator_id, inputs, binding)
+            authority = (
+                binding.task, binding.policy,
+                binding.frontier.rights_epoch,
+                binding.frontier.correction_generation,
+                _grant_record("source:operator:" + spec.operator_id, binding),
+                numeric,
+                _grant_record(binding.numeric_source_handle, binding)
+                if numeric is not None else None,
+            )
+            key = PureOperationMemo.key(
+                operator=spec, dependencies=dependencies, authority=authority)
         cached = None
-        if memo is not None:
+        if prevalidated_source_authority:
+            # Preserve the receipt's one-lookup-per-executed-node accounting
+            # without rebuilding memo/provenance identity on the learning path.
+            lookups += 1
+        if memo is not None and not prevalidated_source_authority:
             lookups += 1
             cached = _memo_get_verified(memo, key)
         if cached is None and computed >= compute_limit:
             return unresolved_answer(node.node_id, node.expected_output_type)
-        if memo is None:
+        if memo is None and not prevalidated_source_authority:
             lookups += 1
         if cached is not None:
             if (not isinstance(cached, TypedValue)
@@ -212,9 +227,12 @@ def execute_dag(
             value = cached
         else:
             computed += 1
-            value = _compute_after_authorization(spec, inputs, binding)
-            if memo is not None and value.state in (
-                    ValueState.VALUE, ValueState.NONE):
+            value = _compute_after_authorization(
+                spec, inputs, binding,
+                source_prevalidated=prevalidated_source_authority)
+            if (memo is not None and not prevalidated_source_authority
+                    and value.state in (
+                    ValueState.VALUE, ValueState.NONE)):
                 _memo_put_verified(memo, key, value)
         results[node.node_id] = value
         lineage[node.node_id] = key
