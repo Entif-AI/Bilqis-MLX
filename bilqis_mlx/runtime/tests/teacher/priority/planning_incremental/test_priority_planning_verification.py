@@ -49,10 +49,8 @@ class PriorityPlanningVerificationTests(PreNeuralJourneySupport, unittest.TestCa
         priority_qualification._verify_planning(planning, release, None)
 
         with patch.object(
-                priority_qualification, "validate_closure_structure",
-                side_effect=AssertionError("closure structure rerun")), patch.object(
-                    priority_qualification, "validate_frontier_selection",
-                    side_effect=AssertionError("selection structure rerun")):
+                priority_qualification, "_planning",
+                side_effect=AssertionError("full planning verification rerun")):
             priority_qualification._verify_planning(planning, release, None)
 
     def test_same_object_selection_mutation_invalidates_verified_planning(self):

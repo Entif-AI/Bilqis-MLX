@@ -26,8 +26,16 @@ class ProviderCompatibilityTests(unittest.TestCase):
                 "grade-a-accepted-to-provenance",
                 "grade-a-current-to-provenance",
                 "grade-a-1324082-to-provenance",
+                "boolean-connectives-mainline-to-current",
+                "boolean-connectives-issue1566-pre-structure-to-current",
+                "boolean-composite-mainline-to-current",
+                "boolean-composite-issue1566-pre-structure-to-current",
+                "boolean-identification-accepted-to-mainline",
+                "boolean-identification-pre-r15-to-mainline",
                 "boolean-identification-accepted-to-current",
                 "boolean-identification-pre-r15-to-current",
+                "boolean-identification-mainline-to-current",
+                "boolean-identification-issue1566-pre-structure-to-current",
                 "numeric-accepted-to-current",
                 "numeric-modular-to-current",
                 "numeric-pre-r20-to-current",
@@ -118,6 +126,44 @@ class ProviderCompatibilityTests(unittest.TestCase):
         self.assertEqual(rebound.descriptor, admitted)
         self.assertIs(rebound.draw, registered.draw)
         self.assertIs(rebound.check, registered.check)
+
+    def test_issue1566_boolean_provider_refactors_resume_mainline_descriptors(self):
+        current_registry = live_source_registry()
+        mainline = (
+            (
+                "bilqis_mlx.live_grade_b.draw_connectives",
+                "8103a38b7668cabc685c713d69426a064b3b7eabb6322886c75ab1ba14ad60de",
+            ),
+            (
+                "bilqis.mlx.grade-b-composite-constructor/v1",
+                "72e432371bb88ef7beb735ed53ae63a9fd5c16b012a3185782a19b2ee03e3e86",
+            ),
+            (
+                "bilqis.mlx.grade-b-idboolops-constructor/v1",
+                "811ed2ad7708e6a7ce3a72fb20d92ea8fcc1df51aae45afc01e711fea07d18c6",
+            ),
+        )
+        admitted = []
+        for generator, implementation_sha256 in mainline:
+            current = current_registry.resolve_owner(generator).descriptor
+            admitted.append(replace(
+                current,
+                implementation_sha256=implementation_sha256,
+                cohort_releases=tuple(
+                    (release, implementation_sha256)
+                    for release, _digest in current.cohort_releases
+                ),
+            ))
+
+        staging = predecessor_compatible_source_registry(
+            SimpleNamespace(source_adapters=tuple(admitted)),
+            current_registry,
+        )
+
+        for descriptor in admitted:
+            with self.subTest(adapter=descriptor.adapter_id):
+                rebound = staging.resolve_owner(descriptor.generator_id)
+                self.assertEqual(rebound.descriptor, descriptor)
 
     def test_exact_prior_provider_can_resume_without_weakening_descriptor_checks(self):
         current = live_source_registry().require(
