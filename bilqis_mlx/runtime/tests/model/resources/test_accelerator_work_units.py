@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import unittest
 
+from bilqis_mlx.errors import BilqisError, SCHOOL
 from bilqis_mlx.runtime.accelerator_work_units import (
     C08_EQUIVALENCE_ATOL,
     DEFAULT_LOGICAL_BATCH_SIZE,
@@ -45,8 +46,46 @@ class AcceleratorWorkUnitQualificationTests(unittest.TestCase):
         self.assertFalse(schedule[-1].learning_policy_experiment)
 
     def test_equal_budget_schedule_rejects_non_divisible_budget(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(BilqisError) as caught:
             equal_row_budget_schedule(row_budget=100)
+        self.assertIs(caught.exception.spec, SCHOOL.BAMF_RESOURCES.INVALID)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "BAMF_C08_EQUAL_ROW_BUDGET_NOT_DIVISIBLE",
+        )
+
+    def test_invalid_geometry_inputs_use_resource_error_control_plane(self):
+        cases = (
+            (
+                lambda: classify_physical_row_work_unit(
+                    logical_batch_size=0, rows_per_launch=1
+                ),
+                "BAMF_C08_LOGICAL_BATCH_SIZE_INVALID",
+            ),
+            (
+                lambda: classify_physical_row_work_unit(
+                    logical_batch_size=32, rows_per_launch=0
+                ),
+                "BAMF_C08_ROWS_PER_LAUNCH_INVALID",
+            ),
+            (
+                lambda: equal_row_budget_schedule(row_budget=0),
+                "BAMF_C08_EQUAL_ROW_BUDGET_INVALID",
+            ),
+            (
+                lambda: equal_row_budget_schedule(batch_sizes=()),
+                "BAMF_C08_LOGICAL_BATCH_SIZES_INVALID",
+            ),
+        )
+        for invoke, reason in cases:
+            with self.subTest(reason=reason):
+                with self.assertRaises(BilqisError) as caught:
+                    invoke()
+                self.assertIs(
+                    caught.exception.spec,
+                    SCHOOL.BAMF_RESOURCES.INVALID,
+                )
+                self.assertEqual(caught.exception.context["reason"], reason)
 
     def test_physical_witness_uses_c08_fp32_tolerance_not_bitwise_state_hash(self):
         results = [

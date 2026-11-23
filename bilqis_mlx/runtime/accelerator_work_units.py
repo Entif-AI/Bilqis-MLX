@@ -9,12 +9,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 import math
 
+from bilqis_mlx.errors import ErrorBus, SCHOOL
+
 
 DEFAULT_LOGICAL_BATCH_SIZE = 32
 PHYSICAL_CAPS = (8, 16, 32)
 LOGICAL_BATCH_EXPERIMENT_SIZES = (8, 16, 24, 32)
 DEFAULT_EQUAL_ROW_BUDGET = 96
 C08_EQUIVALENCE_ATOL = 1e-6
+
+
+def _invalid(reason: str) -> None:
+    ErrorBus.raise_(SCHOOL.BAMF_RESOURCES.INVALID, reason=reason)
 
 
 @dataclass(frozen=True)
@@ -40,9 +46,9 @@ def classify_physical_row_work_unit(
 ) -> PhysicalWorkUnitQualification:
     """Classify row-count geometry without silently changing learning semantics."""
     if type(logical_batch_size) is not int or logical_batch_size < 1:
-        raise ValueError("logical_batch_size must be a positive integer")
+        _invalid("BAMF_C08_LOGICAL_BATCH_SIZE_INVALID")
     if type(rows_per_launch) is not int or rows_per_launch < 1:
-        raise ValueError("rows_per_launch must be a positive integer")
+        _invalid("BAMF_C08_ROWS_PER_LAUNCH_INVALID")
     if rows_per_launch > logical_batch_size:
         return PhysicalWorkUnitQualification(
             logical_batch_size,
@@ -65,15 +71,15 @@ def equal_row_budget_schedule(
 ) -> tuple[EqualBudgetArm, ...]:
     """Build an explicit equal-row-presentation learning-policy experiment."""
     if type(row_budget) is not int or row_budget < 1:
-        raise ValueError("row_budget must be a positive integer")
+        _invalid("BAMF_C08_EQUAL_ROW_BUDGET_INVALID")
     if (
         not isinstance(batch_sizes, tuple)
         or not batch_sizes
         or any(type(size) is not int or size < 1 for size in batch_sizes)
     ):
-        raise ValueError("batch_sizes must be a non-empty tuple of positive integers")
+        _invalid("BAMF_C08_LOGICAL_BATCH_SIZES_INVALID")
     if any(row_budget % size for size in batch_sizes):
-        raise ValueError("row_budget must be divisible by every logical batch size")
+        _invalid("BAMF_C08_EQUAL_ROW_BUDGET_NOT_DIVISIBLE")
     return tuple(
         EqualBudgetArm(
             logical_batch_size=size,
