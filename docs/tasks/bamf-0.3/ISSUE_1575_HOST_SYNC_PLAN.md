@@ -196,4 +196,3 @@ their finite witness immediately after their own required aggregate barrier.
 Output/shape/participation structural failures remain fail-closed at their
 current owners. Strict/evidence mode keeps its current deeper replay/parity
 checks.
-
