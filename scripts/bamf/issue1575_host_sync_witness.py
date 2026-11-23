@@ -90,12 +90,18 @@ def _run(label: str, root: Path, rows: int, artifact_rel: str) -> dict:
         "ISSUE1575_LABEL": label,
         "ISSUE1575_ROWS": str(rows),
     })
-    completed = subprocess.run(
+    process = subprocess.Popen(
         [sys.executable, "-B", "-c", CHILD], cwd=root, env=environment,
-        check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    print(completed.stdout, end="", flush=True)
-    lines = [line for line in completed.stdout.splitlines()
-             if line.startswith("ISSUE1575_RESULT ")]
+        text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1)
+    lines = []
+    assert process.stdout is not None
+    for line in process.stdout:
+        print(line, end="", flush=True)
+        if line.startswith("ISSUE1575_RESULT "):
+            lines.append(line.rstrip())
+    returncode = process.wait()
+    if returncode != 0:
+        raise SystemExit(f"{label}: child failed with return code {returncode}")
     if len(lines) != 1:
         raise SystemExit(f"{label}: expected exactly one #1575 result")
     return json.loads(lines[0].split(" ", 1)[1])
@@ -108,6 +114,8 @@ def main() -> int:
     parser.add_argument("--base-commit", required=True)
     parser.add_argument("--feature-commit", required=True)
     parser.add_argument("--rows", type=int, default=32)
+    parser.add_argument(
+        "--only", choices=("base", "feature", "both"), default="both")
     parser.add_argument(
         "--artifact-rel",
         default=("bilqis_mlx/bootstrap_assets/atlas/"
@@ -123,6 +131,23 @@ def main() -> int:
         text=True, stdout=subprocess.PIPE).stdout.strip()
     if base_commit != args.base_commit or base_dirty:
         raise SystemExit("#1575 base worktree identity or cleanliness drifted")
+    if args.only == "base":
+        base = _run("base", args.base.resolve(), args.rows, args.artifact_rel)
+        print("ISSUE1575_SINGLE " + json.dumps({
+            "schema": "bilqis.bamf.issue1575-host-sync-single/v1",
+            "base_commit": args.base_commit,
+            "result": base,
+        }, sort_keys=True), flush=True)
+        return 0
+    if args.only == "feature":
+        feature = _run("feature", args.feature.resolve(), args.rows, args.artifact_rel)
+        print("ISSUE1575_SINGLE " + json.dumps({
+            "schema": "bilqis.bamf.issue1575-host-sync-single/v1",
+            "feature_commit": args.feature_commit,
+            "feature_snapshot_sha256": os.environ.get("BILQIS_DETACHED_SOURCE_SHA256"),
+            "result": feature,
+        }, sort_keys=True), flush=True)
+        return 0
     base = _run("base", args.base.resolve(), args.rows, args.artifact_rel)
     feature = _run("feature", args.feature.resolve(), args.rows, args.artifact_rel)
     equivalent = (
