@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "798b3bb34a280f734505f64627b94b765813c3be",
-  "updated_at": "2026-11-23T06:45:22+00:00",
+  "observed_unified": "c8650c20f4463e65db2bf31c121c7961bb13cb89",
+  "updated_at": "2026-11-23T07:45:07+00:00",
   "exception": null,
   "items": [
     {
@@ -523,11 +523,11 @@
     },
     {
       "issue": 1504,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "c2bdb5f3c0bc4b829594a08a1dac88b92c6ff04a",
-      "head_sha_role": "current main baseline after reviewed BAMF unified history was merged into main and the remote unified ref was retired",
-      "summary": "Production BAMF four-row candidate steps regressed from the previously demonstrated ~10-second class to sustained 40+ seconds. Issue #1504 owns restoration of hot-path throughput without weakening correctness, custody, provenance, currentness, fail-closed behavior, or one-launch vectorization. Confirmed first target is lost #1238 candidate-identity reuse: a four-step live visit performed 24 full identity computations, 0 binding reuses, and hashed 22.89 GB. Secondary scope is measured B11 preflight multiplicity and reproducible production-shaped performance qualification. No agent-run live learner updates are authorized.",
+      "pr": 1511,
+      "state": "TURNED_IN",
+      "head_sha": "b572dc79e7fa8eefc96ae990d4d971efe257e5ed",
+      "head_sha_role": "final verified #1504 feature head; PR #1511 merged externally and issue is closed",
+      "summary": "#1504 is closed after PR #1511 restored the production-shaped four-row operator path to the sub-second class while preserving source/currentness/custody authority. Its candidate-identity continuity repair is merged predecessor authority for #1574, not an active competing writer. The final #1504 receipt recorded zero repeated accepted-parent full identity hashes/bytes and green hosted verification; no agent-run human learner mutation was authorized.",
       "resume_trigger": null,
       "preserved_branch": "codex/1504-bamf-performance-regression-20261120"
     },
@@ -630,6 +630,16 @@
       "summary": "#1586 is turned in as PR #1587 after the human retry exposed OBSERVATION_DELIVERY_INVALID. Learning-first Factory compilation now binds BamfTrainingBatch.delivered_content_sha256 to content_digest(exact ordered trained rows), matching strict-mode semantics while preserving direct DeliveredTeaching specimen identity and fail-closed capture. Focused proof: producer red/green, 25 delivery tests, strict rehearsal parity, mutation/omission/insertion/reordering rejection, zero new error debt, architecture/flow/diff green. EGM final 0B/0M/0N; PM-2026-11-23-001 filed. No agent-run trainer or persistent neural-state mutation.",
       "resume_trigger": null,
       "preserved_branch": "codex/1586-observation-delivery-20261123"
+    },
+    {
+      "issue": 1574,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "c8650c20f4463e65db2bf31c121c7961bb13cb89",
+      "head_sha_role": "current main baseline consumed before #1574 O(1) step-authority/generation/identity implementation",
+      "summary": "Issue #1574 owns ordinary inner-loop authority/generation/currentness and speculative-candidate identity cost only. It consumes merged #1169 streaming exact identity plus #1504/#1539/#1566 hot-path repairs, must make ordinary checks O(1) or proportional to actual change while preserving exact durable publication/retention identity and strict/evidence proof, and must fail closed on release, accepted generation, semantic/source authority, optimizer lineage or other governing drift. Prepared numerical rows remain #1573-owned; C05 and teacher-policy semantics are out of scope. No agent-run mutation of the human production learner is authorized.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/1574-step-authority-20261123"
     }
   ]
 }
