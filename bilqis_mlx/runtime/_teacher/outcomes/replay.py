@@ -33,6 +33,15 @@ def _factory_capability_count(run_dir, observation):
     return len(capabilities)
 
 
+def _selection_capability_count(run_dir, observation):
+    total = observation["context"].get("total_capabilities")
+    if total is None:
+        return _factory_capability_count(run_dir, observation)
+    if type(total) is not int or total < 1:
+        invalid()
+    return total
+
+
 def _recorded_diagnostic_context(selected, observation):
     from bilqis_mlx.learning._learning_experiment_decision import (
         DIAGNOSTIC_CONTEXT_KEY_LENGTH, _channel,
@@ -71,7 +80,7 @@ def _recover_mutated_selected_teacher(run_dir, teacher, observation):
     phase = context["phase"]
     scope_name = context["curriculum_scope"]
     grade = context["grade"]
-    total_capabilities = _factory_capability_count(run_dir, observation)
+    total_capabilities = _selection_capability_count(run_dir, observation)
     context_key = capability + "|" + phase + "|" + scope_name
     scope = channel["contexts"].get(context_key, {})
     active, inventory, _retired = breeding.selection_population(
@@ -126,6 +135,36 @@ def _recover_mutated_selected_teacher(run_dir, teacher, observation):
     return selected
 
 
+def _recover_checkpointed_selected_teacher(run_dir, teacher, observation):
+    """Replay deterministic active-population checkpointing from policy selection."""
+    import bilqis_mlx.learning.teacher_breeding as breeding
+    import bilqis_mlx.learning.teacher_strategy_population as population
+
+    selected = deepcopy(teacher)
+    context, visit = observation["context"], observation["teacher_visit"]
+    capability = visit["capability_id"]
+    scope_name = context["curriculum_scope"]
+    grade = context["grade"]
+    channel = selected.get("causal_experiment", {})
+    context_key = capability + "|" + context["phase"] + "|" + scope_name
+    scope = channel.get("contexts", {}).get(context_key, {})
+    total_capabilities = _selection_capability_count(run_dir, observation)
+    active, inventory = population.active_effective_strategy_keys(
+        selected, grade, scope, total_capabilities=total_capabilities)
+    active = breeding.filter_active_effective(
+        selected, grade=grade, capability=capability,
+        curriculum_scope=scope_name, active_effective=active,
+        inventory=inventory)
+    population.checkpoint_active_effective_strategy_keys(
+        selected, grade, scope, channel, context_key, active, inventory,
+        visit["student_sha256"])
+    if (_fingerprint(selected) == observation.get("selected_teacher_sha256")
+            and selected.get("strategies", {}).get(visit["policy_key"])
+            == observation.get("selected_policy")):
+        return selected
+    return None
+
+
 def _selected_teacher_override(run_dir, teacher, observation):
     if "selected_teacher" in observation:
         return None
@@ -141,6 +180,10 @@ def _selected_teacher_override(run_dir, teacher, observation):
     if (isinstance(selected_sha256, str)
             and _fingerprint(compact) == selected_sha256):
         return None
+    checkpointed = _recover_checkpointed_selected_teacher(
+        run_dir, teacher, observation)
+    if checkpointed is not None:
+        return checkpointed
     return _recover_mutated_selected_teacher(run_dir, teacher, observation)
 
 

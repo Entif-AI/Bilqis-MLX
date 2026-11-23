@@ -88,8 +88,6 @@ class NativeRejectionOutcomeTests(NativeSourceFixture, unittest.TestCase):
     def fixture(self, *, accepted=False):
         parent = self.parent()
         original_teacher = selection_teacher()
-        for stat in original_teacher['global_stats'].values():
-            stat.setdefault('latest', None)
         with patch('bilqis_mlx.control_plane.tests.cp07.native_source_support.selection_teacher', return_value=original_teacher):
             visit = self.bound_native_visit(parent)
         identity = visit.identity
@@ -98,12 +96,17 @@ class NativeRejectionOutcomeTests(NativeSourceFixture, unittest.TestCase):
         cap = identity.capability_id
         release_sha = 'a' * 64
         offer = SimpleNamespace(capability_id=cap, source_seed=17, release_sha256=release_sha)
+        diagnostic_contexts = teacher['causal_experiment']['diagnostic_contexts']
+        self.assertEqual(len(diagnostic_contexts), 1)
+        diagnostic_key, diagnostics = next(iter(diagnostic_contexts.items()))
         context = {'grade': 'A', 'phase': 'RECOVERY_1', 'curriculum_scope': 'factory/7',
-                   'rubric_sha256': 'd' * 64, 'factory_release_sha256': release_sha, 'diagnostics': {},
-                   'grade_definition_sha256': 'e' * 64, 'source_binding_sha256': 'f' * 64}
+                   'rubric_sha256': 'd' * 64, 'factory_release_sha256': release_sha,
+                   'diagnostics': diagnostics, 'diagnostic_context_key': diagnostic_key,
+                   'grade_definition_sha256': 'e' * 64, 'source_binding_sha256': 'f' * 64,
+                   'total_capabilities': 20}
         selection = _issue_result(
             'TEACHER_SELECTED', cap, offer, visit, policy,
-            {'how_context': context, 'selected_teacher_snapshot_required': True},
+            {'how_context': context, 'diagnostic_context_key': diagnostic_key},
             'A', (), self.run, object())
         fixture = list(factory_fixture._foundation_owner_fixture())
         fixture[-1] = replace(fixture[-1], status=DecisionStatus.ELIGIBLE if accepted else DecisionStatus.REJECT,
