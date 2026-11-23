@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "30d69050664878da7d40c2374efe57e8146713b4",
-  "updated_at": "2026-11-23T04:36:30+00:00",
+  "observed_unified": "798b3bb34a280f734505f64627b94b765813c3be",
+  "updated_at": "2026-11-23T06:38:03+00:00",
   "exception": null,
   "items": [
     {
@@ -620,6 +620,16 @@
       "summary": "#1584 is turned in as PR #1585 after merged #1580 exposed LIVE_GRADE_A_INVALID_DRAW. Rehearsal now consumes the current Foundation four-row source floor, seed-selects one prior/support specimen, preserves weakness-matched preservation, and derives exact singleton SourceBatchAuthority only after source-owner parent/subset validation. Downstream each=1 exactness, C05/B13/currentness and learning-first boundaries are unchanged. Focused proof is green; affected-scope EGM R2 is 0 Blockers / 0 Majors / 0 Nits; PM-2026-11-22-003 is filed. No human trainer or persistent neural state was mutated.",
       "resume_trigger": null,
       "preserved_branch": "codex/1584-rehearsal-balanced-draw-20261122"
+    },
+    {
+      "issue": 1586,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "798b3bb34a280f734505f64627b94b765813c3be",
+      "head_sha_role": "current main baseline after merged #1584 / PR #1585 exposed the realized-delivery digest mismatch",
+      "summary": "#1586 repairs post-merge OBSERVATION_DELIVERY_INVALID: learning-first training binds delivered_content_sha256 to direct teaching-option specimens even when actual compiled/delivered rows include rehearsal/enrichment. The repair must bind the training batch to the exact trained rows while preserving direct DeliveredTeaching identity, observation strictness, rehearsal/source authority, C05/B13/currentness, and human trainer ownership.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/1586-observation-delivery-20261123"
     }
   ]
 }
