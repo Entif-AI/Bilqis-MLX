@@ -24,7 +24,7 @@ def test_direct_factory_path_binds_rows_before_heavy_source_preparation():
         return "adapter", "manifest", "profile", ("source-row",)
 
     with patch(
-            "bilqis_mlx.runtime.factory_training_bridge._prepare_factory_source_rows",
+            "bilqis_mlx.runtime.factory_training_preparation._prepare_factory_source_rows",
             side_effect=prepare), patch(
                 "bilqis_mlx.runtime.priority_source_materialization._prepare_model_sources",
                 return_value=(("model-source",), ("config",))) as model_sources:
@@ -36,4 +36,4 @@ def test_direct_factory_path_binds_rows_before_heavy_source_preparation():
     model_sources.assert_called_once()
     assert result == (
         authority, "adapter", "manifest", "profile", ("source-row",),
-        ("model-source",), None, None)
+        ("model-source",), None, None, None)

@@ -3,7 +3,7 @@ from types import SimpleNamespace as NS
 from unittest.mock import patch
 
 from bilqis_mlx.factory.teaching import content_digest
-from bilqis_mlx.runtime.factory_training_bridge import _compile_factory_training
+from bilqis_mlx.runtime.factory_training_compile import _compile_factory_training
 
 
 def test_learning_first_delivery_digest_covers_rehearsal_rows():
@@ -16,7 +16,7 @@ def test_learning_first_delivery_digest_covers_rehearsal_rows():
             "bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode."
             "strict_evidence_enabled",
             return_value=False), patch(
-            "bilqis_mlx.runtime.factory_training_bridge."
+            "bilqis_mlx.runtime.factory_training_compile."
             "compile_learning_first_training_batch",
             return_value="compiled") as compiler:
         result = _compile_factory_training(
@@ -39,7 +39,7 @@ def test_learning_first_fresh_support_has_separate_non_rehearsal_role():
             "bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode."
             "strict_evidence_enabled",
             return_value=False), patch(
-            "bilqis_mlx.runtime.factory_training_bridge."
+            "bilqis_mlx.runtime.factory_training_compile."
             "compile_learning_first_training_batch",
             return_value="compiled") as compiler:
         result = _compile_factory_training(

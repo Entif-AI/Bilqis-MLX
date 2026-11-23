@@ -79,12 +79,43 @@ def _prepared_feature_context(prepared, semantic_context):
     return feature_context
 
 
+def _candidate_parameters(parent, candidate):
+    optimizer = parent.retained_state.optimizer if candidate is None else candidate.optimizer
+    return optimizer.parameters
+
+
+def _execute_distributed_batch(
+        run_dir, source_context, parent, prepared, feature_context, generation, parameters,
+        neural_cache, resource_plan, salience_supervision, mentor_supervision,
+        distributed_profile, distributed_executor):
+    if (type(distributed_profile) is not DistributedExecutionProfile
+            or type(distributed_executor) is not DistributedExecutorBinding
+            or distributed_executor.profile != distributed_profile):
+        _invalid("FACTORY_DISTRIBUTED_CONFIGURATION_INVALID")
+    distributed_started = time.perf_counter()
+    manifest = issue_distributed_step_manifest(
+        parent, prepared.training_batch, resource_plan, distributed_profile)
+    persist_distributed_manifest(Path(run_dir), manifest)
+    outcome = distributed_executor.execute(
+        parameters=parameters, prepared=prepared,
+        source_context=source_context, feature_snapshot=feature_context.snapshot,
+        generation=generation, cache=neural_cache, resource_plan=resource_plan,
+        manifest=manifest, salience_supervision=salience_supervision,
+        mentor_supervision=mentor_supervision)
+    if type(outcome) is not DistributedStepOutcome:
+        _invalid("FACTORY_DISTRIBUTED_OUTCOME_REQUIRED")
+    gradient, authorities, target_rows = bind_factory_distributed_outcome(
+        prepared, source_context, feature_context.snapshot, generation,
+        resource_plan, manifest, outcome)
+    return (gradient, authorities, target_rows,
+            time.perf_counter() - distributed_started)
+
+
 def _execute_training_and_admission(
         run_dir, source_context, parent, prepared, feature_context, generation, cache, resource_plan,
         teacher_hparams, max_norm, candidate, currentness_transaction,
         salience_supervision, mentor_supervision, distributed_profile, distributed_executor):
-    parameters = (parent.retained_state.optimizer if candidate is None
-                  else candidate.optimizer).parameters
+    parameters = _candidate_parameters(parent, candidate)
     from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import strict_evidence_enabled
     strict = strict_evidence_enabled()
     neural_cache = cache if strict or distributed_profile is not None else None
@@ -93,7 +124,13 @@ def _execute_training_and_admission(
             parameters, prepared.compiled_rows[0], source_context,
             feature_context.snapshot, generation, neural_cache,
             salience_supervision=salience_supervision,
-            mentor_supervision=mentor_supervision)
+            mentor_supervision=mentor_supervision,
+            learning_first_cache=getattr(prepared, "learning_first_cache", None),
+            row_cache_key=(
+                None if getattr(prepared, "learning_first_cache", None) is None else
+                prepared.learning_first_cache.key(
+                    prepared.compiled_rows[0].sources[0].source_row,
+                    prepared.training_batch.rows[0].model_input.eligibility_digest)))
         authorities, target_rows = (authority,), (targets,)
         optimizer_started = time.perf_counter()
         transaction = (
@@ -120,28 +157,11 @@ def _execute_training_and_admission(
                 mentor_supervision=mentor_supervision)
             logical_batch_wall_seconds = gradient.wall_seconds
         else:
-            if (type(distributed_profile) is not DistributedExecutionProfile
-                    or type(distributed_executor) is not DistributedExecutorBinding
-                    or distributed_executor.profile != distributed_profile):
-                _invalid("FACTORY_DISTRIBUTED_CONFIGURATION_INVALID")
-            distributed_started = time.perf_counter()
-            manifest = issue_distributed_step_manifest(
-                parent, prepared.training_batch, resource_plan,
-                distributed_profile)
-            persist_distributed_manifest(Path(run_dir), manifest)
-            outcome = distributed_executor.execute(
-                parameters=parameters, prepared=prepared,
-                source_context=source_context,
-                feature_snapshot=feature_context.snapshot,
-                generation=generation, cache=neural_cache, resource_plan=resource_plan,
-                manifest=manifest, salience_supervision=salience_supervision,
-                mentor_supervision=mentor_supervision)
-            if type(outcome) is not DistributedStepOutcome:
-                _invalid("FACTORY_DISTRIBUTED_OUTCOME_REQUIRED")
-            gradient, authorities, target_rows = bind_factory_distributed_outcome(
-                prepared, source_context, feature_context.snapshot, generation,
-                resource_plan, manifest, outcome)
-            logical_batch_wall_seconds = time.perf_counter() - distributed_started
+            gradient, authorities, target_rows, logical_batch_wall_seconds = (
+                _execute_distributed_batch(
+                    run_dir, source_context, parent, prepared, feature_context,
+                    generation, parameters, neural_cache, resource_plan, salience_supervision,
+                    mentor_supervision, distributed_profile, distributed_executor))
         optimizer_started = time.perf_counter()
         transaction = (
             admit_uninterrupted_candidate_step(

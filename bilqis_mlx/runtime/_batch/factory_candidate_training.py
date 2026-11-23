@@ -32,7 +32,8 @@ def _prepare_candidate_step_inputs(
         mentor_observation_wall_seconds, progress_emission_wall_seconds,
         observer_begin_step_wall_seconds, candidate_delivery_setup_wall_seconds,
         semantic_context,
-        prepared_source, accepted_cache, selected_source_authority):
+        prepared_source, accepted_cache, selected_source_authority,
+        learning_first_cache):
     start = time.perf_counter()
     if candidate_step_started_at is None:
         candidate_step_started_at = start
@@ -69,7 +70,8 @@ def _prepare_candidate_step_inputs(
         fresh_support_by_id=fresh_support_by_id,
         semantic_context=semantic_context,
         prepared_source=prepared_source,
-        selected_source_authority=selected_source_authority)
+        selected_source_authority=selected_source_authority,
+        learning_first_cache=learning_first_cache)
     prepared_observation = getattr(prepared, "_performance_observation", {})
     if isinstance(prepared_observation, dict):
         stage_metrics.update({
@@ -187,6 +189,7 @@ def execute_factory_candidate_step(
     prepared_source=None,
     accepted_cache=None,
     selected_source_authority=None,
+    learning_first_cache=None,
     distributed_profile=None,
     distributed_executor=None,
 ) -> FactoryCandidateStep:
@@ -214,7 +217,8 @@ def execute_factory_candidate_step(
         mentor_observation_wall_seconds, progress_emission_wall_seconds,
         observer_begin_step_wall_seconds, candidate_delivery_setup_wall_seconds,
         semantic_context,
-        prepared_source, accepted_cache, selected_source_authority)
+        prepared_source, accepted_cache, selected_source_authority,
+        learning_first_cache)
     _require_mentor_supervision_timed(
         mentor_supervision, observation, parent, cache, teacher_strategy,
         source_seed, stage_metrics)
