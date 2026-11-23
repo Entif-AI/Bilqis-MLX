@@ -60,6 +60,37 @@ class PreparedFactoryTrainingBatch:
             self.semantic_context.__post_init__()
 
 
+def _authenticated_feature_context(
+        source_context, candidate, atlas_artifact_path, semantic_context):
+    authenticated = semantic_context
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    strict = strict_evidence_enabled()
+    if authenticated is None:
+        authenticated = authenticate_bamf_execution_feature_context(
+            candidate, atlas_artifact_path, source_context.run_dir)
+    elif not is_authenticated_generation_feature_context(authenticated):
+        _invalid("FACTORY_TRAINING_SEMANTIC_CONTEXT_INVALID")
+    if strict:
+        authenticated.__post_init__()
+    return authenticated, strict
+
+
+def _bind_compiled_rows(
+        strict, source_context, candidate, authenticated, training, source_rows,
+        profile, source_seed, source_each, prepared_b11_sources, prepared_packed_owner):
+    if strict:
+        return _bind_b11_rows(
+            source_context, candidate, authenticated, training, source_rows,
+            profile, source_seed=source_seed, source_each=source_each,
+            prepared_b11=prepared_b11_sources,
+            packed_owner=prepared_packed_owner)
+    return _bind_learning_first_rows(
+        source_context, candidate, authenticated, training, source_rows,
+        profile, source_seed=source_seed, source_each=source_each)
+
+
 def _prepared_factory_result(
         training, compiled_rows, source_rows, authenticated, prepared_motif_inputs,
         source_context, *, request_validation_seconds, semantic_context_seconds,
@@ -121,18 +152,8 @@ def prepare_factory_training_batch(
         rehearsal_by_id=rehearsal_by_id)
     request_validation_seconds = time.perf_counter() - stage_started
     stage_started = time.perf_counter()
-    authenticated = semantic_context
-    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
-        strict_evidence_enabled,
-    )
-    strict = strict_evidence_enabled()
-    if authenticated is None:
-        authenticated = authenticate_bamf_execution_feature_context(
-            candidate, atlas_artifact_path, source_context.run_dir)
-    elif not is_authenticated_generation_feature_context(authenticated):
-        _invalid("FACTORY_TRAINING_SEMANTIC_CONTEXT_INVALID")
-    if strict:
-        authenticated.__post_init__()
+    authenticated, strict = _authenticated_feature_context(
+        source_context, candidate, atlas_artifact_path, semantic_context)
     semantic_context_seconds = time.perf_counter() - stage_started
     cache_hits_before = int(getattr(learning_first_cache, "hits", 0))
     cache_misses_before = int(getattr(learning_first_cache, "misses", 0))
@@ -160,16 +181,10 @@ def prepare_factory_training_batch(
         authenticated, manifest, prepared_model_sources)
     compile_seconds = time.perf_counter() - stage_started
     stage_started = time.perf_counter()
-    if strict:
-        compiled_rows = _bind_b11_rows(
-            source_context, candidate, authenticated, training, source_rows,
-            profile, source_seed=source_seed, source_each=source_each,
-            prepared_b11=prepared_b11_sources,
-            packed_owner=prepared_packed_owner)
-    else:
-        compiled_rows = _bind_learning_first_rows(
-            source_context, candidate, authenticated, training, source_rows,
-            profile, source_seed=source_seed, source_each=source_each)
+    compiled_rows = _bind_compiled_rows(
+        strict, source_context, candidate, authenticated, training, source_rows,
+        profile, source_seed, source_each, prepared_b11_sources,
+        prepared_packed_owner)
     b11_binding_seconds = time.perf_counter() - stage_started
     return _prepared_factory_result(
         training, compiled_rows, source_rows, authenticated, prepared_motif_inputs,
