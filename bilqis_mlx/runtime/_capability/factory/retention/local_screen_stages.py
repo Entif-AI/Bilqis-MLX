@@ -6,6 +6,7 @@ from bilqis_mlx.learning._atlas_candidate.identity_binding import (
 )
 from bilqis_mlx.runtime._factory_parent_assessment_cache import (
     factory_parent_assessment_identity,
+    lookup_parent_assessment,
     use_parent_assessment,
 )
 from bilqis_mlx.runtime._factory_retention_support import (
@@ -143,20 +144,28 @@ def protected_stage(
         scope_sha256=target_plan.evaluation_scope_sha256,
         source_sha256=plan.source_sha256)
     started = time.perf_counter()
-    protected_parent_solver, protected_parent_generation = factory_complete_solver(
-        source_context, parent, artifact_path, protected_instruments,
-        execution_cache=cache)
+    protected_parent_solver = None
+    protected_parent_generation = cache.generation_binding
     parent_identity = factory_parent_assessment_identity(
         source_context, parent, cache, protected_cohort,
-        protected_parent_solver, protected_parent_generation)
+        None, protected_parent_generation)
+    cached_parent = lookup_parent_assessment(
+        parent_identity, protected_cohort, protected_parent_generation, scope=cache)
+    if cached_parent is None:
+        protected_parent_solver, protected_parent_generation = factory_complete_solver(
+            source_context, parent, artifact_path, protected_instruments,
+            execution_cache=cache)
     elapsed(observer, "retention_protected_parent_solver_wall_seconds", started)
     started = time.perf_counter()
     observe(
         observer, retention_completed=2, retention_total=4,
         retention_subject="fixed_school", retention_role="parent")
-    protected_parent, parent_cache = use_parent_assessment(
-        parent_identity, protected_parent_solver, protected_cohort,
-        protected_parent_generation, scope=cache)
+    if cached_parent is None:
+        protected_parent, parent_cache = use_parent_assessment(
+            parent_identity, protected_parent_solver, protected_cohort,
+            protected_parent_generation, scope=cache)
+    else:
+        protected_parent, parent_cache = cached_parent
     observe(
         observer, retention_completed=3, retention_total=4,
         retention_subject="fixed_school", retention_role="parent",

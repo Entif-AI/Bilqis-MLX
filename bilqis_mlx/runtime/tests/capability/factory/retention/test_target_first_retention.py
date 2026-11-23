@@ -266,3 +266,46 @@ def test_live_screen_short_circuits_before_protected_compilation():
     assert fixture.assessments.call_args_list[0].args[1] is fixture.target_cohort
     assert fixture.assessments.call_args_list[1].args[1] is fixture.target_cohort
     _assert_short_circuit_profile(fixture.observed, fixture.target)
+
+
+def test_protected_parent_cache_hit_skips_parent_solver_construction():
+    protected = "prior.protected"
+    instrument = N(case=N(capability_id=protected))
+    target_plan = N(
+        evaluated_capability_groups=((protected, "prior-grade"),),
+        protected_capability_ids=(protected,),
+        evaluation_scope_sha256="1" * 64,
+    )
+    plan = N(digest="2" * 64, rubric_sha256="3" * 64, source_sha256="4" * 64)
+    cache = N(generation_binding="5" * 64)
+    cached_assessment = object()
+    cache_receipt = N(reused=True)
+    parent = object()
+    candidate = object()
+    candidate_solver = object()
+    solver = Mock(return_value=(candidate_solver, "6" * 64))
+
+    with patch.multiple(
+            local_stages,
+            cached_instruments=Mock(return_value=(instrument,)),
+            local_coverage=Mock(return_value=N()),
+            coverage_for_groups=Mock(return_value=N()),
+            foundation_policy=Mock(return_value=object()),
+            _cohort=Mock(return_value=object()),
+            factory_parent_assessment_identity=Mock(return_value=object()),
+            lookup_parent_assessment=Mock(return_value=(
+                cached_assessment, cache_receipt)),
+            use_parent_assessment=Mock(return_value=(cached_assessment, cache_receipt)),
+            factory_complete_solver=solver,
+            observed_assessment=Mock(return_value=object()),
+            AssessmentPair=Mock(side_effect=lambda parent, candidate: N(
+                parent=parent, candidate=candidate)),
+            solver_profile=Mock()):
+        pair, receipt, _, _ = local_stages.protected_stage(
+            object(), parent, candidate, "artifact", object(), plan,
+            target_plan, (), ((protected, 7, ({"id": "p"},)),), cache, N())
+
+    assert receipt is cache_receipt
+    assert pair.parent is cached_assessment
+    assert solver.call_count == 1
+    assert solver.call_args.args[1] is candidate

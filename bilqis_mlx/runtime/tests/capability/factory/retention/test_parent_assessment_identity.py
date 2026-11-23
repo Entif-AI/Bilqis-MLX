@@ -20,7 +20,7 @@ from bilqis_mlx.runtime.atlas_optimizer import AdamWStateTree
 from bilqis_mlx.runtime.capability_retention import CompleteSolver
 from bilqis_mlx.runtime._factory_parent_assessment_cache import (
     clear_parent_assessment_cache, factory_parent_assessment_identity,
-    use_parent_assessment,
+    lookup_parent_assessment, use_parent_assessment,
 )
 from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import (
     PARENT, _screen_inputs,
@@ -115,6 +115,37 @@ class ParentAssessmentIdentityIntegrationTests(unittest.TestCase):
         self.assertNotEqual(legacy.parent_candidate_sha256, raw.parent_candidate_sha256)
         self.assertFalse(self.assess(legacy).reused)
         self.assertFalse(self.assess(raw).reused)
+
+    def test_exact_lookup_reuses_without_solver_and_solverless_identity_matches(self):
+        state = _state(RAW_IDENTITY_SCHEME)
+        identity = self.identity(state)
+        self.assertFalse(use_parent_assessment(
+            identity, self.solver, self.cohort, PARENT,
+            scope=self.cache)[1].reused)
+        calls_after_fill = len(self.calls)
+
+        parent = SimpleNamespace(
+            run_id=self.cache.run_id, generation=self.cache.generation,
+            retained_state=state, implementation_sha256="5" * 64,
+            topology=SimpleNamespace(digest="6" * 64),
+            extents=SimpleNamespace(digest="7" * 64),
+            correction_frontier={}, semantic_abi={}, compiler_features={},
+            evaluation_contract={},
+        )
+        with patch(
+                "bilqis_mlx.runtime._factory_parent_assessment_cache."
+                "require_accepted_execution_cache", return_value=self.cache):
+            solverless = factory_parent_assessment_identity(
+                self.context, parent, self.cache, self.cohort, None, PARENT)
+
+        self.assertEqual(solverless, identity)
+        result = lookup_parent_assessment(
+            solverless, self.cohort, PARENT, scope=self.cache)
+        self.assertIsNotNone(result)
+        assessment, receipt = result
+        self.assertTrue(receipt.reused)
+        self.assertEqual(assessment.generation_digest, PARENT)
+        self.assertEqual(len(self.calls), calls_after_fill)
 
 
 if __name__ == "__main__":
