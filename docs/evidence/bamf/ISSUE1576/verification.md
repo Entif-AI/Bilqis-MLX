@@ -65,3 +65,28 @@ throughput gain with low memory cost and exact retained-state parity. The
 qualified ordinary route-training compile boundary is therefore enabled by
 default. Set `BILQIS_MLX_COMPILE_STABLE_KERNEL=0` to disable it for diagnosis or
 comparison.
+
+## Differential gate baseline
+
+The repository differential leaf gate selected 235 test files when compared
+with `origin/main`. After 41 minutes it completed with 1,088 passed, 93 skipped,
+99 failed, and 28 errors. The failures are not unique to this branch.
+
+The first collection blocker was a stale mainline test import of
+`_target_source_count` from `factory_training_bridge`; pristine
+`origin/main@256501bd5fa49c7497c1fec4c5e97eba7880ef61` reproduces that ImportError.
+The test now imports the helper from its current owner,
+`factory_training_preparation`; the repaired rehearsal module passes 8 tests.
+
+After that repair, a representative cluster nearest the changed B11/C08 owners
+was run on both pristine `origin/main` and this branch:
+
+- `test_atlas_model_microbatch.py`
+- `test_factory_training_microbatch.py`
+- `test_distributed_candidate_step.py`
+- `test_atlas_candidate_step_custody.py`
+
+Both trees produced the same result: 6 failed, 6 passed, 4 skipped, and 10
+subtests passed, with matching failure traces. These failures therefore predate
+#1576. The branch-specific focused suite remains green, and the qualification
+witness exercises the production 32-row compiled path directly.
