@@ -1,7 +1,7 @@
 """#1575 host synchronization and materialization-boundary regressions."""
 from __future__ import annotations
 
-from types import SimpleNamespace
+from types import MappingProxyType, SimpleNamespace
 from unittest.mock import patch
 
 import mlx.core as mx
@@ -31,6 +31,17 @@ def test_fused_materialization_witness_rejects_nonfinite_loss_or_gradient(
         microbatch._require_materialized_finite_witness(
             witness, "B11_GRADIENT_NONFINITE")
     assert caught.value.context["reason"] == "B11_GRADIENT_NONFINITE"
+
+
+def test_microbatch_autodiff_accepts_frozen_optimizer_parameter_mapping():
+    params = MappingProxyType({"x": mx.array(2.0, dtype=mx.float32)})
+
+    loss, gradients, *_ = microbatch._materialize_gradient(
+        lambda current: current["x"] * current["x"],
+        params, False, {}, None, (), (), (), (), None, None, ())
+
+    assert float(loss) == 4.0
+    assert float(gradients["x"]) == 4.0
 
 
 def _strict_vector_finalization_fixture(*, selected=0):
