@@ -7,7 +7,7 @@ from bilqis_mlx.factory.adapters import SourceAdapterRegistry
 from bilqis_mlx.factory.curriculum_definition import from_legacy_course
 from bilqis_mlx.factory.executable_release import compile_executable_factory_release
 from bilqis_mlx.factory.execution import CurriculumProfile
-from bilqis_mlx.factory.teaching import describe_delivered_teaching
+from bilqis_mlx.factory.teaching import content_digest, describe_delivered_teaching
 from bilqis_mlx.factory.tests.test_teaching import closed_source_fixture
 from bilqis_mlx.runtime.atlas_training_adapter import (
     BamfTarget, PreparedModelSourceInput, compile_training_batch,
@@ -62,6 +62,7 @@ class AtlasTrainingAdapterTest(AtlasTrainingAdapterCase):
         self.assertEqual(batch.rows[1].provenance.capability_id, 'Z.C0')
         self.assertEqual(batch.rows[1].provenance.visit.capability_id, 'Z.C2')
         self.assertEqual(batch.rows[1].provenance.rehearsal, 'prior')
+        self.assertEqual(batch.delivered_content_sha256, content_digest(rows))
         self.assertEqual(
             batch.rows[1].provenance.source_family_id,
             support_authority.source_family_id)

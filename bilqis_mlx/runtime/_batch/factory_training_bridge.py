@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import time
 
-from bilqis_mlx.factory.teaching import DeliveredTeaching
+from bilqis_mlx.factory.teaching import DeliveredTeaching, content_digest
 from bilqis_mlx.runtime.atlas_model_contracts import BamfCompiledBatch
 from bilqis_mlx.runtime.bamf_bundle import (
     AuthenticatedCandidateFeatureContext, is_authenticated_generation_feature_context,
@@ -197,7 +197,7 @@ def _compile_factory_training(
             rehearsal_by_id=(rehearsal_by_id or {}),
             generation_binding=generation_binding,
             prepared_model_sources=prepared_model_sources,
-            delivered_content_sha256=delivery.specimen_content_sha256)
+            delivered_content_sha256=content_digest(rows))
     by_tokens = {tuple(item.row["tokens"]): item.ast for item in source_rows}
     if len(by_tokens) != len(rows):
         _invalid("FACTORY_TRAINING_AMBIGUOUS_SOURCE_PREFIX")
