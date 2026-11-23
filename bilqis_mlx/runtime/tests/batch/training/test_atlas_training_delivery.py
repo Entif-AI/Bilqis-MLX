@@ -149,15 +149,21 @@ class TrainingDeliveryTests(AtlasTrainingAdapterTest):
                 priority=(), preservation=(), support=(), enrichment=(),
                 guidance=None, controls={}, seed=42, cost={'wall_seconds': 0.25},
                 prior=support)
-            with self.assertRaises(BilqisError) as caught:
-                capture_realized_delivery(
-                    batch, self.context, capture, 'Z.C2', 1, tuple(reversed(rows)),
-                    generation_binding=batch.generation_binding, option_rows=target,
-                    priority=(), preservation=(), support=(), enrichment=(),
-                    guidance=None, controls={}, seed=42,
-                    cost={'wall_seconds': 0.25}, prior=support)
-            self.assertEqual(
-                caught.exception.context["reason"], "OBSERVATION_DELIVERY_INVALID")
+            for drifted in (
+                    tuple(reversed(rows)),
+                    rows[:-1],
+                    (*rows, rows[-1])):
+                with self.subTest(drifted=tuple(row['id'] for row in drifted)):
+                    with self.assertRaises(BilqisError) as caught:
+                        capture_realized_delivery(
+                            batch, self.context, capture, 'Z.C2', 1, drifted,
+                            generation_binding=batch.generation_binding,
+                            option_rows=target, priority=(), preservation=(),
+                            support=(), enrichment=(), guidance=None, controls={},
+                            seed=42, cost={'wall_seconds': 0.25}, prior=support)
+                    self.assertEqual(
+                        caught.exception.context["reason"],
+                        "OBSERVATION_DELIVERY_INVALID")
 
     def test_training_and_inference_use_one_selector_without_inference_targets(self):
         from bilqis_mlx.runtime.atlas_training_adapter import execute_with_backend
