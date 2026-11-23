@@ -137,11 +137,11 @@ def _draw_one(source_context, plan, role, capability, ordinal):
     if (len(rows) != _SOURCE_DRAW_EACH
             or any(row.get("capability") != capability for row in rows)):
         _invalid("BAMF_REHEARSAL_SOURCE_DRAW_INVALID")
-    row = rows[0]
+    row = rows[seed % len(rows)]
     authority = source_context.bind_authorized_subset_rows(
         rows, (row,), parent_authority)
     return row, _binding(
-        source_context, rows[0], authority, role=role, capability=capability,
+        source_context, row, authority, role=role, capability=capability,
         seed=seed, each=1), authority
 
 

@@ -9,7 +9,7 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.atlas_training_contracts import BamfDeliveryProvenance
 from bilqis_mlx.runtime.factory_training_bridge import _target_source_count
 from bilqis_mlx.runtime.bamf_operator.session_parts.rehearsal import (
-    RehearsalPlan, RehearsalRows, compile_rehearsal_plan,
+    RehearsalPlan, RehearsalRows, _seed, compile_rehearsal_plan,
     materialize_rehearsal_rows,
 )
 from bilqis_mlx.runtime.bamf_operator.source_prefetch import (
@@ -121,6 +121,25 @@ def test_materialization_retains_one_row_source_authority_per_rehearsal_specimen
         assert binding["seed"] == authority.seed
         assert binding["each"] == authority.each == 1
         assert binding["capability"] == authority.capability_id
+
+
+def test_rehearsal_specimen_selection_uses_seed_not_provider_row_zero():
+    plan = RehearsalPlan(
+        "Z.C2", "GENERATED-ZETA", ("Z.C0",), (), (),
+        "a" * 64, "c" * 64, "d" * 64, "b" * 64)
+    context = _BoundSourceContext()
+    ordinal = next(
+        value for value in range(32)
+        if _seed(plan, "prior", "Z.C0", value)
+        % DEFAULT_BINARY_BALANCE.minimum_total != 0)
+
+    rows = materialize_rehearsal_rows(context, plan, ordinal)
+
+    row = rows.prior[0]
+    expected_seed = _seed(plan, "prior", "Z.C0", ordinal)
+    expected_index = expected_seed % DEFAULT_BINARY_BALANCE.minimum_total
+    assert row["id"].endswith(f":{expected_index}")
+    assert expected_index != 0
 
 
 def test_preservation_selects_one_matching_row_from_balanced_source_draw():
