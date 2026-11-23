@@ -1,8 +1,12 @@
 """Bounded C05 multi-row B11 execution without changing per-case solver semantics."""
 from __future__ import annotations
 
+from contextlib import nullcontext
 from dataclasses import dataclass
 from typing import Callable
+
+import mlx.core as mx
+import numpy as np
 
 from bilqis_mlx.learning.frame_embeddings import semantic_bank_views
 from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput
@@ -16,9 +20,21 @@ from bilqis_mlx.runtime.atlas_model_forward import _decode_bamf_producer_row
 from bilqis_mlx.runtime.atlas_model_contracts import BamfCompiledBatch
 from bilqis_mlx.runtime.factory_task_authority import FactoryTaskAuthority
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
+from bilqis_mlx.runtime.microbatch.route_kernel import (
+    prepare_route_microbatch_inference_kernel,
+    route_microbatch_trajectory,
+)
 from bilqis_mlx.runtime.task_goal_readout import task_goal_route_decisions
 from bilqis_mlx.semantics.frame_compiler import CompiledFrameRows
 from bilqis_mlx.learning.atlas_readout import AnswerPlan, ModelOutput
+from bilqis_mlx.learning.atlas_readout.decoder.prediction import (
+    attest_issued_outputs,
+)
+from bilqis_mlx.runtime.autodiff_trace import defer_host_tensor_validation
+from bilqis_mlx.runtime.atlas_model_refinement import _prediction_refinement_selection
+from bilqis_mlx.runtime.microbatch.route_evidence import (
+    _route_output_from_materialized_logits,
+)
 
 from .capability_evaluation import _invalid
 
@@ -120,33 +136,69 @@ def _execute_chunk(
 
     combined = _combine(items)
     first = items[0].batch
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    strict = strict_evidence_enabled()
     first.atlas_feature_artifact_owner.require(combined.features)
     backend = model_backend(ModelTopologySpecV2())
     require_execution_generation_binding(
         execution_binding, parameters,
         spec=backend.topology, extents=combined.extents)
-    banks = semantic_bank_views(
-        parameters, combined.extents, combined.features.semantic_release,
-        first.active_semantic_rows.active_indices)
-    producer = start_source_backbone_producer(
-        combined,
-        parameters,
-        tuple(item.batch.sources[0] for item in items),
-        first.feature_schema,
-        banks,
-        first.atlas_feature_artifact_owner,
-        execution_binding=execution_binding,
-        snapshot=items[0].plan.snapshot,
-    )
-    hidden = finalize_source_backbone_hidden(producer)
+    numerical_scope = nullcontext() if strict else defer_host_tensor_validation()
+    with numerical_scope:
+        banks = semantic_bank_views(
+            parameters, combined.extents, combined.features.semantic_release,
+            first.active_semantic_rows.active_indices)
+        producer = start_source_backbone_producer(
+            combined,
+            parameters,
+            tuple(item.batch.sources[0] for item in items),
+            first.feature_schema,
+            banks,
+            first.atlas_feature_artifact_owner,
+            execution_binding=execution_binding,
+            trace=not strict,
+            snapshot=items[0].plan.snapshot,
+        )
+        hidden = finalize_source_backbone_hidden(producer)
+        fast_route = (
+            not strict
+            and all(_prediction_refinement_selection(
+                item.batch, item.plan, item.plan.generation_binding,
+                training=False,
+            ) is None for item in items)
+        )
+        if fast_route:
+            kernel = prepare_route_microbatch_inference_kernel(
+                tuple(item.batch for item in items),
+                tuple(item.plan for item in items),
+            )
+            trajectory, route_logits = route_microbatch_trajectory(
+                parameters, hidden, kernel)
+            mx.eval(*trajectory, *route_logits)
+            trajectory_indices = np.asarray(
+                mx.stack(trajectory), dtype=np.int64)
     if on_launch is not None:
         on_launch(len(items), max(_positions(item) for item in items))
-    return tuple(
-        _decode_bamf_producer_row(
-            backend, parameters, item.batch, item.plan,
-            producer, hidden, index, execution_binding=execution_binding)
-        for index, item in enumerate(items)
-    )
+    if fast_route:
+        with defer_host_tensor_validation():
+            outputs = tuple(
+                _route_output_from_materialized_logits(
+                    item.plan, index, trajectory_indices, route_logits)
+                for index, item in enumerate(items)
+            )
+    else:
+        with defer_host_tensor_validation():
+            outputs = tuple(
+                _decode_bamf_producer_row(
+                    backend, parameters, item.batch, item.plan,
+                    producer, hidden, index, execution_binding=execution_binding)
+                for index, item in enumerate(items)
+            )
+    if not attest_issued_outputs(outputs):
+        _invalid("BAMF_C05_BATCH_OUTPUT_ATTESTATION_FAILED")
+    return outputs
 
 
 def batched_factory_outputs(

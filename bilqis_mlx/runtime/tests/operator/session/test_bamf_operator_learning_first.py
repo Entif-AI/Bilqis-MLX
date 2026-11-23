@@ -1,0 +1,64 @@
+"""Focused routing checks for the learning-first BAMF candidate path."""
+import inspect
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+
+from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
+from bilqis_mlx.runtime.bamf_operator.session_parts.native_session import (
+    candidate_horizon_execution,
+)
+
+
+def _invalid(reason):
+    raise ValueError(reason)
+
+
+def _run_horizon(selection, captured):
+    sentinel = object()
+
+    def horizon_impl(*args, **kwargs):
+        captured.update(kwargs)
+        return sentinel
+
+    with patch(
+            "bilqis_mlx.runtime.bamf_operator.session_parts.native_session."
+            "_candidate_horizon_execution_impl",
+            side_effect=horizon_impl):
+        result = candidate_horizon_execution(
+            Path("/run"), object(), object(), "atlas", "features",
+            selection, (), "A.TEST", object(), 12, None, 0, None, None,
+            None, None, emit_progress=lambda *_args: None, invalid=_invalid)
+    assert result is sentinel
+
+
+def _executor_from(captured):
+    closure = inspect.getclosurevars(captured["execute_horizon_fn"]).nonlocals
+    return closure["candidate_executor"]
+
+
+def test_learning_first_horizon_never_prepares_strict_source_authority():
+    selection = SimpleNamespace(status="TEACHER_SELECTED")
+    captured = {}
+    with evidence_mode(strict=False), patch(
+            "bilqis_mlx.runtime.bamf_operator.session_parts.native_session."
+            "prepare_accepted_priority_candidate_visit") as strict_prepare:
+        _run_horizon(selection, captured)
+
+    strict_prepare.assert_not_called()
+    from bilqis_mlx.runtime.bamf_operator.session_parts import native_session
+    assert _executor_from(captured) is native_session.execute_learning_first_priority_candidate
+
+
+def test_strict_horizon_preserves_legacy_source_authority_path():
+    selection = SimpleNamespace(status="TEACHER_SELECTED")
+    captured = {}
+    with evidence_mode(strict=True), patch(
+            "bilqis_mlx.runtime.bamf_operator.session_parts.native_session."
+            "prepare_accepted_priority_candidate_visit",
+            return_value=object()) as strict_prepare:
+        _run_horizon(selection, captured)
+
+    strict_prepare.assert_called_once()
+    from bilqis_mlx.runtime.bamf_operator.session_parts import native_session
+    assert _executor_from(captured) is native_session.execute_accepted_priority_candidate

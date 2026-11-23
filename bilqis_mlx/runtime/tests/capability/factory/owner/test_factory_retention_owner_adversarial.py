@@ -53,6 +53,7 @@ def _foundation_owner_fixture():
     source = SimpleNamespace(
         __post_init__=lambda: None,
         release=release,
+        run_dir=Path("unused"),
         require_accepted_runtime=Mock(),
     )
     candidate = object.__new__(CandidateTransaction)
@@ -146,6 +147,8 @@ def _evaluate_foundation_owner(source, candidate, target, fixed, fresh,
                     rubric_sha256="1" * 64, scope_sha256="2" * 64,
                     policy_sha256="3" * 64, source_sha256="4" * 64,
                     evidence_stage=owner.CURRENT_EVIDENCE_STAGE)),
+                authenticate_bamf_execution_feature_context=Mock(
+                    return_value=object()),
                 FoundationRetentionPolicy=policy_factory,
                 factory_complete_solver=Mock(side_effect=(
                     (object(), "b" * 64), (object(), "c" * 64))),
@@ -162,6 +165,23 @@ def _evaluate_foundation_owner(source, candidate, target, fixed, fresh,
 
 
 class FactoryRetentionOwnerAdversarialTests(unittest.TestCase):
+    def test_learning_first_candidate_preserves_source_independence_coordinates(self):
+        candidate = object.__new__(CandidateTransaction)
+        object.__setattr__(candidate, "learning_first", True)
+        object.__setattr__(candidate, "training_authorities", ())
+        object.__setattr__(candidate, "step_proofs", ())
+        object.__setattr__(candidate, "update_steps", 1)
+        object.__setattr__(candidate, "training_source_coordinates", (
+            ("B.IDBOOLOPS", "family-a", "episode-a"),
+            ("B.IDBOOLOPS", "family-a", "episode-b"),
+        ))
+
+        self.assertEqual(
+            owner._training_exclusions(candidate),
+            (("family-a",), ("episode-a", "episode-b")),
+        )
+        self.assertEqual(owner._training_capabilities(candidate), ("B.IDBOOLOPS",))
+
     def test_optimizer_delta_summary_distinguishes_decay_only_from_gradient_driven_change(self):
         parent = SimpleNamespace(retained_state=SimpleNamespace(
             optimizer=SimpleNamespace(parameters={

@@ -1,4 +1,6 @@
 """Differentiable raw-atom vectors from the actual released B01 parameters."""
+from dataclasses import dataclass
+
 import mlx.core as mx
 
 from ...runtime.atlas_artifact_owner import AtlasFeatureArtifactOwner
@@ -14,6 +16,36 @@ from ..frame_embeddings import (
 )
 from ...runtime.model_topology_v2 import ModelTopologySpecV2
 from .inputs import SourceAtomRow
+from ...semantics.domains import contract_digest
+
+
+@dataclass(frozen=True)
+class _LearningSourceHandoff:
+    """Numerical source coordinates for verification-free ordinary training."""
+
+    source_instance_id: str
+    abi_indices: tuple[int, ...]
+    digest: str
+
+    @classmethod
+    def from_row(cls, source_instance_id, abi_indices):
+        digest = contract_digest((
+            "bilqis.mlx.learning-source-handoff/v1",
+            source_instance_id,
+            abi_indices,
+        ))
+        return cls(source_instance_id, abi_indices, digest)
+
+    def __post_init__(self):
+        if (not isinstance(self.source_instance_id, str) or not self.source_instance_id
+                or type(self.abi_indices) is not tuple or not self.abi_indices
+                or any(type(index) is not int or index < 0 for index in self.abi_indices)
+                or self.digest != contract_digest((
+                    "bilqis.mlx.learning-source-handoff/v1",
+                    self.source_instance_id,
+                    self.abi_indices,
+                ))):
+            invalid("BAMF_SOURCE_ATOM_INPUT_INVALID")
 
 
 def _resolve_source_embedding_authority(
@@ -153,6 +185,38 @@ def _source_binding_vectors(
     ) * owned["features.norm"]
 
 
+def _learning_first_source_vectors(
+        parameters, compiled, config, source, features, extents, banks, snapshot):
+    indices = source.learning_abi_indices
+    if (type(indices) is not tuple or len(indices) != compiled.visible_end
+            or snapshot is None):
+        invalid("BAMF_SOURCE_ATOM_INPUT_INVALID")
+    spec, owned = _source_embedding_parameters(
+        parameters, source, features, extents, banks, snapshot)
+    active_indices = tuple(
+        bank.bank_index * spec.semantic_bank_rows + row
+        for bank in banks for row in bank.active_rows)
+    vectors = []
+    for abi_index in indices:
+        entry = snapshot.abi(abi_index)
+        feature = generation_feature_row(
+            snapshot, features, entry.semantic_id, abi_index, config.task.scope,
+            active_indices=active_indices)
+        bank_index, bank_row = divmod(abi_index, spec.semantic_bank_rows)
+        value = banks[bank_index].weights[bank_row]
+        for term in _released_factor_terms(owned, feature):
+            value = value + term
+        value = value + owned["features.local_slot"][0]
+        vectors.append(value)
+    combined = mx.stack(tuple(vectors))
+    vectors = combined * mx.rsqrt(
+        mx.mean(combined * combined, axis=-1, keepdims=True)
+        + spec.rms_norm_epsilon
+    ) * owned["features.norm"]
+    return vectors, _LearningSourceHandoff.from_row(
+        compiled.source_instance_id, indices)
+
+
 def source_atom_vectors(
     parameters, compiled, config, source, features, feature_schema, extents,
     banks, artifact_owner, *, snapshot=None, source_execution_authority=None,
@@ -163,6 +227,10 @@ def source_atom_vectors(
     feature types. Unframed atoms use its existing NONE role/schema and local
     slot zero, without casting the atom to a caller-created ConceptRef.
     """
+    if source.learning_abi_indices is not None:
+        vectors, handoff = _learning_first_source_vectors(
+            parameters, compiled, config, source, features, extents, banks, snapshot)
+        return vectors, banks, handoff
     snapshot, handoff = _resolve_source_embedding_authority(
         compiled, config, source, features, feature_schema, artifact_owner,
         snapshot, source_execution_authority)

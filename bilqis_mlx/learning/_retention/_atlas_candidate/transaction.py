@@ -23,6 +23,10 @@ from .motif_transition import (
     _stage_candidate_motif_allocation,
 )
 
+TRAINING_SOURCE_COORDINATE_FIELDS = (
+    "capability", "source_family", "episode",
+)
+
 
 def _parent_object_guard(parent: CandidateState) -> tuple:
     """Cheap process-local proof that the accepted parent objects are unchanged."""
@@ -51,7 +55,9 @@ class CandidateTransaction:
     update_steps: int = 0
     step_proofs: tuple = ()
     training_authorities: tuple = ()
+    training_source_coordinates: tuple = ()
     motif_transition: CandidateMotifAllocationTransition | None = None
+    learning_first: bool = False
     training_objective_ref: str = field(init=False)
     training_objective_digest: str = field(init=False)
     schema_version: str = TRANSACTION_SCHEMA
@@ -66,6 +72,9 @@ class CandidateTransaction:
     def __post_init__(self):
         if getattr(self, '_issuance', None) is not TRANSACTION_ISSUER:
             invalid()
+        if self.learning_first:
+            _validate_learning_first_transaction(self)
+            return
         if (type(self.parent) is not CandidateState
                 or type(self.optimizer) is not AdamWStateTree
                 or type(self.allocations) is not MotifAllocationSnapshot
@@ -75,6 +84,7 @@ class CandidateTransaction:
                 or len(self.step_proofs) != self.update_steps
                 or type(self.training_authorities) is not tuple
                 or len(self.training_authorities) != self.update_steps
+                or self.training_source_coordinates != ()
                 or any(type(proof) is not CandidateStepProof for proof in self.step_proofs)
                 or any(proof.step_index != index + 1
                        for index, proof in enumerate(self.step_proofs))
@@ -144,10 +154,40 @@ class CandidateTransaction:
         return next_update_mode(self.parent.policy, teacher_requests_full=self.teacher_requests_full)
 
 
+def _validate_learning_first_transaction(candidate):
+    coordinates = candidate.training_source_coordinates
+    if (type(candidate.parent) is not CandidateState
+            or type(candidate.optimizer) is not AdamWStateTree
+            or candidate.allocations is not candidate.parent.allocations
+            or type(candidate.teacher_requests_full) is not bool
+            or type(candidate.update_steps) is not int or candidate.update_steps < 0
+            or candidate.step_proofs != ()
+            or candidate.training_authorities != ()
+            or type(coordinates) is not tuple
+            or coordinates != tuple(sorted(set(coordinates)))
+            or any(type(item) is not tuple
+                   or len(item) != len(TRAINING_SOURCE_COORDINATE_FIELDS)
+                   or any(not isinstance(value, str) or not value for value in item)
+                   for item in coordinates)
+            or (candidate.update_steps > 0 and not coordinates)
+            or (candidate.update_steps == 0 and coordinates)
+            or candidate.motif_transition is not None
+            or not isinstance(candidate.training_objective_ref, str)
+            or not candidate.training_objective_ref
+            or not isinstance(candidate.training_objective_digest, str)
+            or len(candidate.training_objective_digest) != SHA256_HEX_LENGTH
+            or not isinstance(candidate._parent_identity_sha256, str)
+            or len(candidate._parent_identity_sha256) != SHA256_HEX_LENGTH
+            or _parent_object_guard(candidate.parent) != candidate._parent_guard
+            or candidate.schema_version != TRANSACTION_SCHEMA):
+        invalid()
+
+
 def _issue_transaction(parent, optimizer, teacher_requests_full, update_steps=0,
                        step_proofs=(), training_authorities=(), *, allocations=None,
                        motif_transition=None, parent_identity_sha256=None,
-                       parent_guard=None):
+                       parent_guard=None, learning_first=False,
+                       training_source_coordinates=()):
     """Continue one candidate; B07 allocation state is terminal when present."""
     candidate = object.__new__(CandidateTransaction)
     allocations = parent.allocations if allocations is None else allocations
@@ -176,7 +216,9 @@ def _issue_transaction(parent, optimizer, teacher_requests_full, update_steps=0,
             ('teacher_requests_full', teacher_requests_full), ('update_steps', update_steps),
             ('step_proofs', tuple(step_proofs)),
             ('training_authorities', tuple(training_authorities)),
+            ('training_source_coordinates', tuple(training_source_coordinates)),
             ('motif_transition', motif_transition),
+            ('learning_first', bool(learning_first)),
             ('training_objective_ref', objective_ref),
             ('training_objective_digest', objective_digest),
             ('_parent_identity_sha256', parent_identity_sha256),
@@ -211,6 +253,19 @@ def _begin_candidate_with_parent_identity(
     return _issue_transaction(
         parent, parent.optimizer, teacher_requests_full,
         parent_identity_sha256=parent_identity_sha256)
+
+
+def _begin_learning_first_candidate(
+        parent: CandidateState, parent_identity_sha256: str) -> CandidateTransaction:
+    """Begin a proofless provisional candidate from an already-bound parent."""
+    if (type(parent) is not CandidateState
+            or not isinstance(parent_identity_sha256, str)
+            or len(parent_identity_sha256) != SHA256_HEX_LENGTH):
+        invalid()
+    return _issue_transaction(
+        parent, parent.optimizer, False,
+        parent_identity_sha256=parent_identity_sha256,
+        learning_first=True)
 
 
 def resolve_candidate(candidate: CandidateTransaction, *, accepted: bool) -> CandidateState:

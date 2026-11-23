@@ -1,10 +1,10 @@
 """Accepted C03 priority selection and one Factory candidate execution."""
+from copy import deepcopy
 from dataclasses import replace
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 import json
 from pathlib import Path
 import time
-
 from bilqis_mlx.learning._atlas_candidate.identity_binding import (
     candidate_identity_for_canonical_consumer,
 )
@@ -30,6 +30,7 @@ from .accepted_priority_candidate import (
     execute_accepted_priority_candidate,
     prepare_accepted_priority_candidate_visit,
 )
+from .accepted_priority_learning_first import execute_learning_first_priority_candidate
 from .accepted_priority_visit_contracts import (
     PriorityVisitResult,
     _issue_result,
@@ -52,6 +53,7 @@ def _selected_priority_result(
         plasticity_escape, priority_features, cadence_authorization,
         source_materialization_wall_seconds):
     capability = option.context.capability_id
+    selection_base = deepcopy(teacher)
     key, policy, metadata = select_visit_policy(
         engine, teacher, capability, school, rng, learning_settings,
         option.context.scope,
@@ -61,6 +63,13 @@ def _selected_priority_result(
         plasticity_escape=plasticity_escape)
     metadata = {**metadata, 'how_context': context_for_selection(
         source_context.release, program, grade, school, option, teacher, metadata)}
+    from bilqis_mlx.runtime.outcomes.observations import _compact_selected_teacher
+    metadata = {
+        **metadata,
+        'selected_teacher_snapshot_required': (
+            _compact_selected_teacher(selection_base, metadata['how_context'])
+            != teacher),
+    }
     if cadence_authorization is not None:
         metadata = {**metadata, 'cadence': cadence_authorization.to_record()}
     selected_epoch = replace(
@@ -197,12 +206,16 @@ def select_accepted_priority_visit(
             holds.append((option.stable_id, OOM_EXHAUSTED))
             continue
         offer = by_id[option.stable_id]
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_evidence_enabled,
+        )
         materialization_started = time.perf_counter()
-        try:
-            offer.require_current(source_context, parent)
-        except ValueError:
-            holds.append((option.stable_id, 'SOURCE_OFFER_HELD'))
-            continue
+        if strict_evidence_enabled():
+            try:
+                offer.require_current(source_context, parent)
+            except ValueError:
+                holds.append((option.stable_id, 'SOURCE_OFFER_HELD'))
+                continue
         grade = _grade(program, school, option.context.capability_id)
         if grade is None:
             _invalid('BAMF_PRIORITY_PROGRAM_INVALID')

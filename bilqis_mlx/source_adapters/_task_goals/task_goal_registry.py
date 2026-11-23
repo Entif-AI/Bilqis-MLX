@@ -115,7 +115,35 @@ def require_task_goal_lowerer(provider_id: str, provider_sha256: str):
     return matches[0]
 
 
+def learning_first_task_goal_lowerer(provider_id: str):
+    """Return task semantics without provider/authentication digest ceremony.
+
+    Ordinary BAMF training already owns a selected Factory row. It needs the row's
+    learning problem, not a second provider-identity attestation. Strict evidence
+    mode continues to use the authenticated lowerer lookup.
+    """
+    if provider_id == "source.finite-numeric/v2":
+        return lower_numeric_task_goal, resolve_numeric_task_goal
+    if provider_id in {
+        "source.micro.predicates/v1",
+        "source.micro.boolean-connectives/v1",
+        "source.micro.boolean-composite/v1",
+        "source.micro.boolean-identification/v1",
+    }:
+        return lower_answer_choice_task_goal, resolve_answer_choice_task_goal
+    from bilqis_mlx.source_adapters import event_frames
+    if provider_id == event_frames.ADAPTER_ID:
+        return lower_answer_choice_task_goal, resolve_answer_choice_task_goal
+    from bilqis_mlx.source_adapters.c13_episode import PROVIDER_ID as c13_provider_id
+    if provider_id == c13_provider_id:
+        from .c13_episode_task_goal import (
+            lower_c13_episode_task_goal, resolve_c13_episode_task_goal,
+        )
+        return lower_c13_episode_task_goal, resolve_c13_episode_task_goal
+    _invalid("BAMF_C04_SOURCE_TASK_LOWERER_REQUIRED")
+
+
 __all__ = (
     "RegisteredTaskGoalLowerer", "live_task_goal_lowerers",
-    "require_task_goal_lowerer",
+    "require_task_goal_lowerer", "learning_first_task_goal_lowerer",
 )

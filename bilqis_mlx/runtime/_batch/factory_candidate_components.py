@@ -126,7 +126,11 @@ def _reporting_diagnostics(gradient, capture_diagnostics: bool):
 
 def _frame_stats(compiled_batch) -> FrameStats:
     row = compiled_batch.compiled.compiled.rows[0]
-    compiled_batch.compiled.packed_frame_artifact_owner.require_row(row)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if strict_evidence_enabled():
+        compiled_batch.compiled.packed_frame_artifact_owner.require_row(row)
     closures = tuple(
         position for position in row.positions
         if position.kind is PositionKind.CLOSURE)

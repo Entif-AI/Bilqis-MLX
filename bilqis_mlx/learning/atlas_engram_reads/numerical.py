@@ -106,13 +106,23 @@ def _gated_residual(state, feature, slot_id, parameters, projections):
 def _read_row(
     row_index, row, hidden, features, task, frontier, policy,
     manifest, parameters, projections, qualified_context=None,
+    learning_projection=None,
 ):
     unchanged = tuple(
         hidden[row_index, index] for index in range(hidden.shape[1]))
     envelopes = tuple(item.envelope for item in row if item is not None)
     if not envelopes:
         return unchanged, ("MISS",) * hidden.shape[1], None, ()
-    if qualified_context is None:
+    if learning_projection is not None:
+        if type(learning_projection) is not ApprovedContextProjection:
+            _invalid()
+        projection = learning_projection
+        context_digest = projection.digest
+        live_schema_handles = {
+            schema_source_handle(item.schema): True
+            for item in row if item is not None and item.schema is not None
+        }
+    elif qualified_context is None:
         projection = project_context(envelopes, task, frontier, policy)
         if isinstance(projection, ContextHold):
             status = tuple("HELD" if item is not None else "MISS" for item in row)
@@ -178,6 +188,7 @@ def _read_motif_unqualified_candidate(
     manifest: MotifManifest,
     parameters: MotifParameterView,
     qualified_contexts=None,
+    learning_projections=None,
 ) -> MotifReadResult:
     """Experimental helper; set eligibility precedes every row's slot gather.
 
@@ -189,8 +200,12 @@ def _read_motif_unqualified_candidate(
         manifest, parameters)
     if qualified_contexts is None:
         qualified_contexts = (None,) * len(positions)
+    if learning_projections is None:
+        learning_projections = (None,) * len(positions)
     if (type(qualified_contexts) is not tuple
-            or len(qualified_contexts) != len(positions)):
+            or len(qualified_contexts) != len(positions)
+            or type(learning_projections) is not tuple
+            or len(learning_projections) != len(positions)):
         _invalid()
     projections = {name: parameters[name] for name in (
         "projection", "norm", "gate_hidden", "gate_feature", "bias")}
@@ -203,7 +218,8 @@ def _read_motif_unqualified_candidate(
         task, frontier, policy = tasks[row_index], frontiers[row_index], policies[row_index]
         output, status, digest, row_slots = _read_row(
             row_index, row, hidden, features, task, frontier, policy,
-            manifest, parameters, projections, qualified_contexts[row_index])
+            manifest, parameters, projections, qualified_contexts[row_index],
+            learning_projections[row_index])
         output_rows.append(output)
         dispositions.append(status)
         context_digests.append(digest)

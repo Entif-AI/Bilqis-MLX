@@ -10,6 +10,7 @@ from bilqis_mlx.runtime.task_goal_readout import (
     augment_answer_plan_for_task_goal, proposal_from_task_goal_output,
     task_goal_route_decisions,
 )
+from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
 from bilqis_mlx.runtime.cognitive_solver import (
     GenerationBinding, NeuralRequest, RouteKind, SolveBudget, SolveContext,
     solve_task,
@@ -65,6 +66,50 @@ class TaskGoalReadoutTests(unittest.TestCase):
         self.assertEqual(chosen.candidate_operand_refs, ())
         self.assertEqual(proposal.source_binding_digest, contract_digest(binding))
         self.assertEqual(proposal.generation_digest, CANDIDATE)
+
+    def test_learning_first_route_receipt_uses_compact_bound_identity(self):
+        goal, binding, request, memory, context, plan, semantics, parameters = self._case()
+        augmented = augment_answer_plan_for_task_goal(plan, goal)
+        output = predict_typed(memory, context, augmented, semantics, parameters)
+
+        with evidence_mode(strict=False):
+            proposal = proposal_from_task_goal_output(goal, request, output)
+
+        committed = {
+            item.decision_id: item.value for item in output.committed
+            if item.decision_id in {route.decision_id for route in task_goal_route_decisions(goal)}
+        }
+        expected = contract_digest({
+            "schema": "bilqis.mlx.b10-task-goal-route-learning-first/v1",
+            "goal_id": goal.goal_id,
+            "source_binding_digest": request.source_binding_digest,
+            "generation_digest": request.generation_digest,
+            "unresolved_signature": request.unresolved_signature,
+            "allowed_operator_ids": request.allowed_operator_ids,
+            "route": tuple((key, committed[key]) for key in sorted(committed)),
+        })
+        self.assertEqual(proposal.proposal_receipt_sha256, expected)
+
+    def test_strict_route_receipt_preserves_full_evidence_identity(self):
+        goal, _, request, memory, context, plan, semantics, parameters = self._case()
+        augmented = augment_answer_plan_for_task_goal(plan, goal)
+        output = predict_typed(memory, context, augmented, semantics, parameters)
+
+        with evidence_mode(strict=True):
+            proposal = proposal_from_task_goal_output(goal, request, output)
+
+        committed = {
+            item.decision_id: item.value for item in output.committed
+            if item.decision_id in {route.decision_id for route in task_goal_route_decisions(goal)}
+        }
+        expected = contract_digest({
+            "schema": "bilqis.mlx.b10-task-goal-route/v1",
+            "goal": contract_digest(goal),
+            "request": request,
+            "plan": output.plan,
+            "route": tuple((key, committed[key]) for key in sorted(committed)),
+        })
+        self.assertEqual(proposal.proposal_receipt_sha256, expected)
 
     def test_copied_route_strings_without_live_output_cannot_mint_proposal(self):
         goal, _, request, memory, context, plan, semantics, parameters = self._case()

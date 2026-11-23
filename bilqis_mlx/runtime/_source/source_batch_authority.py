@@ -151,10 +151,25 @@ def bind_delivery_rows(context, rows, *, seed: int, capability: str, direct_each
     return _issue(context, tuple(rows), seed=seed, capability=capability)
 
 
+def bind_prequalified_delivery_rows(
+        context, direct_rows, rows, authority: SourceBatchAuthority):
+    """Extend one already-selected source authority without redrawing its provider."""
+    direct_rows = tuple(direct_rows)
+    rows = tuple(rows)
+    if (not direct_rows or not rows or len(direct_rows) > len(rows)
+            or type(authority) is not SourceBatchAuthority):
+        _invalid("FACTORY_SOURCE_BATCH_BINDING_INVALID")
+    require_bound_rows(context, direct_rows, authority)
+    if rows[:len(direct_rows)] != direct_rows:
+        _invalid("FACTORY_SOURCE_BATCH_CONTENT_DRIFT")
+    return _issue(
+        context, rows, seed=authority.seed, capability=authority.capability_id)
+
+
 # Preserve the historical import identity while implementation lives in this owner module.
 SourceBatchAuthority.__module__ = "bilqis_mlx.runtime._source.source_execution"
 
 __all__ = (
-    "SourceBatchAuthority", "bind_delivery_rows", "bind_rows", "draw_bound_rows",
-    "require_bound_rows", "source_content_digest",
+    "SourceBatchAuthority", "bind_delivery_rows", "bind_prequalified_delivery_rows",
+    "bind_rows", "draw_bound_rows", "require_bound_rows", "source_content_digest",
 )

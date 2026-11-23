@@ -34,8 +34,8 @@ def _validate_compiled_batch_shape(batch):
             and type(batch.training_authority) is not BamfTrainingAuthority)
         or (batch.visit_provenance is not None
             and type(batch.visit_provenance) is not BamfVisitProvenance)
-        or ((batch.training_authority is None)
-            != (batch.visit_provenance is None))
+        or (batch.training_authority is not None
+            and batch.visit_provenance is None)
     ):
         _invalid("B11_COMPILED_BATCH_INVALID")
     batch.compiled.__post_init__()
@@ -98,9 +98,15 @@ def _validate_task_authority(batch):
 
 
 def _validate_training_context(batch):
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if not strict_evidence_enabled() and batch.training_authority is None:
+        return
+    if batch.visit_provenance is not None:
+        batch.visit_provenance.__post_init__()
     if batch.training_authority is None:
         return
-    batch.visit_provenance.__post_init__()
     if (batch.visit_provenance.capability_id
             != batch.training_authority.delivery_capability
             or batch.visit_provenance.visit_id
@@ -132,6 +138,11 @@ def _bind_atlas_feature_owner(batch):
             AtlasFeatureArtifactOwner(
                 batch.compiled.features, batch.feature_schema),
         )
+        return
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if not strict_evidence_enabled():
         return
     owner.require(batch.compiled.features)
 

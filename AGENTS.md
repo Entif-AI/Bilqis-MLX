@@ -331,6 +331,30 @@ expensive probe is still running so the successor does not launch a duplicate.
 Acceptance-scale witnesses belong at a stable boundary after cheaper evidence has
 changed; they are not the ordinary inner debugging loop.
 
+**BAMF training-first stabilization authority (2026-11-22):** During the current
+BAMF stabilization phase, production/full-path trainer learning throughput is the
+controlling performance acceptance authority. Component-local microbenchmarks are
+diagnostic evidence only and do not close a performance issue when the actual
+persistent trainer remains slow.
+
+**Default BAMF Step 1 acceptance target: <= 1 second.** Ordinary training is a
+numerical learning path, not an evidence-verification path. Authentication,
+custody, provenance, currentness, replay, source-prefix/prefix-inventory,
+refinement-policy verification, proof issuance, and equivalent evidence-plane
+ceremony MUST NOT execute on the default Step 1 hot path or be moved immediately
+before autodiff under another name. Keep that machinery available behind an
+explicit strict/evidence mode instead.
+
+The default path may retain only work required for actual gradient/learning
+formation, meaningful regression protection, atomic accepted model+optimizer
+persistence, and correct resume from accepted state. Do not re-enable strict
+source/B11 authority machinery merely to satisfy an existing validator; change or
+bypass the validator for non-strict training when it depends on evidence ceremony.
+Performance is accepted only from the production/full-path training boundary, with
+the <= 1 second Step 1 target controlling the current repair. This stabilization
+authority does not delete the stricter machinery or authorize fabricated evidence.
+It removes that machinery from ordinary training cadence.
+
 **Staged fail-fast verification for expensive tests (ADR-139):** Treat every
 expensive test or witness as an ordered pipeline. Do not make a multi-minute MLX,
 Factory, full-model, or end-to-end run the first place that fixture, import,

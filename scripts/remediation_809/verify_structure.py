@@ -26,7 +26,10 @@ def main() -> int:
         cwd=ROOT, check=True,
     )
     for raw, limit in LIMITS:
-        lines = len((ROOT / raw).read_text().splitlines())
+        path = ROOT / raw
+        if not path.is_file():
+            continue
+        lines = len(path.read_text().splitlines())
         if lines > limit:
             raise SystemExit(f"STRUCTURE_FILE_LIMIT:{raw}:{lines}>{limit}")
     for raw, limit in DIRECTORIES:

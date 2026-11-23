@@ -72,11 +72,16 @@ def microbatch_compatible(
             or any(type(item) is not BamfCompiledBatch for item in row_batches)):
         return False
     first = row_batches[0]
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    strict = strict_evidence_enabled()
     for item in row_batches:
         item.__post_init__()
         row = item.compiled.compiled.rows[0]
-        item.compiled.packed_frame_artifact_owner.require_row(row)
-        item.atlas_feature_artifact_owner.require(item.compiled.features)
+        if strict:
+            item.compiled.packed_frame_artifact_owner.require_row(row)
+            item.atlas_feature_artifact_owner.require(item.compiled.features)
         if (item.compiled.features != first.compiled.features
                 or item.compiled.extents != first.compiled.extents
                 or item.feature_schema != first.feature_schema

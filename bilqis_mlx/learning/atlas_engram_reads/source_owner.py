@@ -89,6 +89,10 @@ def _row_read_inputs(
     positions, vectors = [], []
     family = _source_family(adapter.descriptor.adapter_id)
     qualified_schemas = _qualified_schema_map(source_execution_authority)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    strict = strict_evidence_enabled()
     for position in compiled_row.positions:
         if position.kind is not PositionKind.CLOSURE:
             positions.append(None)
@@ -106,9 +110,19 @@ def _row_read_inputs(
         if type(envelope.frame) is not FrameInstance:
             _invalid()
         if qualified_schemas is None:
-            schema, _witness = lookup_source_pinned_frame_schema(
-                envelope.frame.frame_schema_id, envelope.frame.frame_schema_revision,
-                source_family=family, atlas_selection=source.selection)
+            if strict:
+                schema, _witness = lookup_source_pinned_frame_schema(
+                    envelope.frame.frame_schema_id, envelope.frame.frame_schema_revision,
+                    source_family=family, atlas_selection=source.selection)
+            else:
+                schema = next((
+                    item for item in config.schemas
+                    if (item.schema_id, item.revision)
+                    == (envelope.frame.frame_schema_id,
+                        envelope.frame.frame_schema_revision)
+                ), None)
+                if schema is None:
+                    _invalid()
         else:
             schema = qualified_schemas.get(envelope.frame.occurrence_id)
             if (schema is None
@@ -170,9 +184,19 @@ def _retained_read_authorities(
         else source_execution_authorities)
 
 
-def _qualified_motif_row_authority(row, config, source, source_authority):
+def _qualified_motif_row_authority(
+        row, config, source, source_authority, learning_projection=None):
     if type(source) is not SourceAtomRow:
         _invalid()
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if source_authority is None and not strict_evidence_enabled():
+        adapter = _canonical_adapter(source)
+        if (learning_projection is not None
+                and type(learning_projection) is not ApprovedContextProjection):
+            _invalid()
+        return adapter, learning_projection, config.frontier
     if source_authority is None:
         adapter = _canonical_adapter(source)
         replayed = source_qualified_motif_context(
@@ -211,10 +235,10 @@ def _qualified_motif_row_authority(row, config, source, source_authority):
 
 def _retained_motif_row(
     row, config, source, source_authority, parameters, features, extents,
-    padded_width,
+    padded_width, learning_projection=None,
 ):
     adapter, projection, issued_frontier = _qualified_motif_row_authority(
-        row, config, source, source_authority)
+        row, config, source, source_authority, learning_projection)
     if projection is None:
         positions = (None,) * len(row.positions)
         vectors = mx.zeros(
@@ -243,18 +267,22 @@ def _read_retained_compiled_motifs(
     source_execution_authorities=None,
 ) -> MotifReadResult:
     """Execute B08 only for a B13-admitted caller holding the private seal."""
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
     authorities = _retained_read_authorities(
         compiled, parameters, sources, manifest, spec, extents, seal,
         source_execution_authorities)
     row_positions, row_features, tasks, frontiers, policies = [], [], [], [], []
     qualified_contexts = []
     padded_width = hidden.shape[1]
-    for row, config, source, authority in zip(
+    learning_projections = compiled._projections
+    for row, config, source, authority, learning_projection in zip(
             compiled.compiled.rows, compiled.compiler_configs,
-            sources, authorities):
+            sources, authorities, learning_projections):
         positions, vectors, task, frontier, policy = _retained_motif_row(
             row, config, source, authority, parameters, compiled.features,
-            extents, padded_width)
+            extents, padded_width, learning_projection)
         row_positions.append(positions)
         row_features.append(vectors)
         tasks.append(task)
@@ -281,6 +309,9 @@ def _read_retained_compiled_motifs(
         features=mx.stack(tuple(row_features)), positions=tuple(row_positions),
         tasks=tuple(tasks), frontiers=tuple(frontiers), policies=tuple(policies),
         qualified_contexts=tuple(qualified_contexts),
+        learning_projections=(
+            learning_projections if not strict_evidence_enabled()
+            else None),
         manifest=manifest,
         parameters=motif_parameter_view(
             parameters, spec=spec, extents=extents, site_index=site_index))

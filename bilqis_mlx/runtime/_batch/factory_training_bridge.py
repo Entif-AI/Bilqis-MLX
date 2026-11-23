@@ -16,9 +16,13 @@ from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 from .atlas_training_adapter import compile_training_batch
 from .atlas_training_contracts import BamfTrainingBatch, BamfVisitProvenance, _invalid
 from .factory_training_context import training_answer_plan
+from .learning_first_compiler import compile_learning_first_training_batch
+from .learning_first_source import prepare_learning_first_source_rows
 from .factory_training_source import (
-    _FactoryMotifPlanningInput, _bind_b11_rows, _motif_planning_input,
+    _FactoryMotifPlanningInput, _bind_b11_rows, _bind_learning_first_rows,
+    _motif_planning_input,
     _prepare_b11_source_binding, _prepare_factory_source_rows,
+    _prepare_learning_first_model_sources,
 )
 
 
@@ -32,20 +36,27 @@ class PreparedFactoryTrainingBatch:
     semantic_context: object
 
     def __post_init__(self) -> None:
-        if (type(self.training_batch) is not BamfTrainingBatch
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_evidence_enabled,
+        )
+        strict = strict_evidence_enabled()
+        if (not hasattr(self.training_batch, "rows")
                 or type(self.compiled_rows) is not tuple
                 or len(self.compiled_rows) != len(self.training_batch.rows)
                 or type(self.motif_inputs) is not tuple
                 or len(self.motif_inputs) != len(self.training_batch.rows)
+                or not is_authenticated_generation_feature_context(
+                    self.semantic_context)):
+            _invalid("FACTORY_TRAINING_BRIDGE_INVALID")
+        if strict and (
+                type(self.training_batch) is not BamfTrainingBatch
                 or any(type(item) is not _FactoryMotifPlanningInput
                        for item in self.motif_inputs)
                 or any(type(item) is not BamfCompiledBatch
-                       for item in self.compiled_rows)
-                or (type(self.semantic_context) is not AuthenticatedCandidateFeatureContext
-                    and not is_authenticated_generation_feature_context(
-                        self.semantic_context))):
+                       for item in self.compiled_rows)):
             _invalid("FACTORY_TRAINING_BRIDGE_INVALID")
-        self.semantic_context.__post_init__()
+        if strict:
+            self.semantic_context.__post_init__()
 
 
 
@@ -84,12 +95,29 @@ def _validated_training_request(
 def _prepared_source_inputs(
         prepared_source, source_context, authenticated, rows, *, capability,
         source_seed, source_each, delivery=None, rehearsal_by_id=None,
-        rehearsal_bindings=None, rehearsal_authorities=None):
+        rehearsal_bindings=None, rehearsal_authorities=None,
+        selected_source_authority=None):
     if prepared_source is None:
         rehearsal_by_id = rehearsal_by_id or {}
         rehearsal_bindings = rehearsal_bindings or {}
         rehearsal_authorities = rehearsal_authorities or {}
         target_rows = tuple(row for row in rows if row.get("id") not in rehearsal_by_id)
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_evidence_enabled,
+        )
+        strict = strict_evidence_enabled()
+        if not strict:
+            source_rows = prepare_learning_first_source_rows(
+                source_context, authenticated, rows,
+                source_seed=source_seed, source_each=source_each)
+            prepared_model_sources = _prepare_learning_first_model_sources(
+                authenticated, source_rows)
+            profile = (
+                source_rows[0].profile if len(source_rows) == 1 else None)
+            return (
+                None, source_rows[0].source_adapter, None, profile, source_rows,
+                prepared_model_sources, None, None, None,
+            )
         source_authority = (
             source_context.bind_rows(
                 target_rows, seed=source_seed, capability=capability, each=source_each)
@@ -111,7 +139,8 @@ def _prepared_source_inputs(
             source_seed=source_seed, source_each=source_each,
             source_authority=source_authority,
             source_authorities_by_id=rehearsal_authorities,
-            source_bindings_by_id=rehearsal_bindings)
+            source_bindings_by_id=rehearsal_bindings,
+            issue_b11_proofs=strict)
         from bilqis_mlx.runtime.priority_source_materialization import (
             _prepare_model_sources,
         )
@@ -154,6 +183,21 @@ def _compile_factory_training(
         rehearsal_by_id, rehearsal_authorities, source_rows,
         feature_artifact_path, generation_binding,
         authenticated, manifest, prepared_model_sources):
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if not strict_evidence_enabled():
+        return compile_learning_first_training_batch(
+            rows, source_context, candidate.topology,
+            delivery_capability=capability,
+            teacher_strategy=teacher_strategy,
+            requested_count=requested_count,
+            optimizer_step_seed=optimizer_step_seed,
+            visit_provenance=visit_provenance,
+            rehearsal_by_id=(rehearsal_by_id or {}),
+            generation_binding=generation_binding,
+            prepared_model_sources=prepared_model_sources,
+            delivered_content_sha256=delivery.specimen_content_sha256)
     by_tokens = {tuple(item.row["tokens"]): item.ast for item in source_rows}
     if len(by_tokens) != len(rows):
         _invalid("FACTORY_TRAINING_AMBIGUOUS_SOURCE_PREFIX")
@@ -215,26 +259,17 @@ def _prepared_factory_result(
 
 
 def prepare_factory_training_batch(
-    source_context: SourceExecutionContext,
-    candidate: BamfBundleCandidate,
-    atlas_artifact_path: str,
-    feature_artifact_path: str,
-    delivered_rows,
-    generation_binding: str,
+    source_context: SourceExecutionContext, candidate: BamfBundleCandidate,
+    atlas_artifact_path: str, feature_artifact_path: str,
+    delivered_rows, generation_binding: str,
     *,
-    capability: str,
-    delivery: DeliveredTeaching,
-    requested_count: int,
-    source_seed: int,
-    source_each: int,
+    capability: str, delivery: DeliveredTeaching, requested_count: int,
+    source_seed: int, source_each: int,
     optimizer_step_seed: int = 0,
-    visit_provenance: BamfVisitProvenance,
-    teacher_strategy: dict,
-    rehearsal_by_id: dict | None = None,
-    rehearsal_bindings: dict | None = None,
+    visit_provenance: BamfVisitProvenance, teacher_strategy: dict,
+    rehearsal_by_id: dict | None = None, rehearsal_bindings: dict | None = None,
     rehearsal_authorities: dict | None = None,
-    semantic_context=None,
-    prepared_source=None,
+    semantic_context=None, prepared_source=None, selected_source_authority=None,
 ) -> PreparedFactoryTrainingBatch:
     """Compile one real Factory draw once, then bind each C02 row into B11.
 
@@ -252,12 +287,17 @@ def prepare_factory_training_batch(
     request_validation_seconds = time.perf_counter() - stage_started
     stage_started = time.perf_counter()
     authenticated = semantic_context
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    strict = strict_evidence_enabled()
     if authenticated is None:
         authenticated = authenticate_bamf_execution_feature_context(
             candidate, atlas_artifact_path, source_context.run_dir)
     elif not is_authenticated_generation_feature_context(authenticated):
         _invalid("FACTORY_TRAINING_SEMANTIC_CONTEXT_INVALID")
-    authenticated.__post_init__()
+    if strict:
+        authenticated.__post_init__()
     semantic_context_seconds = time.perf_counter() - stage_started
     stage_started = time.perf_counter()
     (source_authority, _adapter, manifest, profile, source_rows,
@@ -267,7 +307,8 @@ def prepare_factory_training_batch(
         capability=capability, source_seed=source_seed, source_each=source_each,
         delivery=delivery, rehearsal_by_id=rehearsal_by_id,
         rehearsal_bindings=rehearsal_bindings,
-        rehearsal_authorities=rehearsal_authorities)
+        rehearsal_authorities=rehearsal_authorities,
+        selected_source_authority=selected_source_authority)
     prepared_source_seconds = time.perf_counter() - stage_started
     stage_started = time.perf_counter()
     training = _compile_factory_training(
@@ -278,11 +319,16 @@ def prepare_factory_training_batch(
         authenticated, manifest, prepared_model_sources)
     compile_seconds = time.perf_counter() - stage_started
     stage_started = time.perf_counter()
-    compiled_rows = _bind_b11_rows(
-        source_context, candidate, authenticated, training, source_rows,
-        profile, source_seed=source_seed, source_each=source_each,
-        prepared_b11=prepared_b11_sources,
-        packed_owner=prepared_packed_owner)
+    if strict:
+        compiled_rows = _bind_b11_rows(
+            source_context, candidate, authenticated, training, source_rows,
+            profile, source_seed=source_seed, source_each=source_each,
+            prepared_b11=prepared_b11_sources,
+            packed_owner=prepared_packed_owner)
+    else:
+        compiled_rows = _bind_learning_first_rows(
+            source_context, candidate, authenticated, training, source_rows,
+            profile, source_seed=source_seed, source_each=source_each)
     b11_binding_seconds = time.perf_counter() - stage_started
     return _prepared_factory_result(
         training, compiled_rows, source_rows, authenticated, prepared_motif_inputs,

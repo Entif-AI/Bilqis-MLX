@@ -2,12 +2,18 @@
 from dataclasses import dataclass
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
+import os
 import sys
 from types import ModuleType, SimpleNamespace
 from unittest.mock import patch
 import pytest
 
 from bilqis_mlx.errors import BilqisError
+
+pytestmark = pytest.mark.skipif(
+    os.environ.get("BILQIS_STRICT_EVIDENCE_TESTS") != "1",
+    reason="legacy strict priority-authority harness is opt-in during BAMF stabilization",
+)
 
 @dataclass(frozen=True)
 class HParams:

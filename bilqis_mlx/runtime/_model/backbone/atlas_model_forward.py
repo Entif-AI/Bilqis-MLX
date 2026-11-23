@@ -56,13 +56,19 @@ def _source_execution_authorities(compiled_batch):
 def _source_producer(
         params, compiled_batch, generation, cache, execution_binding=None, *,
         trace=False, snapshot=None):
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    strict = strict_evidence_enabled()
     candidate = type(cache) is CandidateExecutionCache
     distributed = type(cache) is DistributedExecutionCache
-    speculative = candidate or distributed
+    speculative = candidate or distributed or not strict
     execution_cache = (
         require_candidate_execution_cache(cache) if candidate
         else (require_distributed_execution_cache(cache) if distributed
-              else (None if cache is None else require_accepted_execution_cache(cache))))
+              else (None if cache is None
+                    else require_accepted_execution_cache(cache) if strict
+                    else cache)))
     accepted_cache = execution_cache._accepted_cache if candidate else execution_cache
     banks = semantic_bank_views(
         params, compiled_batch.compiled.extents,
@@ -82,15 +88,15 @@ def _source_producer(
             snapshot=snapshot,
             source_execution_authorities=source_execution_authorities,
         ), None, True
-    if (
-        accepted_cache.run_id != compiled_batch.active_semantic_rows.run_id
-        or accepted_cache.generation != compiled_batch.active_semantic_rows.generation
-        or execution_cache.generation_binding != generation
-        or accepted_cache.motif_manifest.digest
-        != compiled_batch.compiled.extents.motif_key_map_digest
-    ):
+    if accepted_cache.motif_manifest.digest != compiled_batch.compiled.extents.motif_key_map_digest:
         _invalid("B11_ACCEPTED_CACHE_GENERATION_MISMATCH")
-    bind_motif_artifact_owner(accepted_cache, compiled_batch.compiled)
+    if strict and (
+            accepted_cache.run_id != compiled_batch.active_semantic_rows.run_id
+            or accepted_cache.generation != compiled_batch.active_semantic_rows.generation
+            or execution_cache.generation_binding != generation):
+        _invalid("B11_ACCEPTED_CACHE_GENERATION_MISMATCH")
+    if strict:
+        bind_motif_artifact_owner(accepted_cache, compiled_batch.compiled)
     producer = start_retained_source_backbone_producer(
         compiled_batch.compiled,
         params,
@@ -126,20 +132,10 @@ def _finalize_source_hidden(
 
 
 def _decode_bamf_producer_row(
-    backend: Backend,
-    params,
-    compiled_batch: BamfCompiledBatch,
-    answer_plan: AnswerPlan,
-    producer,
-    final_hidden,
-    row_index: int,
-    accepted_cache=None,
-    execution_binding=None,
-    *,
-    refinement_training: bool = False,
-    teacher_targets=None,
-    trace=False,
-    replay_output=None,
+    backend: Backend, params, compiled_batch: BamfCompiledBatch,
+    answer_plan: AnswerPlan, producer, final_hidden, row_index: int,
+    accepted_cache=None, execution_binding=None, *, refinement_training=False,
+    teacher_targets=None, trace=False, replay_output=None,
 ) -> ModelOutput:
     """Decode one task-owned row from a B11 source producer and issue its provenance."""
     validate_decode_row_input(
@@ -149,9 +145,13 @@ def _decode_bamf_producer_row(
     validate_bamf_parameters(spec, extents, params)
     generation = require_execution_generation_binding(
         execution_binding, params, spec=spec, extents=extents).generation_digest
-    validate_decode_row_custody(
-        compiled_batch, answer_plan, producer, row_index, generation)
-    validate_task_plan_custody(compiled_batch, answer_plan)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if strict_evidence_enabled():
+        validate_decode_row_custody(
+            compiled_batch, answer_plan, producer, row_index, generation)
+        validate_task_plan_custody(compiled_batch, answer_plan)
     if (compiled_batch.training_authority is not None
             and compiled_batch.training_authority.generation_binding != generation):
         _invalid("B11_TRAINING_AUTHORITY_GENERATION_MISMATCH")

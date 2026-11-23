@@ -92,8 +92,12 @@ def microbatch_trace_from_route(
     for index, (row_batch, plan, row_targets, mask, refinement) in enumerate(zip(
             row_batches, answer_plans, targets, masks, refinement_selections)):
         validate_decode_row_input(backend, row_batch, plan, hidden, index)
-        validate_decode_row_custody(row_batch, plan, producer, index, generation)
-        validate_task_plan_custody(row_batch, plan)
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_evidence_enabled,
+        )
+        if strict_evidence_enabled():
+            validate_decode_row_custody(row_batch, plan, producer, index, generation)
+            validate_task_plan_custody(row_batch, plan)
         if (row_batch.training_authority is not None
                 and row_batch.training_authority.generation_binding != generation):
             _invalid("B11_TRAINING_AUTHORITY_GENERATION_MISMATCH")

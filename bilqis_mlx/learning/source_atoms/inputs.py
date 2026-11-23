@@ -15,6 +15,7 @@ class SourceAtomRow:
     source_each: int
     course: object = None
     source_profile_parameters: dict | None = None
+    learning_abi_indices: tuple[int, ...] | None = None
 
     def replay_arguments(self) -> dict:
         return dict(

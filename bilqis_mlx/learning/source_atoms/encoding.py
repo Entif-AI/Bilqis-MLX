@@ -11,9 +11,12 @@ from .embedding import source_atom_vectors
 
 def _atomic_source_embeddings(compiled, atom_rows):
     """Bind one-atom fallbacks to the exact already-authorized source vector."""
-    if any(compiled.atomic_handles) and (
-            compiled.source_asts is None
-            or compiled.partial_forest_receipts is None):
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if (strict_evidence_enabled() and any(compiled.atomic_handles)
+            and (compiled.source_asts is None
+                 or compiled.partial_forest_receipts is None)):
         invalid("BAMF_SOURCE_ATOM_ATOMIC_FRAME_SOURCE_PROOF_REQUIRED")
     rows = []
     for handles, vectors, row in zip(

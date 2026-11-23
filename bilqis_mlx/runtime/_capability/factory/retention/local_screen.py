@@ -27,6 +27,9 @@ from bilqis_mlx.runtime.capability_retention_foundation_runtime import (
     observed_assessment,
 )
 from bilqis_mlx.runtime.factory_complete_solver import factory_complete_solver
+from bilqis_mlx.runtime.bamf_bundle import (
+    authenticate_bamf_execution_feature_context,
+)
 from bilqis_mlx.semantics.domains import contract_digest
 
 from .local_evaluation import (
@@ -103,12 +106,13 @@ def _split_cached_rows(cached_rows, target_plan):
 
 
 def _cached_instruments(
-        source_context, candidate_bundle, artifact_path, cached_rows):
+        source_context, candidate_bundle, artifact_path, cached_rows, *,
+        authenticated=None):
     result = []
     for _capability, seed, rows in cached_rows:
         result.extend(_instruments(
             source_context, candidate_bundle, artifact_path, rows,
-            seed=seed, each=C05_PROBE_EACH, release_prevalidated=True))
+            seed=seed, release_prevalidated=True, authenticated=authenticated))
     return tuple(result)
 
 
@@ -170,14 +174,15 @@ def _local_coverage(target_coverage, target_plan, plan_sha256):
 
 def _target_stage(
         source_context, parent, candidate_bundle, candidate_state, artifact_path,
-        release, plan, target_plan, training, cached_rows, cache, observer=None):
+        release, plan, target_plan, training, cached_rows, cache, observer=None, *,
+        authenticated=None):
     started = time.perf_counter()
     target = target_plan.target_capability_id
     (reference_seed, reference_rows), protected_rows = _split_cached_rows(
         cached_rows, target_plan)
     reference_target = tuple(_instruments(
         source_context, candidate_bundle, artifact_path, reference_rows,
-        seed=reference_seed, each=C05_PROBE_EACH, release_prevalidated=True))
+        seed=reference_seed, release_prevalidated=True, authenticated=authenticated))
     epoch = _comparison_epoch(
         release, plan, target_plan, reference_target, parent, cache)
     ledger = BaselineLedger.from_optional_record(parent.baseline_evidence)
@@ -191,7 +196,8 @@ def _target_stage(
         training=training, require_independent=False)
     target_instruments = tuple(_instruments(
         source_context, candidate_bundle, artifact_path, target_draw.rows,
-        seed=target_draw.seed, each=C05_PROBE_EACH))
+        seed=target_draw.seed, each=C05_PROBE_EACH,
+        release_prevalidated=True, authenticated=authenticated))
     target_cases = tuple(item.case for item in target_instruments)
     target_policy = _policy(target_group, (), target_cases, target_coverage)
     target_cohort = _cohort(
@@ -237,10 +243,11 @@ def _target_stage(
 def _protected_stage(
         source_context, parent, candidate_bundle, artifact_path,
         release, plan, target_plan, training, protected_rows, cache,
-        target_coverage, observer=None):
+        target_coverage, observer=None, *, authenticated=None):
     started = time.perf_counter()
     protected_instruments = _cached_instruments(
-        source_context, candidate_bundle, artifact_path, protected_rows)
+        source_context, candidate_bundle, artifact_path, protected_rows,
+        authenticated=authenticated)
     protected_pair = parent_cache = None
     coverage = _local_coverage(target_coverage, target_plan, plan.digest)
     _observe(observer, retention_protected_case_count=len(protected_instruments))
@@ -307,19 +314,22 @@ def foundation_local_retention_screen(
         release, plan, target_plan, training, cached_rows, cache, *,
         observer=None):
     """Resolve a fresh target pair before any protected candidate inference."""
+    authenticated = authenticate_bamf_execution_feature_context(
+        candidate_bundle, artifact_path, source_context.run_dir)
     (
         target, protected_rows, target_instruments, target_pair,
         target_coverage, comparison, decision,
     ) = _target_stage(
         source_context, parent, candidate_bundle, candidate_state, artifact_path,
-        release, plan, target_plan, training, cached_rows, cache, observer)
+        release, plan, target_plan, training, cached_rows, cache, observer,
+        authenticated=authenticated)
     if decision is not None:
         return decision, parent, candidate_bundle, None, comparison, None, None
 
     protected_pair, parent_cache, protected_instruments, coverage = _protected_stage(
         source_context, parent, candidate_bundle, artifact_path,
         release, plan, target_plan, training, protected_rows, cache,
-        target_coverage, observer)
+        target_coverage, observer, authenticated=authenticated)
     groups = target_plan.evaluated_capability_groups
 
     all_instruments = (*target_instruments, *protected_instruments)

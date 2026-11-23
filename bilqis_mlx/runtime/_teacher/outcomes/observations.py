@@ -63,7 +63,7 @@ def _deltas(observation):
     return deltas
 
 
-def _apply_outcome(teacher, observation):
+def _apply_outcome(teacher, observation, *, selected_teacher_override=None):
     """Return a credited copy, or the unchanged copy for identical delivery."""
     if (not isinstance(observation, dict) or observation.get('schema') != SCHEMA
             or observation.get('outcome_sha256') != outcome_digest(observation)):
@@ -77,10 +77,16 @@ def _apply_outcome(teacher, observation):
             invalid()
         return deepcopy(teacher)
     if 'selected_teacher' in observation:
+        if selected_teacher_override is not None:
+            invalid()
         selected = deepcopy(observation['selected_teacher'])
     else:
         selected_sha256 = observation.get('selected_teacher_sha256')
-        selected = _compact_selected_teacher(teacher, context)
+        selected = (
+            _compact_selected_teacher(teacher, context)
+            if selected_teacher_override is None
+            else deepcopy(selected_teacher_override)
+        )
         if (not isinstance(selected_sha256, str)
                 or selected_sha256 != _fingerprint(selected)):
             invalid()
@@ -134,9 +140,11 @@ def _apply_outcome(teacher, observation):
     return selected
 
 
-def apply_outcome(teacher, observation):
+def apply_outcome(teacher, observation, *, selected_teacher_override=None):
     """Validate one observation before returning any changed teacher state."""
     try:
-        return _apply_outcome(teacher, observation)
+        return _apply_outcome(
+            teacher, observation,
+            selected_teacher_override=selected_teacher_override)
     except (KeyError, TypeError, ValueError, AttributeError):
         invalid()

@@ -174,13 +174,31 @@ def proposal_from_task_goal_output(
         goal,
         expression_or_holes=replace(goal.expression_or_holes, nodes=tuple(nodes)),
     )
-    receipt = contract_digest({
-        "schema": "bilqis.mlx.b10-task-goal-route/v1",
-        "goal": contract_digest(goal),
-        "request": request,
-        "plan": output.plan,
-        "route": tuple((key, committed[key]) for key in sorted(committed)),
-    })
+    route_record = tuple((key, committed[key]) for key in sorted(committed))
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if strict_evidence_enabled():
+        receipt = contract_digest({
+            "schema": "bilqis.mlx.b10-task-goal-route/v1",
+            "goal": contract_digest(goal),
+            "request": request,
+            "plan": output.plan,
+            "route": route_record,
+        })
+    else:
+        if (request.goal_id != goal.goal_id
+                or request.generation_digest != output.plan.generation_binding):
+            _invalid("BAMF_C04_TASK_GOAL_ROUTE_OUTPUT_INVALID")
+        receipt = contract_digest({
+            "schema": "bilqis.mlx.b10-task-goal-route-learning-first/v1",
+            "goal_id": goal.goal_id,
+            "source_binding_digest": request.source_binding_digest,
+            "generation_digest": request.generation_digest,
+            "unresolved_signature": request.unresolved_signature,
+            "allowed_operator_ids": request.allowed_operator_ids,
+            "route": route_record,
+        })
     return NeuralProposal(
         proposal_goal, request.source_binding_digest,
         request.generation_digest, request.unresolved_signature, receipt,

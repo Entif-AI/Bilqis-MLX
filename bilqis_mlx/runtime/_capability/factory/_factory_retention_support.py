@@ -5,6 +5,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from bilqis_mlx.learning.atlas_candidate import CandidateTransaction, resolve_candidate
+from bilqis_mlx.learning._retention._atlas_candidate.transaction import (
+    TRAINING_SOURCE_COORDINATE_FIELDS,
+)
 from bilqis_mlx.learning._atlas_candidate.identity_binding import (
     bind_candidate_identity_or_fallback, candidate_identity_for_canonical_consumer,
 )
@@ -34,10 +37,20 @@ C05_FRESH_LESSON_SEED_OFFSET = 130363
 C05_MAX_FRESH_DRAWS = 32
 
 
-def _training_exclusions(candidate: CandidateTransaction):
-    families, episodes = set(), set()
+def _training_coordinates(candidate: CandidateTransaction):
+    if getattr(candidate, "learning_first", False):
+        coordinates = getattr(candidate, "training_source_coordinates", ())
+        if (type(coordinates) is not tuple or not coordinates
+                or coordinates != tuple(sorted(set(coordinates)))
+                or any(type(item) is not tuple
+                       or len(item) != len(TRAINING_SOURCE_COORDINATE_FIELDS)
+                       or any(not isinstance(value, str) or not value for value in item)
+                       for item in coordinates)):
+            _invalid("BAMF_C05_TRAINING_SOURCE_INDEPENDENCE_UNAVAILABLE")
+        return coordinates
     if not candidate.training_authorities:
         _invalid("BAMF_C05_TRAINING_SOURCE_INDEPENDENCE_UNAVAILABLE")
+    coordinates = []
     for proof, authority in zip(candidate.step_proofs, candidate.training_authorities):
         if type(authority) is BamfTrainingAuthority:
             authority.__post_init__()
@@ -56,11 +69,25 @@ def _training_exclusions(candidate: CandidateTransaction):
             members, valid = (), False
         if not valid:
             _invalid("BAMF_C05_TRAINING_SOURCE_INDEPENDENCE_UNAVAILABLE")
-        families.update(member.source_family_id for member in members)
-        episodes.update(member.episode_id for member in members)
+        coordinates.extend(
+            (authority.delivery_capability, member.source_family_id, member.episode_id)
+            for member in members)
+    return tuple(coordinates)
+
+
+def _training_exclusions(candidate: CandidateTransaction):
+    coordinates = _training_coordinates(candidate)
+    families = {family for _capability, family, _episode in coordinates}
+    episodes = {episode for _capability, _family, episode in coordinates}
     if not families or not episodes:
         _invalid("BAMF_C05_TRAINING_SOURCE_INDEPENDENCE_UNAVAILABLE")
     return tuple(sorted(families)), tuple(sorted(episodes))
+
+
+def _training_capabilities(candidate: CandidateTransaction):
+    return tuple(sorted({
+        capability for capability, _family, _episode in _training_coordinates(candidate)
+    }))
 
 
 def _owner_seed(release_sha256, cache, target_capability, candidate_sha256):
@@ -132,7 +159,7 @@ def _package_import_from_live_parent(
 
 def _instruments(
         source_context, candidate, artifact_path, rows, *, seed, each=None,
-        release_prevalidated=False):
+        release_prevalidated=False, authenticated=None):
     source_cohort_sha256 = None
     if each is None:
         measured = {row.get("capability") for row in rows}
@@ -146,7 +173,7 @@ def _instruments(
     return factory_evaluation_instruments(
         source_context, candidate, artifact_path, rows, seed=seed, each=each,
         source_cohort_sha256=source_cohort_sha256,
-        release_prevalidated=release_prevalidated)
+        release_prevalidated=release_prevalidated, authenticated=authenticated)
 
 
 @dataclass(frozen=True)

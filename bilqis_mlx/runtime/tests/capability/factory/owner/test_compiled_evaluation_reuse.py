@@ -24,6 +24,7 @@ from bilqis_mlx.semantics.cognitive_operators import TypedValue
 from bilqis_mlx.semantics.domains import contract_digest
 from bilqis_mlx.semantics.tests.test_frame_compiler import RELEASE
 import bilqis_mlx.runtime.factory_complete_solver as complete_solver
+import bilqis_mlx.runtime.retention.evaluation_binding as evaluation_binding
 
 from .compiled_evaluation_fixtures import compiled_case
 
@@ -36,6 +37,27 @@ def _cold_case(compiled):
 
 
 class CompiledEvaluationReuseTests(unittest.TestCase):
+    def test_cached_evaluator_context_preserves_grants_but_matches_current_epochs(self):
+        expected_task = object()
+        expected_policy = object()
+        expected_frontier = SimpleNamespace(rights_epoch=3, correction_generation=5)
+        compiled_config = SimpleNamespace(
+            task=expected_task,
+            policy=expected_policy,
+            frontier=SimpleNamespace(
+                rights_epoch=3, correction_generation=5,
+                grants=("row-specific-source-grant",)),
+        )
+
+        self.assertTrue(
+            evaluation_binding._evaluation_context_matches_compiled_config(
+                compiled_config, expected_task, expected_frontier, expected_policy))
+        self.assertFalse(
+            evaluation_binding._evaluation_context_matches_compiled_config(
+                compiled_config, expected_task,
+                SimpleNamespace(rights_epoch=3, correction_generation=6),
+                expected_policy))
+
     def test_accepted_solver_reuses_checkpoint_feature_context(self):
         class CheckpointContext:
             pass

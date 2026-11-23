@@ -1,23 +1,28 @@
 """Source/context preparation owned by the Factory training bridge."""
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import asdict, replace
 from pathlib import Path
 
 from bilqis_mlx.factory.generation import runtime_adapter_for_release
 from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput
 from bilqis_mlx.learning.source_atoms import SourceAtomRow
-from bilqis_mlx.runtime.atlas_model_contracts import bind_candidate_active_semantic_rows
+from bilqis_mlx.runtime.atlas_model_contracts import (
+    BamfCompiledBatch, bind_candidate_active_semantic_rows,
+)
 from bilqis_mlx.runtime.atlas_training_authority import bind_compiled_training_batch
 from bilqis_mlx.runtime.b11_source_execution_authority import (
     _bind_prepared_b11_source_execution_authority, _issue_prepared_b11_source_proof,
 )
 from bilqis_mlx.semantics.frame_adapters.registry import source_frame_strategy
+from bilqis_mlx.semantics.atlas_features.common import _factor_overflow
 from bilqis_mlx.semantics.context_eligibility import ApprovedContextProjection
+from bilqis_mlx.semantics.domains import contract_digest
 from bilqis_mlx.semantics.frame_compiler import (
-    CompiledFrameBatch, CompiledFrameRows, FrameCompilerConfig,
+    CompiledFrameBatch, CompiledFrameRows, FrameCompilerConfig, compile_prefix,
     validate_partial_visible_forest,
 )
+from bilqis_mlx.semantics.frame_schema import FrameInstance
 from bilqis_mlx.semantics.released_frame_schemas import (
     _load_pinned_released_frame_schemas_from_snapshot,
 )
@@ -123,10 +128,107 @@ def _bind_b11_rows(source_context, candidate, authenticated, training, source_ro
     return tuple(compiled_rows)
 
 
+def _prepare_learning_first_model_sources(authenticated, source_rows):
+    """Build only the model inputs needed for learning.
+
+    This deliberately skips the strict source inventory, lineage, semantic-authority,
+    B11 proof and currentness ceremony. The already-selected source rows and the
+    planning generation's authenticated feature context remain the inputs.
+    """
+    from bilqis_mlx.runtime.atlas_training_adapter import PreparedModelSourceInput
+
+    def learning_features(projection):
+        rows = []
+        type_map = dict(authenticated.features.type_map)
+        for envelope in projection.envelopes:
+            frame = envelope.frame
+            if type(frame) is not FrameInstance:
+                continue
+            for binding in frame.bindings:
+                concepts = ((binding.concept,) if binding.concept is not None
+                            else binding.alternatives)
+                for concept in concepts:
+                    row = authenticated.features.features_for(
+                        concept.semantic_id, binding.role_id,
+                        frame.frame_schema_id, envelope.scope)
+                    identifiers = tuple(concept.type_ids)
+                    rows.append(replace(
+                        row, type_ids=identifiers,
+                        type_rows=tuple(type_map.get(item, 0) for item in identifiers),
+                        type_overflow=tuple(
+                            (item, _factor_overflow("type", item))
+                            for item in identifiers if type_map.get(item, 0) == 0)))
+        return tuple(rows)
+    prepared = []
+    for item in source_rows:
+        visible = tuple(item.row["tokens"])
+        config = (item.config if item.projection is None
+                  else replace(item.config, approved=item.projection))
+        prefix = compile_prefix(
+            item.ast, len(visible), item.task.semantic_release, config)
+        features = (() if item.projection is None else
+                    learning_features(item.projection))
+        eligibility_digest = (
+            item.projection.digest if item.projection is not None else
+            contract_digest({
+                "schema": "bilqis.mlx.c02-atomic-eligibility/v1",
+                "task": asdict(item.task),
+                "frontier": asdict(item.frontier),
+                "policy": asdict(item.policy),
+                "source_instance_id": item.ast.source_instance_id,
+                "visible_end": len(visible),
+            }))
+        model = PreparedModelSourceInput(
+            item.row["id"], visible, prefix, features, eligibility_digest)
+        model.__post_init__()
+        prepared.append(model)
+    return tuple(prepared)
+
+
+def _bind_learning_first_rows(
+        source_context, candidate, authenticated, training, source_rows, profile, *,
+        source_seed, source_each):
+    """Bind neural rows without B11 source-execution or artifact-owner authority."""
+    active_semantic_rows = bind_candidate_active_semantic_rows(candidate, authenticated)
+    compiled_rows = []
+    for index, item in enumerate(source_rows):
+        prefix = training.rows[index].model_input.prefix
+        config = (item.config if item.projection is None
+                  else replace(item.config, approved=item.projection))
+        rows = CompiledFrameRows(
+            (prefix,), (prefix.positions,), ((True,) * len(prefix.positions),))
+        if item.projection is None:
+            compiled = CompiledEncoderInput(
+                rows, (config,), authenticated.features, candidate.extents)
+        else:
+            compiled = CompiledEncoderInput(
+                rows, (config,), authenticated.features, candidate.extents)
+        abi_indices = []
+        for token_index in item.row["tokens"]:
+            entry = authenticated.snapshot.abi(token_index)
+            token = item.source_graph["tokens"][token_index]
+            if entry.symbol != token:
+                semantic_id = item.source_graph["nodes"][token_index].get("semantic_id")
+                entry = authenticated.snapshot.abi_for_semantic(semantic_id)
+            abi_indices.append(entry.index)
+        source = SourceAtomRow(
+            authenticated.selection, item.row, item.source_graph,
+            Path(source_context.source_root),
+            item.source_seed, item.source_each,
+            source_context.release.curriculum, item.profile, tuple(abi_indices))
+        batch = BamfCompiledBatch(
+            compiled, (source,), authenticated.schema, active_semantic_rows,
+            visit_provenance=training.rows[index].provenance.visit)
+        batch.__post_init__()
+        compiled_rows.append(batch)
+    return tuple(compiled_rows)
+
+
 def _prepare_factory_source_rows(source_context, authenticated, rows, *, capability,
                                  source_seed, source_each, source_authority=None,
                                  source_authorities_by_id=None,
-                                 source_bindings_by_id=None):
+                                 source_bindings_by_id=None,
+                                 issue_b11_proofs=True):
     """Prepare the same source-owned AST and eligibility inputs for C02 or an offer."""
     execution = source_context.release.execution_plan.capability_map[capability]
     adapter = runtime_adapter_for_release(
@@ -180,7 +282,7 @@ def _prepare_factory_source_rows(source_context, authenticated, rows, *, capabil
             capability=row_capability, source_seed=row_seed, source_each=row_each,
             prequalified=row_authority is not None))
     source_rows = tuple(source_rows)
-    if prequalified:
+    if prequalified and issue_b11_proofs:
         source_rows = tuple(replace(
             item,
             b11_proof=_issue_prepared_b11_source_proof(
