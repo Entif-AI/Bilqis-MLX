@@ -17,8 +17,8 @@ from bilqis_mlx.learning.teacher_visit_identity import (
     record_teacher_visit_identity,
 )
 from bilqis_mlx.runtime.atlas_memory_retry import OOM_EXHAUSTED
-from bilqis_mlx.runtime._learning_first.accepted_priority_context import (
-    learning_first_priority_context,
+from bilqis_mlx.runtime._learning_first.accepted_priority_selection import (
+    select_learning_first_priority_visit,
 )
 from bilqis_mlx.runtime.priority_source_offer import (
     PrioritySourceIntent, expand_selected_priority_source_offer,
@@ -200,74 +200,12 @@ def _qualified_priority_context(
     )
 
 
-def select_accepted_priority_visit(
-        run_dir, source_context, frontier, history, planning, offers,
-        engine, school, rng, learning_settings, *, program, now,
-        lawful_frontier,
-        cadence_authorization=None,
-        selected_source_each=None,
-        planning_offer_fanout_wall_seconds=None,
-        total_capabilities=None, plasticity_escape=None,
-        legacy_receipt=None, adaptation=None, prior_region=None,
-        accepted_parent=None, planning_generation=None, resource_holds=frozenset()):
-    parent, cache = _accepted_context(
-        run_dir, source_context, school, lawful_frontier,
-        accepted_parent, planning_generation)
-    cadence_ids, cadence_metadata = _cadence_context(
-        cadence_authorization, lawful_frontier)
-    if not offers and frontier is None:
-        return _empty_priority_result(
-            run_dir, source_context, parent, frontier, history, lawful_frontier,
-            cadence_authorization, cadence_ids, cadence_metadata)
-    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
-        strict_mode_enabled,
-    )
-    strict = strict_mode_enabled()
-    if not strict:
-        projection, epoch, teacher, by_id, holds = learning_first_priority_context(
-            run_dir, source_context, parent, cache, frontier, offers, school,
-            learning_settings, lawful_frontier, legacy_receipt, adaptation, prior_region)
-        if cadence_ids is not None and not set(by_id) <= set(cadence_ids):
-            _invalid('BAMF_ACTIVE_GRADE_CADENCE_OFFER_DRIFT')
-        for option in frontier.options:
-            if _planning_hold(option, planning.selection):
-                holds.append((option.stable_id, 'A09_PLANNING_UNAVAILABLE'))
-                continue
-            if option.context.capability_id in resource_holds:
-                holds.append((option.stable_id, OOM_EXHAUSTED))
-                continue
-            grade = _grade(program, school, option.context.capability_id)
-            if grade is None:
-                _invalid('BAMF_PRIORITY_PROGRAM_INVALID')
-            planning_offer = by_id[option.stable_id]
-            materialization_started = time.perf_counter()
-            try:
-                offer = materialize_priority_source_intent(
-                    planning_offer, source_context, parent,
-                    source_each=(planning_offer.source_each
-                                 if selected_source_each is None
-                                 else selected_source_each))
-            except ValueError:
-                holds.append((option.stable_id, 'SOURCE_OFFER_HELD'))
-                continue
-            source_materialization_wall_seconds = max(
-                0.0, time.perf_counter() - materialization_started)
-            priority_features = {
-                'schema': 'bilqis.bamf.learning-first-priority-features/v1',
-                'known': [False, False, False],
-            }
-            return _selected_priority_result(
-                run_dir, source_context, parent, cache, projection, epoch, teacher,
-                option.dispatch_tier, option, offer, school, engine, rng,
-                learning_settings, program, grade, None, holds, lawful_frontier,
-                total_capabilities, plasticity_escape, priority_features,
-                cadence_authorization, planning_offer,
-                source_materialization_wall_seconds,
-                planning_offer_fanout_wall_seconds)
-        return _issue_result(
-            'NO_ADMISSIBLE_TEACHING', None, None, None, None, cadence_metadata,
-            None, sorted(holds), run_dir, lawful_frontier,
-            cadence_authorization=cadence_authorization)
+def _select_strict_priority_visit(
+        run_dir, source_context, parent, cache, frontier, history, planning, offers,
+        engine, school, rng, learning_settings, program, now, lawful_frontier,
+        cadence_authorization, cadence_ids, cadence_metadata, selected_source_each,
+        planning_offer_fanout_wall_seconds, total_capabilities, plasticity_escape,
+        legacy_receipt, adaptation, prior_region, planning_generation, resource_holds):
     (projection, epoch, teacher, qualified, by_id, evidence, holds) = (
         _qualified_priority_context(
             run_dir, source_context, parent, cache, frontier, history, planning,
@@ -317,7 +255,7 @@ def select_accepted_priority_visit(
             except ValueError:
                 holds.append((option.stable_id, 'SOURCE_OFFER_HELD'))
                 continue
-        source_materialization_wall_seconds = max(
+        materialization_wall = max(
             0.0, time.perf_counter() - materialization_started)
         return _selected_priority_result(
             run_dir, source_context, parent, cache, projection, epoch, teacher,
@@ -325,7 +263,7 @@ def select_accepted_priority_visit(
             engine, rng, learning_settings, program, grade,
             evidence[option.stable_id], holds, lawful_frontier, total_capabilities,
             plasticity_escape, priority_features, cadence_authorization,
-            planning_offer, source_materialization_wall_seconds,
+            planning_offer, materialization_wall,
             planning_offer_fanout_wall_seconds)
     if action_required_option_id is not None:
         return _issue_result(
@@ -336,4 +274,44 @@ def select_accepted_priority_visit(
         'NO_ADMISSIBLE_TEACHING', None, None, None, None, cadence_metadata,
         None, sorted(holds), run_dir, lawful_frontier,
         cadence_authorization=cadence_authorization)
+
+
+def select_accepted_priority_visit(
+        run_dir, source_context, frontier, history, planning, offers,
+        engine, school, rng, learning_settings, *, program, now,
+        lawful_frontier,
+        cadence_authorization=None,
+        selected_source_each=None,
+        planning_offer_fanout_wall_seconds=None,
+        total_capabilities=None, plasticity_escape=None,
+        legacy_receipt=None, adaptation=None, prior_region=None,
+        accepted_parent=None, planning_generation=None, resource_holds=frozenset()):
+    parent, cache = _accepted_context(
+        run_dir, source_context, school, lawful_frontier,
+        accepted_parent, planning_generation)
+    cadence_ids, cadence_metadata = _cadence_context(
+        cadence_authorization, lawful_frontier)
+    if not offers and frontier is None:
+        return _empty_priority_result(
+            run_dir, source_context, parent, frontier, history, lawful_frontier,
+            cadence_authorization, cadence_ids, cadence_metadata)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    strict = strict_mode_enabled()
+    if not strict:
+        return select_learning_first_priority_visit(
+            run_dir, source_context, parent, cache, frontier, offers, school,
+            learning_settings, lawful_frontier, legacy_receipt, adaptation, prior_region,
+            cadence_ids, planning, resource_holds, program, selected_source_each,
+            engine, rng, total_capabilities, plasticity_escape, cadence_authorization,
+            cadence_metadata, planning_offer_fanout_wall_seconds,
+            invalid=_invalid, selected_result=_selected_priority_result,
+            issue_result=_issue_result)
+    return _select_strict_priority_visit(
+        run_dir, source_context, parent, cache, frontier, history, planning, offers,
+        engine, school, rng, learning_settings, program, now, lawful_frontier,
+        cadence_authorization, cadence_ids, cadence_metadata, selected_source_each,
+        planning_offer_fanout_wall_seconds, total_capabilities, plasticity_escape,
+        legacy_receipt, adaptation, prior_region, planning_generation, resource_holds)
 
