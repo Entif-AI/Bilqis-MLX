@@ -46,10 +46,13 @@ class LearningFirstSourcePathTests(PreNeuralJourneySupport, unittest.TestCase):
                     parent.retained_state.optimizer.parameters,
                     spec=parent.topology, extents=parent.extents)
                 cache = LearningFirstPreparationCache()
-                from bilqis_mlx.runtime import factory_training_bridge
+                from bilqis_mlx.runtime import factory_training_preparation
                 with evidence_mode(strict=False), patch.object(
-                        factory_training_bridge, "_prepare_learning_first_model_sources",
-                        wraps=factory_training_bridge._prepare_learning_first_model_sources,
+                        factory_training_preparation,
+                        "_prepare_learning_first_model_sources",
+                        wraps=(
+                            factory_training_preparation
+                            ._prepare_learning_first_model_sources),
                 ) as prepare_model_sources:
                     first = prepare_factory_training_batch(
                         context, parent, atlas_path, feature_path, rows, generation,
