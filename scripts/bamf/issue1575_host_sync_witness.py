@@ -21,6 +21,7 @@ from unittest.mock import patch
 import mlx.core as mx
 
 from bilqis_mlx.runtime.mlx_memory import training_memory_policy
+from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
 from bilqis_mlx.runtime.tests.capability.factory.retention import retention_throughput_profile as p
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.cold_resume_probe import retained_digest
 
@@ -50,9 +51,10 @@ try:
                 mx.clear_cache()
                 mx.reset_peak_memory()
                 started = time.perf_counter()
-                _bound, rows, step = p._train_candidate(
-                    run_dir, parent, source_context, feature_path, artifact,
-                    "B.AND", rows_requested)
+                with evidence_mode(strict=False):
+                    _bound, rows, step = p._train_candidate(
+                        run_dir, parent, source_context, feature_path, artifact,
+                        "B.AND", rows_requested)
                 mx.synchronize()
                 wall = max(0.0, time.perf_counter() - started)
                 cost = dict(step.realized_cost)
