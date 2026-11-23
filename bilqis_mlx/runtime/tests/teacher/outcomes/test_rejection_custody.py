@@ -108,7 +108,7 @@ class NativeRejectionOutcomeTests(NativeSourceFixture, unittest.TestCase):
                    'total_capabilities': 20}
         selection = _issue_result(
             'TEACHER_SELECTED', cap, offer, visit, policy,
-            {'how_context': context},
+            {'how_context': context, 'diagnostic_context_key': diagnostic_key},
             'A', (), self.run, object())
         fixture = list(factory_fixture._foundation_owner_fixture())
         fixture[-1] = replace(fixture[-1], status=DecisionStatus.ELIGIBLE if accepted else DecisionStatus.REJECT,
