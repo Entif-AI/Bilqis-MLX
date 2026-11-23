@@ -74,7 +74,9 @@ try:
                     "requested_rows": rows_requested,
                     "wall_seconds": wall,
                     "optimizer_state_sha256": retained_digest(step.transaction),
-                    "optimizer_step": step.transaction.optimizer_step,
+                    "optimizer_step": (
+                        step.transaction.parent.optimizer_step
+                        + step.transaction.update_steps),
                     "realized_cost": {key: cost.get(key) for key in keys},
                 }, sort_keys=True), flush=True)
 finally:
