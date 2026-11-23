@@ -71,9 +71,11 @@ def _row_execution_inputs(
     )
     if not strict_evidence_enabled():
         row = compiled.sources[0].source_row
-        cache_key = (
-            learning_first_cache.key(row) if row_cache_key is None
-            else row_cache_key)
+        cache_key = None
+        if learning_first_cache is not None:
+            cache_key = (
+                learning_first_cache.key(row) if row_cache_key is None
+                else row_cache_key)
         cached = (
             None if learning_first_cache is None
             else learning_first_cache.get_task_inputs(cache_key))

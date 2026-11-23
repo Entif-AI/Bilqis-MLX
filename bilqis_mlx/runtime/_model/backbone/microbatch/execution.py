@@ -17,6 +17,7 @@ from ..atlas_model_training import (
 )
 from .compiled_batch import _MIN_ROWS, _compiled_microbatch, _microbatch_salience_labels
 from .route_kernel import prepare_route_microbatch_kernel, route_microbatch_compatible
+from .compiled_route import learning_first_compiled_route
 from ..atlas_model_microbatch import (
     _gradient_path, _materialize_gradient, _microbatch_objective,
     _require_materialized_finite_witness,
@@ -100,11 +101,16 @@ def _learning_first_microbatch_value_and_grad_impl(
     refinement_selections = (None,) * len(row_batches)
     route_kernel = prepare_route_microbatch_kernel(
         row_batches, answer_plans, targets, masks, None, salience_labels)
+    compiled_route = None
+    if salience_supervision is None:
+        compiled_route, _compile_state = learning_first_compiled_route(
+            backend, row_batches, answer_plans, targets, masks, route_kernel)
     holder = {}
     objective = _microbatch_objective(
         backend, batch, row_batches, answer_plans, targets, masks, None,
         generation, snapshot, rebind_execution, True, None,
-        refinement_selections, route_kernel, salience_supervision, holder)
+        refinement_selections, route_kernel, salience_supervision, holder,
+        compiled_route=compiled_route)
     with source_replay_observation() as replay:
         autodiff_started = time.perf_counter()
         mean_loss, gradients, executions, route_trajectory, finite_witness, timings = (

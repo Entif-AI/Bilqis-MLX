@@ -198,6 +198,8 @@ def test_learning_first_ignores_accepted_cache_for_gradient_identity():
             return_value=(batch, None, "generation", object())), patch.object(
                 microbatch_execution, "route_microbatch_compatible",
                 return_value=True), patch.object(
+                    microbatch_execution, "learning_first_compiled_route",
+                    return_value=(None, "disabled")), patch.object(
                     microbatch_execution, "_gradient_execution_rebinder",
                     return_value=lambda current: object()) as rebind, patch.object(
                         microbatch_execution, "prepare_route_microbatch_kernel",

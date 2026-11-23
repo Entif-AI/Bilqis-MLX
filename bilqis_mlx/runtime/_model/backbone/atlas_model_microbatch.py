@@ -157,7 +157,7 @@ def _microbatch_objective(
         backend, batch, row_batches, answer_plans, targets, masks, cache,
         generation, snapshot, rebind_execution, route_vectorized,
         preflight_executions, refinement_selections, route_kernel,
-        salience_supervision, holder):
+        salience_supervision, holder, compiled_route=None):
     dispatch_timings = {key: 0.0 for key in _DISPATCH_CHILD_FIELDS}
     holder["dispatch_timings"] = dispatch_timings
 
@@ -208,10 +208,18 @@ def _microbatch_objective(
             dispatch_timings["b11_autodiff_dispatch_refinement_graph_wall_seconds"] += (
                 time.perf_counter() - started)
             started = time.perf_counter()
-            mean_loss, trajectory, route_logits = route_microbatch_loss_and_trajectory(
-                current, refined, route_kernel, salience_hidden=salience_hidden,
-                refinement_routing_loss=refinement_routing_loss,
-                return_logits=True)
+            if compiled_route is None:
+                mean_loss, trajectory, route_logits = route_microbatch_loss_and_trajectory(
+                    current, refined, route_kernel, salience_hidden=salience_hidden,
+                    refinement_routing_loss=refinement_routing_loss,
+                    return_logits=True)
+            else:
+                # The learning-first compiled boundary is qualified only while
+                # refinement selections are empty, so salience_hidden == refined
+                # and no refinement-routing loss is omitted here.
+                if refinement_routing:
+                    _invalid("B11_COMPILED_ROUTE_REFINEMENT_UNSUPPORTED")
+                mean_loss, trajectory, route_logits = compiled_route(current, refined)
             dispatch_timings["b11_autodiff_dispatch_route_graph_wall_seconds"] += (
                 time.perf_counter() - started)
             return (
