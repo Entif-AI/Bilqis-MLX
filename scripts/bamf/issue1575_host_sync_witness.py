@@ -16,6 +16,8 @@ import os
 from pathlib import Path
 import tempfile
 import time
+from collections.abc import Mapping
+from contextlib import nullcontext
 from unittest.mock import patch
 
 import mlx.core as mx
@@ -38,6 +40,7 @@ previous = mx.default_device()
 mx.set_default_device(mx.gpu)
 try:
     original_delivery = ObservationCapture.delivery
+    original_value_and_grad = mx.value_and_grad
 
     def compatible_delivery(self, *args, fresh_support=(), **kwargs):
         if fresh_support:
@@ -45,9 +48,24 @@ try:
                 "#1575 witness compatibility shim refuses non-empty fresh support")
         return original_delivery(self, *args, **kwargs)
 
+    def compatible_value_and_grad(*args, **kwargs):
+        transformed = original_value_and_grad(*args, **kwargs)
+
+        def invoke(parameters, *call_args, **call_kwargs):
+            if type(parameters) is not dict and isinstance(parameters, Mapping):
+                parameters = dict(parameters)
+            return transformed(parameters, *call_args, **call_kwargs)
+
+        return invoke
+
+    control_autodiff_compatibility = (
+        patch.object(mx, "value_and_grad", compatible_value_and_grad)
+        if label == "base" else nullcontext())
+
     with training_memory_policy(mx):
         with tempfile.TemporaryDirectory() as directory, p.host_source_authority_patch(), \
-                patch.object(ObservationCapture, "delivery", compatible_delivery):
+                patch.object(ObservationCapture, "delivery", compatible_delivery), \
+                control_autodiff_compatibility:
             stage = Path(directory)
             with patch.dict(os.environ, {
                     "BILQIS_A01_ATLAS_BUNDLE": str(artifact),
