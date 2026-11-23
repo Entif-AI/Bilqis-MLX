@@ -18,6 +18,26 @@ from ..performance import selected_source_visit_fields
 from ..session_support import BamfPreparedVisit
 
 
+def _record_planning_observation(observer, selection, planning_started):
+    if observer is None:
+        return
+    identity = getattr(getattr(getattr(selection, "visit", None), "identity", None),
+                       "visit_id", None)
+    if isinstance(identity, str) and identity:
+        observer.update(visit_id=identity)
+    planning_total = max(0.0, time.perf_counter() - planning_started)
+    source_wall = float(
+        getattr(selection, "source_materialization_wall_seconds", None) or 0.0)
+    from bilqis_mlx.runtime.priority_source_materialization import (
+        source_materialization_observation,
+    )
+    observer.update(
+        planning_wall_seconds=max(0.0, planning_total - source_wall),
+        source_materialization_wall_seconds=(source_wall or None),
+        **selected_source_visit_fields(
+            source_materialization_observation(selection.offer)))
+
+
 def prepare_bamf_visit_impl(
         run_dir: Path, *, steps_per_visit, batch_size, reserve_gib, progress,
         source_prefetch_workers, source_prefetch_executor,
@@ -67,25 +87,7 @@ def prepare_bamf_visit_impl(
         run_dir, context, atlas_path, program=program, school=school,
         progress=progress, resource_holds=resource_holds,
         planning_cache=planning_cache, logical_batch_size=batch_size)
-    if observer is not None:
-        identity = getattr(getattr(getattr(selection, "visit", None), "identity", None),
-                           "visit_id", None)
-        if isinstance(identity, str) and identity:
-            observer.update(visit_id=identity)
-    planning_total = max(0.0, time.perf_counter() - planning_started)
-    source_materialization_wall_seconds = float(
-        getattr(selection, "source_materialization_wall_seconds", None) or 0.0)
-    if observer is not None:
-        from bilqis_mlx.runtime.priority_source_materialization import (
-            source_materialization_observation,
-        )
-        observer.update(
-            planning_wall_seconds=max(
-                0.0, planning_total - source_materialization_wall_seconds),
-            source_materialization_wall_seconds=(
-                source_materialization_wall_seconds or None),
-            **selected_source_visit_fields(
-                source_materialization_observation(selection.offer)))
+    _record_planning_observation(observer, selection, planning_started)
     if selection.status != "TEACHER_SELECTED":
         if (selection.status == "NO_ADMISSIBLE_TEACHING"
                 and any(reason == OOM_EXHAUSTED for _, reason in selection.holds)):

@@ -4,14 +4,15 @@ import unittest
 from bilqis_mlx.learning.learning_experiment import Settings, decide
 
 
-_MARGINAL_TRADE = {
-    "A.LINK": {"before": 2, "after": 3, "total": 6},
-    "A.MAPS": {"before": 3, "after": 4, "total": 6},
-    "A.EDGE": {"before": 5, "after": 3, "total": 6},
-    "A.MEMBER": {"before": 5, "after": 4, "total": 6},
-    "A.IDENTITY": {"before": 4, "after": 4, "total": 6},
-    "A.PARENT": {"before": 4, "after": 4, "total": 6},
-}
+def _marginal_trade():
+    return {
+        "A.LINK": {"before": 2, "after": 3, "total": 6},
+        "A.MAPS": {"before": 3, "after": 4, "total": 6},
+        "A.EDGE": {"before": 5, "after": 3, "total": 6},
+        "A.MEMBER": {"before": 5, "after": 4, "total": 6},
+        "A.IDENTITY": {"before": 4, "after": 4, "total": 6},
+        "A.PARENT": {"before": 4, "after": 4, "total": 6},
+    }
 
 
 class MasteryDebtMarginTests(unittest.TestCase):
@@ -27,13 +28,13 @@ class MasteryDebtMarginTests(unittest.TestCase):
         )
 
     def test_default_margin_rejects_recent_one_over_36_trade(self):
-        result = self._decide(_MARGINAL_TRADE)
+        result = self._decide(_marginal_trade())
         self.assertEqual(result["decision"], "REJECT")
         self.assertEqual(result["reason"], "PROTECTED_CAPABILITY_REGRESSION")
 
     def test_explicit_lower_margin_can_admit_same_trade(self):
         result = self._decide(
-            _MARGINAL_TRADE,
+            _marginal_trade(),
             settings=Settings(mastery_debt_min_utility=0.02),
         )
         self.assertEqual(result["decision"], "PROVISIONAL")

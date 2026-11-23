@@ -12,27 +12,29 @@ from bilqis_mlx.runtime.capability_retention_foundation_runtime import (
 )
 
 
-SCORES = {
-    "A.LINK": {"before": 2, "after": 3, "total": 6},
-    "A.MAPS": {"before": 3, "after": 4, "total": 6},
-    "A.EDGE": {"before": 5, "after": 3, "total": 6},
-    "A.MEMBER": {"before": 5, "after": 4, "total": 6},
-    "A.IDENTITY": {"before": 4, "after": 4, "total": 6},
-    "A.PARENT": {"before": 4, "after": 4, "total": 6},
-}
+def _scores():
+    return {
+        "A.LINK": {"before": 2, "after": 3, "total": 6},
+        "A.MAPS": {"before": 3, "after": 4, "total": 6},
+        "A.EDGE": {"before": 5, "after": 3, "total": 6},
+        "A.MEMBER": {"before": 5, "after": 4, "total": 6},
+        "A.IDENTITY": {"before": 4, "after": 4, "total": 6},
+        "A.PARENT": {"before": 4, "after": 4, "total": 6},
+    }
 
 
 def _decision(margin):
-    groups = tuple((capability, "A") for capability in SCORES)
-    protected = tuple(capability for capability in SCORES if capability != "A.LINK")
+    scores = _scores()
+    groups = tuple((capability, "A") for capability in scores)
+    protected = tuple(capability for capability in scores if capability != "A.LINK")
     policy = FoundationRetentionPolicy(
         groups, ("A",), tuple((capability, 1) for capability in protected),
         6, "f" * 64,
         mastery_debt_min_utility_units=mastery_debt_utility_margin_units(margin))
     pair = SimpleNamespace(
-        delta=lambda capability: SCORES[capability]["after"] - SCORES[capability]["before"])
+        delta=lambda capability: scores[capability]["after"] - scores[capability]["before"])
     context = (
-        pair, dict(groups), None, tuple(SCORES), set(SCORES), SCORES, 1)
+        pair, dict(groups), None, tuple(scores), set(scores), scores, 1)
     with patch(
             "bilqis_mlx.runtime.capability_retention_foundation_runtime._fixed_school_score_context",
             return_value=context):
