@@ -17,6 +17,9 @@ from bilqis_mlx.learning.teacher_visit_identity import (
     record_teacher_visit_identity,
 )
 from bilqis_mlx.runtime.atlas_memory_retry import OOM_EXHAUSTED
+from bilqis_mlx.runtime._learning_first.accepted_priority_context import (
+    learning_first_priority_context,
+)
 from bilqis_mlx.runtime.priority_source_offer import (
     PrioritySourceIntent, expand_selected_priority_source_offer,
     materialize_priority_source_intent,
@@ -197,33 +200,6 @@ def _qualified_priority_context(
     )
 
 
-def _learning_first_priority_context(
-        run_dir, source_context, parent, cache, frontier, offers, school,
-        learning_settings, lawful_frontier, legacy_receipt, adaptation, prior_region):
-    from bilqis_mlx.runtime.priority_authority import LearningFirstPriorityFrontier
-    if type(frontier) is not LearningFirstPriorityFrontier:
-        _invalid('BAMF_PRIORITY_LEARNING_FIRST_FRONTIER_INVALID')
-    projection = _c03_projection(
-        parent, legacy_receipt=legacy_receipt,
-        adaptation=adaptation, prior_region=prior_region)
-    projection = current_teacher_projection(run_dir, parent, cache, projection)
-    epoch = restore_teacher_lineage(projection.teacher_state)
-    teacher = _teacher(epoch, school)
-    if not isinstance(learning_settings, Settings):
-        _invalid('BAMF_SALIENCE_CONTEXTUAL_SETTINGS_REQUIRED')
-    by_id = dict(offers)
-    if (len(by_id) != len(offers)
-            or set(by_id) != {option.stable_id for option in frontier.options}
-            or any(option.context.capability_id != option.stable_id
-                   for option in frontier.options)):
-        _invalid('BAMF_PRIORITY_LEARNING_FIRST_FRONTIER_INVALID')
-    holds = [
-        (item.capability_id, item.code.value)
-        for item in lawful_frontier.exclusions
-    ]
-    return projection, epoch, teacher, by_id, holds
-
-
 def select_accepted_priority_visit(
         run_dir, source_context, frontier, history, planning, offers,
         engine, school, rng, learning_settings, *, program, now,
@@ -248,7 +224,7 @@ def select_accepted_priority_visit(
     )
     strict = strict_mode_enabled()
     if not strict:
-        projection, epoch, teacher, by_id, holds = _learning_first_priority_context(
+        projection, epoch, teacher, by_id, holds = learning_first_priority_context(
             run_dir, source_context, parent, cache, frontier, offers, school,
             learning_settings, lawful_frontier, legacy_receipt, adaptation, prior_region)
         if cadence_ids is not None and not set(by_id) <= set(cadence_ids):

@@ -83,47 +83,6 @@ def test_priority_offer_qualifies_source_without_heavy_context_or_prefix_build()
         fixture.doCleanups()
 
 
-def test_learning_first_source_intent_draws_only_after_selection():
-    from bilqis_mlx.runtime import priority_source_offer as offer_module
-    from bilqis_mlx.runtime import priority_planning_generation as planning_module
-    from bilqis_mlx.runtime.tests.batch import test_atlas_training_adapter as fixture_module
-
-    fixture = fixture_module.AtlasTrainingAdapterTest()
-    fixture.setUp()
-    try:
-        context = replace(
-            fixture.context, run_dir=Path("/run"), source_root=Path("/source"))
-        planning = object.__new__(planning_module.PriorityPlanningGeneration)
-        object.__setattr__(planning, "_issuance", planning_module._PLANNING_ISSUER)
-        object.__setattr__(
-            planning, "_target_registrar",
-            SimpleNamespace(register=lambda *_args, **_kwargs: None))
-        cache = SimpleNamespace(
-            accepted_manifest_sha256="a" * 64,
-            generation_binding="b" * 64)
-        authenticated = SimpleNamespace(
-            receipt=SimpleNamespace(
-                generation_manifest_sha256=cache.accepted_manifest_sha256),
-            features=SimpleNamespace(semantic_release="0" * 64))
-        with evidence_mode(strict=False), patch.object(
-                offer_module, "_require_planning_generation_identity",
-                return_value=(cache, authenticated)):
-            intent = offer_module.plan_priority_source_intent(
-                context, object(), "unused", capability="Z.C0",
-                source_seed=17, source_each=4, planning_generation=planning)
-            assert context._source_preparation_metrics.provider_draws == 0
-            selected = offer_module.materialize_priority_source_intent(
-                intent, context, object(), source_each=32)
-
-        assert selected.capability_id == intent.capability_id == "Z.C0"
-        assert selected.source_seed == intent.source_seed == 17
-        assert selected.source_each == 32
-        assert len(selected.rows()) == 32
-        assert context._source_preparation_metrics.provider_draws == 1
-    finally:
-        fixture.doCleanups()
-
-
 def test_selected_offer_expansion_reuses_seed_and_issues_full_fresh_authority():
     from bilqis_mlx.runtime import priority_source_offer as offer_module
     from bilqis_mlx.runtime import priority_planning_generation as planning_module

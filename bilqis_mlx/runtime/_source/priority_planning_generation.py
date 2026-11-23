@@ -115,7 +115,7 @@ def bind_priority_planning_generation(source_context, parent, atlas_artifact_pat
             run_dir, parent, cache, metrics=metrics)
     else:
         currentness = getattr(cache, "_currentness_transaction", None)
-        from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (
+        from bilqis_mlx.runtime._learning_first.accepted_currentness import (
             require_accepted_currentness_identity,
         )
         currentness = require_accepted_currentness_identity(

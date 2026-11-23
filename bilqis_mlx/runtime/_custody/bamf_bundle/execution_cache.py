@@ -239,8 +239,8 @@ def require_accepted_execution_cache(cache) -> AcceptedExecutionCache:
     )
     currentness = getattr(cache, "_currentness_transaction", None)
     if currentness is not None:
-        from .currentness_transaction import (
-            require_accepted_currentness,
+        from .currentness_transaction import require_accepted_currentness
+        from bilqis_mlx.runtime._learning_first.accepted_currentness import (
             require_accepted_currentness_identity,
         )
         require = (

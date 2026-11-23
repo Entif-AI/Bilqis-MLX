@@ -1,23 +1,22 @@
 """Production C06 authority for ordinary grade-neutral BAMF teaching priority."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 import hashlib
 import time
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
-from bilqis_mlx.learning.atlas_salience import (
-    DispatchTier, derive_salience, verify_salience_inputs,
-)
-from bilqis_mlx.learning.salience_contracts import (
-    ActionKind, AttentionOption, AuthoritySnapshot, FactOrigin, Metric, MetricRule,
-    NoveltyState, Ordinal, SalienceContext, SaliencePolicy, Signal, SignedFact,
-)
-from bilqis_mlx.learning.salience_history import (
-    EventKind, SalienceEvent, SalienceHistory, WindowPolicy,
-)
 from bilqis_mlx.learning.salience_teacher import AttentionFrontier
 from bilqis_mlx.learning.teacher_lineage import priority_rotation_state
+from bilqis_mlx.runtime._learning_first.priority_frontier import (
+    LearningFirstPriorityFrontier,
+    learning_first_priority_frontier,
+    planning_unlocks as _planning_unlocks,
+)
+from bilqis_mlx.runtime._learning_first.priority_salience import (
+    priority_history as _priority_history,
+    priority_options as _strict_priority_options,
+)
 from bilqis_mlx.runtime.priority_source_offer import (
     _require_planning_generation, _require_planning_generation_identity,
     bind_priority_planning_generation,
@@ -25,7 +24,6 @@ from bilqis_mlx.runtime.priority_source_offer import (
 )
 from bilqis_mlx.runtime.logical_batch import BamfLogicalBatchContract
 from bilqis_mlx.semantic_sampling import DEFAULT_BINARY_BALANCE
-from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind, DependencyRef
 from bilqis_mlx.semantics.domains import contract_digest
 from .priority_planning_owner import (
     build_priority_planning_epoch as _build_priority_planning_epoch,
@@ -36,6 +34,8 @@ from .priority_rejection_replay import (
     ordered_rejections as _ordered_rejections,
     rejection_recency as _rejection_recency,
 )
+
+_priority_options = _strict_priority_options
 
 
 _SCOPE = "factory/foundation"
@@ -60,7 +60,7 @@ def _invalid(reason):
 @dataclass(frozen=True)
 class AcceptedPriorityAuthority:
     frontier: object | None
-    history: SalienceHistory | None
+    history: object | None
     planning: object
     lawful_frontier: object = field(compare=False, repr=False)
     lawful_frontier_sha256: str
@@ -72,105 +72,9 @@ class AcceptedPriorityAuthority:
     selection_cadence: object = field(compare=False, repr=False)
 
 
-@dataclass(frozen=True)
-class LearningFirstPriorityContext:
-    capability_id: str
-    scope: str = _SCOPE
-
-
-@dataclass(frozen=True)
-class LearningFirstPriorityOption:
-    stable_id: str
-    context: LearningFirstPriorityContext
-    eligible_since: int
-    downstream_unlocks: int
-    dispatch_tier: DispatchTier
-    salience_inputs_digest: str
-    action_kind: ActionKind = ActionKind.TEACHING
-
-
-@dataclass(frozen=True)
-class LearningFirstPriorityFrontier:
-    options: tuple[LearningFirstPriorityOption, ...]
-    evidence: tuple = ()
-
-
-def _signed(record, signer, kind, key):
-    dependency = DependencyRef(kind, key)
-    return replace(record, signature_hex=signer.sign(dependency, record.signing_bytes()))
-
-
-def _policy(release_sha256, families, now, signer):
-    count_metrics = (Metric.DOWNSTREAM_COUNT, Metric.COVERAGE_COUNT,
-                     Metric.BLOCKED_COUNT, Metric.REPAIR_COUNT)
-    rules = (
-        MetricRule(Metric.DECLARED_IMPACT, "ordinal-index", (1, 2, 3, 4),
-                   tuple(Ordinal), "bamf/foundation/declared/v1"),
-        MetricRule(Metric.DEADLINE_AT, "seconds-until-deadline", (1, 61, 3601),
-                   (Ordinal.CRITICAL, Ordinal.HIGH, Ordinal.MODERATE, Ordinal.LOW),
-                   "bamf/foundation/deadline/v1"),
-        *(MetricRule(metric, "count", (1, 3, 8),
-                    (Ordinal.LOW, Ordinal.MODERATE, Ordinal.HIGH, Ordinal.CRITICAL),
-                    "bamf/foundation/" + metric.value + "/v1")
-          for metric in count_metrics),
-    )
-    raw = SaliencePolicy(
-        "bamf-foundation", "v1", release_sha256, tuple(sorted(set(families))), rules,
-        ((NoveltyState.MATCHED, Ordinal.LOW),
-         (NoveltyState.STRUCTURE_CHANGED, Ordinal.MODERATE),
-         (NoveltyState.OUTCOME_CHANGED, Ordinal.HIGH),
-         (NoveltyState.EXPECTED_MISSING, Ordinal.CRITICAL),
-         (NoveltyState.REPORTED_NEGATIVE, Ordinal.LOW)),
-        ((Signal.IMPACT, (Metric.DECLARED_IMPACT,)),
-         (Signal.EXIGENCY, (Metric.BLOCKED_COUNT,)),
-         (Signal.NOVELTY, (Metric.NOVELTY_COMPARISON,))),
-        now, signer.owner_id, "0" * 128)
-    return _signed(raw, signer, DependencyKind.POLICY,
-                   "salience-policy:" + raw.policy_id)
-
-
-def _unknown_fact(metric, context, policy, receipt, now, signer):
-    fact_id = f"{context.capability_id}:{metric.value}"
-    raw = SignedFact(
-        fact_id, metric, 0, FactOrigin.SOURCE, context, policy.digest(), receipt,
-        now, now, now, now, signer.owner_id, "0" * 128)
-    return _signed(raw, signer, DependencyKind.SOURCE, "salience-fact:" + fact_id)
-
-
-def _context(parent, offer, teacher_epoch_digest):
-    binding = offer.source_binding_digest
-    capability_epoch = contract_digest((
-        "bilqis.bamf.c03.4-capability-epoch/v1", offer.release_sha256,
-        offer.capability_id, binding))
-    correction = parent.correction_frontier
-    rights_epoch = correction.get("rights_epoch")
-    correction_generation = correction.get("correction_generation")
-    if (type(rights_epoch) is not int or rights_epoch < 0
-            or type(correction_generation) is not int
-            or correction_generation < 0):
-        _invalid("BAMF_PRIORITY_CORRECTION_FRONTIER_INVALID")
-    return SalienceContext(
-        offer.release_sha256, binding, rights_epoch, correction_generation,
-        offer.capability_id, capability_epoch,
-        _SCOPE, offer.source_family_id, offer.generation_binding, teacher_epoch_digest)
-
-
 def _offer_seed(next_seed: int, capability_id: str) -> int:
     raw = f"bilqis.bamf.c03.4-source-seed/v1|{next_seed}|{capability_id}".encode()
     return int.from_bytes(hashlib.sha256(raw).digest()[:8], "big")
-
-
-def _planning_unlocks(capability_id, planning):
-    selection = planning.selection
-    if selection is None:
-        return 0
-    from bilqis_mlx.factory import candidate_realizations
-    try:
-        semantic_id = candidate_realizations.realized_atlas_semantic_id(capability_id)
-    except ValueError:
-        return 0
-    return (selection.downstream_unlocks
-            if semantic_id == selection.selected_semantic_id else 0)
 
 
 def _priority_offers(source_context, parent, atlas_artifact_path, next_seed,
@@ -208,86 +112,6 @@ def _priority_offers(source_context, parent, atlas_artifact_path, next_seed,
     return capabilities, tuple(
         (capability.capability_id, prepare(capability))
         for capability in capabilities)
-
-
-def _priority_options(parent, release_sha256, offers, teacher_epoch, counter,
-                      last_selected, rejection_count, rejection_positions,
-                      registry, signer, planning):
-    now = counter + rejection_count
-    rejection_recency = {
-        capability: counter + position
-        for capability, position in rejection_positions.items()
-    }
-    policy = _policy(release_sha256,
-                     (offer.source_family_id for _, offer in offers), now, signer)
-    teacher_digest = contract_digest(teacher_epoch)
-    contexts = tuple(_context(parent, offer, teacher_digest) for _, offer in offers)
-    snapshot = AuthoritySnapshot(contexts, now, registry)
-    options, evidence_rows = [], []
-    for context, (stable_id, offer) in zip(contexts, offers, strict=True):
-        receipt = getattr(offer, 'planning_receipt_sha256', None)
-        if receipt is None:
-            receipt = offer.source_authority.content_sha256
-        facts = tuple(_unknown_fact(metric, context, policy, receipt,
-                                    now, signer)
-                      for metric in (Metric.IMPACT_UNKNOWN,
-                                     Metric.EXIGENCY_UNKNOWN,
-                                     Metric.NOVELTY_UNKNOWN))
-        evidence = derive_salience(verify_salience_inputs(
-            facts, policy, snapshot, context))
-        option = AttentionOption(
-            stable_id, context, evidence.basis.digest(), ActionKind.TEACHING,
-            max(last_selected.get(stable_id, 0), rejection_recency.get(stable_id, 0)),
-            True, True, True, True, _planning_unlocks(stable_id, planning),
-            False, False, signer.owner_id, "0" * 128)
-        option = _signed(option, signer, DependencyKind.ARTIFACT,
-                         "salience-option:" + stable_id)
-        options.append(option)
-        evidence_rows.append((stable_id, evidence))
-    return now, policy, snapshot, tuple(options), tuple(evidence_rows)
-
-
-def _learning_first_priority_frontier(
-        release_sha256, offers, planning, counter, last_selected,
-        rejection_count, rejection_positions):
-    """Rank ordinary teaching intents from metadata only, before source materialization."""
-    now = counter + rejection_count
-    rejection_recency = {
-        capability: counter + position
-        for capability, position in rejection_positions.items()
-    }
-    ranked = []
-    for stable_id, intent in offers:
-        unlocks = _planning_unlocks(stable_id, planning)
-        tier = (
-            DispatchTier.DOWNSTREAM_UNLOCK
-            if unlocks > 0 else DispatchTier.FAIR_ROTATION)
-        eligible_since = max(
-            last_selected.get(stable_id, 0),
-            rejection_recency.get(stable_id, 0))
-        inputs_digest = contract_digest((
-            "bilqis.bamf.learning-first-priority/v1",
-            release_sha256,
-            intent.accepted_manifest_sha256,
-            intent.generation_binding,
-            intent.source_binding_digest,
-            stable_id,
-            eligible_since,
-            unlocks,
-            int(tier),
-        ))
-        option = LearningFirstPriorityOption(
-            stable_id,
-            LearningFirstPriorityContext(stable_id),
-            eligible_since,
-            unlocks,
-            tier,
-            inputs_digest,
-        )
-        ranked.append((tier, eligible_since, stable_id, option))
-    ranked.sort(key=lambda item: item[:3])
-    return now, LearningFirstPriorityFrontier(
-        tuple(item[3] for item in ranked))
 
 
 def _bind_lawful_priority_epoch(
@@ -369,32 +193,6 @@ def _bind_lawful_priority_epoch(
     return planning_generation, cache, planning_epoch, planning, lawful_frontier
 
 
-def _priority_history(
-        source_context, cache, signer, policy, evidence_rows, rejections, now):
-    window = WindowPolicy(
-        "bamf-foundation-window", "v1", policy.digest(),
-        source_context.release.release_sha256, 2, now,
-        signer.owner_id, "0" * 128)
-    window = _signed(window, signer, DependencyKind.POLICY,
-                     "salience-policy:" + window.policy_id)
-    evidence_by_id = dict(evidence_rows)
-    history_events = []
-    for stable_id, visit_id, reason, receipt_sha256 in rejections[-window.window_size:]:
-        raw = SalienceEvent(
-            "bamf-rejection:" + receipt_sha256, EventKind.OBSERVATION,
-            f"{cache.run_id}:{cache.generation}:{cache.accepted_manifest_sha256}",
-            visit_id,
-            contract_digest(("bilqis.bamf.c16.3-rejection-observation/v1",
-                             stable_id, reason)),
-            None, evidence_by_id[stable_id], now, receipt_sha256,
-            None, None, None, None, None, None,
-            signer.owner_id, "0" * 128)
-        history_events.append(_signed(
-            raw, signer, DependencyKind.ARTIFACT,
-            "salience-event:" + raw.event_id))
-    return SalienceHistory(window, tuple(history_events))
-
-
 def issue_foundation_priority_authority(
         run_dir, source_context, parent, teacher_epoch, atlas_artifact_path, *,
         teacher_state, progress=None, planning_cache=None, logical_batch_size=None):
@@ -453,7 +251,7 @@ def issue_foundation_priority_authority(
         strict_mode_enabled,
     )
     if not strict_mode_enabled():
-        now, frontier = _learning_first_priority_frontier(
+        now, frontier = learning_first_priority_frontier(
             source_context.release.release_sha256, offers, planning,
             counter, last_selected, rejection_count, rejection_positions)
         return AcceptedPriorityAuthority(
@@ -469,7 +267,7 @@ def issue_foundation_priority_authority(
     now, policy, snapshot, options, evidence_rows = _priority_options(
         parent, source_context.release.release_sha256, offers, teacher_epoch,
         counter, last_selected, rejection_count, rejection_positions,
-        registry, signer, planning)
+        registry, signer, planning, scope=_SCOPE, planning_unlocks=_planning_unlocks)
     history = _priority_history(
         source_context, cache, signer, policy, evidence_rows, rejections, now)
     return AcceptedPriorityAuthority(
