@@ -6,6 +6,7 @@ from enum import Enum
 
 
 SCHEMA = "bilqis.teacher-multifidelity-shadow/v1"
+MIN_SHADOW_EVIDENCE_BUDGET_STEPS = 2
 
 
 class TeacherMultifidelityError(str, Enum):

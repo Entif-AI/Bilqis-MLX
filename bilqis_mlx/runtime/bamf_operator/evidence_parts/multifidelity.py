@@ -1,6 +1,8 @@
 """Zero-authority multi-fidelity evidence for persistent BAMF candidates."""
 from __future__ import annotations
 
+from bilqis_mlx.learning.teacher_multifidelity import MIN_SHADOW_EVIDENCE_BUDGET_STEPS
+
 from .support import _invalid, _plain
 
 
@@ -8,7 +10,8 @@ def configure_multifidelity(
         capture, *, full_budget_steps: int, rungs, policy_version: str,
         minimum_target_delta_to_continue: int, minimum_decision_step: int):
     rungs = tuple(rungs)
-    if (type(full_budget_steps) is not int or full_budget_steps < 2
+    if (type(full_budget_steps) is not int
+            or full_budget_steps < MIN_SHADOW_EVIDENCE_BUDGET_STEPS
             or not isinstance(policy_version, str) or not policy_version
             or type(minimum_target_delta_to_continue) is not int
             or minimum_target_delta_to_continue < 1

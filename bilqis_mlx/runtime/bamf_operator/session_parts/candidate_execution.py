@@ -119,7 +119,7 @@ def execute_horizon(
     steps, candidate = [], None
     shadow_rungs = ()
     shadow_parent_correct = None
-    if (horizon >= 2 and shadow_policy is not None
+    if (shadow_policy is not None and horizon >= shadow_policy.rungs[0]
             and callable(shadow_rungs_fn) and callable(shadow_probe_fn)):
         shadow_rungs = tuple(shadow_rungs_fn(shadow_policy, horizon))
         capture.configure_multifidelity(
