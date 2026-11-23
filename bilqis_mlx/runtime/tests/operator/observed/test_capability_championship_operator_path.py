@@ -18,7 +18,7 @@ from bilqis_mlx.runtime.capability_retention import (
 from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import (
     _cases, _solver,
 )
-from bilqis_mlx.runtime.tests.capability.factory.owner.test_factory_retention_owner_adversarial import (
+from bilqis_mlx.runtime.tests.capability.factory.owner.adversarial.support import (
     _evaluate_foundation_owner, _foundation_owner_fixture,
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
@@ -129,6 +129,10 @@ def _run_first_title_operator():
          {"side_effect": lambda _visit, value, _parent: value}),
         (native + "_resource_observation", {"return_value": {}}),
         (native + "candidate_identity_metrics_delta", {"return_value": {}}),
+        ("bilqis_mlx.learning.teacher_lineage.instruction_history",
+         {"return_value": ("COMPLETE", ())}),
+        ("bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode."
+         "strict_evidence_enabled", {"return_value": True}),
         (prefix + "accept_and_publish",
          {"side_effect": lambda _root, value, *_args, **_kwargs: published.append(value)}),
         (prefix + "load_accepted_generation", {"return_value": successor}),

@@ -43,6 +43,11 @@ from .execution import (
 
 
 from .reporting import _candidate_cost
+from .step_authority import (
+    bind_learning_first_step_authority,
+    issue_learning_first_step_authority,
+    learning_first_step_authority_metrics_snapshot,
+)
 
 
 def _capture_candidate_result(
@@ -113,6 +118,7 @@ def _execute_prepared_candidate(
         time.perf_counter() - mentor_evidence_started
         if mentor_supervision is not None else 0.0)
     identity_before = candidate_identity_metrics_snapshot()
+    step_authority_before = learning_first_step_authority_metrics_snapshot()
     resource_plan_started = time.perf_counter()
     resource_plan, memory_budget = _resource_plan(prepared, parent, memory_budget)
     stage_metrics["resource_plan_wall_seconds"] = (
@@ -128,10 +134,13 @@ def _execute_prepared_candidate(
             cache, plan, teacher_hparams, max_norm, candidate, currentness_transaction,
             salience_supervision, mentor_supervision, distributed_profile,
             distributed_executor)
-        motif_started = time.perf_counter()
         from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
             strict_evidence_enabled,
         )
+        if not strict_evidence_enabled() and distributed_profile is None:
+            issue_learning_first_step_authority(
+                cache, parent, transaction, source_context)
+        motif_started = time.perf_counter()
         if finalize_candidate and strict_evidence_enabled():
             transaction = _stage_retained_motifs(
                 run_dir, parent, cache, transaction, prepared, plan, memory_budget,
@@ -165,6 +174,8 @@ def _execute_prepared_candidate(
         start, stage_metrics, gradient, loss_total, prepared, resource_plan,
         memory_budget, transaction, feature_context,
         semantic_context_materialized_in_step, c08_metrics, retry, identity_before)
+    from .step_authority import learning_first_step_authority_metrics_delta
+    cost.update(learning_first_step_authority_metrics_delta(step_authority_before))
     return _capture_candidate_result(
         prepared, resource_plan, authorities, target_rows, gradient, transaction,
         cost, source_context, observation, capability, delivered_rows, generation,
@@ -210,9 +221,8 @@ def _candidate_cache_and_generation(run_dir, source_context, parent, candidate,
             cache, parameters, spec=parent.topology,
             extents=parent.extents).generation_digest
     else:
-        from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
-        generation = execution_generation_digest(
-            parameters, spec=parent.topology, extents=parent.extents)
+        generation = bind_learning_first_step_authority(
+            cache, parent, candidate, source_context)
     if strict and cache.generation_binding != generation:
         _invalid("FACTORY_CANDIDATE_STEP_GENERATION_DRIFT")
     return cache, generation
