@@ -7,7 +7,7 @@ import pytest
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.atlas_training_contracts import BamfDeliveryProvenance
-from bilqis_mlx.runtime.factory_training_bridge import _target_source_count
+from bilqis_mlx.runtime.factory_training_preparation import _target_source_count
 from bilqis_mlx.runtime.bamf_operator.session_parts.rehearsal import (
     RehearsalPlan, RehearsalRows, _seed, compile_rehearsal_plan,
     materialize_rehearsal_rows,
