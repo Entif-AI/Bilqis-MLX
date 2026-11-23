@@ -30,7 +30,7 @@ from bilqis_mlx.runtime.bamf_operator.evidence_parts import CandidateEvidenceCap
 from bilqis_mlx.runtime.capability_retention import DecisionStatus
 from bilqis_mlx.runtime.outcomes.issuance import build_outcome
 from bilqis_mlx.runtime.outcomes.replay import replay_rejected_outcomes
-from bilqis_mlx.runtime.tests.capability.factory.owner import test_factory_retention_owner_adversarial as factory_fixture
+from bilqis_mlx.runtime.tests.capability.factory.owner.adversarial import support as factory_fixture
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.teacher_custody_fixtures import selection_teacher
 from bilqis_mlx.runtime.tests.teacher.priority.authority.test_priority_rejection_signer import _registry
 

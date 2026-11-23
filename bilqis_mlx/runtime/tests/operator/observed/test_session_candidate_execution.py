@@ -42,14 +42,18 @@ class SessionCandidateExecutionTests(unittest.TestCase):
         events = []
         observer = NS(update=lambda **fields: events.append(fields))
         parent = NS(retained_state=NS(optimizer_step=7), optimizer_hyperparameters='hp')
-        selection = NS(offer=NS(source_seed=1), visit=NS(identity=NS(visit_id='v')))
+        selection = NS(
+            offer=NS(source_seed=1, capability_id='cap'),
+            visit=NS(identity=NS(visit_id='v')))
         transactions = [NS(parent=NS(optimizer_step=7), update_steps=1),
                         NS(parent=NS(optimizer_step=7), update_steps=2, motif_transition='stop')]
         prefix = 'bilqis_mlx.runtime.bamf_operator.session_parts.native_session.'
         cache = NS(generation=1, accepted_manifest_sha256='a' * 64)
         with patch(prefix + 'prepare_candidate_evidence_root'), patch(prefix + '_Capture'), patch(
                 prefix + 'FactoryDeliveryObservation'), patch(
-                prefix + 'execute_accepted_priority_candidate', side_effect=[NS(transaction=x) for x in transactions]) as execute:
+                prefix + 'active_rungs', return_value=()), patch(
+                prefix + 'execute_accepted_priority_candidate',
+                side_effect=[NS(transaction=x) for x in transactions]) as execute:
             steps, _capture = execute_horizon(
                 Path('/tmp'), selection, NS(), parent, 'atlas', 'feature',
                 ({'id': 'row'},), 4, cache, 1, None, 0, None, None, observer, None,

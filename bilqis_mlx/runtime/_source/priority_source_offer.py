@@ -215,3 +215,35 @@ def prepare_priority_source_offer(source_context, parent, atlas_artifact_path, *
         'SALIENCE_EVIDENCE', qualification_owner)
     offer.require_qualified_current(source_context, parent)
     return offer
+
+
+def expand_selected_priority_source_offer(
+        offer, source_context, parent, *, source_each):
+    """Reissue one selected planning offer at its full training-row authority."""
+    if (type(offer) is not PreparedPrioritySourceOffer
+            or type(source_each) is not int
+            or source_each < offer.source_each):
+        _invalid_source_batch('BAMF_PRIORITY_SELECTED_SOURCE_EXPANSION_INVALID')
+    if source_each == offer.source_each:
+        offer.require_qualified_current(source_context, parent)
+        return offer
+    expanded = prepare_priority_source_offer(
+        source_context, parent, None,
+        capability=offer.capability_id,
+        source_seed=offer.source_seed,
+        source_each=source_each,
+        planning_generation=offer._planning_generation,
+        materialization_cache=offer._materialization_cache)
+    continuity_fields = (
+        'accepted_manifest_sha256', 'generation_binding', 'release_sha256',
+        'capability_id', 'source_seed', 'source_family_id', 'source_binding_digest',
+    )
+    if (expanded._planning_generation is not offer._planning_generation
+            or any(getattr(expanded, name) != getattr(offer, name)
+                   for name in continuity_fields)
+            or expanded.source_authority.provider_id
+            != offer.source_authority.provider_id
+            or expanded.source_authority.provider_implementation_sha256
+            != offer.source_authority.provider_implementation_sha256):
+        _invalid_source_batch('BAMF_PRIORITY_SELECTED_SOURCE_EXPANSION_DRIFT')
+    return expanded

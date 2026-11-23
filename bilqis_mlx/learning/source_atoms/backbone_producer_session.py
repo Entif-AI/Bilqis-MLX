@@ -29,7 +29,7 @@ class _SourceBackboneProducerSession:
         self._compiled = compiled
         self._encoded = encoded
         self._handoffs = tuple(handoffs)
-        self._parameters = dict(parameters)
+        self._parameters = parameters
         self._sources = None
         self._feature_schema = None
         self._source_execution_authorities = None

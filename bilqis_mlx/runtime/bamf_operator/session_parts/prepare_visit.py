@@ -33,6 +33,8 @@ def _record_planning_observation(observer, selection, planning_started):
     )
     observer.update(
         planning_wall_seconds=max(0.0, planning_total - source_wall),
+        planning_offer_fanout_wall_seconds=getattr(
+            selection, "planning_offer_fanout_wall_seconds", None),
         source_materialization_wall_seconds=(source_wall or None),
         **selected_source_visit_fields(
             source_materialization_observation(selection.offer)))

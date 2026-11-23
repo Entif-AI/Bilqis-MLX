@@ -81,7 +81,7 @@ def _prepared_feature_context(prepared, semantic_context):
 
 def _candidate_parameters(parent, candidate):
     optimizer = parent.retained_state.optimizer if candidate is None else candidate.optimizer
-    return dict(optimizer.parameters)
+    return optimizer.parameters
 
 
 def _execute_distributed_batch(
