@@ -1,0 +1,147 @@
+{
+  "default_batch_size_changed": false,
+  "results": [
+    {
+      "accepted": true,
+      "actual_mlx_peak_bytes": 12755445188,
+      "attempt_wall_seconds": 937.2550732078962,
+      "attempted_steps_per_hour": 46.09204178766567,
+      "b11_autodiff_materialization_wall_seconds_total": 4.99915300286375,
+      "c08_logical_batch_wall_seconds_total": 9.015007292153314,
+      "candidate_step_wall_seconds_total": 920.4048122097738,
+      "decision_reason": "PAIRED_SCREEN_WITHIN_BUDGET",
+      "decision_status": "ELIGIBLE",
+      "estimated_peak_bytes_max": 1828987384,
+      "gradient_launches_total": 12,
+      "logical_batch_size": 8,
+      "optimizer_steps": 12,
+      "outcome_scores": [
+        [
+          "B.AND",
+          3,
+          3,
+          6
+        ]
+      ],
+      "physical_microbatch_count": 1,
+      "physical_microbatch_size": 8,
+      "retained_candidates_per_hour": 3.8410034823054726,
+      "retained_steps_per_hour": 46.09204178766567,
+      "retention_yield": 1.0,
+      "row_presentations": 96,
+      "rows_per_launch": 8.0,
+      "steps_per_retention": 12,
+      "training_rows": 8,
+      "useful_retention_reason": "Disposable C05 evaluation is not a published durable retention or downstream usefulness witness.",
+      "useful_retentions_per_hour": "NOT_MEASURED"
+    },
+    {
+      "accepted": true,
+      "actual_mlx_peak_bytes": 7345983700,
+      "attempt_wall_seconds": 966.0104080839083,
+      "attempted_steps_per_hour": 22.360007531227147,
+      "b11_autodiff_materialization_wall_seconds_total": 6.129388375906274,
+      "c08_logical_batch_wall_seconds_total": 9.725926039973274,
+      "candidate_step_wall_seconds_total": 948.3931745840237,
+      "decision_reason": "PAIRED_SCREEN_WITHIN_BUDGET",
+      "decision_status": "ELIGIBLE",
+      "estimated_peak_bytes_max": 2088878584,
+      "gradient_launches_total": 6,
+      "logical_batch_size": 16,
+      "optimizer_steps": 6,
+      "outcome_scores": [
+        [
+          "B.AND",
+          3,
+          4,
+          6
+        ]
+      ],
+      "physical_microbatch_count": 1,
+      "physical_microbatch_size": 16,
+      "retained_candidates_per_hour": 3.7266679218711913,
+      "retained_steps_per_hour": 22.360007531227147,
+      "retention_yield": 1.0,
+      "row_presentations": 96,
+      "rows_per_launch": 16.0,
+      "steps_per_retention": 6,
+      "training_rows": 16,
+      "useful_retention_reason": "Disposable C05 evaluation is not a published durable retention or downstream usefulness witness.",
+      "useful_retentions_per_hour": "NOT_MEASURED"
+    },
+    {
+      "accepted": true,
+      "actual_mlx_peak_bytes": 5569916724,
+      "attempt_wall_seconds": 949.4056650830898,
+      "attempted_steps_per_hour": 15.167383690237138,
+      "b11_autodiff_materialization_wall_seconds_total": 5.051062541315332,
+      "c08_logical_batch_wall_seconds_total": 8.65696395910345,
+      "candidate_step_wall_seconds_total": 932.1688397082034,
+      "decision_reason": "PAIRED_SCREEN_WITHIN_BUDGET",
+      "decision_status": "ELIGIBLE",
+      "estimated_peak_bytes_max": 2349980152,
+      "gradient_launches_total": 4,
+      "logical_batch_size": 24,
+      "optimizer_steps": 4,
+      "outcome_scores": [
+        [
+          "B.AND",
+          1,
+          1,
+          6
+        ]
+      ],
+      "physical_microbatch_count": 1,
+      "physical_microbatch_size": 32,
+      "retained_candidates_per_hour": 3.7918459225592844,
+      "retained_steps_per_hour": 15.167383690237138,
+      "retention_yield": 1.0,
+      "row_presentations": 96,
+      "rows_per_launch": 24.0,
+      "steps_per_retention": 4,
+      "training_rows": 24,
+      "useful_retention_reason": "Disposable C05 evaluation is not a published durable retention or downstream usefulness witness.",
+      "useful_retentions_per_hour": "NOT_MEASURED"
+    },
+    {
+      "accepted": true,
+      "actual_mlx_peak_bytes": 5092382437,
+      "attempt_wall_seconds": 923.2686515001114,
+      "attempted_steps_per_hour": 11.69757034688911,
+      "b11_autodiff_materialization_wall_seconds_total": 5.394614042015746,
+      "c08_logical_batch_wall_seconds_total": 8.72805375000462,
+      "candidate_step_wall_seconds_total": 905.6816645830404,
+      "decision_reason": "PAIRED_SCREEN_WITHIN_BUDGET",
+      "decision_status": "ELIGIBLE",
+      "estimated_peak_bytes_max": 2611081720,
+      "gradient_launches_total": 3,
+      "logical_batch_size": 32,
+      "optimizer_steps": 3,
+      "outcome_scores": [
+        [
+          "B.AND",
+          1,
+          1,
+          6
+        ]
+      ],
+      "physical_microbatch_count": 1,
+      "physical_microbatch_size": 32,
+      "retained_candidates_per_hour": 3.8991901156297035,
+      "retained_steps_per_hour": 11.69757034688911,
+      "retention_yield": 1.0,
+      "row_presentations": 96,
+      "rows_per_launch": 32.0,
+      "steps_per_retention": 3,
+      "training_rows": 32,
+      "useful_retention_reason": "Disposable C05 evaluation is not a published durable retention or downstream usefulness witness.",
+      "useful_retentions_per_hour": "NOT_MEASURED"
+    }
+  ],
+  "row_budget": 96,
+  "schema": "bilqis.bamf.issue1578-logical-batch-policy-evidence/v1",
+  "source_log": "/Users/emilie/Code/.worktrees/bilqis-mlx/1578-accelerator-work-units-20261123/.local/issue1578/logical-r2.log",
+  "source_receipt": "/Users/emilie/Code/.worktrees/bilqis-mlx/1578-accelerator-work-units-20261123/.local/issue1578/logical-r2.receipt.json",
+  "useful_retention_reason": "Disposable C05 evaluation does not publish a retained lineage or establish downstream usefulness.",
+  "useful_retentions_per_hour": "NOT_MEASURED"
+}
