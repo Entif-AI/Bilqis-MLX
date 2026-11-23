@@ -9,6 +9,7 @@ import os
 
 import mlx.core as mx
 
+from ..atlas_model_contracts import _invalid
 from .route_kernel import route_microbatch_loss_and_trajectory
 
 
@@ -37,7 +38,7 @@ def compile_stable_kernel_enabled() -> bool:
     if value is None:
         return _DEFAULT_ENABLED
     if value not in ("0", "1"):
-        raise ValueError(f"{_COMPILE_ENV} must be 0 or 1")
+        _invalid("B11_COMPILED_ROUTE_TOGGLE_INVALID")
     return value == "1"
 
 

@@ -7,7 +7,9 @@ from unittest.mock import patch
 
 import mlx.core as mx
 import numpy as np
+import pytest
 
+from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_readout import DecisionKind, DecisionOutput, DecisionSpec
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.runtime.atlas_model_microbatch import _materialize_gradient
@@ -168,6 +170,13 @@ def test_compilation_toggle_is_enabled_by_default_and_can_be_disabled():
         assert not compile_stable_kernel_enabled()
     assert compiled is None and state == "disabled"
     assert compiled_route_cache_stats() == {"entries": 0, "hits": 0, "misses": 0}
+
+
+def test_invalid_compilation_toggle_uses_model_error_control_plane():
+    with patch.dict("os.environ", {"BILQIS_MLX_COMPILE_STABLE_KERNEL": "invalid"}):
+        with pytest.raises(BilqisError) as error:
+            compile_stable_kernel_enabled()
+    assert error.value.context["reason"] == "B11_COMPILED_ROUTE_TOGGLE_INVALID"
 
 
 def test_compiled_route_matches_uncompiled_loss_and_gradients_exactly():
