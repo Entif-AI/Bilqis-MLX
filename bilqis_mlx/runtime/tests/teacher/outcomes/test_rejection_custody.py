@@ -88,8 +88,6 @@ class NativeRejectionOutcomeTests(NativeSourceFixture, unittest.TestCase):
     def fixture(self, *, accepted=False):
         parent = self.parent()
         original_teacher = selection_teacher()
-        for stat in original_teacher['global_stats'].values():
-            stat.setdefault('latest', None)
         with patch('bilqis_mlx.control_plane.tests.cp07.native_source_support.selection_teacher', return_value=original_teacher):
             visit = self.bound_native_visit(parent)
         identity = visit.identity
