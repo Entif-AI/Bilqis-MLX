@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "caef2d9d6c59de4a7688e1558998905af14f4251",
-  "updated_at": "2026-11-23T09:22:37+00:00",
+  "observed_unified": "89f9699412aeaa1b1533bd8f05734157b984c46a",
+  "updated_at": "2026-11-23T10:03:50+00:00",
   "exception": null,
   "items": [
     {
@@ -640,6 +640,16 @@
       "summary": "#1574 is turned in as ready PR #1595 after consuming current main caef2d9d (#1591). Ordinary learning-first generation/currentness now uses revocable process-local step authority tokens bound to accepted run/generation/manifest/candidate identity, release/source authority, topology/extents, optimizer lineage and candidate step, avoiding ordinary full parameter-tree proof. Tokens advance on actual optimizer changes and reuse unchanged speculative state; observational shadow rungs defer canonical candidate identity while final retention/publication still computes exact durable raw-v2 identity, and strict/evidence mode retains exact execution-generation proof. Final reconciled focused proof is 84/84 PASS at 4332445b with zero changed-path smell findings, green flow control and diff hygiene. The detached repository-wide verify:leaf snapshot failed with 106 failures and 15 errors across broad inherited/system tests and missing/stale fixtures outside #1574; the snapshot source was unchanged. Prepared-row #1573 work, C05 semantics and teacher-policy semantics remain out of scope. No agent-run human learner or production --human-run mutation occurred. Hosted portable-core then exposed six raw step-authority exception identities as new opaque operator-contract debt; c08322d6 routes all six through SCHOOL.BAMF_TRAINING_ADAPTER.INVALID with named reason codes. Failing-before proved stale-token revocation still raised raw ValueError; post-fix authority proof is 14/14 PASS and the exact portable-core architecture/docs/error-control stage is green with new debt 0.",
       "resume_trigger": null,
       "preserved_branch": "codex/1574-step-authority-20261123"
+    },
+    {
+      "issue": 1578,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "89f9699412aeaa1b1533bd8f05734157b984c46a",
+      "head_sha_role": "current main baseline consumed before #1578 accelerator work-unit qualification",
+      "summary": "Issue #1578 owns WS4 accelerator execution geometry and compute-economics qualification after closed #1541 and #1543. It must first determine whether larger physical MLX work units can preserve the exact declared 32-row logical optimizer objective and update ordering; any larger logical batch remains an explicit equal-budget learning-policy experiment, not a hidden hardware knob. Preserve OOM retry/resource-budget semantics, report execution wall/rows per launch/memory/throughput/retention economics together, and do not change the default without evidence that useful learning per wall-clock improves with unchanged retention safety. No agent-run mutation of the human production learner is authorized.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/1578-accelerator-work-units-20261123"
     }
   ]
 }
