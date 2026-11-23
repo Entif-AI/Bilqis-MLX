@@ -10,20 +10,25 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 
 
-_STRICT_EVIDENCE = ContextVar("bilqis_bamf_strict_evidence", default=True)
+_STRICT_MODE = ContextVar("bilqis_bamf_strict_mode", default=True)
+
+
+def strict_mode_enabled() -> bool:
+    return bool(_STRICT_MODE.get())
 
 
 def strict_evidence_enabled() -> bool:
-    return bool(_STRICT_EVIDENCE.get())
+    """Compatibility alias for older callers that named only evidence ceremony."""
+    return strict_mode_enabled()
 
 
 @contextmanager
 def evidence_mode(*, strict: bool):
-    token = _STRICT_EVIDENCE.set(bool(strict))
+    token = _STRICT_MODE.set(bool(strict))
     try:
         yield
     finally:
-        _STRICT_EVIDENCE.reset(token)
+        _STRICT_MODE.reset(token)
 
 
-__all__ = ("evidence_mode", "strict_evidence_enabled")
+__all__ = ("evidence_mode", "strict_mode_enabled", "strict_evidence_enabled")

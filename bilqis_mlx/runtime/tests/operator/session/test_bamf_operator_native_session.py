@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch
 
 from bilqis_mlx.runtime.bamf_operator.session import (
-    _execution_context, prepare_bamf_visit,
+    _SessionExecutionContext, _execution_context, prepare_bamf_visit,
 )
 from bilqis_mlx.runtime.bamf_operator.session_parts.native_session import (
     priority_hold_result,
@@ -141,6 +141,37 @@ class BamfOperatorNativeSessionTests(unittest.TestCase):
             "accepted_source_context_wall_seconds": 1.0,
             "accepted_feature_authentication_wall_seconds": 1.0,
         })
+
+    def test_learning_first_session_context_reuses_until_accepted_publication(self):
+        calls = []
+
+        def loader(run_dir, **kwargs):
+            calls.append((run_dir, kwargs))
+            return object()
+
+        context = _SessionExecutionContext(strict=False, loader=loader)
+        first = context(Path("/run"), performance_metrics={})
+        second = context(Path("/run"), performance_metrics={"ignored": True})
+        self.assertIs(first, second)
+        self.assertEqual(len(calls), 1)
+
+        context.accepted_publication()
+        third = context(Path("/run"), performance_metrics={})
+        self.assertIsNot(third, first)
+        self.assertEqual(len(calls), 2)
+
+    def test_strict_session_context_revalidates_every_visit(self):
+        calls = []
+
+        def loader(run_dir, **kwargs):
+            calls.append((run_dir, kwargs))
+            return object()
+
+        context = _SessionExecutionContext(strict=True, loader=loader)
+        first = context(Path("/run"))
+        second = context(Path("/run"))
+        self.assertIsNot(first, second)
+        self.assertEqual(len(calls), 2)
 
     def test_resource_observation_reports_semantic_materialization_counts(self):
         from bilqis_mlx.runtime.bamf_operator.session_parts.session_support import _resource_observation

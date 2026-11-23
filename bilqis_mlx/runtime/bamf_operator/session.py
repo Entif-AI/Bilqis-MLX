@@ -42,6 +42,26 @@ from .session_parts.maintenance import (
     training_memory_context as _training_memory_context)
 from .session_parts.prepare_visit import prepare_bamf_visit_impl as _prepare_bamf_visit_impl
 
+
+class _SessionExecutionContext:
+    """Reuse one accepted execution snapshot until publication advances generation."""
+
+    def __init__(self, *, strict: bool, loader):
+        self.strict = bool(strict)
+        self.loader = loader
+        self.snapshot = None
+
+    def __call__(self, run_dir: Path, **kwargs):
+        if self.strict:
+            return self.loader(run_dir, **kwargs)
+        if self.snapshot is None:
+            self.snapshot = self.loader(run_dir, **kwargs)
+        return self.snapshot
+
+    def accepted_publication(self) -> None:
+        if not self.strict:
+            self.snapshot = None
+
 def _invalid(reason: str):
     ErrorBus.raise_(SCHOOL.BAMF_FIRST_STUDENT.INVALID, reason=reason)
 from .session_parts.session_support import BamfOperatorResult
@@ -93,7 +113,9 @@ def prepare_bamf_visit(
         source_prefetch_metrics: SourcePrefetchMetrics | None = None, observer=None,
         resource_holds=frozenset(), distributed_profile=None,
         distributed_executor=None, planning_cache=None,
-        mastery_debt_min_utility: float = 0.05) -> BamfPreparedVisit:
+        mastery_debt_min_utility: float = 0.05,
+        execution_context=None) -> BamfPreparedVisit:
+    execution_context = _execution_context if execution_context is None else execution_context
     return _prepare_bamf_visit_impl(
         run_dir, steps_per_visit=steps_per_visit, batch_size=batch_size,
         reserve_gib=reserve_gib, progress=progress,
@@ -104,7 +126,7 @@ def prepare_bamf_visit(
         distributed_executor=distributed_executor, planning_cache=planning_cache,
         mastery_debt_min_utility=mastery_debt_min_utility,
         invalid=_invalid, emit_progress=_emit_progress,
-        execution_context=_execution_context,
+        execution_context=execution_context,
         execute_selected_visit=_execute_selected_visit,
         priority_hold_result=_priority_hold_result,
         schedule_program=schedule_program_from_executable_release,
@@ -118,13 +140,15 @@ def _visit(run_dir: Path, reserve_gib: float, *, steps_per_visit=DEFAULT_CANDIDA
            source_prefetch_executor=None, source_prefetch_metrics=None, observer=None,
            run_authority_binding=None, resource_holds=frozenset(),
            distributed_profile=None, distributed_executor=None,
-           planning_cache=None, mastery_debt_min_utility=0.05):
+           planning_cache=None, mastery_debt_min_utility=0.05,
+           execution_context=None):
     def prepare_visit(*args, **kwargs):
         return prepare_bamf_visit(
             *args, **kwargs, distributed_profile=distributed_profile,
             distributed_executor=distributed_executor,
             planning_cache=planning_cache,
-            mastery_debt_min_utility=mastery_debt_min_utility)
+            mastery_debt_min_utility=mastery_debt_min_utility,
+            execution_context=execution_context)
     return _visit_impl(
         run_dir, reserve_gib, steps_per_visit=steps_per_visit, progress=progress,
         batch_size=batch_size,
@@ -159,7 +183,8 @@ def operate_bamf(
     run_authority=None,
     distributed_profile=None,
     distributed_executor=None,
-    strict_evidence: bool = False,
+    strict_mode: bool = False,
+    strict_evidence: bool | None = None,
     mastery_debt_min_utility: float = 0.05,
     progress=None,
 ) -> BamfOperatorResult:
@@ -171,6 +196,10 @@ def operate_bamf(
     if (distributed_profile is None
             and type(distributed_executor) is DistributedExecutorBinding):
         distributed_profile = distributed_executor.profile
+    if strict_evidence is not None:
+        strict_mode = bool(strict_mode or strict_evidence)
+    session_execution_context = _SessionExecutionContext(
+        strict=strict_mode, loader=_execution_context)
     maintenance_token = None
     def before_visits(root):
         nonlocal maintenance_token
@@ -187,18 +216,24 @@ def operate_bamf(
     planning_cache = PriorityPlanningCache(Path(run_dir))
     def visit_fn(*args, **kwargs):
         if distributed_profile is None and distributed_executor is None:
-            return _visit(
+            result = _visit(
                 *args, **kwargs, planning_cache=planning_cache,
-                mastery_debt_min_utility=mastery_debt_min_utility)
-        return _visit(
-            *args, **kwargs, distributed_profile=distributed_profile,
-            distributed_executor=distributed_executor,
-            planning_cache=planning_cache,
-            mastery_debt_min_utility=mastery_debt_min_utility)
+                mastery_debt_min_utility=mastery_debt_min_utility,
+                execution_context=session_execution_context)
+        else:
+            result = _visit(
+                *args, **kwargs, distributed_profile=distributed_profile,
+                distributed_executor=distributed_executor,
+                planning_cache=planning_cache,
+                mastery_debt_min_utility=mastery_debt_min_utility,
+                execution_context=session_execution_context)
+        if result in {"ACCEPTED", "GRADE_TRANSITIONED"}:
+            session_execution_context.accepted_publication()
+        return result
     _run_pending_operator_maintenance(Path(run_dir), progress=progress)
     from .session_parts.evidence_mode import evidence_mode
     try:
-        with evidence_mode(strict=strict_evidence):
+        with evidence_mode(strict=strict_mode):
             return _operate_impl(
                 Path(run_dir), minutes=minutes, max_visits=max_visits,
                 steps_per_visit=steps_per_visit, batch_size=batch_size,

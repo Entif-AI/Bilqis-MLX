@@ -57,11 +57,14 @@ def _rejection_routing_fixture():
     decision = SimpleNamespace(
         accepted=False, reason="retention_gate",
         to_record=lambda: {"decision": "REJECTED"})
+    cache = SimpleNamespace(generation=1, accepted_manifest_sha256="a" * 64)
     return SimpleNamespace(
-        parent=parent, context=SimpleNamespace(release=object()),
+        parent=parent, context=SimpleNamespace(
+            release=object(),
+            _accepted_runtime_host=SimpleNamespace(_accepted_cache=cache)),
         selection=selection, step=step, decision=decision,
         capture=SimpleNamespace(finalize=lambda **_kwargs: _evidence_receipt()),
-        cache=SimpleNamespace(generation=1, accepted_manifest_sha256="a" * 64),
+        cache=cache,
         evaluation=SimpleNamespace(
             candidate_state=object(), parent_state=parent.retained_state))
 
@@ -75,7 +78,11 @@ def _run_rejection_routing_fixture(case):
         (prefix + "schedule_program_from_executable_release", {"return_value": "program"}),
         (prefix + "accepted_priority_school", {"return_value": "school"}),
         (prefix + "select_foundation_priority_visit", {"return_value": case.selection}),
-        (native + "bind_accepted_execution_cache", {"return_value": case.cache}),
+        (native + "bind_accepted_execution_cache", {
+            "side_effect": AssertionError("learning-first routing must use session cache")}),
+        ("bilqis_mlx.runtime.bamf_operator.session_parts.prepare_visit."
+         "bind_current_retention_protection_plan", {"return_value": "plan"}),
+        (native + "bind_current_retention_source_rows", {"return_value": "rows"}),
         (native + "rejection_attempt_ordinals", {"return_value": (1, 1)}),
         (native + "candidate_step_horizon", {"return_value": 1}),
         (native + "prepare_candidate_evidence_root", {}),
@@ -184,7 +191,11 @@ class BamfOperatorRoutingContinuationTests(unittest.TestCase):
             retained_state=SimpleNamespace(optimizer_step=11),
             optimizer_hyperparameters="hparams",
         )
-        context = SimpleNamespace(release=SimpleNamespace(execution_plan=OrderTrap()))
+        cache = SimpleNamespace(
+            generation=1, accepted_manifest_sha256="a" * 64)
+        context = SimpleNamespace(
+            release=SimpleNamespace(execution_plan=OrderTrap()),
+            _accepted_runtime_host=SimpleNamespace(_accepted_cache=cache))
         identity = SimpleNamespace(
             visit_id="visit:beta", policy_key="policy:beta",
             to_record=lambda: {"visit_id": "visit:beta"})
@@ -215,8 +226,6 @@ class BamfOperatorRoutingContinuationTests(unittest.TestCase):
         )
         evidence_receipt = _evidence_receipt()
         capture = SimpleNamespace(finalize=lambda **_kwargs: evidence_receipt)
-        cache = SimpleNamespace(
-            generation=1, accepted_manifest_sha256="a" * 64)
         evaluation = SimpleNamespace(
             candidate_state=object(), parent_state=parent.retained_state)
 
@@ -235,7 +244,11 @@ class BamfOperatorRoutingContinuationTests(unittest.TestCase):
                 "bilqis_mlx.runtime.bamf_operator.session.select_foundation_priority_visit",
                 return_value=selection), patch(
                 "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.bind_accepted_execution_cache",
-                return_value=cache), patch(
+                side_effect=AssertionError("learning-first routing must use session cache")), patch(
+                "bilqis_mlx.runtime.bamf_operator.session_parts.prepare_visit.bind_current_retention_protection_plan",
+                return_value="plan"), patch(
+                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.bind_current_retention_source_rows",
+                return_value="rows"), patch(
                 "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.rejection_attempt_ordinals",
                 return_value=(1, 1)), patch(
                 "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.candidate_step_horizon",

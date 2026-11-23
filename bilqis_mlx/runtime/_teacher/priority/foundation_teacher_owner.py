@@ -91,13 +91,16 @@ def foundation_teacher_bootstrap() -> FoundationTeacherBootstrap:
     return result
 
 
-def current_foundation_teacher_projection(run_dir):
+def current_foundation_teacher_projection(run_dir, *, accepted_parent=None, accepted_cache=None):
     """Project the current accepted C03 teacher without selecting a capability."""
     from bilqis_mlx.runtime.accepted_teacher_custody import (
         _accepted_parent, _c03_projection, current_teacher_projection,
     )
 
-    parent, cache = _accepted_parent(run_dir)
+    if accepted_parent is None or accepted_cache is None:
+        parent, cache = _accepted_parent(run_dir)
+    else:
+        parent, cache = accepted_parent, accepted_cache
     state = parent.teacher_state
     bootstrap = {"legacy_receipt": None, "adaptation": None, "prior_region": None}
     if "c03_lineage" not in state:
@@ -116,7 +119,7 @@ def current_foundation_teacher_projection(run_dir):
 def select_foundation_priority_visit(
         run_dir, source_context, atlas_artifact_path, *, program, school,
         progress=None, resource_holds=frozenset(), planning_cache=None,
-        logical_batch_size=None):
+        logical_batch_size=None, accepted_parent=None, accepted_cache=None):
     """Compose C16.3 bootstrap with the production C03.4 priority owner."""
     from bilqis_mlx.learning.learning_experiment import Settings
     from bilqis_mlx.runtime.accepted_priority_visit import select_accepted_priority_visit
@@ -124,8 +127,11 @@ def select_foundation_priority_visit(
     from bilqis_mlx.runtime.logical_batch import BamfLogicalBatchContract
     from bilqis_mlx.runtime.priority_authority import issue_foundation_priority_authority
 
-    parent = load_accepted_generation(run_dir)
-    projection = current_foundation_teacher_projection(run_dir)
+    parent = (
+        load_accepted_generation(run_dir)
+        if accepted_parent is None else accepted_parent)
+    projection = current_foundation_teacher_projection(
+        run_dir, accepted_parent=accepted_parent, accepted_cache=accepted_cache)
     epoch = restore_teacher_lineage(projection.teacher_state)
     authority = issue_foundation_priority_authority(
         run_dir, source_context, parent, epoch, atlas_artifact_path,

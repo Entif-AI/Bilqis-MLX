@@ -10,6 +10,13 @@ from bilqis_mlx.cli import main, parse_args
 
 
 class OperatorTests(unittest.TestCase):
+    def test_strict_mode_is_explicit_and_strict_evidence_is_only_an_alias(self):
+        self.assertFalse(parse_args(["train", "--resume"]).strict_mode)
+        self.assertTrue(parse_args([
+            "train", "--resume", "--strict-mode"]).strict_mode)
+        self.assertTrue(parse_args([
+            "train", "--resume", "--strict-evidence"]).strict_mode)
+
     def test_resume_instructions_are_flag_free_at_default_retention_policy(self):
         from bilqis_mlx.trainer import _resume_command
         from bilqis_mlx.learning.learning_experiment import Settings

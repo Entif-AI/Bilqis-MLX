@@ -20,6 +20,14 @@ def invalid(reason: str):
     ErrorBus.Raise(SCHOOL.BAMF_OPERATOR.INVALID, reason=reason)
 
 
+def strict_mode_requested(args) -> bool:
+    """Resolve the one explicit opt-in for heavyweight BAMF verification."""
+    return bool(
+        getattr(args, "strict_mode", False)
+        or getattr(args, "strict_evidence", False)
+    )
+
+
 def _source_pin_identity(bundle_id: str, release_sha256: str) -> AtlasArtifactIdentity:
     path = Path(__file__).resolve().parents[2] / "semantics/atlas_source_pins_v1.json"
     raw = path.read_bytes()

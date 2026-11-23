@@ -3955,3 +3955,34 @@ second. Strict/evidence behavior remains separately testable and may be slower.
 **Scope:** This is a stabilization decision for ordinary BAMF training. It does not
 authorize fabricated evidence, weaken accepted model+optimizer atomicity, alter
 resume correctness, or delete strict verification machinery.
+
+## ADR-154 | 2026-11-23 | `--strict-mode` is the explicit BAMF verification boundary
+
+**Status:** Accepted by direct owner correction on 2026-11-23 through reopened issue #1566.
+
+**Problem:** ADR-153 made the ordinary BAMF learning path verification-free, but
+the operator contract still exposed `--strict-evidence` while accepted-generation,
+source-custody, currentness, and feature-authentication owners were re-entered for
+ordinary candidate visits. The resulting implementation could select the
+learning-first numerical executor while still paying the strict ceremony around it.
+
+**Decision:** `--strict-mode` is the authoritative operator-facing opt-in for the
+heavyweight BAMF verification path. `--strict-evidence` is retained only as a
+compatibility alias and MUST resolve to the same strict mode. Without either flag,
+the human BAMF operator MUST use the ADR-153 learning-first path.
+
+The ordinary operator may pay the accepted-state proof once at the resume/session
+boundary and again after a real accepted-generation publication. Within one
+unchanged accepted generation it reuses that process-owned snapshot: accepted
+parent, execution cache, admitted source context, and authenticated feature
+context. Candidate rejection, hold, or retry MUST NOT cause accepted-state
+rebinding or live currentness/source-custody revalidation. A successful retained
+publication or grade-transition publication invalidates the snapshot before the
+next visit. Missing ordinary-session cache state fails closed rather than silently
+falling back to strict rebinding.
+
+Strict mode preserves the complete accepted-generation/source/currentness/feature
+verification behavior and remains independently testable. This boundary does not
+weaken atomic publication, cold-resume validation, source truth, retention
+protection, or accepted model+optimizer custody; it removes repeated proof of an
+accepted generation that has not changed.

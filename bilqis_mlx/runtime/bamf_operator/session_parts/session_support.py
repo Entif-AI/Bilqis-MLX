@@ -85,6 +85,13 @@ def _execution_context(
     if performance_metrics is not None:
         performance_metrics["accepted_generation_load_wall_seconds"] = max(
             0.0, time.perf_counter() - started)
+    from .evidence_mode import strict_mode_enabled
+    if not strict_mode_enabled():
+        from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (
+            bind_accepted_currentness_transaction,
+        )
+        bind_accepted_currentness_transaction(
+            run_dir, parent, host._accepted_cache, metrics=currentness_metrics)
     started = time.perf_counter()
     context = host.source_context(source_root=LEGACY_SOURCE.resolve())
     if performance_metrics is not None:

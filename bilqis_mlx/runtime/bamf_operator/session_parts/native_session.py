@@ -199,10 +199,12 @@ def candidate_horizon_execution(
         source_prefetch_executor, source_prefetch_metrics, observer, adviser_pool,
         *, emit_progress, invalid,
         distributed_profile=None, distributed_executor=None):
+    from .evidence_mode import strict_mode_enabled
+    strict = strict_mode_enabled()
+    if host_cache is None and not strict:
+        invalid("BAMF_LEARNING_FIRST_SESSION_CACHE_REQUIRED")
     cache = host_cache if host_cache is not None else bind_accepted_execution_cache(run_dir)
     from bilqis_mlx.runtime.bamf_bundle.execution_cache import AcceptedExecutionCache
-    from .evidence_mode import strict_evidence_enabled
-    strict = strict_evidence_enabled()
     candidate_visit = (
         prepare_accepted_priority_candidate_visit(selection, context)
         if strict else None)
@@ -275,12 +277,15 @@ def execute_selected_visit(
     emit_progress(
         progress, f"selected {selection.offer.capability_id} with {len(rows)} source rows")
     capability = selection.offer.capability_id
+    from .evidence_mode import strict_mode_enabled
+    strict = strict_mode_enabled()
+    if host_cache is None and not strict:
+        invalid("BAMF_LEARNING_FIRST_SESSION_CACHE_REQUIRED")
     adviser_cache = host_cache if host_cache is not None else bind_accepted_execution_cache(run_dir)
     if host_cache is not None:
         bind_current_retention_source_rows(context, host_cache, capability)
-    from .evidence_mode import strict_evidence_enabled
     adviser_pool = None
-    if strict_evidence_enabled():
+    if strict:
         from bilqis_mlx.runtime.championship_advisers import prepare_championship_adviser_pool
         adviser_pool = prepare_championship_adviser_pool(
             run_dir, parent, context, atlas_path, adviser_cache, reserve_gib=reserve_gib)

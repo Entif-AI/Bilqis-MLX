@@ -18,7 +18,10 @@ def _invalid(reason):
     raise ValueError(reason)
 
 
-def _run_horizon(selection, captured, *, cache=None):
+_AUTO_CACHE = object()
+
+
+def _run_horizon(selection, captured, *, cache=_AUTO_CACHE):
     sentinel = object()
 
     def horizon_impl(*args, **kwargs):
@@ -31,7 +34,7 @@ def _run_horizon(selection, captured, *, cache=None):
             side_effect=horizon_impl):
         result = candidate_horizon_execution(
             Path("/run"), object(), object(), "atlas", "features",
-            selection, (), "A.TEST", object() if cache is None else cache,
+            selection, (), "A.TEST", object() if cache is _AUTO_CACHE else cache,
             12, None, 0, None, None,
             None, None, emit_progress=lambda *_args: None, invalid=_invalid)
     assert result is sentinel
@@ -91,6 +94,17 @@ def test_learning_first_horizon_preserves_rehearsal_with_accepted_cache():
 
     compile_plan.assert_called_once()
     assert _rehearsal_plan_from(captured) is rehearsal_plan
+
+
+def test_learning_first_horizon_never_rebinds_missing_session_cache():
+    selection = SimpleNamespace(status="TEACHER_SELECTED")
+    with evidence_mode(strict=False), patch(
+            "bilqis_mlx.runtime.bamf_operator.session_parts.native_session."
+            "bind_accepted_execution_cache",
+            side_effect=AssertionError("non-strict cache rebound")) as bind_cache:
+        with pytest.raises(ValueError, match="BAMF_LEARNING_FIRST_SESSION_CACHE_REQUIRED"):
+            _run_horizon(selection, {}, cache=None)
+    bind_cache.assert_not_called()
 
 
 def test_learning_first_horizon_fails_closed_when_accepted_rehearsal_plan_is_invalid():

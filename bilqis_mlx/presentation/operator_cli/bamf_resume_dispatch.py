@@ -99,6 +99,7 @@ def _run_bamf_resume(
     from bilqis_mlx.control_plane.active_endpoint import advertise_active_endpoint
     from bilqis_mlx.runtime.bamf_operator import operate_bamf
     from bilqis_mlx.runtime.checkpoints import operator_view
+    from .bamf_lifecycle_inputs import strict_mode_requested
     view = (
         operator_view(lambda event: _bamf_dashboard_event(board, event))
         if board is not None else nullcontext())
@@ -109,7 +110,7 @@ def _run_bamf_resume(
             batch_size=args.batch_size,
             reserve_gib=args.reserve_gib,
             source_prefetch_workers=args.source_prefetch_workers,
-            strict_evidence=bool(getattr(args, "strict_evidence", False)),
+            strict_mode=strict_mode_requested(args),
             mastery_debt_min_utility=float(getattr(
                 args, "experiment_mastery_debt_min_utility", 0.05)),
             parent_graph=parent_graph,
