@@ -2,6 +2,56 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.4.5](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.4...v1.4.5) (2026-11-23)
+
+
+### Performance Improvements
+
+* **bamf:** disable source authority ceremony by default ([#1567](https://github.com/Entif-AI/Bilqis-MLX/issues/1567)) ([731ad33](https://github.com/Entif-AI/Bilqis-MLX/commit/731ad337884b96feec456ea86fc6ab8edcb41f2c))
+
+<!-- release-history:pr:1567:start -->
+### PR #1567 constituent commit inventory
+
+Release Please summarized PR #1567 as [`731ad33`](https://github.com/Entif-AI/Bilqis-MLX/commit/731ad337884b96feec456ea86fc6ab8edcb41f2c). This generated inventory preserves **25 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **24 source commits and 1 internal merge commit**.
+
+<details>
+<summary>24 source commits (newest-first PR order)</summary>
+
+- [`fe4d849336`](https://github.com/Entif-AI/Bilqis-MLX/commit/fe4d849336cab2448d708db7b98ccd0252544ba2) fix(bamf): preserve mutated teacher replay provenance
+- [`0f703245e7`](https://github.com/Entif-AI/Bilqis-MLX/commit/0f703245e7ce0b4040adf6ef4c05b534fce12bb7) fix(bamf): keep speculative candidates off accepted cache
+- [`20deba0f1d`](https://github.com/Entif-AI/Bilqis-MLX/commit/20deba0f1da7dd06ac8738f0343fab567ce51bbd) test(ci): compartmentalize remediation verifier regression
+- [`4603061861`](https://github.com/Entif-AI/Bilqis-MLX/commit/460306186165be67bcb8ee240afc6fd3bc395e3d) fix(ci): tolerate removed remediation files
+- [`a26426026b`](https://github.com/Entif-AI/Bilqis-MLX/commit/a26426026b73cfb262219cfe4c60641cce3f2321) refactor(bamf): split retention owner support
+- [`57013cad96`](https://github.com/Entif-AI/Bilqis-MLX/commit/57013cad96cd7c194024da1a204f51c7f4efcabe) test(bamf): split microbatch trajectory witnesses
+- [`d697f41039`](https://github.com/Entif-AI/Bilqis-MLX/commit/d697f41039c69ebdd34e051d594529c11156c413) perf(bamf): accelerate default retention evaluation
+- [`60bd1f253d`](https://github.com/Entif-AI/Bilqis-MLX/commit/60bd1f253d371bd86e8a9e37ca19b27861d96b57) chore(bamf): record operator-contract CI repair
+- [`e6be253b42`](https://github.com/Entif-AI/Bilqis-MLX/commit/e6be253b4257dae1f9ee6d97faf34479d8f6ebbd) fix(bamf): name learning-first operator contracts
+- [`54a49cc8fd`](https://github.com/Entif-AI/Bilqis-MLX/commit/54a49cc8fda28fab50331cac0c8852fca0c6b43c) chore(bamf): record C05 training repair
+- [`fe519d552a`](https://github.com/Entif-AI/Bilqis-MLX/commit/fe519d552a64aef5287461f439875f27e75ccac4) fix(bamf): preserve C05 source independence
+- [`a05b116e1b`](https://github.com/Entif-AI/Bilqis-MLX/commit/a05b116e1b0ece85f852470ff1e96c48e037e794) chore(bamf): record #1566 subsecond proof
+- [`d562f6c9d7`](https://github.com/Entif-AI/Bilqis-MLX/commit/d562f6c9d762141eac212ae5a4ecfe6e5100a893) perf(bamf): make default training numerical first
+- [`0cdea97f8f`](https://github.com/Entif-AI/Bilqis-MLX/commit/0cdea97f8fe1356672013555b67665ca4e2d19b0) chore(bamf): record prefix inventory crash repair
+- [`46a5450b5e`](https://github.com/Entif-AI/Bilqis-MLX/commit/46a5450b5e5e28d9be324cb334d483a007669625) refactor(bamf): keep candidate bridge entrypoints compact
+- [`e91da0b0a6`](https://github.com/Entif-AI/Bilqis-MLX/commit/e91da0b0a6bd597dfd33dd436d005d694af17754) fix(bamf): restore learning-first prefix inventory
+- [`b15efbfd08`](https://github.com/Entif-AI/Bilqis-MLX/commit/b15efbfd08dbad3d6ba1f7d50506b9c53fdbc569) chore(bamf): record selected-source reuse repair
+- [`3d421c6cd5`](https://github.com/Entif-AI/Bilqis-MLX/commit/3d421c6cd5f1a9189ff1acd6d3682c700d57740f) perf(bamf): reuse selected source authority in training
+- [`3c6ebae8cf`](https://github.com/Entif-AI/Bilqis-MLX/commit/3c6ebae8cff757bdc487fec8e765c6aa264e68c1) chore(bamf): record learning-first crash fix
+- [`f133d9d6d3`](https://github.com/Entif-AI/Bilqis-MLX/commit/f133d9d6d3e6302de6e51cf5b43cd288ba29947c) fix(bamf): preserve learning-first visit provenance
+- [`e34bf42a55`](https://github.com/Entif-AI/Bilqis-MLX/commit/e34bf42a556a2d34eff485a667e75c51e01f1984) chore(bamf): refresh issue 1566 CI checkpoint
+- [`f876d6df77`](https://github.com/Entif-AI/Bilqis-MLX/commit/f876d6df777f15f8a9fd0d11c180d20a2443687b) refactor(bamf): isolate learning-first execution
+- [`d3f71f529a`](https://github.com/Entif-AI/Bilqis-MLX/commit/d3f71f529adafce33fcf991b6c0a1b0aa47df8df) chore(bamf): turn in issue 1566
+- [`6dd7839a61`](https://github.com/Entif-AI/Bilqis-MLX/commit/6dd7839a61bbeb5904a12ef7171e2580927f6f51) perf(bamf): default to learning-first source path
+
+</details>
+
+<details>
+<summary>1 internal merge commit (newest-first PR order)</summary>
+
+- [`28a67fdfd8`](https://github.com/Entif-AI/Bilqis-MLX/commit/28a67fdfd898062dd451dddd2355b52323aaa092) Merge remote-tracking branch 'origin/main' into codex/1566-training-first-bypass-20261122
+
+</details>
+
+<!-- release-history:pr:1567:end -->
 ## [1.4.4](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.3...v1.4.4) (2026-11-22)
 
 
