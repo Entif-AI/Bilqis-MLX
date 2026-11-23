@@ -95,8 +95,11 @@ class DepthParameterView(Mapping[str, mx.array]):
         if any(self._tensors[local] is not self._full_parameters[path]
                for local, path in _depth_names(self.boundary_group).items()):
             _invalid()
+        full_parameters = self._full_parameters
         object.__setattr__(self, "_tensors", MappingProxyType(dict(self._tensors)))
-        object.__setattr__(self, "_full_parameters", MappingProxyType(dict(self._full_parameters)))
+        if getattr(self._execution_binding, "_parameters", None) is not full_parameters:
+            full_parameters = MappingProxyType(dict(full_parameters))
+        object.__setattr__(self, "_full_parameters", full_parameters)
         object.__setattr__(self, "_feature_parameters", MappingProxyType({
             name: value for name, value in self._full_parameters.items() if name.startswith("features.")}))
 
