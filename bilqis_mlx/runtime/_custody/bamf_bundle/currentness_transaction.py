@@ -311,6 +311,26 @@ def require_accepted_currentness(transaction, cache=None, parent=None):
     return transaction
 
 
+def require_accepted_currentness_identity(transaction, cache=None, parent=None):
+    """Fence the process-live accepted roots without walking every retained leaf."""
+    if (type(transaction) is not AcceptedCurrentnessTransaction
+            or getattr(transaction, "_issuance", None) is not _ISSUER
+            or (cache is not None and transaction._cache is not cache)
+            or (parent is not None and transaction._parent is not parent)
+            or getattr(transaction._cache, "_currentness_transaction", None)
+               is not transaction
+            or transaction._cache.accepted_manifest_sha256
+               != transaction.accepted_manifest_sha256
+            or transaction._cache.generation_binding != transaction.generation_binding
+            or getattr(transaction._cache, "_candidate_identity_sha256", None)
+               != transaction.candidate_identity_sha256
+            or transaction._parent.topology.digest != transaction.topology_digest
+            or transaction._parent.extents.digest != transaction.extents_digest
+            or _retained_root_guard(transaction._parent) != transaction._retained_root):
+        invalid("B13_CURRENTNESS_TRANSACTION_DRIFT")
+    return transaction
+
+
 def refresh_accepted_currentness(transaction, parent: CompleteStudent):
     """Check all mutable accepted-state edges once before the next neural step."""
     require_accepted_currentness(transaction, transaction._cache, parent)
@@ -353,6 +373,7 @@ __all__ = (
     "currentness_metrics",
     "refresh_accepted_currentness",
     "require_accepted_currentness",
+    "require_accepted_currentness_identity",
     "require_accepted_currentness_step",
     "require_live_accepted_currentness_step",
 )

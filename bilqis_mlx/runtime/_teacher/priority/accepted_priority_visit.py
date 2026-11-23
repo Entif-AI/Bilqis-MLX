@@ -17,14 +17,17 @@ from bilqis_mlx.learning.teacher_visit_identity import (
     record_teacher_visit_identity,
 )
 from bilqis_mlx.runtime.atlas_memory_retry import OOM_EXHAUSTED
-from bilqis_mlx.runtime.priority_source_offer import expand_selected_priority_source_offer
+from bilqis_mlx.runtime.priority_source_offer import (
+    PrioritySourceIntent, expand_selected_priority_source_offer,
+    materialize_priority_source_intent,
+)
 from bilqis_mlx.runtime.teacher_policy_selection import select_visit_policy
 from bilqis_mlx.semantics.domains import contract_digest
 from .accepted_teacher_custody import (
     _accepted_parent, _c03_projection, _issue_bound_visit, _require_current_visit,
     _selection_projection, current_teacher_projection,
 )
-from .priority_qualification import _grade, requalify_priority
+from .priority_qualification import _grade, _planning_hold, requalify_priority
 from bilqis_mlx.runtime.outcomes.issuance import context_for_selection
 from .accepted_priority_candidate import (
     execute_accepted_priority_candidate,
@@ -48,17 +51,18 @@ def _action_required_hold_reason(action_kind):
 
 def _selected_priority_result(
         run_dir, source_context, parent, cache, projection, epoch, teacher,
-        qualified, option, offer, school, engine, rng, learning_settings,
-        program, grade, evidence, holds, lawful_frontier, total_capabilities,
+        dispatch_tier, option, offer, school, engine, rng, learning_settings,
+        program, grade, salience_evidence, holds, lawful_frontier, total_capabilities,
         plasticity_escape, priority_features, cadence_authorization,
         planning_offer, source_materialization_wall_seconds,
         planning_offer_fanout_wall_seconds):
     capability = option.context.capability_id
+    diagnostics = {'teacher_epoch_digest': contract_digest(epoch)}
+    if salience_evidence is not None:
+        diagnostics['salience_evidence'] = salience_evidence
     key, policy, metadata = select_visit_policy(
         engine, teacher, capability, school, rng, learning_settings,
-        option.context.scope,
-        {'salience_evidence': evidence[option.stable_id],
-         'teacher_epoch_digest': contract_digest(epoch)},
+        option.context.scope, diagnostics,
         grade, total_capabilities=total_capabilities,
         plasticity_escape=plasticity_escape)
     metadata = {**metadata, 'how_context': context_for_selection(
@@ -78,15 +82,16 @@ def _selected_priority_result(
         capability_id=capability,
         policy_key=key)
     recorded = record_teacher_visit_identity(selected.teacher_state, identity)
+    planning_authority = getattr(planning_offer, 'source_authority', None)
+    planning_receipt = getattr(planning_authority, 'content_sha256', None)
     ranking_evidence = {
         **priority_features,
-        'dispatch_tier': int(dict(qualified.ranked.tiers)[option.stable_id]),
+        'dispatch_tier': int(dispatch_tier),
         'eligible_since': option.eligible_since,
         'downstream_unlocks': option.downstream_unlocks,
         'stable_id': option.stable_id,
         'salience_inputs_digest': option.salience_inputs_digest,
-        'planning_source_receipt_sha256': (
-            planning_offer.source_authority.content_sha256),
+        'planning_source_receipt_sha256': planning_receipt,
         'planning_source_each': planning_offer.source_each,
         'selected_source_receipt_sha256': offer.source_authority.content_sha256,
         'selected_source_each': offer.source_each,
@@ -108,9 +113,17 @@ def _accepted_context(run_dir, source_context, school, lawful_frontier,
         parent, cache = _accepted_parent(Path(run_dir))
         expected = candidate_identity_for_canonical_consumer(parent.retained_state)
     else:
-        from bilqis_mlx.runtime.priority_source_offer import _require_planning_generation
+        from bilqis_mlx.runtime.priority_source_offer import (
+            _require_planning_generation, _require_planning_generation_identity,
+        )
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_mode_enabled,
+        )
         parent = accepted_parent
-        cache, _authenticated = _require_planning_generation(
+        require_generation = (
+            _require_planning_generation
+            if strict_mode_enabled() else _require_planning_generation_identity)
+        cache, _authenticated = require_generation(
             planning_generation, source_context, parent)
         if getattr(lawful_frontier, '_planning_generation', None) is not planning_generation:
             _invalid('BAMF_PRIORITY_LAWFUL_FRONTIER_BINDING_DRIFT')
@@ -184,6 +197,33 @@ def _qualified_priority_context(
     )
 
 
+def _learning_first_priority_context(
+        run_dir, source_context, parent, cache, frontier, offers, school,
+        learning_settings, lawful_frontier, legacy_receipt, adaptation, prior_region):
+    from bilqis_mlx.runtime.priority_authority import LearningFirstPriorityFrontier
+    if type(frontier) is not LearningFirstPriorityFrontier:
+        _invalid('BAMF_PRIORITY_LEARNING_FIRST_FRONTIER_INVALID')
+    projection = _c03_projection(
+        parent, legacy_receipt=legacy_receipt,
+        adaptation=adaptation, prior_region=prior_region)
+    projection = current_teacher_projection(run_dir, parent, cache, projection)
+    epoch = restore_teacher_lineage(projection.teacher_state)
+    teacher = _teacher(epoch, school)
+    if not isinstance(learning_settings, Settings):
+        _invalid('BAMF_SALIENCE_CONTEXTUAL_SETTINGS_REQUIRED')
+    by_id = dict(offers)
+    if (len(by_id) != len(offers)
+            or set(by_id) != {option.stable_id for option in frontier.options}
+            or any(option.context.capability_id != option.stable_id
+                   for option in frontier.options)):
+        _invalid('BAMF_PRIORITY_LEARNING_FIRST_FRONTIER_INVALID')
+    holds = [
+        (item.capability_id, item.code.value)
+        for item in lawful_frontier.exclusions
+    ]
+    return projection, epoch, teacher, by_id, holds
+
+
 def select_accepted_priority_visit(
         run_dir, source_context, frontier, history, planning, offers,
         engine, school, rng, learning_settings, *, program, now,
@@ -203,6 +243,55 @@ def select_accepted_priority_visit(
         return _empty_priority_result(
             run_dir, source_context, parent, frontier, history, lawful_frontier,
             cadence_authorization, cadence_ids, cadence_metadata)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    strict = strict_mode_enabled()
+    if not strict:
+        projection, epoch, teacher, by_id, holds = _learning_first_priority_context(
+            run_dir, source_context, parent, cache, frontier, offers, school,
+            learning_settings, lawful_frontier, legacy_receipt, adaptation, prior_region)
+        if cadence_ids is not None and not set(by_id) <= set(cadence_ids):
+            _invalid('BAMF_ACTIVE_GRADE_CADENCE_OFFER_DRIFT')
+        for option in frontier.options:
+            if _planning_hold(option, planning.selection):
+                holds.append((option.stable_id, 'A09_PLANNING_UNAVAILABLE'))
+                continue
+            if option.context.capability_id in resource_holds:
+                holds.append((option.stable_id, OOM_EXHAUSTED))
+                continue
+            grade = _grade(program, school, option.context.capability_id)
+            if grade is None:
+                _invalid('BAMF_PRIORITY_PROGRAM_INVALID')
+            planning_offer = by_id[option.stable_id]
+            materialization_started = time.perf_counter()
+            try:
+                offer = materialize_priority_source_intent(
+                    planning_offer, source_context, parent,
+                    source_each=(planning_offer.source_each
+                                 if selected_source_each is None
+                                 else selected_source_each))
+            except ValueError:
+                holds.append((option.stable_id, 'SOURCE_OFFER_HELD'))
+                continue
+            source_materialization_wall_seconds = max(
+                0.0, time.perf_counter() - materialization_started)
+            priority_features = {
+                'schema': 'bilqis.bamf.learning-first-priority-features/v1',
+                'known': [False, False, False],
+            }
+            return _selected_priority_result(
+                run_dir, source_context, parent, cache, projection, epoch, teacher,
+                option.dispatch_tier, option, offer, school, engine, rng,
+                learning_settings, program, grade, None, holds, lawful_frontier,
+                total_capabilities, plasticity_escape, priority_features,
+                cadence_authorization, planning_offer,
+                source_materialization_wall_seconds,
+                planning_offer_fanout_wall_seconds)
+        return _issue_result(
+            'NO_ADMISSIBLE_TEACHING', None, None, None, None, cadence_metadata,
+            None, sorted(holds), run_dir, lawful_frontier,
+            cadence_authorization=cadence_authorization)
     (projection, epoch, teacher, qualified, by_id, evidence, holds) = (
         _qualified_priority_context(
             run_dir, source_context, parent, cache, frontier, history, planning,
@@ -225,20 +314,26 @@ def select_accepted_priority_visit(
             continue
         planning_offer = by_id[option.stable_id]
         offer = planning_offer
-        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
-            strict_evidence_enabled,
-        )
         materialization_started = time.perf_counter()
-        if strict_evidence_enabled():
-            try:
-                offer.require_current(source_context, parent)
-            except ValueError:
-                holds.append((option.stable_id, 'SOURCE_OFFER_HELD'))
-                continue
+        try:
+            offer.require_current(source_context, parent)
+        except ValueError:
+            holds.append((option.stable_id, 'SOURCE_OFFER_HELD'))
+            continue
         grade = _grade(program, school, option.context.capability_id)
         if grade is None:
             _invalid('BAMF_PRIORITY_PROGRAM_INVALID')
-        if selected_source_each is not None:
+        if type(planning_offer) is PrioritySourceIntent:
+            try:
+                offer = materialize_priority_source_intent(
+                    planning_offer, source_context, parent,
+                    source_each=(planning_offer.source_each
+                                 if selected_source_each is None
+                                 else selected_source_each))
+            except ValueError:
+                holds.append((option.stable_id, 'SOURCE_OFFER_HELD'))
+                continue
+        elif selected_source_each is not None:
             try:
                 offer = expand_selected_priority_source_offer(
                     planning_offer, source_context, parent,
@@ -250,8 +345,9 @@ def select_accepted_priority_visit(
             0.0, time.perf_counter() - materialization_started)
         return _selected_priority_result(
             run_dir, source_context, parent, cache, projection, epoch, teacher,
-            qualified, option, offer, school, engine, rng, learning_settings,
-            program, grade, evidence, holds, lawful_frontier, total_capabilities,
+            dict(qualified.ranked.tiers)[option.stable_id], option, offer, school,
+            engine, rng, learning_settings, program, grade,
+            evidence[option.stable_id], holds, lawful_frontier, total_capabilities,
             plasticity_escape, priority_features, cadence_authorization,
             planning_offer, source_materialization_wall_seconds,
             planning_offer_fanout_wall_seconds)

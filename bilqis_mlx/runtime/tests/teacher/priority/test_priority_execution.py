@@ -91,7 +91,8 @@ def priority():
         'bilqis_mlx.runtime.accepted_teacher_custody': module(_accepted_parent=None, _c03_projection=None,
             _issue_bound_visit=None, _require_current_visit=None, _selection_projection=None,
             current_teacher_projection=lambda run, parent, cache, projection: projection),
-        'bilqis_mlx.runtime.priority_qualification': module(_grade=None, requalify_priority=None),
+        'bilqis_mlx.runtime.priority_qualification': module(
+            _grade=None, _planning_hold=None, requalify_priority=None),
     }
     name = 'bilqis_mlx.runtime.priority_execution_portable_test'
     path = Path(__file__).resolve().parents[3] / '_teacher/priority/accepted_priority_visit.py'

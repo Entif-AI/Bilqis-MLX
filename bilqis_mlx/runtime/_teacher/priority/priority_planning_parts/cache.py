@@ -44,6 +44,10 @@ class PriorityPlanningCache:
     closure_misses: int = 0
     planning_hits: int = 0
     planning_misses: int = 0
+    planning_generation_hits: int = 0
+    planning_generation_misses: int = 0
+    learning_first_epoch_hits: int = 0
+    learning_first_epoch_misses: int = 0
     source_materialization_cache: PrioritySourceMaterializationCache = field(
         default_factory=PrioritySourceMaterializationCache, repr=False)
     _static_key: tuple | None = field(default=None, init=False, repr=False)
@@ -57,6 +61,13 @@ class PriorityPlanningCache:
     _closure: object | None = field(default=None, init=False, repr=False)
     _planning_key: tuple | None = field(default=None, init=False, repr=False)
     _planning: object | None = field(default=None, init=False, repr=False)
+    _planning_generation_key: tuple | None = field(default=None, init=False, repr=False)
+    _planning_generation: object | None = field(default=None, init=False, repr=False)
+    _learning_first_epoch_key: tuple | None = field(default=None, init=False, repr=False)
+    _learning_first_epoch: object | None = field(default=None, init=False, repr=False)
+    _learning_first_planning: object | None = field(default=None, init=False, repr=False)
+    _learning_first_lawful_frontier: object | None = field(
+        default=None, init=False, repr=False)
 
     def __post_init__(self):
         self.run_dir = Path(self.run_dir).resolve()
@@ -71,6 +82,10 @@ class PriorityPlanningCache:
             "closure_misses": self.closure_misses,
             "planning_hits": self.planning_hits,
             "planning_misses": self.planning_misses,
+            "planning_generation_hits": self.planning_generation_hits,
+            "planning_generation_misses": self.planning_generation_misses,
+            "learning_first_epoch_hits": self.learning_first_epoch_hits,
+            "learning_first_epoch_misses": self.learning_first_epoch_misses,
         }
         metrics.update({
             "source_materialization_" + name: value

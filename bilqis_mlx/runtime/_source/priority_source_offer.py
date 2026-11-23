@@ -15,10 +15,12 @@ from .priority_planning_generation import (
     _PLANNING_ISSUER,
     _current_cache,
     _require_planning_generation,
+    _require_planning_generation_identity,
     bind_priority_planning_generation,
 )
 
 _ISSUER = object()
+_INTENT_ISSUER = object()
 
 
 def _json_value(value):
@@ -72,6 +74,7 @@ class PreparedPrioritySourceOffer:
     _materialized: dict = field(repr=False, compare=False)
     _materialization_cache: object = field(repr=False, compare=False)
     _qualification_owner: object = field(repr=False, compare=False)
+    _learning_first: bool = field(repr=False, compare=False)
     _planning_generation: PriorityPlanningGeneration = field(repr=False, compare=False)
     _issuance: object = field(repr=False)
 
@@ -89,7 +92,9 @@ class PreparedPrioritySourceOffer:
                 or self.source_authority.source_family_id != self.source_family_id
                 or type(self._materialized) is not dict
                 or any(key != 'value' for key in self._materialized)
-                or self._qualification_owner is None
+                or type(self._learning_first) is not bool
+                or (not self._learning_first and self._qualification_owner is None)
+                or (self._learning_first and self._qualification_owner is not None)
                 or type(self._planning_generation) is not PriorityPlanningGeneration
                 or getattr(self._planning_generation, '_issuance', None) is not _PLANNING_ISSUER):
             _invalid_source_batch('BAMF_PRIORITY_SOURCE_OFFER_INVALID')
@@ -108,7 +113,13 @@ class PreparedPrioritySourceOffer:
     def require_current_parent(self, source_context):
         self._validate()
         parent = self._planning_generation._parent
-        cache, _authenticated = _require_planning_generation(
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_mode_enabled,
+        )
+        require_generation = (
+            _require_planning_generation
+            if strict_mode_enabled() else _require_planning_generation_identity)
+        cache, _authenticated = require_generation(
             self._planning_generation, source_context, parent)
         return parent, cache
 
@@ -118,7 +129,14 @@ class PreparedPrioritySourceOffer:
         self._validate()
         offer_validate_seconds = time.perf_counter() - stage_started
         stage_started = time.perf_counter()
-        cache, _authenticated = _require_planning_generation(
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_mode_enabled,
+        )
+        strict = strict_mode_enabled()
+        require_generation = (
+            _require_planning_generation
+            if strict else _require_planning_generation_identity)
+        cache, _authenticated = require_generation(
             self._planning_generation, source_context, parent)
         planning_generation_seconds = time.perf_counter() - stage_started
         stage_started = time.perf_counter()
@@ -134,6 +152,21 @@ class PreparedPrioritySourceOffer:
         stage_started = time.perf_counter()
         rows = self.rows() if prepared_rows is None else tuple(prepared_rows)
         row_decode_seconds = time.perf_counter() - stage_started
+        if not strict:
+            object.__setattr__(self, "_performance_observation", {
+                "source_currentness_offer_validate_wall_seconds": float(
+                    offer_validate_seconds),
+                "source_currentness_planning_generation_wall_seconds": float(
+                    planning_generation_seconds),
+                "source_currentness_static_binding_wall_seconds": float(
+                    static_binding_seconds),
+                "source_currentness_row_decode_wall_seconds": float(
+                    row_decode_seconds),
+                "source_currentness_row_authority_wall_seconds": 0.0,
+                "source_currentness_row_canonical_wall_seconds": 0.0,
+                "source_currentness_qualification_owner_wall_seconds": 0.0,
+            })
+            return rows
         stage_started = time.perf_counter()
         source_context.require_bound_rows(rows, self.source_authority)
         row_authority_seconds = time.perf_counter() - stage_started
@@ -171,6 +204,120 @@ class PreparedPrioritySourceOffer:
             self, source_context, parent, prepared_rows=prepared_rows)
 
 
+@dataclass(frozen=True, init=False, eq=False)
+class PrioritySourceIntent:
+    """Metadata-only preselection intent; source rows are drawn only after selection."""
+
+    accepted_manifest_sha256: str
+    generation_binding: str
+    release_sha256: str
+    capability_id: str
+    source_seed: int
+    source_each: int
+    source_binding_digest: str
+    _run_dir: Path = field(repr=False)
+    _materialization_cache: object = field(repr=False, compare=False)
+    _planning_generation: PriorityPlanningGeneration = field(repr=False, compare=False)
+    _issuance: object = field(repr=False)
+
+    def __init__(self, *args, **kwargs):
+        _invalid_source_batch('BAMF_PRIORITY_SOURCE_INTENT_CALLER_CONSTRUCTION_FORBIDDEN')
+
+    def _validate(self):
+        if (getattr(self, '_issuance', None) is not _INTENT_ISSUER
+                or not all(isinstance(value, str) and value for value in (
+                    self.accepted_manifest_sha256, self.generation_binding,
+                    self.release_sha256, self.capability_id,
+                    self.source_binding_digest))
+                or type(self.source_seed) is not int or self.source_seed < 0
+                or type(self.source_each) is not int or self.source_each < 1
+                or type(self._planning_generation) is not PriorityPlanningGeneration
+                or getattr(self._planning_generation, '_issuance', None) is not _PLANNING_ISSUER):
+            _invalid_source_batch('BAMF_PRIORITY_SOURCE_INTENT_INVALID')
+        if self._materialization_cache is not None:
+            from .priority_source_materialization_cache import (
+                PrioritySourceMaterializationCache,
+            )
+            if type(self._materialization_cache) is not PrioritySourceMaterializationCache:
+                _invalid_source_batch('BAMF_PRIORITY_SOURCE_INTENT_INVALID')
+        return self
+
+
+def plan_priority_source_intent(source_context, parent, atlas_artifact_path, *,
+                                capability, source_seed, source_each,
+                                planning_generation=None,
+                                materialization_cache=None):
+    """Bind a lawful source identity without drawing or validating provider rows."""
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    if strict_mode_enabled():
+        _invalid_source_batch('BAMF_PRIORITY_SOURCE_INTENT_STRICT_MODE_FORBIDDEN')
+    if planning_generation is None:
+        planning_generation = bind_priority_planning_generation(
+            source_context, parent, atlas_artifact_path)
+    cache, _authenticated = _require_planning_generation_identity(
+        planning_generation, source_context, parent)
+    if (not isinstance(capability, str) or not capability
+            or type(source_seed) is not int or source_seed < 0
+            or type(source_each) is not int or source_each < 1
+            or capability not in source_context.release.execution_plan.capability_map):
+        _invalid_source_batch('BAMF_PRIORITY_SOURCE_INTENT_INPUT_INVALID')
+    binding = source_context.release.source_bindings.by_capability[capability]
+    binding_digest = contract_digest(binding)
+    intent = object.__new__(PrioritySourceIntent)
+    for name, value in (
+        ('accepted_manifest_sha256', cache.accepted_manifest_sha256),
+        ('generation_binding', cache.generation_binding),
+        ('release_sha256', source_context.release.release_sha256),
+        ('capability_id', capability), ('source_seed', source_seed),
+        ('source_each', source_each),
+        ('source_binding_digest', binding_digest),
+        ('_run_dir', Path(source_context.run_dir).resolve()),
+        ('_materialization_cache', materialization_cache),
+        ('_planning_generation', planning_generation), ('_issuance', _INTENT_ISSUER),
+    ):
+        object.__setattr__(intent, name, value)
+    return intent._validate()
+
+
+def materialize_priority_source_intent(
+        intent, source_context, parent, *, source_each=None):
+    """Draw and qualify exactly one selected learning-first source intent."""
+    if type(intent) is not PrioritySourceIntent:
+        _invalid_source_batch('BAMF_PRIORITY_SOURCE_INTENT_REQUIRED')
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    if strict_mode_enabled():
+        _invalid_source_batch('BAMF_PRIORITY_SOURCE_INTENT_STRICT_MODE_FORBIDDEN')
+    intent._validate()
+    cache, _authenticated = _require_planning_generation_identity(
+        intent._planning_generation, source_context, parent)
+    each = intent.source_each if source_each is None else source_each
+    if (type(each) is not int or each < intent.source_each
+            or Path(source_context.run_dir).resolve() != intent._run_dir
+            or source_context.release.release_sha256 != intent.release_sha256
+            or cache.accepted_manifest_sha256 != intent.accepted_manifest_sha256
+            or cache.generation_binding != intent.generation_binding
+            or contract_digest(source_context.release.source_bindings.by_capability[
+                intent.capability_id]) != intent.source_binding_digest):
+        _invalid_source_batch('BAMF_PRIORITY_SOURCE_INTENT_STALE')
+    offer = prepare_priority_source_offer(
+        source_context, parent, None,
+        capability=intent.capability_id, source_seed=intent.source_seed,
+        source_each=each, planning_generation=intent._planning_generation,
+        materialization_cache=intent._materialization_cache)
+    if (offer.accepted_manifest_sha256 != intent.accepted_manifest_sha256
+            or offer.generation_binding != intent.generation_binding
+            or offer.release_sha256 != intent.release_sha256
+            or offer.capability_id != intent.capability_id
+            or offer.source_seed != intent.source_seed
+            or offer.source_binding_digest != intent.source_binding_digest):
+        _invalid_source_batch('BAMF_PRIORITY_SOURCE_INTENT_MATERIALIZATION_DRIFT')
+    return offer
+
+
 def prepare_priority_source_offer(source_context, parent, atlas_artifact_path, *,
                                   capability, source_seed, source_each,
                                   planning_generation=None,
@@ -179,7 +326,14 @@ def prepare_priority_source_offer(source_context, parent, atlas_artifact_path, *
     if planning_generation is None:
         planning_generation = bind_priority_planning_generation(
             source_context, parent, atlas_artifact_path)
-    cache, authenticated = _require_planning_generation(
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    strict = strict_mode_enabled()
+    require_generation = (
+        _require_planning_generation
+        if strict else _require_planning_generation_identity)
+    cache, authenticated = require_generation(
         planning_generation, source_context, parent)
     if (not isinstance(capability, str) or not capability
             or type(source_seed) is not int or source_seed < 0
@@ -194,9 +348,11 @@ def prepare_priority_source_offer(source_context, parent, atlas_artifact_path, *
         _invalid_source_batch('BAMF_PRIORITY_SOURCE_ROWS_INVALID')
     if authenticated.receipt.generation_manifest_sha256 != cache.accepted_manifest_sha256:
         _invalid_source_batch('BAMF_PRIORITY_SOURCE_ACCEPTED_GENERATION_DRIFT')
-    from bilqis_mlx.runtime.salience_evidence_owner import SalienceEvidenceArtifactOwner
-    qualification_owner = SalienceEvidenceArtifactOwner.for_source_qualification(
-        authority, rows, authenticated.features.semantic_release)
+    qualification_owner = None
+    if strict:
+        from bilqis_mlx.runtime.salience_evidence_owner import SalienceEvidenceArtifactOwner
+        qualification_owner = SalienceEvidenceArtifactOwner.for_source_qualification(
+            authority, rows, authenticated.features.semantic_release)
     offer = object.__new__(PreparedPrioritySourceOffer)
     for name, value in (
         ('source_authority', authority), ('accepted_manifest_sha256', cache.accepted_manifest_sha256),
@@ -208,12 +364,16 @@ def prepare_priority_source_offer(source_context, parent, atlas_artifact_path, *
         ('_run_dir', Path(source_context.run_dir).resolve()), ('_materialized', {}),
         ('_materialization_cache', materialization_cache),
         ('_qualification_owner', qualification_owner),
+        ('_learning_first', not strict),
         ('_planning_generation', planning_generation),
         ('_issuance', _ISSUER)):
         object.__setattr__(offer, name, value)
-    planning_generation._target_registrar.register(
-        'SALIENCE_EVIDENCE', qualification_owner)
-    offer.require_qualified_current(source_context, parent)
+    if strict:
+        planning_generation._target_registrar.register(
+            'SALIENCE_EVIDENCE', qualification_owner)
+        offer.require_qualified_current(source_context, parent)
+    else:
+        offer._validate()
     return offer
 
 
@@ -247,3 +407,10 @@ def expand_selected_priority_source_offer(
             != offer.source_authority.provider_implementation_sha256):
         _invalid_source_batch('BAMF_PRIORITY_SELECTED_SOURCE_EXPANSION_DRIFT')
     return expanded
+
+
+__all__ = (
+    'PreparedPrioritySourceOffer', 'PrioritySourceIntent',
+    'plan_priority_source_intent', 'materialize_priority_source_intent',
+    'prepare_priority_source_offer', 'expand_selected_priority_source_offer',
+)

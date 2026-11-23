@@ -56,7 +56,7 @@ class PriorityPlanningGeneration:
         _invalid_source_batch('BAMF_PRIORITY_PLANNING_CALLER_CONSTRUCTION_FORBIDDEN')
 
 
-def _require_planning_generation(binding, source_context, parent):
+def _require_planning_generation_identity(binding, source_context, parent):
     from bilqis_mlx.runtime.bamf_bundle import CompleteStudent
     if (type(binding) is not PriorityPlanningGeneration
             or getattr(binding, '_issuance', None) is not _PLANNING_ISSUER
@@ -79,11 +79,17 @@ def _require_planning_generation(binding, source_context, parent):
             or binding._authenticated_features.receipt.generation_manifest_sha256
             != binding.accepted_manifest_sha256):
         _invalid_source_batch('BAMF_PRIORITY_PLANNING_GENERATION_DRIFT')
+    return cache, binding._authenticated_features
+
+
+def _require_planning_generation(binding, source_context, parent):
+    cache, authenticated = _require_planning_generation_identity(
+        binding, source_context, parent)
     from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (
         require_accepted_currentness,
     )
     require_accepted_currentness(binding._accepted_currentness, cache, parent)
-    return cache, binding._authenticated_features
+    return cache, authenticated
 
 
 def bind_priority_planning_generation(source_context, parent, atlas_artifact_path):
@@ -110,9 +116,10 @@ def bind_priority_planning_generation(source_context, parent, atlas_artifact_pat
     else:
         currentness = getattr(cache, "_currentness_transaction", None)
         from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (
-            require_accepted_currentness,
+            require_accepted_currentness_identity,
         )
-        currentness = require_accepted_currentness(currentness, cache, parent)
+        currentness = require_accepted_currentness_identity(
+            currentness, cache, parent)
     from bilqis_mlx.runtime.bamf_bundle import (
         authenticate_bamf_execution_feature_context,
         is_authenticated_generation_feature_context,
@@ -154,7 +161,10 @@ def bind_priority_planning_generation(source_context, parent, atlas_artifact_pat
         ('_issuance', _PLANNING_ISSUER),
     ):
         object.__setattr__(result, name, value)
-    _require_planning_generation(result, source_context, parent)
+    if strict:
+        _require_planning_generation(result, source_context, parent)
+    else:
+        _require_planning_generation_identity(result, source_context, parent)
     return result
 
 

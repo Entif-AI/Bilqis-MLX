@@ -6,7 +6,9 @@ import hashlib
 import time
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
-from bilqis_mlx.learning.atlas_salience import derive_salience, verify_salience_inputs
+from bilqis_mlx.learning.atlas_salience import (
+    DispatchTier, derive_salience, verify_salience_inputs,
+)
 from bilqis_mlx.learning.salience_contracts import (
     ActionKind, AttentionOption, AuthoritySnapshot, FactOrigin, Metric, MetricRule,
     NoveltyState, Ordinal, SalienceContext, SaliencePolicy, Signal, SignedFact,
@@ -17,8 +19,9 @@ from bilqis_mlx.learning.salience_history import (
 from bilqis_mlx.learning.salience_teacher import AttentionFrontier
 from bilqis_mlx.learning.teacher_lineage import priority_rotation_state
 from bilqis_mlx.runtime.priority_source_offer import (
-    _require_planning_generation, bind_priority_planning_generation,
-    prepare_priority_source_offer,
+    _require_planning_generation, _require_planning_generation_identity,
+    bind_priority_planning_generation,
+    plan_priority_source_intent, prepare_priority_source_offer,
 )
 from bilqis_mlx.runtime.logical_batch import BamfLogicalBatchContract
 from bilqis_mlx.semantic_sampling import DEFAULT_BINARY_BALANCE
@@ -56,7 +59,7 @@ def _invalid(reason):
 
 @dataclass(frozen=True)
 class AcceptedPriorityAuthority:
-    frontier: AttentionFrontier | None
+    frontier: object | None
     history: SalienceHistory | None
     planning: object
     lawful_frontier: object = field(compare=False, repr=False)
@@ -67,6 +70,29 @@ class AcceptedPriorityAuthority:
     planning_generation: object
     cadence: object = field(compare=False, repr=False)
     selection_cadence: object = field(compare=False, repr=False)
+
+
+@dataclass(frozen=True)
+class LearningFirstPriorityContext:
+    capability_id: str
+    scope: str = _SCOPE
+
+
+@dataclass(frozen=True)
+class LearningFirstPriorityOption:
+    stable_id: str
+    context: LearningFirstPriorityContext
+    eligible_since: int
+    downstream_unlocks: int
+    dispatch_tier: DispatchTier
+    salience_inputs_digest: str
+    action_kind: ActionKind = ActionKind.TEACHING
+
+
+@dataclass(frozen=True)
+class LearningFirstPriorityFrontier:
+    options: tuple[LearningFirstPriorityOption, ...]
+    evidence: tuple = ()
 
 
 def _signed(record, signer, kind, key):
@@ -148,7 +174,8 @@ def _planning_unlocks(capability_id, planning):
 
 
 def _priority_offers(source_context, parent, atlas_artifact_path, next_seed,
-                     planning_generation, lawful_frontier, authorized, source_each,
+                     planning_generation, lawful_frontier, authorized,
+                     source_each=_SOURCE_EACH,
                      planning_cache=None):
     by_id = {
         capability.capability_id: capability
@@ -160,6 +187,12 @@ def _priority_offers(source_context, parent, atlas_artifact_path, next_seed,
             or any(capability_id not in by_id for capability_id in authorized)):
         _invalid("BAMF_PRIORITY_LAWFUL_FRONTIER_RELEASE_DRIFT")
     capabilities = tuple(by_id[capability_id] for capability_id in authorized)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    prepare_offer = (
+        prepare_priority_source_offer
+        if strict_mode_enabled() else plan_priority_source_intent)
     def prepare(capability):
         kwargs = {
             "capability": capability.capability_id,
@@ -169,7 +202,7 @@ def _priority_offers(source_context, parent, atlas_artifact_path, next_seed,
         }
         if planning_cache is not None:
             kwargs["materialization_cache"] = planning_cache.source_materialization_cache
-        return prepare_priority_source_offer(
+        return prepare_offer(
             source_context, parent, atlas_artifact_path, **kwargs)
 
     return capabilities, tuple(
@@ -192,8 +225,10 @@ def _priority_options(parent, release_sha256, offers, teacher_epoch, counter,
     snapshot = AuthoritySnapshot(contexts, now, registry)
     options, evidence_rows = [], []
     for context, (stable_id, offer) in zip(contexts, offers, strict=True):
-        facts = tuple(_unknown_fact(metric, context, policy,
-                                    offer.source_authority.content_sha256,
+        receipt = getattr(offer, 'planning_receipt_sha256', None)
+        if receipt is None:
+            receipt = offer.source_authority.content_sha256
+        facts = tuple(_unknown_fact(metric, context, policy, receipt,
                                     now, signer)
                       for metric in (Metric.IMPACT_UNKNOWN,
                                      Metric.EXIGENCY_UNKNOWN,
@@ -212,15 +247,109 @@ def _priority_options(parent, release_sha256, offers, teacher_epoch, counter,
     return now, policy, snapshot, tuple(options), tuple(evidence_rows)
 
 
+def _learning_first_priority_frontier(
+        release_sha256, offers, planning, counter, last_selected,
+        rejection_count, rejection_positions):
+    """Rank ordinary teaching intents from metadata only, before source materialization."""
+    now = counter + rejection_count
+    rejection_recency = {
+        capability: counter + position
+        for capability, position in rejection_positions.items()
+    }
+    ranked = []
+    for stable_id, intent in offers:
+        unlocks = _planning_unlocks(stable_id, planning)
+        tier = (
+            DispatchTier.DOWNSTREAM_UNLOCK
+            if unlocks > 0 else DispatchTier.FAIR_ROTATION)
+        eligible_since = max(
+            last_selected.get(stable_id, 0),
+            rejection_recency.get(stable_id, 0))
+        inputs_digest = contract_digest((
+            "bilqis.bamf.learning-first-priority/v1",
+            release_sha256,
+            intent.accepted_manifest_sha256,
+            intent.generation_binding,
+            intent.source_binding_digest,
+            stable_id,
+            eligible_since,
+            unlocks,
+            int(tier),
+        ))
+        option = LearningFirstPriorityOption(
+            stable_id,
+            LearningFirstPriorityContext(stable_id),
+            eligible_since,
+            unlocks,
+            tier,
+            inputs_digest,
+        )
+        ranked.append((tier, eligible_since, stable_id, option))
+    ranked.sort(key=lambda item: item[:3])
+    return now, LearningFirstPriorityFrontier(
+        tuple(item[3] for item in ranked))
+
+
 def _bind_lawful_priority_epoch(
         run_dir, source_context, parent, atlas_artifact_path, progress,
         planning_cache=None):
     if progress is not None:
         progress("teacher: binding accepted planning generation")
-    planning_generation = bind_priority_planning_generation(
-        source_context, parent, atlas_artifact_path)
-    cache, _authenticated = _require_planning_generation(
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    planning_generation = None
+    learning_first_key = None
+    if planning_cache is not None and not strict_mode_enabled():
+        host = getattr(source_context, '_accepted_runtime_host', None)
+        accepted_cache = getattr(host, '_accepted_cache', None)
+        authenticated = getattr(source_context, '_accepted_feature_context', None)
+        receipt = getattr(authenticated, 'receipt', None)
+        learning_first_key = (
+            id(source_context), id(parent), id(accepted_cache),
+            getattr(accepted_cache, 'accepted_manifest_sha256', None),
+            getattr(accepted_cache, 'generation_binding', None),
+            source_context.release.release_sha256,
+            contract_digest(parent.correction_frontier),
+            getattr(receipt, 'digest', None), str(atlas_artifact_path),
+        )
+        if (planning_cache._planning_generation_key == learning_first_key
+                and planning_cache._planning_generation is not None):
+            planning_cache.planning_generation_hits += 1
+            planning_generation = planning_cache._planning_generation
+        else:
+            planning_cache.planning_generation_misses += 1
+            planning_generation = bind_priority_planning_generation(
+                source_context, parent, atlas_artifact_path)
+            planning_cache._planning_generation_key = learning_first_key
+            planning_cache._planning_generation = planning_generation
+            planning_cache._learning_first_epoch_key = None
+            planning_cache._learning_first_epoch = None
+            planning_cache._learning_first_planning = None
+            planning_cache._learning_first_lawful_frontier = None
+    if planning_generation is None:
+        planning_generation = bind_priority_planning_generation(
+            source_context, parent, atlas_artifact_path)
+    require_generation = (
+        _require_planning_generation
+        if strict_mode_enabled() else _require_planning_generation_identity)
+    cache, _authenticated = require_generation(
         planning_generation, source_context, parent)
+    if (planning_cache is not None and not strict_mode_enabled()
+            and planning_cache._learning_first_epoch_key == learning_first_key
+            and planning_cache._learning_first_epoch is not None
+            and planning_cache._learning_first_planning is not None
+            and planning_cache._learning_first_lawful_frontier is not None):
+        planning_cache.learning_first_epoch_hits += 1
+        return (
+            planning_generation,
+            cache,
+            planning_cache._learning_first_epoch,
+            planning_cache._learning_first_planning,
+            planning_cache._learning_first_lawful_frontier,
+        )
+    if planning_cache is not None and not strict_mode_enabled():
+        planning_cache.learning_first_epoch_misses += 1
     from bilqis_mlx.runtime.lawful_teaching_frontier import (
         _issue_lawful_teaching_frontier_from_epoch,
     )
@@ -232,6 +361,11 @@ def _bind_lawful_priority_epoch(
     lawful_frontier = _issue_lawful_teaching_frontier_from_epoch(
         planning_epoch, source_context, parent, planning_generation,
         planning_cache=planning_cache)
+    if planning_cache is not None and not strict_mode_enabled():
+        planning_cache._learning_first_epoch_key = learning_first_key
+        planning_cache._learning_first_epoch = planning_epoch
+        planning_cache._learning_first_planning = planning
+        planning_cache._learning_first_lawful_frontier = lawful_frontier
     return planning_generation, cache, planning_epoch, planning, lawful_frontier
 
 
@@ -287,13 +421,17 @@ def issue_foundation_priority_authority(
             lawful_frontier.frontier_sha256, (), 0.0,
             counter, planning_generation,
             cadence, selection_cadence)
-    registry = cache._correction_registry
-    signer = read_host_system_source_authority_signer(registry)
     capabilities = ready_capabilities
     if progress is not None:
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_mode_enabled,
+        )
         progress(
             "teacher: preparing source-backed offers for "
-            f"{len(capabilities)} lawful capabilities")
+            f"{len(capabilities)} lawful capabilities"
+            if strict_mode_enabled()
+            else "teacher: preparing metadata-only learning-first intents for "
+                 f"{len(capabilities)} lawful capabilities")
     offer_fanout_started = time.perf_counter()
     capabilities, offers = _priority_offers(
         source_context, parent, atlas_artifact_path, next_seed,
@@ -304,7 +442,6 @@ def issue_foundation_priority_authority(
         0.0, time.perf_counter() - offer_fanout_started)
     if progress is not None:
         progress("teacher: ranking priority options")
-    rejections = _ordered_rejections(run_dir, parent, cache)
     rejection_count, rejection_positions = _rejection_recency(run_dir, parent, cache)
     option_ids = {capability for capability, _ in offers}
     rejection_positions = {
@@ -312,8 +449,23 @@ def issue_foundation_priority_authority(
         for capability, position in rejection_positions.items()
         if capability in option_ids
     }
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    if not strict_mode_enabled():
+        now, frontier = _learning_first_priority_frontier(
+            source_context.release.release_sha256, offers, planning,
+            counter, last_selected, rejection_count, rejection_positions)
+        return AcceptedPriorityAuthority(
+            frontier, None, planning,
+            lawful_frontier, lawful_frontier.frontier_sha256, offers,
+            planning_offer_fanout_wall_seconds, now,
+            planning_generation, cadence, selection_cadence)
+    registry = cache._correction_registry
+    signer = read_host_system_source_authority_signer(registry)
     rejections = tuple(
-        item for item in rejections if item[0] in option_ids)
+        item for item in _ordered_rejections(run_dir, parent, cache)
+        if item[0] in option_ids)
     now, policy, snapshot, options, evidence_rows = _priority_options(
         parent, source_context.release.release_sha256, offers, teacher_epoch,
         counter, last_selected, rejection_count, rejection_positions,
