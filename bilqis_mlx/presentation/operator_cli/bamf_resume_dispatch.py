@@ -110,6 +110,8 @@ def _run_bamf_resume(
             reserve_gib=args.reserve_gib,
             source_prefetch_workers=args.source_prefetch_workers,
             strict_evidence=bool(getattr(args, "strict_evidence", False)),
+            mastery_debt_min_utility=float(getattr(
+                args, "experiment_mastery_debt_min_utility", 0.05)),
             parent_graph=parent_graph,
             **({"profile_release": profile_release} if profile_release is not None else {}),
             run_authority=run_authority,

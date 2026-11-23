@@ -148,11 +148,11 @@ def activation(teacher: dict, capability: str, curriculum_scope: str,
 
 
 def allows_early_grade_net(state: dict | None, paired: dict,
-                           capabilities) -> bool:
+                           capabilities, *, min_utility: float = 0.0) -> bool:
     if not state or not state.get("active"):
         return False
     utility, _details = _mastery_debt_utility(paired, capabilities)
-    return utility > 0
+    return float(utility) > min_utility
 
 
 def maybe_relax(reason: str, *, state: dict | None, no_target_gain: bool,
@@ -163,7 +163,8 @@ def maybe_relax(reason: str, *, state: dict | None, no_target_gain: bool,
                 fixed_grade_net_gain: int | None,
                 active_frontier_grade_net_gain: int | None,
                 whole_school_net_gain: int | None,
-                fragile_losses: bool) -> tuple[str, dict]:
+                fragile_losses: bool,
+                min_utility: float = 0.0) -> tuple[str, dict]:
     telemetry = {**(state or {}), "applied": False, "waived_reason": None}
     if (not telemetry.get("active") or no_target_gain or fragile_losses or
             reason not in _RELAXABLE_REASONS):
@@ -184,6 +185,7 @@ def maybe_relax(reason: str, *, state: dict | None, no_target_gain: bool,
         active_frontier_scores)
     telemetry["mastery_debt_utility"] = {
         "power": MASTERY_DEBT_POWER,
+        "minimum_required": min_utility,
         "paired": paired_utility,
         "same_grade": same_grade_utility,
         "fixed_grade": fixed_grade_utility,
@@ -194,18 +196,22 @@ def maybe_relax(reason: str, *, state: dict | None, no_target_gain: bool,
     # debt. Each capability contributes one vote regardless of probe-row count.
     # Squared deficit makes near-perfect surplus cheap to borrow from, while the
     # cost accelerates if the same capability keeps being cannibalized.
-    if same_grade_net <= 0 or paired_net <= 0:
+    if (float(same_grade_net) <= min_utility or
+            float(paired_net) <= min_utility):
         return reason, telemetry
     if (fixed_grade_net_gain is not None and fixed_grade_net_gain < 0 and
-            (fixed_grade_utility_net is None or fixed_grade_utility_net <= 0)):
+            (fixed_grade_utility_net is None or
+             float(fixed_grade_utility_net) <= min_utility)):
         return reason, telemetry
     if (active_frontier_grade_net_gain is not None and
             active_frontier_grade_net_gain < 0 and
-            (active_frontier_utility_net is None or active_frontier_utility_net <= 0)):
+            (active_frontier_utility_net is None or
+             float(active_frontier_utility_net) <= min_utility)):
         return reason, telemetry
     if (whole_school_net_gain is not None and
             whole_school_net_gain < 0 and
-            (frontier_utility_net is None or frontier_utility_net <= 0)):
+            (frontier_utility_net is None or
+             float(frontier_utility_net) <= min_utility)):
         return reason, telemetry
     telemetry["applied"] = True
     telemetry["waived_reason"] = reason

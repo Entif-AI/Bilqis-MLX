@@ -77,6 +77,7 @@ def prepare_operator_session(*, resume, run_dir, manifest, historical_course, co
 def configure_operator_session(*, schedule_program, run_dir, receipt, params, optimizer,
                                graph, experiment_probe_each, experiment_mature_max_loss,
                                experiment_introduction_extra_loss, experiment_protected_cap_limit,
+                               experiment_mastery_debt_min_utility,
                                retention_enabled, mx, autonomous_curriculum, source_root,
                                executable_release, source_prefetch_workers, resources):
     course = schedule_program
@@ -87,7 +88,8 @@ def configure_operator_session(*, schedule_program, run_dir, receipt, params, op
         probe_each=experiment_probe_each,
         mature_max_loss=experiment_mature_max_loss,
         introduction_extra_loss=experiment_introduction_extra_loss,
-        protected_cap_limit=experiment_protected_cap_limit)
+        protected_cap_limit=experiment_protected_cap_limit,
+        mastery_debt_min_utility=experiment_mastery_debt_min_utility)
         if retention_enabled else None)
     with _runtime_timing_trace.trace_span("RECONCILE_LEARNING_SETTINGS"):
         receipt = _runtime_reconciliation._reconcile_learning_settings(

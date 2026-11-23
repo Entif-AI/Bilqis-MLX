@@ -50,6 +50,7 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
             experiment_mature_max_loss: int = 1,
             experiment_introduction_extra_loss: int = 2,
             experiment_protected_cap_limit: int = 8,
+            experiment_mastery_debt_min_utility: float = 0.05,
             stagnation_grace_grade: str | None = None,
             stagnation_grace_steps: int = 0,
             admit_next_grade_with_debt: bool = False,
@@ -119,6 +120,7 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
             experiment_mature_max_loss=experiment_mature_max_loss,
             experiment_introduction_extra_loss=experiment_introduction_extra_loss,
             experiment_protected_cap_limit=experiment_protected_cap_limit,
+            experiment_mastery_debt_min_utility=experiment_mastery_debt_min_utility,
             retention_enabled=retention_enabled, mx=mx, autonomous_curriculum=autonomous_curriculum,
             source_root=source_root, executable_release=executable_release,
             source_prefetch_workers=source_prefetch_workers, resources=resources)

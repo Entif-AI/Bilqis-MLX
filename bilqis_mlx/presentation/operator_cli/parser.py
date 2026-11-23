@@ -90,6 +90,12 @@ def _add_training_policy_args(parser) -> None:
     parser.add_argument('--retention-protected-cap-limit', '--experiment-protected-cap-limit',
                         dest='experiment_protected_cap_limit', type=int, default=8,
                         help='Bounded grade-stratified sentinel panel per visit')
+    parser.add_argument(
+        '--retention-mastery-debt-min-utility',
+        '--experiment-mastery-debt-min-utility',
+        dest='experiment_mastery_debt_min_utility', type=float, default=0.05,
+        help=('Minimum normalized quadratic mastery-debt utility required to '
+              'accept a regression-bearing score trade; must be exceeded'))
 
 
 def _add_training_execution_args(parser) -> None:

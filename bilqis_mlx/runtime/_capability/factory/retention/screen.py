@@ -12,6 +12,7 @@ from bilqis_mlx.runtime.capability_evaluation import _invalid
 from bilqis_mlx.runtime.capability_retention_foundation import (
     FoundationRetentionPolicy,
     evaluate_foundation_fixed_school_candidate_with_evidence,
+    mastery_debt_utility_margin_units,
 )
 from bilqis_mlx.runtime._factory_parent_assessment_cache import (
     factory_parent_assessment_identity, use_parent_assessment,
@@ -68,7 +69,7 @@ def _comparison_epoch(
 def broad_foundation_retention_screen(
     source_context, parent, candidate_bundle, artifact_path, target_capability,
     release, groups, training, fixed_instruments, cache, evidence_stage, *,
-    broad_certification_trigger, observer=None,
+    broad_certification_trigger, observer=None, mastery_debt_min_utility=0.05,
 ):
     if not isinstance(broad_certification_trigger, BroadCertificationTrigger):
         _invalid("BAMF_C05_BROAD_CERTIFICATION_TRIGGER_REQUIRED")
@@ -84,7 +85,9 @@ def broad_foundation_retention_screen(
     policy = FoundationRetentionPolicy(
         groups, tuple(dict.fromkeys(group for _, group in groups)),
         tuple((capability, C05_PROTECTED_REFERENCE_LOSS) for capability in protected),
-        C05_PROBE_EACH, case_census_digest(fixed_cases), coverage)
+        C05_PROBE_EACH, case_census_digest(fixed_cases), coverage,
+        mastery_debt_min_utility_units=mastery_debt_utility_margin_units(
+            mastery_debt_min_utility))
     fixed_cohort = _cohort(
         EvidenceKind.FIXED_SCHOOL, fixed_instruments, groups, release, policy, training,
         evidence_stage=evidence_stage)

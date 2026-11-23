@@ -293,7 +293,9 @@ def _resume_command(run_dir: _pathlib.Path, source_root: _pathlib.Path,
             " --retention-introduction-extra-loss " +
                 str(learning_settings.introduction_extra_loss) +
             " --retention-protected-cap-limit " +
-                str(learning_settings.protected_cap_limit))
+                str(learning_settings.protected_cap_limit) +
+            " --retention-mastery-debt-min-utility " +
+                str(learning_settings.mastery_debt_min_utility))
     if learning_settings is None or _pathlib.Path(run_dir).resolve() != active_run_dir().resolve():
         command += " --run-dir " + _shlex.quote(str(run_dir))
     if _pathlib.Path(source_root).resolve() != LEGACY_SOURCE.resolve():

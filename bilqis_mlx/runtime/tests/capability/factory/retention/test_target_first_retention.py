@@ -4,6 +4,8 @@ from types import SimpleNamespace as N
 from unittest.mock import ANY, Mock, patch
 
 import bilqis_mlx.runtime.retention.local_screen as local_screen
+import bilqis_mlx.runtime.retention.local_screen_stages as local_stages
+import bilqis_mlx.runtime.retention.local_screen_support as local_support
 from bilqis_mlx.runtime.capability_retention import (
     AssessmentPair,
     EvidenceStage,
@@ -109,7 +111,7 @@ def test_local_coverage_combines_exact_target_state_with_compiled_protection():
         (), ("future.target",), (("future-grade-z", 0, 1),),
         0, 1, "a" * 64)
 
-    coverage = local_screen._local_coverage(
+    coverage = local_support.local_coverage(
         target_coverage, target_plan, "b" * 64)
 
     assert coverage.measured_capabilities == ("established.prerequisite",)
@@ -221,27 +223,27 @@ def test_live_screen_short_circuits_before_protected_compilation():
     fixture = _live_short_circuit_fixture()
 
     with patch.multiple(
-            local_screen,
-            _split_cached_rows=Mock(return_value=(
+            local_stages,
+            split_cached_rows=Mock(return_value=(
                 (7, ({"id": "reference", "capability": fixture.target},)),
                 ((fixture.protected, 8, ({
                     "id": "protected", "capability": fixture.protected},)),))),
-            _comparison_epoch=Mock(return_value=N(identity=lambda capability: capability)),
+            comparison_epoch=Mock(return_value=N(identity=lambda capability: capability)),
             BaselineLedger=N(from_optional_record=Mock(return_value=object())),
             baseline_coverage=Mock(return_value=N()),
             candidate_identity_for_canonical_consumer=Mock(return_value="7" * 64),
             _owner_seed=Mock(return_value=11),
             _fresh_rows=fixture.fresh_rows,
             _instruments=Mock(return_value=(fixture.target_instrument,)),
-            _policy=Mock(return_value=object()),
+            foundation_policy=Mock(return_value=object()),
             _cohort=Mock(return_value=fixture.target_cohort),
             factory_complete_solver=fixture.solvers,
-            authenticate_bamf_execution_feature_context=Mock(
-                return_value=object()),
             evaluate_capabilities=fixture.assessments,
             AssessmentPair=Mock(return_value=object()),
             evaluate_target_gate=Mock(return_value=fixture.rejection),
-            _cached_instruments=fixture.protected_compile):
+            cached_instruments=fixture.protected_compile), patch.object(
+                local_screen, "authenticate_bamf_execution_feature_context",
+                return_value=object()):
         result = local_screen.foundation_local_retention_screen(
             N(run_dir=None), fixture.parent, object(), object(), "artifact",
             fixture.release, fixture.plan, fixture.target_plan,
@@ -258,7 +260,7 @@ def test_live_screen_short_circuits_before_protected_compilation():
     fixture.protected_compile.assert_not_called()
     fixture.fresh_rows.assert_called_once_with(
         ANY,
-        (fixture.target,), seed=11 + local_screen.C05_FRESH_TARGET_SEED_OFFSET,
+        (fixture.target,), seed=11 + local_stages.C05_FRESH_TARGET_SEED_OFFSET,
         training=(("trained-family",), ("trained-episode",)),
         require_independent=False)
     assert fixture.assessments.call_args_list[0].args[1] is fixture.target_cohort

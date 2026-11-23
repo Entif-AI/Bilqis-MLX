@@ -44,6 +44,7 @@ class Settings:
     mature_max_loss: int = 1
     introduction_extra_loss: int = 2
     protected_cap_limit: int = 8
+    mastery_debt_min_utility: float = 0.05
 
     def __post_init__(self):
         if (type(self.probe_each) is not int or not 2 <= self.probe_each <= 48
@@ -52,7 +53,10 @@ class Settings:
                 type(self.introduction_extra_loss) is not int or
                 not 0 <= self.introduction_extra_loss <= self.probe_each or
                 type(self.protected_cap_limit) is not int or
-                not 1 <= self.protected_cap_limit <= 128):
+                not 1 <= self.protected_cap_limit <= 128 or
+                type(self.mastery_debt_min_utility) not in (int, float) or
+                not math.isfinite(self.mastery_debt_min_utility) or
+                self.mastery_debt_min_utility < 0):
             raise ValueError("LEARNING_EXPERIMENT_INVALID_SETTINGS")
 
 

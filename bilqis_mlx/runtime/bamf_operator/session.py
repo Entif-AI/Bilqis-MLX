@@ -1,31 +1,19 @@
-"""C16.3 persistent BAMF-native human session.
-
-This coordinator composes existing owners.  It is not a curriculum, teacher,
-retention, source, optimizer, or publication authority.
-"""
+"""C16.3 persistent BAMF-native human-session coordinator."""
 from __future__ import annotations
-
 from contextlib import nullcontext
 from pathlib import Path
 import time
-
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
-from bilqis_mlx.runtime.atlas_memory_retry import CandidateMemoryExhausted, OOM_EXHAUSTED
-from bilqis_mlx.runtime.accepted_priority_visit import (
-    accepted_priority_school,
-)
+from bilqis_mlx.runtime.accepted_priority_visit import accepted_priority_school
 from bilqis_mlx.runtime.bamf_bundle import record_bamf_rejection
 from bilqis_mlx.runtime.bamf_bundle.admission import (
     accept_and_publish, bind_accepted_execution_cache, load_accepted_generation,
 )
-from bilqis_mlx.runtime.factory_retention_owner import (
-    bind_current_retention_protection_plan,
-)
-from bilqis_mlx.runtime.foundation_teacher_owner import select_foundation_priority_visit
 from bilqis_mlx.runtime.active_grade_cadence import record_active_grade_cadence_attempt
+from bilqis_mlx.runtime.foundation_teacher_owner import select_foundation_priority_visit
 from .locking import bamf_operator_lock
-from .performance import measure_observed_phase, selected_source_visit_fields
+from .performance import measure_observed_phase
 from .telemetry import TrainerObservation
 from bilqis_mlx.runtime.operator_session import (
     DEFAULT_CANDIDATE_HORIZON, MAX_CANDIDATE_HORIZON,
@@ -33,7 +21,6 @@ from bilqis_mlx.runtime.operator_session import (
 from .session_support import (
     BamfPreparedVisit, _execution_context, _resource_observation, _step_seed,
 )
-from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import VisitCurrentnessMetrics
 from .source_prefetch import (
     NATIVE_SOURCE_WORKER_COUNTS, SourcePrefetchMetrics,
 )
@@ -49,6 +36,11 @@ from .session_parts.native_session import (
     execute_selected_visit as _execute_selected_visit_impl,
     priority_hold_result as _priority_hold_result,
 )
+from .session_parts.maintenance import (
+    run_pending_operator_maintenance as _maintenance_run_pending,
+    run_post_operator_maintenance as _maintenance_run_post,
+    training_memory_context as _training_memory_context)
+from .session_parts.prepare_visit import prepare_bamf_visit_impl as _prepare_bamf_visit_impl
 
 def _invalid(reason: str):
     ErrorBus.raise_(SCHOOL.BAMF_FIRST_STUDENT.INVALID, reason=reason)
@@ -62,14 +54,16 @@ def _execute_selected_visit(
         run_dir, parent, context, atlas_path, feature_path, selection, host_cache,
         steps_per_visit, reserve_gib, progress, source_prefetch_workers,
         source_prefetch_executor, source_prefetch_metrics, observer,
-        distributed_profile=None, distributed_executor=None):
+        distributed_profile=None, distributed_executor=None,
+        mastery_debt_min_utility=0.05):
     return _execute_selected_visit_impl(
         run_dir, parent, context, atlas_path, feature_path, selection, host_cache,
         steps_per_visit, reserve_gib, progress, source_prefetch_workers,
         source_prefetch_executor, source_prefetch_metrics, observer,
         emit_progress=_emit_progress, invalid=_invalid,
         distributed_profile=distributed_profile,
-        distributed_executor=distributed_executor)
+        distributed_executor=distributed_executor,
+        mastery_debt_min_utility=mastery_debt_min_utility)
 
 
 def _accepted_admission_reentry(
@@ -98,81 +92,24 @@ def prepare_bamf_visit(
         source_prefetch_executor=None,
         source_prefetch_metrics: SourcePrefetchMetrics | None = None, observer=None,
         resource_holds=frozenset(), distributed_profile=None,
-        distributed_executor=None, planning_cache=None) -> BamfPreparedVisit:
-    """Compose the production visit through retention without publishing it."""
-    if (type(steps_per_visit) is not int
-            or not 1 <= steps_per_visit <= MAX_CANDIDATE_HORIZON):
-        _invalid("BAMF_OPERATOR_SESSION_BOUNDS_INVALID")
-    _emit_progress(progress, "validating accepted generation and source custody")
-    visit_currentness_metrics = VisitCurrentnessMetrics()
-    accepted_state_metrics = {}
-    accepted_state_started = time.perf_counter()
-    parent, context, atlas_path, feature_path = _execution_context(
-        run_dir, currentness_metrics=visit_currentness_metrics,
-        performance_metrics=accepted_state_metrics)
-    if observer is not None:
-        observer.bind_parent(parent)
-        observer.update(phase="SELECTING")
-    program = schedule_program_from_executable_release(context.release)
-    accepted_host = getattr(context, "_accepted_runtime_host", None)
-    host_cache = getattr(accepted_host, "_accepted_cache", None)
-    if host_cache is not None:
-        bind_current_retention_protection_plan(context, parent, host_cache)
-    school = accepted_priority_school(
-        parent, program,
-        candidate_identity_sha256=getattr(
-            host_cache, "_candidate_identity_sha256", None))
-    accepted_state_total = max(0.0, time.perf_counter() - accepted_state_started)
-    accepted_state_metrics["accepted_state_setup_wall_seconds"] = accepted_state_total
-    accepted_state_metrics["accepted_state_setup_other_wall_seconds"] = max(
-        0.0,
-        accepted_state_total - sum(float(accepted_state_metrics.get(name, 0.0)) for name in (
-            "accepted_runtime_host_wall_seconds",
-            "accepted_generation_load_wall_seconds",
-            "accepted_source_context_wall_seconds",
-            "accepted_feature_authentication_wall_seconds",
-        )))
-    if observer is not None:
-        observer.update(**accepted_state_metrics)
-    _emit_progress(progress, "planning current candidate frontier and teacher priority")
-    planning_started = time.perf_counter()
-    selection = select_foundation_priority_visit(
-        run_dir, context, atlas_path, program=program, school=school,
-        progress=progress, resource_holds=resource_holds,
-        planning_cache=planning_cache, logical_batch_size=batch_size)
-    if observer is not None:
-        identity = getattr(getattr(getattr(selection, "visit", None), "identity", None),
-                           "visit_id", None)
-        if isinstance(identity, str) and identity:
-            observer.update(visit_id=identity)
-    planning_total = max(0.0, time.perf_counter() - planning_started)
-    source_materialization_wall_seconds = float(
-        getattr(selection, "source_materialization_wall_seconds", None) or 0.0)
-    if observer is not None:
-        from bilqis_mlx.runtime.priority_source_materialization import source_materialization_observation
-        observer.update(
-            planning_wall_seconds=max(
-                0.0, planning_total - source_materialization_wall_seconds),
-            source_materialization_wall_seconds=(
-                source_materialization_wall_seconds or None),
-            **selected_source_visit_fields(source_materialization_observation(selection.offer)))
-    if selection.status != "TEACHER_SELECTED":
-        if (selection.status == "NO_ADMISSIBLE_TEACHING"
-                and any(reason == OOM_EXHAUSTED for _, reason in selection.holds)):
-            return BamfPreparedVisit("RESOURCE_HOLD", parent, selection=selection)
-        return _priority_hold_result(
-            run_dir, selection, context, parent, atlas_path, reserve_gib, progress,
-            emit_progress=_emit_progress)
-    try:
-        return _execute_selected_visit(
-            run_dir, parent, context, atlas_path, feature_path, selection, host_cache,
-            steps_per_visit, reserve_gib, progress, source_prefetch_workers,
-            source_prefetch_executor, source_prefetch_metrics, observer,
-            distributed_profile, distributed_executor)
-    except CandidateMemoryExhausted as error:
-        return BamfPreparedVisit(
-            "RESOURCE_REJECTED", parent, selection=selection,
-            capability=selection.offer.capability_id, resource=error.to_record())
+        distributed_executor=None, planning_cache=None,
+        mastery_debt_min_utility: float = 0.05) -> BamfPreparedVisit:
+    return _prepare_bamf_visit_impl(
+        run_dir, steps_per_visit=steps_per_visit, batch_size=batch_size,
+        reserve_gib=reserve_gib, progress=progress,
+        source_prefetch_workers=source_prefetch_workers,
+        source_prefetch_executor=source_prefetch_executor,
+        source_prefetch_metrics=source_prefetch_metrics, observer=observer,
+        resource_holds=resource_holds, distributed_profile=distributed_profile,
+        distributed_executor=distributed_executor, planning_cache=planning_cache,
+        mastery_debt_min_utility=mastery_debt_min_utility,
+        invalid=_invalid, emit_progress=_emit_progress,
+        execution_context=_execution_context,
+        execute_selected_visit=_execute_selected_visit,
+        priority_hold_result=_priority_hold_result,
+        schedule_program=schedule_program_from_executable_release,
+        accepted_priority_school_fn=accepted_priority_school,
+        select_priority_visit=select_foundation_priority_visit)
 
 
 def _visit(run_dir: Path, reserve_gib: float, *, steps_per_visit=DEFAULT_CANDIDATE_HORIZON,
@@ -181,12 +118,13 @@ def _visit(run_dir: Path, reserve_gib: float, *, steps_per_visit=DEFAULT_CANDIDA
            source_prefetch_executor=None, source_prefetch_metrics=None, observer=None,
            run_authority_binding=None, resource_holds=frozenset(),
            distributed_profile=None, distributed_executor=None,
-           planning_cache=None):
+           planning_cache=None, mastery_debt_min_utility=0.05):
     def prepare_visit(*args, **kwargs):
         return prepare_bamf_visit(
             *args, **kwargs, distributed_profile=distributed_profile,
             distributed_executor=distributed_executor,
-            planning_cache=planning_cache)
+            planning_cache=planning_cache,
+            mastery_debt_min_utility=mastery_debt_min_utility)
     return _visit_impl(
         run_dir, reserve_gib, steps_per_visit=steps_per_visit, progress=progress,
         batch_size=batch_size,
@@ -200,77 +138,14 @@ def _visit(run_dir: Path, reserve_gib: float, *, steps_per_visit=DEFAULT_CANDIDA
         record_cadence_attempt=record_active_grade_cadence_attempt)
 
 
-def _training_memory_context():
-    import mlx.core as mx
-    from bilqis_mlx.runtime.mlx_memory import training_memory_policy
-    return training_memory_policy(mx)
-
-
 def _run_post_operator_maintenance(
         run_dir: Path, *, progress=None, expected_token: str | None = None):
-    """Best-effort bounded storage maintenance after the trainer lock is released."""
-    try:
-        from types import SimpleNamespace
-        from bilqis_mlx._data_plane.cli import _maintenance
-        from bilqis_mlx._data_plane.maintenance import maintenance_roots
-        from bilqis_mlx._data_plane.maintenance_lifecycle import (
-            clear_maintenance_pending,
-        )
-        from bilqis_mlx.data_plane import data_plane
-
-        run_dir = Path(run_dir)
-        if not ((run_dir / "bamf-state.json").is_file()
-                or (run_dir / "state.json").is_file()):
-            return None
-        plane = data_plane()
-        roots = maintenance_roots(plane, run_dir)
-        result = _maintenance(SimpleNamespace(
-            scan_root=list(roots),
-            apply=True,
-            scope="all",
-            max_records=0,
-            vacuum=False,
-        ))
-        if expected_token is not None:
-            clear_maintenance_pending(plane, run_dir, expected_token)
-    except Exception as error:
-        _emit_progress(
-            progress,
-            f"post-operator data-plane maintenance deferred: {error}",
-        )
-        return None
-    _emit_progress(
-        progress,
-        "post-operator data-plane maintenance completed: "
-        f"{result.get('gc', {}).get('reclaimable_object_bytes', 0)} object bytes, "
-        f"{result.get('gc', {}).get('reclaimable_node_bytes', 0)} node bytes, "
-        f"{result.get('file_gc', {}).get('reclaimable_file_bytes', 0)} file bytes",
-    )
-    return result
+    return _maintenance_run_post(
+        run_dir, progress=progress, expected_token=expected_token)
 
 
 def _run_pending_operator_maintenance(run_dir: Path, *, progress=None):
-    """Recover cleanup left pending by a prior hard process death."""
-    run_dir = Path(run_dir)
-    if not ((run_dir / "bamf-state.json").is_file()
-            or (run_dir / "state.json").is_file()):
-        return None
-    try:
-        from bilqis_mlx._data_plane.maintenance_lifecycle import (
-            maintenance_pending_token,
-        )
-        from bilqis_mlx.data_plane import data_plane
-        token = maintenance_pending_token(data_plane(), run_dir)
-    except Exception as error:
-        _emit_progress(
-            progress,
-            f"pending data-plane maintenance deferred: {error}",
-        )
-        return None
-    if token is None:
-        return None
-    return _run_post_operator_maintenance(
-        run_dir, progress=progress, expected_token=token)
+    return _maintenance_run_pending(run_dir, progress=progress, post_maintenance=_run_post_operator_maintenance)
 
 
 def operate_bamf(
@@ -285,6 +160,7 @@ def operate_bamf(
     distributed_profile=None,
     distributed_executor=None,
     strict_evidence: bool = False,
+    mastery_debt_min_utility: float = 0.05,
     progress=None,
 ) -> BamfOperatorResult:
     """Run the human-authorized BAMF lineage until a bounded stop condition."""
@@ -311,11 +187,14 @@ def operate_bamf(
     planning_cache = PriorityPlanningCache(Path(run_dir))
     def visit_fn(*args, **kwargs):
         if distributed_profile is None and distributed_executor is None:
-            return _visit(*args, **kwargs, planning_cache=planning_cache)
+            return _visit(
+                *args, **kwargs, planning_cache=planning_cache,
+                mastery_debt_min_utility=mastery_debt_min_utility)
         return _visit(
             *args, **kwargs, distributed_profile=distributed_profile,
             distributed_executor=distributed_executor,
-            planning_cache=planning_cache)
+            planning_cache=planning_cache,
+            mastery_debt_min_utility=mastery_debt_min_utility)
     _run_pending_operator_maintenance(Path(run_dir), progress=progress)
     from .session_parts.evidence_mode import evidence_mode
     try:

@@ -30,7 +30,8 @@ def _report_retention_plan(args):
         probe_each=args.experiment_probe_each,
         mature_max_loss=args.experiment_mature_max_loss,
         introduction_extra_loss=args.experiment_introduction_extra_loss,
-        protected_cap_limit=args.experiment_protected_cap_limit)
+        protected_cap_limit=args.experiment_protected_cap_limit,
+        mastery_debt_min_utility=args.experiment_mastery_debt_min_utility)
     print("DEFAULT RETENTION PLAN, NO NEURAL UPDATES: "+str(settings), file=sys.stderr)
 
 

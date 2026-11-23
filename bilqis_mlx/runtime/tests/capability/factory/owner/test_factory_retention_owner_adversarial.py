@@ -15,6 +15,8 @@ from bilqis_mlx.learning.atlas_candidate import CandidateTransaction
 import bilqis_mlx.runtime.factory_retention_owner as owner
 import bilqis_mlx.runtime.retention.screen as owner_screen
 import bilqis_mlx.runtime.retention.local_screen as local_screen
+import bilqis_mlx.runtime.retention.local_screen_stages as local_stages
+import bilqis_mlx.runtime.retention.local_screen_support as local_support
 from bilqis_mlx.runtime.factory_retention_owner import (
     FactoryRetentionEvaluation, _cohort, evaluate_factory_retention_candidate,
 )
@@ -137,8 +139,11 @@ def _evaluate_foundation_owner(source, candidate, target, fixed, fresh,
                 side_effect=AssertionError(
                     "ordinary C05 must not execute championship evidence")), \
             patch.multiple(
-                local_screen,
+                local_support,
                 case_census_digest=Mock(return_value="e" * 64),
+                FoundationRetentionPolicy=policy_factory,
+            ), patch.multiple(
+                local_stages,
                 candidate_identity_for_canonical_consumer=Mock(return_value="d" * 64),
                 _owner_seed=Mock(return_value=11),
                 _fresh_rows=fresh,
@@ -147,14 +152,19 @@ def _evaluate_foundation_owner(source, candidate, target, fixed, fresh,
                     rubric_sha256="1" * 64, scope_sha256="2" * 64,
                     policy_sha256="3" * 64, source_sha256="4" * 64,
                     evidence_stage=owner.CURRENT_EVIDENCE_STAGE)),
-                authenticate_bamf_execution_feature_context=Mock(
-                    return_value=object()),
-                FoundationRetentionPolicy=policy_factory,
                 factory_complete_solver=Mock(side_effect=(
                     (object(), "b" * 64), (object(), "c" * 64))),
                 evaluate_capabilities=Mock(return_value=object()),
                 AssessmentPair=Mock(return_value=object()),
                 evaluate_target_gate=Mock(return_value=target_gate_decision),
+            ), patch.multiple(
+                local_screen,
+                _cohort=Mock(return_value=SimpleNamespace(
+                    rubric_sha256="1" * 64, scope_sha256="2" * 64,
+                    policy_sha256="3" * 64, source_sha256="4" * 64,
+                    evidence_stage=owner.CURRENT_EVIDENCE_STAGE)),
+                authenticate_bamf_execution_feature_context=Mock(
+                    return_value=object()),
                 finalize_target_first_local_candidate=Mock(return_value=decision),
             ), patch.multiple(
                 owner_screen,
