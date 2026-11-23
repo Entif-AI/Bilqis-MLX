@@ -57,6 +57,7 @@ class FoundationTeacherOwnerTests(unittest.TestCase):
         authority = SimpleNamespace(
             frontier="frontier", history="history", planning="planning",
             lawful_frontier="lawful-frontier", offers="offers", now=17,
+            planning_offer_fanout_wall_seconds=0.125,
             planning_generation="planning-generation",
             cadence=cadence, selection_cadence=cadence)
         selected = object()
@@ -95,6 +96,7 @@ class FoundationTeacherOwnerTests(unittest.TestCase):
         authority = SimpleNamespace(
             frontier="frontier", history="history", planning="planning",
             lawful_frontier="lawful", offers="offers", now=17,
+            planning_offer_fanout_wall_seconds=0.125,
             planning_generation="planning-generation", cadence=cadence,
             selection_cadence=cadence)
         school = PrioritySchoolContext(
@@ -115,6 +117,8 @@ class FoundationTeacherOwnerTests(unittest.TestCase):
                 program="program", school=school)
         self.assertEqual(select.call_args.args[7].stage, "RECOVERY_1")
         self.assertIs(select.call_args.kwargs["cadence_authorization"], cadence)
+        self.assertEqual(
+            select.call_args.kwargs["planning_offer_fanout_wall_seconds"], 0.125)
 
     def test_accepted_visit_owns_next_seed_and_opaque_cursor(self):
         with TemporaryDirectory() as temporary:

@@ -18,6 +18,7 @@ _ROLE_FIELDS = (
     ("priority", "weakness_replay"),
     ("preservation", "preservation"),
     ("support", "retention_support"),
+    ("fresh_support", "fresh_support"),
     ("enrichment", "enrichment"),
     ("prior", "prior_rehearsal"),
 )

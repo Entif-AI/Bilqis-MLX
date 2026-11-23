@@ -81,11 +81,16 @@ def _attempt(run_dir, epoch, frontier, capability):
 
 
 def _record_attempt(run_dir, issued, capability):
-    terminal = (issued.to_record(), capability)
+    return _record_terminal(run_dir, issued, capability, "RETAINED")
+
+
+def _record_terminal(run_dir, issued, capability, outcome):
+    terminal = (issued.to_record(), capability, outcome)
     with patch(
             "bilqis_mlx.runtime.active_grade_cadence._terminal_attempts",
             return_value=(terminal,)):
-        record_active_grade_cadence_attempt(run_dir, *terminal)
+        record_active_grade_cadence_attempt(
+            run_dir, issued.to_record(), capability, outcome)
 
 
 def test_main_pass_then_two_bounded_recovery_rounds(tmp_path):
@@ -120,6 +125,34 @@ def test_main_pass_then_two_bounded_recovery_rounds(tmp_path):
         repeated = issue_active_grade_cadence(tmp_path, epoch, frontier)
         assert repeated.state.cadence_sha256 == boundary.state.cadence_sha256
         assert repeated.state.revision == boundary.state.revision
+
+
+def test_rejected_recovery_attempt_does_not_count_as_retained_exposure(tmp_path):
+    rows = tuple(_capability(item) for item in ("A", "B", "C", "D"))
+    frontier = _frontier(rows)
+    epoch = _epoch({"A": 1, "B": 1, "C": 1, "D": 1})
+    with patch(
+            "bilqis_mlx.runtime.active_grade_cadence_policy.obligations_for_capability",
+            side_effect=_obligations(epoch)):
+        for capability in ("A", "B", "C", "D"):
+            _attempt(tmp_path, epoch, frontier, capability)
+
+        recovery_one = issue_active_grade_cadence(tmp_path, epoch, frontier)
+        assert recovery_one.authorized_capability_ids == ("A", "B", "C")
+        _record_terminal(tmp_path, recovery_one, "A", "REJECTED")
+        for capability in ("B", "C"):
+            current = issue_active_grade_cadence(tmp_path, epoch, frontier)
+            _record_terminal(tmp_path, current, capability, "RETAINED")
+
+        state = read_current_cadence(tmp_path)
+        assert dict(state.recovery_attempt_counts) == {"A": 1, "B": 1, "C": 1}
+        assert dict(state.recovery_retained_counts) == {"B": 1, "C": 1}
+        assert dict(state.recovery_rejected_counts) == {"A": 1}
+
+        recovery_two = issue_active_grade_cadence(tmp_path, epoch, frontier)
+
+    assert recovery_two.phase is ActiveGradeCadencePhase.RECOVERY_2
+    assert recovery_two.authorized_capability_ids == ("A", "D", "B")
 
 
 def test_ineligible_boundary_rearms_a_fresh_main_acquisition_epoch(tmp_path):
