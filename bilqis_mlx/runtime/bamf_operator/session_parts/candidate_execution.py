@@ -263,11 +263,18 @@ def execute_horizon(
         capture, horizon, shadow_policy, shadow_rungs_fn, shadow_probe_fn)
     shadow_parent_correct = None
     pipeline = None
-    if source_lane is not None and prepare_step_ahead is not None:
-        from .pipeline import CandidateHostPreparationPipeline
-        pipeline = CandidateHostPreparationPipeline(
-            source_lane, horizon, prepare_step_ahead, source_lane.metrics)
-        pipeline.submit(1)
+    if source_lane is not None:
+        from .pipeline import (
+            CandidateHostPreparationPipeline,
+            learning_first_prepare_step,
+        )
+        prepare_step_ahead = (
+            prepare_step_ahead
+            or learning_first_prepare_step(execute_candidate, selection, context))
+        if prepare_step_ahead is not None:
+            pipeline = CandidateHostPreparationPipeline(
+                source_lane, horizon, prepare_step_ahead, source_lane.metrics)
+            pipeline.submit(1)
     try:
         for ordinal in range(1, horizon + 1):
             candidate_step_started_at = time.perf_counter()

@@ -29,6 +29,27 @@ class PreparedHostStep:
     host_wait_wall_seconds: float
 
 
+
+
+def learning_first_prepare_step(execute_candidate, selection, context):
+    """Return the ahead-preparation callback only for ordinary learning-first."""
+    keywords = getattr(execute_candidate, "keywords", None)
+    if not isinstance(keywords, dict) or keywords.get("learning_first_cache") is None:
+        return None
+    from bilqis_mlx.runtime.factory_training_preparation import (
+        prepare_learning_first_source_inputs_ahead,
+    )
+    authenticated = selection.offer._planning_generation._authenticated_features
+
+    def prepare(_ordinal, lesson):
+        return prepare_learning_first_source_inputs_ahead(
+            context, authenticated, lesson.delivered,
+            source_seed=selection.offer.source_seed,
+            source_each=len(lesson.direct) + len(lesson.enrichment))
+
+    return prepare
+
+
 class CandidateHostPreparationPipeline:
     """Keep one future CPU preparation unit ahead of the sovereign optimizer."""
 
@@ -107,4 +128,7 @@ class CandidateHostPreparationPipeline:
         self.executor.shutdown(wait=True, cancel_futures=True)
 
 
-__all__ = ("CandidateHostPreparationPipeline", "PreparedHostStep")
+__all__ = (
+    "CandidateHostPreparationPipeline", "PreparedHostStep",
+    "learning_first_prepare_step",
+)
