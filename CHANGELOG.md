@@ -2,6 +2,26 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.5.0](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.7...v1.5.0) (2026-11-23)
+
+
+### Features
+
+* **bamf:** realize depth teacher control ([#1592](https://github.com/Entif-AI/Bilqis-MLX/issues/1592)) ([1ba7232](https://github.com/Entif-AI/Bilqis-MLX/commit/1ba7232eb7f9e9721130a7a4f51ac3717bfac9d7))
+
+
+### Bug Fixes
+
+* **bamf:** preserve recovery opportunity across terminal rejects ([#1594](https://github.com/Entif-AI/Bilqis-MLX/issues/1594)) ([efa7f59](https://github.com/Entif-AI/Bilqis-MLX/commit/efa7f59b76f48d570388d9dcbbbb3c07d81d8717))
+
+
+### Performance Improvements
+
+* **bamf:** collapse host synchronization around gradient materialization ([#1596](https://github.com/Entif-AI/Bilqis-MLX/issues/1596)) ([69a8e8d](https://github.com/Entif-AI/Bilqis-MLX/commit/69a8e8d1814159e5756e1122379c754d086310ff))
+* **bamf:** defer full source offers until selection ([#1591](https://github.com/Entif-AI/Bilqis-MLX/issues/1591)) ([caef2d9](https://github.com/Entif-AI/Bilqis-MLX/commit/caef2d9d6c59de4a7688e1558998905af14f4251))
+* **bamf:** make step authority O(1) in the inner loop ([#1595](https://github.com/Entif-AI/Bilqis-MLX/issues/1595)) ([166d562](https://github.com/Entif-AI/Bilqis-MLX/commit/166d5620fffb7b3a7b747259dbdf2a23e849961b))
+* **bamf:** reuse learning-first row preparation ([#1588](https://github.com/Entif-AI/Bilqis-MLX/issues/1588)) ([89f9699](https://github.com/Entif-AI/Bilqis-MLX/commit/89f9699412aeaa1b1533bd8f05734157b984c46a))
+
 ## [1.4.7](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.6...v1.4.7) (2026-11-23)
 
 
