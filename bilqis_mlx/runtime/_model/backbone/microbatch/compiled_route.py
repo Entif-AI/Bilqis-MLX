@@ -16,6 +16,8 @@ _CACHE_LIMIT = 8
 _COMPILE_ENV = "BILQIS_MLX_COMPILE_STABLE_KERNEL"
 _DEFAULT_ENABLED = False
 _CACHE = OrderedDict()
+_HITS = 0
+_MISSES = 0
 
 
 @dataclass(frozen=True)
@@ -103,15 +105,18 @@ def _compile_route(kernel):
 def learning_first_compiled_route(
         backend, row_batches, answer_plans, targets, masks, kernel):
     """Return a stable compiled route and whether this request populated the cache."""
+    global _HITS, _MISSES
     if not compile_stable_kernel_enabled():
         return None, "disabled"
     key = stable_route_compile_key(
         backend, row_batches, answer_plans, targets, masks, kernel)
     compiled = _CACHE.get(key)
     if compiled is not None:
+        _HITS += 1
         _CACHE.move_to_end(key)
         return compiled, "hit"
     compiled = _compile_route(kernel)
+    _MISSES += 1
     _CACHE[key] = compiled
     _CACHE.move_to_end(key)
     while len(_CACHE) > _CACHE_LIMIT:
@@ -123,12 +128,21 @@ def compiled_route_cache_size() -> int:
     return len(_CACHE)
 
 
+def compiled_route_cache_stats() -> dict:
+    """Return process-local qualification facts without exposing compiled objects."""
+    return {"entries": len(_CACHE), "hits": _HITS, "misses": _MISSES}
+
+
 def _reset_compiled_route_cache_for_tests() -> None:
+    global _HITS, _MISSES
     _CACHE.clear()
+    _HITS = 0
+    _MISSES = 0
 
 
 __all__ = (
     "StableRouteCompileKey", "compile_stable_kernel_enabled",
-    "compiled_route_cache_size", "learning_first_compiled_route",
+    "compiled_route_cache_size", "compiled_route_cache_stats",
+    "learning_first_compiled_route",
     "stable_route_compile_key",
 )

@@ -12,6 +12,7 @@ from bilqis_mlx.learning.atlas_readout import DecisionKind, DecisionOutput, Deci
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.runtime.atlas_model_microbatch import _materialize_gradient
 from bilqis_mlx.runtime.microbatch.compiled_route import (
+    compiled_route_cache_stats,
     _reset_compiled_route_cache_for_tests,
     learning_first_compiled_route,
     stable_route_compile_key,
@@ -125,14 +126,19 @@ def test_compile_key_invalidates_release_extent_shape_and_route():
     base_key = stable_route_compile_key(*base)
     release_key = stable_route_compile_key(*_fixtures(release="c" * 64))
     extent_key = stable_route_compile_key(*_fixtures(extent="d" * 64))
+    backend, rows, plans, targets, masks, kernel = _fixtures()
+    topology_key = stable_route_compile_key(
+        SimpleNamespace(topology=SimpleNamespace(digest="topology:changed")),
+        rows, plans, targets, masks, kernel)
     route_key = stable_route_compile_key(
         *_fixtures(decisions=(_decision(values=("LEFT", "RIGHT", "HOLD")),)))
-    backend, rows, plans, targets, masks, kernel = _fixtures()
     shaped = replace(
         kernel, candidate_vectors=(mx.zeros((2, 3, 384), dtype=mx.float32),))
     shape_key = stable_route_compile_key(
         backend, rows, plans, targets, masks, shaped)
-    assert len({base_key, release_key, extent_key, route_key, shape_key}) == 5
+    assert len({
+        base_key, release_key, extent_key, topology_key, route_key, shape_key,
+    }) == 6
 
 
 def test_compile_cache_reuses_same_stable_key_and_rebuilds_on_route_change():
@@ -149,6 +155,7 @@ def test_compile_cache_reuses_same_stable_key_and_rebuilds_on_route_change():
     assert compiled is sentinel and reused is sentinel and rebuilt is sentinel
     assert (state, reused_state, rebuilt_state) == ("miss", "hit", "miss")
     assert compile_route.call_count == 2
+    assert compiled_route_cache_stats() == {"entries": 2, "hits": 1, "misses": 2}
 
 
 def test_compilation_toggle_is_disabled_by_default():
@@ -157,6 +164,7 @@ def test_compilation_toggle_is_disabled_by_default():
         compiled, state = learning_first_compiled_route(*_fixtures())
     assert compiled is None
     assert state == "disabled"
+    assert compiled_route_cache_stats() == {"entries": 0, "hits": 0, "misses": 0}
 
 
 def test_compiled_route_matches_uncompiled_loss_and_gradients_exactly():

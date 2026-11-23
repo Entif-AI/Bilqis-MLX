@@ -12,6 +12,7 @@ import sys
 
 
 CHILD = r'''
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -20,9 +21,13 @@ import time
 from unittest.mock import patch
 
 import mlx.core as mx
+import numpy as np
 
+from bilqis_mlx.learning.atlas_acceptance import candidate_identity_digest
+from bilqis_mlx.learning.atlas_candidate import resolve_candidate
 from bilqis_mlx.runtime.mlx_memory import training_memory_policy
 from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
+from bilqis_mlx.runtime.microbatch.compiled_route import compiled_route_cache_stats
 from bilqis_mlx.runtime.teacher_observation_capture import ObservationCapture
 from bilqis_mlx.runtime.tests.capability.factory.retention import retention_throughput_profile as p
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.cold_resume_probe import retained_digest
@@ -70,16 +75,15 @@ try:
                         horizon=horizon, capability="B.AND", source_each=rows_requested)
                 mx.synchronize()
                 wall = max(0.0, time.perf_counter() - started)
+                retained = resolve_candidate(steps[-1].transaction, accepted=True)
+                participation = hashlib.sha256()
+                for name, value in sorted(steps[-1].transaction.optimizer.update_counts.items()):
+                    participation.update(name.encode("utf-8"))
+                    participation.update(np.asarray(value).tobytes())
                 keys = (
                     "candidate_step_wall_seconds",
                     "b11_autodiff_dispatch_route_graph_wall_seconds",
                     "b11_autodiff_materialization_wall_seconds",
-                    "b11_mlx_compile_enabled",
-                    "b11_mlx_compile_cache_hit",
-                    "b11_mlx_compile_cache_miss",
-                    "b11_mlx_compile_cache_entries",
-                    "b11_mlx_compile_cold_dispatch_wall_seconds",
-                    "b11_mlx_compile_warm_dispatch_wall_seconds",
                     "b11_materialization_barrier_count",
                     "b11_host_readback_count",
                     "b11_validation_sync_count",
@@ -104,7 +108,11 @@ try:
                     "horizon": horizon,
                     "wall_seconds": wall,
                     "mlx_peak_bytes": int(mx.get_peak_memory()),
+                    "compile_cache": compiled_route_cache_stats(),
                     "optimizer_state_sha256": retained_digest(steps[-1].transaction),
+                    "optimizer_participation_sha256": participation.hexdigest(),
+                    "retained_candidate_identity_sha256": candidate_identity_digest(retained),
+                    "training_source_coordinates": steps[-1].transaction.training_source_coordinates,
                     "optimizer_step": (
                         steps[-1].transaction.parent.optimizer_step
                         + steps[-1].transaction.update_steps),
@@ -160,10 +168,14 @@ def main() -> int:
     compiled = _run("compiled", root, args.rows, args.horizon, args.artifact_rel)
     control_losses = [item["loss_total"] for item in control["samples"]]
     compiled_losses = [item["loss_total"] for item in compiled["samples"]]
+    control_warm = control["samples"][1:]
     warm = compiled["samples"][1:]
-    warm_dispatch = statistics.median(float(item["b11_mlx_compile_warm_dispatch_wall_seconds"])
-                                      for item in warm)
-    cold_dispatch = float(compiled["samples"][0]["b11_mlx_compile_cold_dispatch_wall_seconds"])
+    warm_dispatch = statistics.median(
+        float(item["b11_autodiff_dispatch_route_graph_wall_seconds"]) for item in warm)
+    cold_materialization = float(
+        compiled["samples"][0]["b11_autodiff_materialization_wall_seconds"])
+    warm_materialization = statistics.median(
+        float(item["b11_autodiff_materialization_wall_seconds"]) for item in warm)
     receipt = {
         "schema": "bilqis.bamf.issue1576-mlx-compile-witness/v1",
         "control": control,
@@ -172,14 +184,41 @@ def main() -> int:
             "loss_sequence_equal": control_losses == compiled_losses,
             "optimizer_state_sha256_equal": (
                 control["optimizer_state_sha256"] == compiled["optimizer_state_sha256"]),
+            "optimizer_participation_sha256_equal": (
+                control["optimizer_participation_sha256"]
+                == compiled["optimizer_participation_sha256"]),
+            "retained_candidate_identity_equal": (
+                control["retained_candidate_identity_sha256"]
+                == compiled["retained_candidate_identity_sha256"]),
+            "training_source_coordinates_equal": (
+                control["training_source_coordinates"]
+                == compiled["training_source_coordinates"]),
             "optimizer_step_equal": control["optimizer_step"] == compiled["optimizer_step"],
+            "compiled_cache_reused": compiled["compile_cache"] == {
+                "entries": 1, "hits": args.horizon - 1, "misses": 1},
+            "uncompiled_cache_unused": control["compile_cache"] == {
+                "entries": 0, "hits": 0, "misses": 0},
         },
         "performance": {
             "control_step_median_seconds": _median(control, "candidate_step_wall_seconds"),
             "compiled_step_median_seconds": _median(compiled, "candidate_step_wall_seconds"),
-            "cold_compile_plus_dispatch_seconds": cold_dispatch,
+            "control_warm_step_median_seconds": statistics.median(
+                float(item["candidate_step_wall_seconds"]) for item in control_warm),
+            "compiled_warm_step_median_seconds": statistics.median(
+                float(item["candidate_step_wall_seconds"]) for item in warm),
+            "cold_compile_plus_materialization_seconds": cold_materialization,
             "warm_compiled_dispatch_median_seconds": warm_dispatch,
-            "cold_compile_overhead_estimate_seconds": max(0.0, cold_dispatch - warm_dispatch),
+            "warm_compiled_materialization_median_seconds": warm_materialization,
+            "cold_compile_overhead_estimate_seconds": max(
+                0.0, cold_materialization - warm_materialization),
+            "control_warm_dispatch_median_seconds": statistics.median(
+                float(item["b11_autodiff_dispatch_route_graph_wall_seconds"])
+                for item in control_warm),
+            "control_warm_materialization_median_seconds": statistics.median(
+                float(item["b11_autodiff_materialization_wall_seconds"])
+                for item in control_warm),
+            "control_total_wall_seconds": control["wall_seconds"],
+            "compiled_total_wall_seconds": compiled["wall_seconds"],
             "control_peak_bytes": control["mlx_peak_bytes"],
             "compiled_peak_bytes": compiled["mlx_peak_bytes"],
         },
