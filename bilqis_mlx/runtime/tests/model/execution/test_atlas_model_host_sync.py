@@ -10,7 +10,7 @@ import pytest
 import bilqis_mlx.runtime.atlas_model_forward_validation as forward_validation
 import bilqis_mlx.runtime.atlas_model_microbatch as microbatch
 import bilqis_mlx.runtime.microbatch.execution as microbatch_execution
-import bilqis_mlx.runtime._model.backbone.microbatch.route_evidence as route_evidence
+import bilqis_mlx.runtime.microbatch.route_evidence as route_evidence
 from bilqis_mlx.errors import BilqisError
 
 
