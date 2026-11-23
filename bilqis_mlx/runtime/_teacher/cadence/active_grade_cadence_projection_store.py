@@ -5,7 +5,9 @@ from __future__ import annotations
 _PROJECTION_KEY = "active-grade-cadence-terminal-attempts"
 _LEGACY_PROJECTION_SCHEMA = "bilqis.mlx.bamf-active-grade-cadence-attempt-projection/v2"
 _PROJECTION_SCHEMA = "bilqis.mlx.bamf-active-grade-cadence-attempt-projection/v3"
+_LEGACY_ATTEMPT_RECORD_SIZE = 2
 _ATTEMPT_RECORD_SIZE = 3
+_ATTEMPT_OUTCOME_INDEX = 2
 
 
 def _digest(value) -> bool:
@@ -49,9 +51,9 @@ def _restore_projection(record):
             if (not isinstance(item, list) or len(item) != _ATTEMPT_RECORD_SIZE
                     or not isinstance(item[0], dict)
                     or not isinstance(item[1], str) or not item[1]
-                    or item[2] not in {"RETAINED", "REJECTED"}):
+                    or item[_ATTEMPT_OUTCOME_INDEX] not in {"RETAINED", "REJECTED"}):
                 return None
-            attempts.append((item[0], item[1], item[2]))
+            attempts.append((item[0], item[1], item[_ATTEMPT_OUTCOME_INDEX]))
         seen = set(record["seen_accepted_events"])
         if len(seen) != len(record["seen_accepted_events"]) or any(
                 not isinstance(item, str) for item in seen):
@@ -84,7 +86,8 @@ def _restore_legacy_projection(record):
                 or not isinstance(record.get("seen_accepted_events"), list)):
             return None
         if any(
-                not isinstance(item, list) or len(item) != 2
+                not isinstance(item, list)
+                or len(item) != _LEGACY_ATTEMPT_RECORD_SIZE
                 or not isinstance(item[0], dict)
                 or not isinstance(item[1], str) or not item[1]
                 for item in record["attempts"]):
