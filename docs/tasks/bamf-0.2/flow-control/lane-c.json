@@ -593,11 +593,11 @@
     },
     {
       "issue": 1566,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "7e34256381a1d40707284e0be466dcb15092ec26",
-      "head_sha_role": "current main baseline consumed for reopened #1566 strict-mode boundary repair",
-      "summary": "#1566 is reopened because the live ordinary trainer still executes accepted-generation/source-custody/feature-authentication and related verification ceremony despite ADR-153 requiring the default learning path to be verification-free. Repair owns an explicit --strict-mode boundary, end-to-end negative assertions that forbidden strict owners are unreachable by default, preservation of the strict path behind opt-in, and full-path non-strict timing evidence. No human trainer mutation is authorized.",
+      "pr": 1602,
+      "state": "TURNED_IN",
+      "head_sha": "bbcaa941e464d34e494e14e7d5df45321e0f2fc2",
+      "head_sha_role": "exact #1566 integrated semantic/test head after consuming current main 4952bbfff; subsequent flow-control receipt commit is metadata only",
+      "summary": "#1566 is turned in as ready PR #1602. `--strict-mode` is now the authoritative operator opt-in for heavyweight BAMF verification, with `--strict-evidence` retained only as a compatibility alias. Ordinary training reuses one accepted parent/cache/source/feature execution snapshot across an unchanged accepted generation, fails closed instead of silently rebinding a missing session cache, bypasses repeated live currentness/source-runtime proof, and invalidates the snapshot after retained or grade-transition publication; strict mode preserves the verification path. ADR-154 codifies the boundary. Post-main-merge proof passed 74 focused tests plus 7 subtests, BAMF flow control and diff hygiene. A disposable 32-row Metal witness passed without human-run mutation: ordinary accepted-session loader calls=1, same-generation reuse=0.000001541s, strict-control loader calls=2, genuine candidate step=3.466712s. This proves the repeated accepted-state ceremony regression is removed but does not claim ADR-153's <=1s full numerical-step target; the remaining ~3.47s candidate-step cost is residual performance work.",
       "resume_trigger": null,
       "preserved_branch": "codex/1566-strict-mode-boundary-20261123"
     },
