@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "798b3bb34a280f734505f64627b94b765813c3be",
-  "updated_at": "2026-11-23T06:38:03+00:00",
+  "updated_at": "2026-11-23T06:45:22+00:00",
   "exception": null,
   "items": [
     {
@@ -623,11 +623,11 @@
     },
     {
       "issue": 1586,
-      "pr": null,
-      "state": "ACTIVE",
-      "head_sha": "798b3bb34a280f734505f64627b94b765813c3be",
-      "head_sha_role": "current main baseline after merged #1584 / PR #1585 exposed the realized-delivery digest mismatch",
-      "summary": "#1586 repairs post-merge OBSERVATION_DELIVERY_INVALID: learning-first training binds delivered_content_sha256 to direct teaching-option specimens even when actual compiled/delivered rows include rehearsal/enrichment. The repair must bind the training batch to the exact trained rows while preserving direct DeliveredTeaching identity, observation strictness, rehearsal/source authority, C05/B13/currentness, and human trainer ownership.",
+      "pr": 1587,
+      "state": "TURNED_IN",
+      "head_sha": "ea771b6efb620abc20a4ab0bcb9e8de9827fda1d",
+      "head_sha_role": "exact semantic/test head before this metadata-only flow-control turn-in receipt",
+      "summary": "#1586 is turned in as PR #1587 after the human retry exposed OBSERVATION_DELIVERY_INVALID. Learning-first Factory compilation now binds BamfTrainingBatch.delivered_content_sha256 to content_digest(exact ordered trained rows), matching strict-mode semantics while preserving direct DeliveredTeaching specimen identity and fail-closed capture. Focused proof: producer red/green, 25 delivery tests, strict rehearsal parity, mutation/omission/insertion/reordering rejection, zero new error debt, architecture/flow/diff green. EGM final 0B/0M/0N; PM-2026-11-23-001 filed. No agent-run trainer or persistent neural-state mutation.",
       "resume_trigger": null,
       "preserved_branch": "codex/1586-observation-delivery-20261123"
     }
