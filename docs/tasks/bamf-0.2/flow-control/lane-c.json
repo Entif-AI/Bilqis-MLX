@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "caef2d9d6c59de4a7688e1558998905af14f4251",
-  "updated_at": "2026-11-23T09:18:06+00:00",
+  "updated_at": "2026-11-23T09:22:37+00:00",
   "exception": null,
   "items": [
     {
@@ -635,9 +635,9 @@
       "issue": 1574,
       "pr": 1595,
       "state": "TURNED_IN",
-      "head_sha": "4332445bb902d703ca143005a0b177e89be6bb17",
-      "head_sha_role": "exact reconciled executable/test head after consuming current main caef2d9d; subsequent flow-control receipt commit is metadata only",
-      "summary": "#1574 is turned in as ready PR #1595 after consuming current main caef2d9d (#1591). Ordinary learning-first generation/currentness now uses revocable process-local step authority tokens bound to accepted run/generation/manifest/candidate identity, release/source authority, topology/extents, optimizer lineage and candidate step, avoiding ordinary full parameter-tree proof. Tokens advance on actual optimizer changes and reuse unchanged speculative state; observational shadow rungs defer canonical candidate identity while final retention/publication still computes exact durable raw-v2 identity, and strict/evidence mode retains exact execution-generation proof. Final reconciled focused proof is 84/84 PASS at 4332445b with zero changed-path smell findings, green flow control and diff hygiene. The detached repository-wide verify:leaf snapshot failed with 106 failures and 15 errors across broad inherited/system tests and missing/stale fixtures outside #1574; the snapshot source was unchanged. Prepared-row #1573 work, C05 semantics and teacher-policy semantics remain out of scope. No agent-run human learner or production --human-run mutation occurred.",
+      "head_sha": "c08322d6b2f2f339714722dbe1c44e7c9c0f52c9",
+      "head_sha_role": "exact reconciled executable/test head after hosted portable-core error-control repair; subsequent flow-control receipt commit is metadata only",
+      "summary": "#1574 is turned in as ready PR #1595 after consuming current main caef2d9d (#1591). Ordinary learning-first generation/currentness now uses revocable process-local step authority tokens bound to accepted run/generation/manifest/candidate identity, release/source authority, topology/extents, optimizer lineage and candidate step, avoiding ordinary full parameter-tree proof. Tokens advance on actual optimizer changes and reuse unchanged speculative state; observational shadow rungs defer canonical candidate identity while final retention/publication still computes exact durable raw-v2 identity, and strict/evidence mode retains exact execution-generation proof. Final reconciled focused proof is 84/84 PASS at 4332445b with zero changed-path smell findings, green flow control and diff hygiene. The detached repository-wide verify:leaf snapshot failed with 106 failures and 15 errors across broad inherited/system tests and missing/stale fixtures outside #1574; the snapshot source was unchanged. Prepared-row #1573 work, C05 semantics and teacher-policy semantics remain out of scope. No agent-run human learner or production --human-run mutation occurred. Hosted portable-core then exposed six raw step-authority exception identities as new opaque operator-contract debt; c08322d6 routes all six through SCHOOL.BAMF_TRAINING_ADAPTER.INVALID with named reason codes. Failing-before proved stale-token revocation still raised raw ValueError; post-fix authority proof is 14/14 PASS and the exact portable-core architecture/docs/error-control stage is green with new debt 0.",
       "resume_trigger": null,
       "preserved_branch": "codex/1574-step-authority-20261123"
     }
