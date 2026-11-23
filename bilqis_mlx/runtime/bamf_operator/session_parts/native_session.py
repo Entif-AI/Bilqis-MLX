@@ -172,6 +172,8 @@ def execute_horizon(
     }
     if candidate_executor is execute_learning_first_priority_candidate:
         candidate_kwargs["accepted_cache"] = cache
+        from bilqis_mlx.runtime.factory_training_bridge import LearningFirstPreparationCache
+        candidate_kwargs["learning_first_cache"] = LearningFirstPreparationCache()
     return _execute_horizon_impl(
         run_dir, selection, context, parent, atlas_path, feature_path,
         rows, horizon, cache, candidate_attempt_ordinal, progress,

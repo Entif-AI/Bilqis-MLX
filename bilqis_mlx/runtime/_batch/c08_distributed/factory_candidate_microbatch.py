@@ -1,6 +1,7 @@
 """C08 execution of source-bound Factory rows as scalar or true MLX microbatches."""
 from __future__ import annotations
 
+from dataclasses import replace
 import time
 
 import mlx.core as mx
@@ -63,15 +64,30 @@ def _learning_first_task_goals(source_context, compiled):
 
 
 def _row_execution_inputs(
-        source_context, compiled, feature_snapshot, generation):
+        source_context, compiled, feature_snapshot, generation,
+        learning_first_cache=None, row_cache_key=None):
     from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
         strict_evidence_enabled,
     )
     if not strict_evidence_enabled():
-        goal, resolved = _learning_first_task_goals(source_context, compiled)
-        targets, mask = task_goal_training_targets(goal, resolved)
-        plan = task_goal_route_plan(
-            goal, compiled, feature_snapshot, generation)
+        row = compiled.sources[0].source_row
+        cache_key = (
+            learning_first_cache.key(row) if row_cache_key is None
+            else row_cache_key)
+        cached = (
+            None if learning_first_cache is None
+            else learning_first_cache.get_task_inputs(cache_key))
+        if cached is None:
+            goal, resolved = _learning_first_task_goals(source_context, compiled)
+            targets, mask = task_goal_training_targets(goal, resolved)
+            plan = task_goal_route_plan(
+                goal, compiled, feature_snapshot, generation)
+            if learning_first_cache is not None:
+                learning_first_cache.put_task_inputs(
+                    cache_key, (goal, resolved, targets, mask, plan))
+        else:
+            goal, resolved, targets, mask, plan = cached
+            plan = replace(plan, generation_binding=generation)
         return compiled, None, targets, mask, plan
     authority = factory_task_authority(
         source_context, compiled, generation_binding=generation)
@@ -96,10 +112,12 @@ def _mentor_multiplier(mentor_supervision, compiled):
 
 def execute_factory_training_row(
         parameters, compiled, source_context, feature_snapshot, generation, cache, *,
-        salience_supervision=None, mentor_supervision=None):
+        salience_supervision=None, mentor_supervision=None,
+        learning_first_cache=None, row_cache_key=None):
     """Preserve the scalar B11 path as correctness oracle and fallback."""
     bound, authority, targets, mask, plan = _row_execution_inputs(
-        source_context, compiled, feature_snapshot, generation)
+        source_context, compiled, feature_snapshot, generation,
+        learning_first_cache=learning_first_cache, row_cache_key=row_cache_key)
     multiplier = _mentor_multiplier(mentor_supervision, compiled)
     gradient = bamf_value_and_grad(
         parameters, bound, plan, targets, mask, cache,
@@ -112,10 +130,18 @@ def execute_factory_logical_batch(
         parameters, prepared, source_context, feature_snapshot, generation, cache,
         resource_plan, *, salience_supervision=None, mentor_supervision=None):
     """Execute each compatible C08 group with one MLX gradient launch."""
+    learning_first_cache = getattr(prepared, "learning_first_cache", None)
+    task_hits_before = int(getattr(learning_first_cache, "task_hits", 0))
+    task_misses_before = int(getattr(learning_first_cache, "task_misses", 0))
     row_inputs_started = time.perf_counter()
     rows = tuple(_row_execution_inputs(
-        source_context, compiled, feature_snapshot, generation)
-        for compiled in prepared.compiled_rows)
+        source_context, compiled, feature_snapshot, generation,
+        learning_first_cache=learning_first_cache,
+        row_cache_key=(
+            None if learning_first_cache is None else learning_first_cache.key(
+                compiled.sources[0].source_row,
+                prepared.training_batch.rows[index].model_input.eligibility_digest)))
+        for index, compiled in enumerate(prepared.compiled_rows))
     row_execution_inputs_wall_seconds = time.perf_counter() - row_inputs_started
     bound = tuple(item[0] for item in rows)
     authorities = tuple(item[1] for item in rows)
@@ -158,6 +184,10 @@ def execute_factory_logical_batch(
         getattr(gradient, "_performance_observation", {}) or {})
     observation["c08_row_execution_inputs_wall_seconds"] = float(
         row_execution_inputs_wall_seconds)
+    observation["learning_first_task_cache_hits"] = int(
+        getattr(learning_first_cache, "task_hits", 0)) - task_hits_before
+    observation["learning_first_task_cache_misses"] = int(
+        getattr(learning_first_cache, "task_misses", 0)) - task_misses_before
     attach_performance_observation(gradient, observation)
     return gradient, authorities, targets
 

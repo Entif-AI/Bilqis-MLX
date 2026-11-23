@@ -1,6 +1,7 @@
 """Production-shaped proof for the authority-light BAMF source path."""
 import time
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -12,8 +13,11 @@ from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_operator.session import _execution_context
 from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
 from bilqis_mlx.runtime.factory_candidate_components import _resource_plan
+from bilqis_mlx.runtime.factory_candidate_microbatch import _row_execution_inputs
 from bilqis_mlx.runtime.factory_candidate_cost import realized_candidate_cost
-from bilqis_mlx.runtime.factory_training_bridge import prepare_factory_training_batch
+from bilqis_mlx.runtime.factory_training_bridge import (
+    LearningFirstPreparationCache, prepare_factory_training_batch,
+)
 from bilqis_mlx.runtime.tests.batch.training.visit_provenance_support import visit_provenance
 
 from .pre_neural_journey_support import (
@@ -23,6 +27,114 @@ from .pre_neural_journey_support import (
 
 
 class LearningFirstSourcePathTests(PreNeuralJourneySupport, unittest.TestCase):
+    def test_learning_first_cache_reuses_invariant_row_preparation_across_steps(self):
+        self.current, self.parent_graph = historical_school_release()
+        snapshot = portable_atlas_snapshot()
+        schema, features, atlas_selection = journey_source(snapshot)
+        with wide_shape_patch(len(snapshot.abi_entries)):
+            self.publish_matching_genesis(snapshot, schema, features)
+            with self.journey_mounts(snapshot, schema, features, atlas_selection):
+                parent, context, atlas_path, feature_path = _execution_context(self.run)
+                rows = tuple(context.draw_rows(
+                    seed=12345, capability="B.AND", each=4))
+                execution = context.release.execution_plan.capability_map["B.AND"]
+                delivery = describe_delivered_teaching(
+                    context.release, "B.AND", execution.teaching_option_ids[0], rows)
+                selected_source_authority = context.bind_rows(
+                    rows, seed=12345, capability="B.AND", each=4)
+                generation = execution_generation_digest(
+                    parent.retained_state.optimizer.parameters,
+                    spec=parent.topology, extents=parent.extents)
+                cache = LearningFirstPreparationCache()
+                from bilqis_mlx.runtime import factory_training_bridge
+                with evidence_mode(strict=False), patch.object(
+                        factory_training_bridge, "_prepare_learning_first_model_sources",
+                        wraps=factory_training_bridge._prepare_learning_first_model_sources,
+                ) as prepare_model_sources:
+                    first = prepare_factory_training_batch(
+                        context, parent, atlas_path, feature_path, rows, generation,
+                        capability="B.AND", delivery=delivery, requested_count=4,
+                        source_seed=12345, source_each=4, optimizer_step_seed=7,
+                        visit_provenance=visit_provenance("B.AND"),
+                        teacher_strategy={"policy": "learning-first"},
+                        selected_source_authority=selected_source_authority,
+                        learning_first_cache=cache)
+                    second = prepare_factory_training_batch(
+                        context, parent, atlas_path, feature_path, rows, generation,
+                        capability="B.AND", delivery=delivery, requested_count=4,
+                        source_seed=12345, source_each=4, optimizer_step_seed=8,
+                        visit_provenance=visit_provenance("B.AND"),
+                        teacher_strategy={"policy": "learning-first"},
+                        selected_source_authority=selected_source_authority,
+                        learning_first_cache=cache)
+
+        self.assertEqual(prepare_model_sources.call_count, len(rows))
+        self.assertEqual(
+            tuple(row.provenance.optimizer_step_seed for row in first.training_batch.rows),
+            (7,) * len(rows))
+        self.assertEqual(
+            tuple(row.provenance.optimizer_step_seed for row in second.training_batch.rows),
+            (8,) * len(rows))
+        self.assertEqual(
+            second._performance_observation["learning_first_source_cache_hits"],
+            len(rows))
+        self.assertEqual(
+            second._performance_observation["learning_first_source_cache_misses"], 0)
+        import bilqis_mlx.runtime.factory_candidate_microbatch as c08
+        with evidence_mode(strict=False), patch.object(
+                c08, "_learning_first_task_goals",
+                wraps=c08._learning_first_task_goals,
+        ) as task_goals, patch.object(
+                c08, "task_goal_route_plan",
+                wraps=c08.task_goal_route_plan,
+        ) as route_plan:
+            first_inputs = _row_execution_inputs(
+                context, first.compiled_rows[0], first.semantic_context.snapshot,
+                generation, learning_first_cache=cache,
+                row_cache_key=cache.key(
+                    rows[0], first.training_batch.rows[0].model_input.eligibility_digest))
+            second_generation = "f" * 64
+            second_inputs = _row_execution_inputs(
+                context, second.compiled_rows[0], second.semantic_context.snapshot,
+                second_generation, learning_first_cache=cache,
+                row_cache_key=cache.key(
+                    rows[0], second.training_batch.rows[0].model_input.eligibility_digest))
+        self.assertEqual(task_goals.call_count, 1)
+        self.assertEqual(route_plan.call_count, 1)
+        self.assertEqual(first_inputs[4].generation_binding, generation)
+        self.assertEqual(second_inputs[4].generation_binding, second_generation)
+
+    def test_learning_first_cache_misses_when_exact_row_content_changes(self):
+        cache = LearningFirstPreparationCache()
+        row = {"id": "row:1", "capability": "A.TEST", "tokens": [1, 2]}
+        model_source = object()
+        cache.put(row, "eligibility:a", model_source)
+
+        assert cache.get(row, "eligibility:a") is model_source
+        assert cache.get({**row, "tokens": [1, 3]}, "eligibility:a") is None
+        assert cache.get(row, "eligibility:b") is None
+
+    def test_learning_first_cache_invalidates_changed_feature_digest(self):
+        cache = LearningFirstPreparationCache()
+        context = SimpleNamespace(
+            run_dir=Path("/run"), release=SimpleNamespace(release_sha256="release"))
+        snapshot = SimpleNamespace(
+            release_sha256="snapshot", bundle_id="bundle",
+            source_bundle_id="source-bundle")
+        first = SimpleNamespace(
+            snapshot=snapshot,
+            features=SimpleNamespace(semantic_release="semantic", digest="features:a"))
+        changed = SimpleNamespace(
+            snapshot=snapshot,
+            features=SimpleNamespace(semantic_release="semantic", digest="features:b"))
+        row = {"id": "row:1", "capability": "A.TEST", "tokens": [1, 2]}
+
+        cache.bind(context, first)
+        cache.put(row, "eligibility", object())
+        cache.bind(context, changed)
+
+        assert cache.get(row, "eligibility") is None
+
     def test_candidate_cost_reports_authority_free_rows_without_requalification(self):
         compiled_row = SimpleNamespace(positions=(object(), object()))
         compiled = SimpleNamespace(

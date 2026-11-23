@@ -8,8 +8,9 @@ import pytest
 
 from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
 from bilqis_mlx.runtime.bamf_operator.session_parts.native_session import (
-    candidate_horizon_execution,
+    candidate_horizon_execution, execute_horizon,
 )
+from bilqis_mlx.runtime.factory_training_bridge import LearningFirstPreparationCache
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import AcceptedExecutionCache
 
 
@@ -57,6 +58,25 @@ def test_learning_first_horizon_never_prepares_strict_source_authority():
     strict_prepare.assert_not_called()
     from bilqis_mlx.runtime.bamf_operator.session_parts import native_session
     assert _executor_from(captured) is native_session.execute_learning_first_priority_candidate
+
+
+def test_learning_first_horizon_scopes_one_preparation_cache_to_the_candidate():
+    from bilqis_mlx.runtime.bamf_operator.session_parts import native_session
+    captured = {}
+
+    def horizon_impl(*args, **kwargs):
+        captured["execute_candidate"] = kwargs["execute_candidate"]
+        return (), object()
+
+    with patch.object(native_session, "_execute_horizon_impl", side_effect=horizon_impl):
+        execute_horizon(
+            Path("/run"), object(), object(), object(), "atlas", "features", (), 4,
+            object(), 1, None, 0, None, None, None, None,
+            emit_progress=lambda *_args: None, invalid=_invalid,
+            candidate_executor=native_session.execute_learning_first_priority_candidate)
+
+    executor = captured["execute_candidate"]
+    assert isinstance(executor.keywords["learning_first_cache"], LearningFirstPreparationCache)
 
 
 def test_learning_first_horizon_preserves_rehearsal_with_accepted_cache():

@@ -1,7 +1,7 @@
 """Join source-owned Factory delivery to C02 inputs and B11 row execution."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import time
 
 from bilqis_mlx.factory.teaching import DeliveredTeaching, content_digest
@@ -34,6 +34,7 @@ class PreparedFactoryTrainingBatch:
     compiled_rows: tuple[BamfCompiledBatch, ...]
     motif_inputs: tuple
     semantic_context: object
+    learning_first_cache: object = None
 
     def __post_init__(self) -> None:
         from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
@@ -57,6 +58,63 @@ class PreparedFactoryTrainingBatch:
             _invalid("FACTORY_TRAINING_BRIDGE_INVALID")
         if strict:
             self.semantic_context.__post_init__()
+
+
+@dataclass
+class LearningFirstPreparationCache:
+    """Candidate-local reuse of exact row preparation for ordinary learning."""
+
+    _binding: tuple | None = None
+    _rows: dict = field(default_factory=dict)
+    _task_inputs: dict = field(default_factory=dict)
+    hits: int = 0
+    misses: int = 0
+    task_hits: int = 0
+    task_misses: int = 0
+
+    def bind(self, source_context, authenticated) -> None:
+        binding = (
+            str(source_context.run_dir),
+            source_context.release.release_sha256,
+            authenticated.snapshot.release_sha256,
+            authenticated.snapshot.bundle_id,
+            authenticated.snapshot.source_bundle_id,
+            authenticated.features.semantic_release,
+            authenticated.features.digest,
+        )
+        if self._binding is None:
+            self._binding = binding
+        elif self._binding != binding:
+            self._binding = binding
+            self._rows.clear()
+            self._task_inputs.clear()
+
+    @staticmethod
+    def key(row, eligibility_digest=None) -> str:
+        suffix = "" if eligibility_digest is None else ":" + str(eligibility_digest)
+        return content_digest((row,)) + suffix
+
+    def get(self, row, eligibility_digest):
+        value = self._rows.get(self.key(row, eligibility_digest))
+        if value is None:
+            self.misses += 1
+        else:
+            self.hits += 1
+        return value
+
+    def put(self, row, eligibility_digest, model_source) -> None:
+        self._rows[self.key(row, eligibility_digest)] = model_source
+
+    def get_task_inputs(self, key):
+        value = self._task_inputs.get(key)
+        if value is None:
+            self.task_misses += 1
+        else:
+            self.task_hits += 1
+        return value
+
+    def put_task_inputs(self, key, value) -> None:
+        self._task_inputs[key] = value
 
 
 
@@ -96,7 +154,7 @@ def _prepared_source_inputs(
         prepared_source, source_context, authenticated, rows, *, capability,
         source_seed, source_each, delivery=None, rehearsal_by_id=None,
         rehearsal_bindings=None, rehearsal_authorities=None,
-        selected_source_authority=None):
+        selected_source_authority=None, learning_first_cache=None):
     if prepared_source is None:
         rehearsal_by_id = rehearsal_by_id or {}
         rehearsal_bindings = rehearsal_bindings or {}
@@ -107,11 +165,34 @@ def _prepared_source_inputs(
         )
         strict = strict_evidence_enabled()
         if not strict:
-            source_rows = prepare_learning_first_source_rows(
-                source_context, authenticated, rows,
-                source_seed=source_seed, source_each=source_each)
-            prepared_model_sources = _prepare_learning_first_model_sources(
-                authenticated, source_rows)
+            if learning_first_cache is None:
+                source_rows = prepare_learning_first_source_rows(
+                    source_context, authenticated, rows,
+                    source_seed=source_seed, source_each=source_each)
+                prepared_model_sources = _prepare_learning_first_model_sources(
+                    authenticated, source_rows)
+            else:
+                if type(learning_first_cache) is not LearningFirstPreparationCache:
+                    _invalid("LEARNING_FIRST_PREPARATION_CACHE_INVALID")
+                learning_first_cache.bind(source_context, authenticated)
+                source_rows = prepare_learning_first_source_rows(
+                    source_context, authenticated, rows,
+                    source_seed=source_seed, source_each=source_each)
+                prepared_model_sources = []
+                for row, source_row in zip(rows, source_rows, strict=True):
+                    eligibility_digest = source_row.projection.digest
+                    cached = learning_first_cache.get(row, eligibility_digest)
+                    if cached is None:
+                        model_source = _prepare_learning_first_model_sources(
+                            authenticated, (source_row,))[0]
+                        if model_source.eligibility_digest != eligibility_digest:
+                            _invalid("LEARNING_FIRST_PREPARATION_ELIGIBILITY_DRIFT")
+                        learning_first_cache.put(
+                            row, eligibility_digest, model_source)
+                    else:
+                        model_source = cached
+                    prepared_model_sources.append(model_source)
+                prepared_model_sources = tuple(prepared_model_sources)
             profile = (
                 source_rows[0].profile if len(source_rows) == 1 else None)
             return (
@@ -233,7 +314,8 @@ def _compile_factory_training(
 def _prepared_factory_result(
         training, compiled_rows, source_rows, authenticated, prepared_motif_inputs,
         source_context, *, request_validation_seconds, semantic_context_seconds,
-        prepared_source_seconds, compile_seconds, b11_binding_seconds):
+        prepared_source_seconds, compile_seconds, b11_binding_seconds,
+        learning_first_cache=None, source_cache_hits=0, source_cache_misses=0):
     stage_started = time.perf_counter()
     motif_inputs = (
         prepared_motif_inputs if prepared_motif_inputs is not None else
@@ -243,7 +325,8 @@ def _prepared_factory_result(
             for item in source_rows))
     motif_planning_seconds = time.perf_counter() - stage_started
     stage_started = time.perf_counter()
-    prepared = PreparedFactoryTrainingBatch(training, compiled_rows, motif_inputs, authenticated)
+    prepared = PreparedFactoryTrainingBatch(
+        training, compiled_rows, motif_inputs, authenticated, learning_first_cache)
     prepared.__post_init__()
     result_construction_seconds = time.perf_counter() - stage_started
     object.__setattr__(prepared, "_performance_observation", {
@@ -254,6 +337,8 @@ def _prepared_factory_result(
         "factory_b11_binding_wall_seconds": float(b11_binding_seconds),
         "factory_motif_planning_wall_seconds": float(motif_planning_seconds),
         "factory_result_construction_wall_seconds": float(result_construction_seconds),
+        "learning_first_source_cache_hits": int(source_cache_hits),
+        "learning_first_source_cache_misses": int(source_cache_misses),
     })
     return prepared
 
@@ -270,6 +355,7 @@ def prepare_factory_training_batch(
     rehearsal_by_id: dict | None = None, rehearsal_bindings: dict | None = None,
     rehearsal_authorities: dict | None = None,
     semantic_context=None, prepared_source=None, selected_source_authority=None,
+    learning_first_cache=None,
 ) -> PreparedFactoryTrainingBatch:
     """Compile one real Factory draw once, then bind each C02 row into B11.
 
@@ -299,6 +385,8 @@ def prepare_factory_training_batch(
     if strict:
         authenticated.__post_init__()
     semantic_context_seconds = time.perf_counter() - stage_started
+    cache_hits_before = int(getattr(learning_first_cache, "hits", 0))
+    cache_misses_before = int(getattr(learning_first_cache, "misses", 0))
     stage_started = time.perf_counter()
     (source_authority, _adapter, manifest, profile, source_rows,
      prepared_model_sources, prepared_motif_inputs,
@@ -308,8 +396,12 @@ def prepare_factory_training_batch(
         delivery=delivery, rehearsal_by_id=rehearsal_by_id,
         rehearsal_bindings=rehearsal_bindings,
         rehearsal_authorities=rehearsal_authorities,
-        selected_source_authority=selected_source_authority)
+        selected_source_authority=selected_source_authority,
+        learning_first_cache=learning_first_cache)
     prepared_source_seconds = time.perf_counter() - stage_started
+    source_cache_hits = int(getattr(learning_first_cache, "hits", 0)) - cache_hits_before
+    source_cache_misses = (
+        int(getattr(learning_first_cache, "misses", 0)) - cache_misses_before)
     stage_started = time.perf_counter()
     training = _compile_factory_training(
         rows, source_context, candidate, delivery, capability, teacher_strategy,
@@ -335,7 +427,12 @@ def prepare_factory_training_batch(
         source_context, request_validation_seconds=request_validation_seconds,
         semantic_context_seconds=semantic_context_seconds,
         prepared_source_seconds=prepared_source_seconds, compile_seconds=compile_seconds,
-        b11_binding_seconds=b11_binding_seconds)
+        b11_binding_seconds=b11_binding_seconds,
+        learning_first_cache=learning_first_cache,
+        source_cache_hits=source_cache_hits, source_cache_misses=source_cache_misses)
 
 
-__all__ = ("PreparedFactoryTrainingBatch", "prepare_factory_training_batch")
+__all__ = (
+    "LearningFirstPreparationCache", "PreparedFactoryTrainingBatch",
+    "prepare_factory_training_batch",
+)
