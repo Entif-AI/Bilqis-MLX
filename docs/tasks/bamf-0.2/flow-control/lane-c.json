@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "db2c0233147069414c83fae76bcbad9c51ca58c5",
-  "updated_at": "2026-11-22T10:47:58+00:00",
+  "updated_at": "2026-11-23T03:31:25+00:00",
   "exception": null,
   "items": [
     {
@@ -590,6 +590,16 @@
       "summary": "#1566 remains turned in as PR #1567 under ADR-153. The sub-second learning-first/C05 repair remains intact. A subsequent hosted portable-core run exposed only operator-contract ratchet debt: two opaque numeric guards for the three-field training-source coordinate and one raw ValueError identity in learning-first schema lookup. The repair names the coordinate contract fields and routes schema unavailability through the existing structured BAMF training-adapter error boundary. Targeted operator-contract comparison against origin/main reports 0 new debt; C05 adversarial 10/10 and learning-first source 2/2 remain green; Factory architecture, docs, BAMF flow-control, diff hygiene, and 3-file smell audit are green. No performance or custody semantics changed and no sovereign human trainer state was mutated.",
       "resume_trigger": null,
       "preserved_branch": "codex/1566-training-first-bypass-20261122"
+    },
+    {
+      "issue": 1580,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "127345066ecc765799f50444e1c65f8ae76e101a",
+      "head_sha_role": "isolated #1580 branch base before consuming release-only main advance f87293215",
+      "summary": "#1580 repairs the learning-first teacher-semantics regression by restoring accepted-cache rehearsal/preservation planning without re-enabling strict evidence ceremony. Failing-before reproduced the non-strict rehearsal gate; 18 directly affected tests are green. No human trainer or neural optimizer mutation is authorized.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/1580-teacher-rehearsal-20261122"
     }
   ]
 }
