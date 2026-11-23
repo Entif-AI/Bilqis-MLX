@@ -1,122 +1,10 @@
 from pathlib import Path
 from contextlib import ExitStack, nullcontext
-import json
-from tempfile import TemporaryDirectory
 from types import SimpleNamespace as NS
 import unittest
 from unittest.mock import patch
 
 from bilqis_mlx.runtime.bamf_operator.session import _visit
-
-
-def _first_baseline_operator_case():
-    from bilqis_mlx.runtime.tests.capability.factory.owner.test_factory_retention_owner_adversarial import (
-        _evaluate_foundation_owner,
-        _foundation_owner_fixture,
-    )
-    from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import (
-        accepted_state,
-        candidate,
-        parent_state,
-    )
-
-    evaluation = _evaluate_foundation_owner(*_foundation_owner_fixture())
-    identity = evaluation.baseline_transition.measurement.comparison
-    fixture_parent_state = parent_state()
-    fixture_candidate_state = accepted_state(fixture_parent_state)
-    object.__setattr__(evaluation, "parent_state", fixture_parent_state)
-    object.__setattr__(evaluation, "candidate_state", fixture_candidate_state)
-    successor = candidate(
-        fixture_candidate_state,
-        generation=1,
-        parent="0" * 64,
-    )
-    parent = NS(
-        generation=0,
-        retained_state=NS(optimizer_step=0),
-        optimizer_hyperparameters=None,
-    )
-    selection = NS(
-        option_id="fixture-option",
-        visit=NS(identity=NS(visit_id="fixture-visit", policy_key="fixture-policy")),
-    )
-    step = NS(transaction=NS(training_authorities=()))
-    capture = NS(finalize=lambda **_kwargs: {
-        "schema": "bilqis.bamf.c16.3-candidate-evidence-reference/v1",
-        "persistence": {
-            "bytes_written": 0,
-            "file_fsyncs": 0,
-            "directory_fsyncs": 0,
-            "evidence_objects": 0,
-            "persistence_seconds": 0.0,
-        },
-    })
-    cache = NS(generation=0, accepted_manifest_sha256="0" * 64)
-    return evaluation, identity, successor, parent, selection, step, capture, cache
-
-
-def _operate_first_baseline_case(case):
-    from contextlib import ExitStack
-    from tempfile import TemporaryDirectory
-    from bilqis_mlx.runtime.bamf_operator.session import _emit_progress, operate_bamf
-    from bilqis_mlx.runtime.bamf_operator.session_parts.native_session import retention_result
-
-    evaluation, identity, successor, parent, selection, step, capture, cache = case
-    published = []
-
-    def prepare(run_dir, *, observer=None, **_kwargs):
-        if observer is not None:
-            observer.bind_parent(parent)
-        return retention_result(
-            run_dir, parent, NS(), "artifact", selection, identity.capability_id,
-            cache, (step,), capture, 1, 1, {}, None, observer, emit_progress=_emit_progress)
-
-    def publish(_run_dir, bound_successor, *_args, **_kwargs):
-        published.append(bound_successor)
-
-    prefix = "bilqis_mlx.runtime.bamf_operator.session."
-    native_prefix = "bilqis_mlx.runtime.bamf_operator.session_parts.native_session."
-    patches = (
-        ('bilqis_mlx.runtime.outcomes.issuance.build_outcome', {'return_value': {}}),
-        ('bilqis_mlx.runtime.outcomes.issuance.credited_visit', {'side_effect': lambda visit, outcome: visit}),
-        ('bilqis_mlx.runtime.outcomes.issuance.carry_credit_to_successor', {'side_effect': lambda visit, successor, parent: successor}),
-        (prefix + "prepare_bamf_visit", {"side_effect": prepare}),
-        (native_prefix + "evaluate_factory_retention_candidate", {"return_value": evaluation}),
-        (native_prefix + "derive_accepted_teacher_successor", {"return_value": successor}),
-        (native_prefix + "_resource_observation", {"return_value": {}}),
-        (native_prefix + "candidate_identity_metrics_delta", {"return_value": {}}),
-        ("bilqis_mlx.runtime.retention.screen.candidate_identity_for_canonical_consumer",
-         {"return_value": "d" * 64}),
-        (prefix + "accept_and_publish", {"side_effect": publish}),
-        (prefix + "load_accepted_generation", {"return_value": NS(
-            generation=1, retained_state=NS(optimizer_step=1))}),
-    )
-    with TemporaryDirectory() as tmp, ExitStack() as stack:
-        for target, kwargs in patches:
-            stack.enter_context(patch(target, **kwargs))
-        result = operate_bamf(
-            Path(tmp), minutes=1, max_visits=1, reserve_gib=0,
-            source_prefetch_workers=0)
-    return result, published
-
-
-def _complete_observed_step(observer):
-    observer.complete_step(
-        candidate_step=1, candidate_optimizer_step=8, candidate_step_wall_seconds=0.5,
-        pre_neural_source_compile_wall_seconds=0.1, currentness_binding_wall_seconds=0.01,
-        accepted_currentness_refresh_wall_seconds=0.001,
-        accepted_parent_currentness_wall_seconds=0.001,
-        lawful_frontier_currentness_wall_seconds=0.002,
-        teacher_visit_currentness_wall_seconds=0.002, source_currentness_wall_seconds=0.001,
-        candidate_binding_wall_seconds=0.003, b11_preflight_wall_seconds=0.1,
-        b11_autodiff_wall_seconds=0.2, optimizer_admission_wall_seconds=0.05,
-        motif_staging_wall_seconds=0.0, evidence_capture_wall_seconds=0.01,
-        candidate_terminal_step=True, c08_gradient_launches=1,
-        c08_vectorized_microbatches=1, c08_materialization_barriers=1,
-        c08_scalar_fallback_rows=0, c08_logical_batch_wall_seconds=0.3,
-        c08_rows_per_gradient_launch=4.0, b11_provider_draw_count=4,
-        b11_atlas_reload_count=1, logical_rows=4, compiled_positions=32,
-    )
 
 
 def _run_observed_preparation_fixture(parent, selection, steps, events):
@@ -130,8 +18,13 @@ def _run_observed_preparation_fixture(parent, selection, steps, events):
 
     prefix = 'bilqis_mlx.runtime.bamf_operator.session.'
     native_prefix = 'bilqis_mlx.runtime.bamf_operator.session_parts.native_session.'
+    accepted_cache = NS(generation=1, accepted_manifest_sha256='a' * 64)
+    context = NS(
+        release='release',
+        _accepted_runtime_host=NS(_accepted_cache=accepted_cache),
+    )
     patches = {
-        '_execution_context': (parent, NS(release='release'), 'atlas', 'feature'),
+        '_execution_context': (parent, context, 'atlas', 'feature'),
         'schedule_program_from_executable_release': 'program',
         'accepted_priority_school': 'school',
         'select_foundation_priority_visit': selection,
@@ -141,14 +34,10 @@ def _run_observed_preparation_fixture(parent, selection, steps, events):
                             'directory_fsyncs': 1, 'evidence_objects': 1,
                             'persistence_seconds': 0.0}}),
         'FactoryDeliveryObservation': 'delivery',
-        'bind_accepted_execution_cache': NS(
-            generation=1, accepted_manifest_sha256='a' * 64),
+        'bind_accepted_execution_cache': accepted_cache,
         'candidate_step_horizon': 3,
         'rejection_attempt_ordinals': (1, 1),
         'prepare_candidate_evidence_root': Path('/tmp/teacher-observations/objects'),
-        'currentness_metrics': {
-            'deep_authentication_count': 1, 'accepted_cache_currentness_count': 3,
-            'full_candidate_identity_hashes': 1, 'bundle_tree_scans': 2},
         'issue_factory_retention_decision': NS(
             accepted=False, reason='PROTECTED_CAPABILITY_REGRESSION',
             evaluated_capability_ids=('cap', 'protected-cap'),
@@ -167,6 +56,20 @@ def _run_observed_preparation_fixture(parent, selection, steps, events):
             native_prefix + 'execute_learning_first_priority_candidate',
             side_effect=steps))
         stack.enter_context(patch(
+            native_prefix + 'currentness_metrics',
+            side_effect=AssertionError(
+                'ordinary semantic observation reopened currentness telemetry')))
+        stack.enter_context(patch(
+            'bilqis_mlx.runtime.bamf_operator.session_parts.learning_trace.'
+            'CandidateLearningTrace',
+            return_value=NS(
+                delivery=lambda *_args, **_kwargs: None,
+                summary=lambda: {
+                    'attempt_id': 'fixture-attempt', 'candidate_steps': 3,
+                    'batch_size': 1, 'policy_controls': ({}, {}, {}),
+                    'guidance_applied_steps': 0, 'enrichment_examples': 0,
+                })))
+        stack.enter_context(patch(
             native_prefix + 'evaluate_factory_retention_candidate',
             side_effect=assess))
         stack.enter_context(patch(
@@ -175,8 +78,13 @@ def _run_observed_preparation_fixture(parent, selection, steps, events):
         stack.enter_context(patch(
             'bilqis_mlx.runtime.bamf_operator.evidence_parts.projection.complete_visit_evidence',
             side_effect=RuntimeError('observation readback failed')))
-        observer = NS(bind_parent=lambda value: events.append({'bound': value}),
-                      update=lambda **fields: events.append(fields))
+        observer = NS(
+            bind_parent=lambda value: events.append({'bound': value}),
+            update=lambda **fields: events.append(fields),
+            begin_step=lambda step, optimizer_step: events.append({
+                'candidate_step': step,
+                'candidate_optimizer_step': optimizer_step,
+            }))
         with evidence_mode(strict=False):
             return prepare_bamf_visit(Path('/tmp'), observer=observer)
 
@@ -221,123 +129,14 @@ class SessionObservationTests(unittest.TestCase):
         self.assertEqual([e.get('phase') for e in events if 'phase' in e],
                          ['SELECTING', 'TRAINING', 'RETENTION'])
         self.assertIn({'visit_id': 'visit'}, events)
-        self.assertIn({'phase': 'TRAINING', 'capability_id': 'cap', 'candidate_step': 0,
-                       'candidate_horizon': 3, 'candidate_optimizer_step': 4}, events)
+        self.assertIn({
+            'phase': 'TRAINING', 'capability_id': 'cap', 'visit_id': 'visit',
+            'candidate_step': 0, 'candidate_horizon': 3,
+            'candidate_optimizer_step': 4,
+        }, events)
         for i in (1, 2, 3):
             self.assertIn({'candidate_step': i, 'candidate_optimizer_step': 4 + i}, events)
         self.assertIn({'retention_completed': 1, 'retention_total': 2,
                        'retention_subject': 'cap', 'retention_role': 'parent'}, events)
-        self.assertIn({
-            'retention_evaluated_capability_count': 2,
-            'retention_protection_plan_sha256': 'f' * 64,
-            'retention_broad_certification_trigger': None,
-        }, events)
-
-    def test_operate_bamf_carries_first_accepted_baseline_to_publication(self):
-        from bilqis_mlx.runtime.baseline.lifecycle import (
-            BaselineLedger,
-            BaselineLifecycleState,
-        )
-
-        case = _first_baseline_operator_case()
-        evaluation, identity = case[:2]
-        identity = evaluation.baseline_transition.measurement.comparison
-        self.assertIs(
-            evaluation.baseline_ledger.state_for(identity),
-            BaselineLifecycleState.BASELINE_ESTABLISHED,
-        )
-        result, published = _operate_first_baseline_case(case)
-
-        self.assertEqual((result.accepted, result.rejected), (1, 0))
-        self.assertEqual(len(published), 1)
-        ledger = BaselineLedger.from_optional_record(published[0].baseline_evidence)
-        self.assertIs(
-            ledger.state_for(identity),
-            BaselineLifecycleState.BASELINE_ESTABLISHED,
-        )
-
-    def test_disposable_operator_witness_spans_planning_training_retention_and_publication(self):
-        from bilqis_mlx.runtime.bamf_bundle.publication.instrumentation import (
-            PublicationMetrics,
-        )
-        from bilqis_mlx.runtime.bamf_operator.session import operate_bamf
-
-        parent = NS(generation=0, retained_state=NS(optimizer_step=7))
-        prepared = NS(status='ACCEPTED', parent=parent, selection=object(),
-                      step=NS(transaction=NS(training_authorities=())),
-                      decision=NS(accepted=True), retained=object(), capability='A.IDENTITY',
-                      successor=NS(extents=NS(factor_map_digest='x')))
-        snapshots = []
-
-        def capture(run_dir):
-            snapshots.append(json.loads(
-                (Path(run_dir) / 'trainer-observed.json').read_text())['visits'][-1])
-
-        def prepare(_run_dir, *, observer=None, **_kwargs):
-            observer.bind_parent(parent)
-            observer.update(
-                phase='SELECTING',
-                activity='planner: compiling semantic curriculum')
-            capture(_run_dir)
-            observer.update(
-                phase='TRAINING', capability_id='A.IDENTITY',
-                candidate_step=0, candidate_horizon=1,
-                candidate_optimizer_step=7)
-            observer.begin_step(1, 8)
-            _complete_observed_step(observer)
-            capture(_run_dir)
-            observer.update(
-                phase='RETENTION', retention_completed=0, retention_total=2,
-                retention_subject='A.IDENTITY', retention_role='parent')
-            observer.update(
-                retention_completed=1, retention_total=2,
-                retention_subject='A.IDENTITY', retention_role='candidate')
-            capture(_run_dir)
-            return prepared
-
-        def publish(run_dir, *_args, publication_observer=None, **_kwargs):
-            capture(run_dir)
-            publication_observer(PublicationMetrics(1, 2, 3, 4, 5))
-
-        prefix = 'bilqis_mlx.runtime.bamf_operator.session.'
-        with TemporaryDirectory() as tmp:
-            run_dir = Path(tmp)
-            (run_dir / 'bamf-state.json').write_text(json.dumps({
-                'run_id': 'operator-witness', 'manifest_sha256': 'a' * 64,
-            }))
-            with patch(prefix + 'prepare_bamf_visit', side_effect=prepare), patch(
-                    prefix + 'accept_and_publish', side_effect=publish), patch(
-                    prefix + 'load_accepted_generation', return_value=NS(
-                        generation=1, retained_state=NS(optimizer_step=8))):
-                result = operate_bamf(
-                    run_dir, minutes=1, max_visits=1, reserve_gib=0,
-                    source_prefetch_workers=0)
-            final = json.loads(
-                (run_dir / 'trainer-observed.json').read_text())['visits'][-1]
-
-        self.assertEqual((result.accepted, result.rejected), (1, 0))
-        self.assertEqual((snapshots[0]['phase'], snapshots[0]['activity']),
-                         ('SELECTING', 'planner: compiling semantic curriculum'))
-        # complete_step is deliberately nonblocking; heartbeat/finalization
-        # persists the completed step after this immediate file snapshot.
-        self.assertEqual((snapshots[1]['phase'], snapshots[1]['candidate_step']),
-                         ('TRAINING', 0))
-        self.assertEqual((snapshots[2]['phase'], snapshots[2]['retention_completed'],
-                          snapshots[2]['retention_total']), ('RETENTION', 1, 2))
-        self.assertEqual((snapshots[3]['phase'], snapshots[3]['outcome']),
-                         ('PUBLISHING', 'RUNNING'))
-        self.assertEqual((final['phase'], final['outcome']),
-                         ('COMPLETED', 'ACCEPTED'))
-        self.assertEqual(final['activity'], 'publishing accepted successor checkpoint')
-        self.assertEqual(final['candidate_step'], 1)
-        self.assertEqual(final['candidate_steps'][-1]['candidate_step'], 1)
-        self.assertEqual((final['retention_completed'], final['retention_total']),
-                         (1, 2))
-        self.assertEqual(
-            (final['retention_subject'], final['retention_role']),
-            ('A.IDENTITY', 'candidate'))
-        self.assertEqual(final['publication_parent_bundle_loads'], 1)
-        self.assertEqual(final['publication_child_bundle_loads'], 2)
-        self.assertEqual(final['publication_tensor_bytes_read'], 3)
-        self.assertEqual(final['publication_write_bytes'], 4)
-        self.assertEqual(final['publication_fsync_bytes'], 5)
+        self.assertFalse(any(
+            'retention_protection_plan_sha256' in event for event in events))

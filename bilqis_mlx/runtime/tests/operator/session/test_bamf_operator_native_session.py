@@ -42,7 +42,9 @@ class BamfOperatorNativeSessionTests(unittest.TestCase):
         selection = SimpleNamespace(
             status="TEACHER_SELECTED",
             option_id="option:horizon",
-            visit=SimpleNamespace(identity=identity),
+            visit=SimpleNamespace(
+                identity=identity,
+                projection=SimpleNamespace(teacher_state=None)),
             offer=SimpleNamespace(
                 capability_id="capability:horizon", source_seed=17,
                 rows=lambda: ({"id": "row:horizon"},),
@@ -60,6 +62,16 @@ class BamfOperatorNativeSessionTests(unittest.TestCase):
             configure_multifidelity=lambda **_kwargs: None,
             record_multifidelity_rung=lambda **_kwargs: None,
         )
+        instruction = patch(
+            "bilqis_mlx.runtime.bamf_operator.session_parts.retention._instruction_event",
+            return_value={
+                "event": "BAMF_INSTRUCTION_HISTORY",
+                "schema": "bilqis.bamf.instruction-history/v1",
+                "state": "PARTIAL",
+                "capability_ids": ["capability:horizon"],
+            })
+        instruction.start()
+        self.addCleanup(instruction.stop)
         with patch(
                 "bilqis_mlx.runtime.bamf_operator.session._execution_context",
                 return_value=(parent, context, "atlas", "feature")), patch(
@@ -71,10 +83,10 @@ class BamfOperatorNativeSessionTests(unittest.TestCase):
                 return_value=selection), patch(
                 "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.bind_accepted_execution_cache",
                 return_value=cache), patch(
-                "bilqis_mlx.runtime.bamf_operator.session_parts.prepare_visit.bind_current_retention_protection_plan",
+                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.bind_current_retention_protection_plan",
                 return_value="plan") as bind_plan, patch(
-                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.bind_current_retention_source_rows",
-                return_value="rows") as bind_rows, patch(
+                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.compile_rehearsal_plan",
+                return_value="rehearsal") as compile_rehearsal, patch(
                 "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.candidate_step_horizon",
                 return_value=4) as horizon, patch(
                 "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.rejection_attempt_ordinals",
@@ -110,7 +122,7 @@ class BamfOperatorNativeSessionTests(unittest.TestCase):
             prepared = prepare_bamf_visit(Path("/run"), steps_per_visit=16)
 
         _assert_horizon_result(
-            self, prepared, execute_candidate, bind_plan, bind_rows,
+            self, prepared, execute_candidate, bind_plan, compile_rehearsal,
             capture_factory, horizon, evaluate, decide, derive, context,
             parent, cache, selection, transactions, evidence)
 

@@ -258,6 +258,12 @@ class TrainerObservation:
         """Update best-effort fields without forcing another synchronous write."""
         with self.lock:
             if self.enabled:
+                activity = fields.get('activity', self.record.get('activity'))
+                if 'activity' in fields and activity != self.record.get('activity'):
+                    self.activity_started = (
+                        time.monotonic() if activity is not None else None)
+                    fields['activity_elapsed_ms'] = (
+                        0 if activity is not None else None)
                 self.record.update(fields)
 
     def begin_step(self, candidate_step: int, candidate_optimizer_step: int):

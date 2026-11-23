@@ -46,6 +46,22 @@ class OperatorContractAuditTests(unittest.TestCase):
             logical_source_path(root / "bilqis_mlx/runtime/visits.py", root),
             "bilqis_mlx/runtime/visits.py",
         )
+        self.assertEqual(
+            logical_source_path(
+                root / "bilqis_mlx/runtime/bamf_operator/session_parts/_candidate/"
+                "candidate_execution.py",
+                root,
+            ),
+            "bilqis_mlx/runtime/bamf_operator/session_parts/candidate_execution.py",
+        )
+        self.assertEqual(
+            logical_source_path(
+                root / "bilqis_mlx/runtime/bamf_operator/session_parts/_lifecycle/"
+                "retention.py",
+                root,
+            ),
+            "bilqis_mlx/runtime/bamf_operator/session_parts/retention.py",
+        )
 
     def test_recover_exact_error_status_and_gate_code_without_guessing_semantics(self):
         source = '''

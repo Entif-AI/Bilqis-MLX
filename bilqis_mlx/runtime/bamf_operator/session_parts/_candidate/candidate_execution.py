@@ -26,6 +26,12 @@ def _execute_horizon_step(
         if callable(begin_step):
             begin_step(ordinal, parent.retained_state.optimizer_step + ordinal)
         observer_seconds = time.perf_counter() - begin_step_started
+    elif observer is not None:
+        stage = getattr(observer, "stage", None)
+        observe = stage if callable(stage) else observer.update
+        observe(
+            candidate_step=ordinal,
+            candidate_optimizer_step=parent.retained_state.optimizer_step + ordinal)
     (
         lesson, source_rows, enrichment_rows, rehearsal_rows,
         source_seconds, wait_seconds, lesson_seconds, pipeline_kwargs,
@@ -157,8 +163,12 @@ def candidate_horizon_execution(
             f"candidate horizon is atomic for up to {horizon} optimizer steps; "
             "the session time limit is checked between candidate visits")
     if observer is not None:
-        observer.update(
-            phase="TRAINING", capability_id=capability, candidate_step=0,
+        stage = getattr(observer, "stage", None)
+        observe = observer.update if strict or not callable(stage) else stage
+        observe(
+            phase="TRAINING", capability_id=capability,
+            visit_id=getattr(getattr(selection.visit, "identity", None), "visit_id", None),
+            candidate_step=0,
             candidate_horizon=horizon,
             candidate_optimizer_step=parent.retained_state.optimizer_step)
     identity_before = identity_snapshot() if strict else None
@@ -166,7 +176,7 @@ def candidate_horizon_execution(
         run_dir, selection, context, parent, atlas_path, feature_path, rows, horizon,
         cache, rejection_journal_ordinal, progress, source_prefetch_workers,
         source_prefetch_executor, source_prefetch_metrics, observer, adviser_pool)
-    if observer is not None:
+    if strict and observer is not None:
         metrics = currentness_metrics_fn(
             selection.offer._planning_generation._accepted_currentness)
         observer.update(

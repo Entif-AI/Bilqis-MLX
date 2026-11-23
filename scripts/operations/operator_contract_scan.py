@@ -32,6 +32,10 @@ LOGICAL_SOURCE_COMPARTMENTS = (
     (("bilqis_mlx", "learning", "_salience"), ("bilqis_mlx", "learning")),
     (("bilqis_mlx", "learning", "_teaching"), ("bilqis_mlx", "learning")),
     (("bilqis_mlx", "semantics", "foundation"), ("bilqis_mlx", "semantics")),
+    (("bilqis_mlx", "runtime", "bamf_operator", "session_parts", "_candidate"),
+     ("bilqis_mlx", "runtime", "bamf_operator", "session_parts")),
+    (("bilqis_mlx", "runtime", "bamf_operator", "session_parts", "_lifecycle"),
+     ("bilqis_mlx", "runtime", "bamf_operator", "session_parts")),
 )
 
 

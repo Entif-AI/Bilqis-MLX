@@ -37,6 +37,20 @@ def _record_planning_observation(observer, selection, planning_started):
             source_materialization_observation(selection.offer)))
 
 
+def _stage_observation(observer, **fields):
+    if observer is None:
+        return
+    stage = getattr(observer, "stage", None)
+    (stage if callable(stage) else observer.update)(**fields)
+
+
+def _record_selected_visit_identity(observer, selection):
+    identity = getattr(getattr(getattr(selection, "visit", None), "identity", None),
+                       "visit_id", None)
+    if isinstance(identity, str) and identity:
+        _stage_observation(observer, visit_id=identity)
+
+
 def prepare_bamf_visit_impl(
         run_dir: Path, *, steps_per_visit, batch_size, reserve_gib, progress,
         source_prefetch_workers, source_prefetch_executor,
@@ -59,10 +73,14 @@ def prepare_bamf_visit_impl(
     parent, context, atlas_path, feature_path = execution_context(
         run_dir, currentness_metrics=visit_currentness_metrics,
         performance_metrics=accepted_state_metrics)
-    runtime_observer = observer if strict else None
-    if runtime_observer is not None:
+    runtime_observer = observer
+    if strict and runtime_observer is not None:
         runtime_observer.bind_parent(parent)
         runtime_observer.update(phase="SELECTING")
+    elif runtime_observer is not None:
+        _stage_observation(
+            runtime_observer, phase="SELECTING",
+            candidate_optimizer_step=parent.retained_state.optimizer_step)
     program = schedule_program(context.release)
     accepted_host = getattr(context, "_accepted_runtime_host", None)
     host_cache = getattr(accepted_host, "_accepted_cache", None)
@@ -93,6 +111,8 @@ def prepare_bamf_visit_impl(
            if not strict else {}))
     if strict:
         _record_planning_observation(runtime_observer, selection, planning_started)
+    else:
+        _record_selected_visit_identity(runtime_observer, selection)
     if selection.status != "TEACHER_SELECTED":
         if (selection.status == "NO_ADMISSIBLE_TEACHING"
                 and any(reason == OOM_EXHAUSTED for _, reason in selection.holds)):

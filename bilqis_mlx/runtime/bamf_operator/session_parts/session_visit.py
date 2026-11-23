@@ -85,14 +85,16 @@ def _publish_accepted(
     successor = prepared.successor
     from .evidence_mode import strict_mode_enabled
     strict = strict_mode_enabled()
-    runtime_observer = observer if strict else None
+    runtime_observer = observer
     if runtime_observer is not None:
-        runtime_observer.update(phase="PUBLISHING")
+        stage = getattr(runtime_observer, "stage", None)
+        observe = runtime_observer.update if strict or not callable(stage) else stage
+        observe(phase="PUBLISHING")
     if strict:
         emit_progress(progress, "publishing accepted successor checkpoint")
     _assert_current(run_authority_binding)
     publication_observer = None
-    if runtime_observer is not None:
+    if strict and runtime_observer is not None:
         publication_observer = lambda metrics: runtime_observer.update(**{
             "publication_" + key: value
             for key, value in metrics.to_record().items()
@@ -119,7 +121,7 @@ def _publish_accepted(
         record_cadence_attempt(
             run_dir, cadence, prepared.capability, "RETAINED")
     health = getattr(prepared, "learning_health", None)
-    if runtime_observer is not None and isinstance(health, dict):
+    if strict and runtime_observer is not None and isinstance(health, dict):
         runtime_observer.learning_health_by_capability[health["capability_id"]] = health
         runtime_observer.update(learning_health=health)
     return "ACCEPTED"
@@ -132,6 +134,8 @@ def visit(
         prepare_visit, record_rejection,
         accept_publish, load_generation, measure_phase, emit_progress,
         record_cadence_attempt=None, resource_holds=frozenset()):
+    from .evidence_mode import strict_mode_enabled
+    strict = strict_mode_enabled()
     prepared = prepare_visit(
         run_dir, steps_per_visit=steps_per_visit, batch_size=batch_size,
         reserve_gib=reserve_gib,
@@ -145,14 +149,24 @@ def visit(
         return prepared.status
     if prepared.status == "RESOURCE_REJECTED":
         if observer is not None:
-            observer.update(phase="REJECTING")
-        with measure_phase(observer, "rejection_wall_seconds"):
+            stage = getattr(observer, "stage", None)
+            (stage if callable(stage) else observer.update)(phase="REJECTING")
+        if strict:
+            with measure_phase(observer, "rejection_wall_seconds"):
+                return _record_resource_rejection(
+                    run_dir, prepared, record_rejection, run_authority_binding)
+        else:
             return _record_resource_rejection(
                 run_dir, prepared, record_rejection, run_authority_binding)
     if not prepared.decision.accepted:
         if observer is not None:
-            observer.update(phase="REJECTING")
-        with measure_phase(observer, "rejection_wall_seconds"):
+            stage = getattr(observer, "stage", None)
+            (stage if callable(stage) else observer.update)(phase="REJECTING")
+        if strict:
+            with measure_phase(observer, "rejection_wall_seconds"):
+                return _record_candidate_rejection(
+                    run_dir, prepared, record_rejection, record_cadence_attempt)
+        else:
             return _record_candidate_rejection(
                 run_dir, prepared, record_rejection, record_cadence_attempt)
     return _publish_accepted(

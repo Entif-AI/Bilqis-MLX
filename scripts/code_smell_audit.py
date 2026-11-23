@@ -52,6 +52,11 @@ DEEP_NESTED_PHYSICAL_OWNER_GROUPS = frozenset({
 def logical_source_path(path: str) -> str:
     """Preserve established module identity across runtime physical grouping."""
     parts = Path(path).parts
+    if (len(parts) >= 6
+            and parts[:4] == (
+                "bilqis_mlx", "runtime", "bamf_operator", "session_parts")
+            and parts[4] in {"_candidate", "_lifecycle"}):
+        return Path(*parts[:4], *parts[5:]).as_posix()
     if (len(parts) >= 4
             and parts[:3] == ("bilqis_mlx", "semantics", "_cognitive_dag")):
         return "bilqis_mlx/semantics/cognitive_dag.py"

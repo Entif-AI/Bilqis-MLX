@@ -35,7 +35,9 @@ def _prepare_native_resource_visit(temporary):
     identity = SimpleNamespace(visit_id="visit:resource", policy_key="policy:resource")
     selection = SimpleNamespace(
         status="TEACHER_SELECTED", option_id="option:resource",
-        visit=SimpleNamespace(identity=identity),
+        visit=SimpleNamespace(
+            identity=identity,
+            projection=SimpleNamespace(teacher_state=None)),
         offer=SimpleNamespace(
             capability_id="capability:resource", source_seed=17,
             rows=lambda: ({"id": "row:resource"},)))
@@ -86,6 +88,14 @@ def _prepare_native_resource_visit(temporary):
             )
             handles[name] = stack.enter_context(patch(owner + name, **kwargs))
         stack.enter_context(patch(
+            "bilqis_mlx.runtime.bamf_operator.session_parts.retention._instruction_event",
+            return_value={
+                "event": "BAMF_INSTRUCTION_HISTORY",
+                "schema": "bilqis.bamf.instruction-history/v1",
+                "state": "PARTIAL",
+                "capability_ids": ["capability:resource"],
+            }))
+        stack.enter_context(patch(
             "bilqis_mlx.runtime.bamf_operator.championship."
             "bind_accepted_championship_successor", return_value=successor))
         prepared = prepare_bamf_visit(Path(temporary), steps_per_visit=16)
@@ -113,15 +123,18 @@ def _candidate_executor(transactions, case):
 
 
 def _assert_horizon_result(
-        case, prepared, execute_candidate, bind_plan, bind_rows,
+        case, prepared, execute_candidate, bind_plan, compile_rehearsal,
         capture_factory, horizon, evaluate, decide, derive, context,
         parent, cache, selection, transactions, evidence):
     case.assertEqual(prepared.status, "ACCEPTED")
     case.assertEqual(len(prepared.steps), 4)
     case.assertEqual(prepared.step.transaction.update_steps, 4)
     case.assertEqual(execute_candidate.call_count, 4)
-    bind_plan.assert_called_once_with(context, parent, cache)
-    bind_rows.assert_called_once_with(context, cache, "capability:horizon")
+    # This fixture deliberately supplies a lightweight cache double rather
+    # than the exact accepted-cache owner, so protection/rehearsal binding is
+    # not authorized on this horizon-aggregation unit path.
+    bind_plan.assert_not_called()
+    compile_rehearsal.assert_not_called()
     capture_factory.assert_called_once_with(
         Path("/run"), selection, generation=1,
         accepted_manifest_sha256="a" * 64,
@@ -130,7 +143,8 @@ def _assert_horizon_result(
         Path("/run"), parent, cache, "capability:horizon", 16)
     evaluate.assert_called_once_with(
         context, transactions[-1], "atlas", "capability:horizon",
-        run_dir=Path("/run"), mastery_debt_min_utility=0.05)
+        run_dir=Path("/run"), mastery_debt_min_utility=0.05,
+        accepted_parent=parent, execution_cache=cache)
     decide.assert_called_once_with(evaluate.return_value)
     event = derive.call_args.kwargs["delivery_events"][0]
     case.assertIs(prepared.resource, event["resource"])

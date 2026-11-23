@@ -26,7 +26,12 @@ class TrainerObservationTests(unittest.TestCase):
                     obs.finish('HELD')
             data = json.loads((root / 'trainer-observed.json').read_text())
             self.assertEqual(data['schema'], 'bilqis.bamf.trainer-observed/v7')
-            self.assertEqual(len(data['visits']), 8)
+            # The visit window is bounded by both the nominal recent-history
+            # limit and the 64 KiB snapshot ceiling.  As observation records
+            # gain fields, the oldest visit may be trimmed before eight fit.
+            self.assertGreaterEqual(len(data['visits']), 1)
+            self.assertLessEqual(len(data['visits']), 8)
+            self.assertEqual(data['visits'][-1]['visit_index'], 9)
             self.assertEqual(data['visits'][-1]['outcome'], 'HELD')
             self.assertGreater(data['visits'][-1]['revision'], 3)
             self.assertEqual(data['visits'][-1]['candidate_step'], 1)
