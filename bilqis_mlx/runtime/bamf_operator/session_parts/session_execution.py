@@ -235,6 +235,16 @@ def operate(
         source_prefetch_overlap_seconds=metrics.overlap_seconds,
         source_prefetch_prepared_steps=metrics.prepared_steps,
         source_prefetch_serial_steps=metrics.serial_steps,
+        pipeline_submitted_steps=metrics.pipeline_submitted_steps,
+        pipeline_prepared_steps=metrics.pipeline_prepared_steps,
+        pipeline_discarded_steps=metrics.pipeline_discarded_steps,
+        pipeline_discarded_preparation_seconds=(
+            metrics.pipeline_discarded_preparation_seconds),
+        pipeline_host_preparation_seconds=metrics.pipeline_host_preparation_seconds,
+        pipeline_host_overlap_seconds=metrics.pipeline_host_overlap_seconds,
+        pipeline_host_wait_seconds=metrics.pipeline_host_wait_seconds,
+        pipeline_accelerator_wait_for_host_seconds=(
+            metrics.pipeline_accelerator_wait_for_host_seconds),
         admission_status=admission_status,
         admission_advances=admission_advances,
         elapsed_seconds=elapsed_seconds,

@@ -96,7 +96,8 @@ def _prepared_factory_result(
         training, compiled_rows, source_rows, authenticated, prepared_motif_inputs,
         source_context, *, request_validation_seconds, semantic_context_seconds,
         prepared_source_seconds, compile_seconds, b11_binding_seconds,
-        learning_first_cache=None, source_cache_hits=0, source_cache_misses=0):
+        learning_first_cache=None, source_cache_hits=0, source_cache_misses=0,
+        ahead_preparation_used=False, ahead_preparation_discarded=False):
     stage_started = time.perf_counter()
     motif_inputs = (
         prepared_motif_inputs if prepared_motif_inputs is not None else
@@ -120,6 +121,8 @@ def _prepared_factory_result(
         "factory_result_construction_wall_seconds": float(result_construction_seconds),
         "learning_first_source_cache_hits": int(source_cache_hits),
         "learning_first_source_cache_misses": int(source_cache_misses),
+        "pipeline_prepared_ahead_used": int(bool(ahead_preparation_used)),
+        "pipeline_discarded_prefetch_work": int(bool(ahead_preparation_discarded)),
     })
     return prepared
 
@@ -137,7 +140,7 @@ def prepare_factory_training_batch(
     rehearsal_authorities: dict | None = None,
     fresh_support_by_id: dict | None = None,
     semantic_context=None, prepared_source=None, selected_source_authority=None,
-    learning_first_cache=None,
+    learning_first_cache=None, prepared_learning_first_source_inputs=None,
 ) -> PreparedFactoryTrainingBatch:
     """Compile one real Factory draw once, then bind each C02 row into B11.
 
@@ -163,14 +166,16 @@ def prepare_factory_training_batch(
     stage_started = time.perf_counter()
     (source_authority, _adapter, manifest, profile, source_rows,
      prepared_model_sources, prepared_motif_inputs,
-     prepared_b11_sources, prepared_packed_owner) = _prepared_source_inputs(
+     prepared_b11_sources, prepared_packed_owner,
+     ahead_preparation_used, ahead_preparation_discarded) = _prepared_source_inputs(
         prepared_source, source_context, authenticated, rows,
         capability=capability, source_seed=source_seed, source_each=source_each,
         delivery=delivery, rehearsal_by_id=rehearsal_by_id,
         rehearsal_bindings=rehearsal_bindings,
         rehearsal_authorities=rehearsal_authorities,
         selected_source_authority=selected_source_authority,
-        learning_first_cache=learning_first_cache)
+        learning_first_cache=learning_first_cache,
+        prepared_learning_first_source_inputs=prepared_learning_first_source_inputs)
     prepared_source_seconds = time.perf_counter() - stage_started
     source_cache_hits = int(getattr(learning_first_cache, "hits", 0)) - cache_hits_before
     source_cache_misses = (
@@ -196,7 +201,9 @@ def prepare_factory_training_batch(
         prepared_source_seconds=prepared_source_seconds, compile_seconds=compile_seconds,
         b11_binding_seconds=b11_binding_seconds,
         learning_first_cache=learning_first_cache,
-        source_cache_hits=source_cache_hits, source_cache_misses=source_cache_misses)
+        source_cache_hits=source_cache_hits, source_cache_misses=source_cache_misses,
+        ahead_preparation_used=ahead_preparation_used,
+        ahead_preparation_discarded=ahead_preparation_discarded)
 
 
 __all__ = (

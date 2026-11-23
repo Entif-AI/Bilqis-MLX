@@ -19,6 +19,36 @@ from .factory_candidate_components import (
 from .factory_training_bridge import prepare_factory_training_batch
 
 
+def _candidate_stage_metrics(
+        candidate_step_started_at, currentness_binding_wall_seconds,
+        source_lane_wait_wall_seconds, source_lesson_materialization_wall_seconds,
+        mentor_observation_wall_seconds, progress_emission_wall_seconds,
+        observer_begin_step_wall_seconds, candidate_delivery_setup_wall_seconds,
+        pipeline_host_preparation_wall_seconds, pipeline_host_overlap_wall_seconds,
+        pipeline_host_wait_wall_seconds,
+        pipeline_accelerator_wait_for_host_wall_seconds, binding_wall_seconds):
+    return {
+        "candidate_step_started_at": candidate_step_started_at,
+        "source_lane_wait_wall_seconds": float(source_lane_wait_wall_seconds),
+        "source_lesson_materialization_wall_seconds": float(
+            source_lesson_materialization_wall_seconds),
+        "mentor_observation_wall_seconds": float(mentor_observation_wall_seconds),
+        "progress_emission_wall_seconds": float(progress_emission_wall_seconds),
+        "observer_begin_step_wall_seconds": float(observer_begin_step_wall_seconds),
+        "candidate_delivery_setup_wall_seconds": float(
+            candidate_delivery_setup_wall_seconds),
+        "pipeline_host_preparation_wall_seconds": float(
+            pipeline_host_preparation_wall_seconds),
+        "pipeline_host_overlap_wall_seconds": float(
+            pipeline_host_overlap_wall_seconds),
+        "pipeline_host_wait_wall_seconds": float(pipeline_host_wait_wall_seconds),
+        "pipeline_accelerator_wait_for_host_wall_seconds": float(
+            pipeline_accelerator_wait_for_host_wall_seconds),
+        "currentness_binding_wall_seconds": (
+            float(currentness_binding_wall_seconds) + binding_wall_seconds),
+    }
+
+
 def _prepare_candidate_step_inputs(
         run_dir, source_context, parent, atlas_artifact_path, feature_artifact_path,
         delivered_rows, capability, delivery, requested_count, source_seed,
@@ -33,7 +63,10 @@ def _prepare_candidate_step_inputs(
         observer_begin_step_wall_seconds, candidate_delivery_setup_wall_seconds,
         semantic_context,
         prepared_source, accepted_cache, selected_source_authority,
-        learning_first_cache):
+        learning_first_cache, prepared_learning_first_source_inputs,
+        pipeline_host_preparation_wall_seconds,
+        pipeline_host_overlap_wall_seconds,
+        pipeline_host_wait_wall_seconds, pipeline_accelerator_wait_for_host_wall_seconds):
     start = time.perf_counter()
     if candidate_step_started_at is None:
         candidate_step_started_at = start
@@ -41,21 +74,15 @@ def _prepare_candidate_step_inputs(
     cache, generation = _candidate_cache_and_generation(
         run_dir, source_context, parent, candidate, currentness_transaction,
         accepted_cache=accepted_cache)
-    stage_metrics = {
-        "candidate_step_started_at": candidate_step_started_at,
-        "source_lane_wait_wall_seconds": float(source_lane_wait_wall_seconds),
-        "source_lesson_materialization_wall_seconds": float(
-            source_lesson_materialization_wall_seconds),
-        "mentor_observation_wall_seconds": float(mentor_observation_wall_seconds),
-        "progress_emission_wall_seconds": float(progress_emission_wall_seconds),
-        "observer_begin_step_wall_seconds": float(
-            observer_begin_step_wall_seconds),
-        "candidate_delivery_setup_wall_seconds": float(
-            candidate_delivery_setup_wall_seconds),
-        "currentness_binding_wall_seconds": (
-            float(currentness_binding_wall_seconds)
-            + time.perf_counter() - binding_started),
-    }
+    stage_metrics = _candidate_stage_metrics(
+        candidate_step_started_at, currentness_binding_wall_seconds,
+        source_lane_wait_wall_seconds, source_lesson_materialization_wall_seconds,
+        mentor_observation_wall_seconds, progress_emission_wall_seconds,
+        observer_begin_step_wall_seconds, candidate_delivery_setup_wall_seconds,
+        pipeline_host_preparation_wall_seconds, pipeline_host_overlap_wall_seconds,
+        pipeline_host_wait_wall_seconds,
+        pipeline_accelerator_wait_for_host_wall_seconds,
+        time.perf_counter() - binding_started)
     semantic_context_materialized_in_step = semantic_context is None
     pre_neural_started = time.perf_counter()
     prepared = prepare_factory_training_batch(
@@ -71,12 +98,13 @@ def _prepare_candidate_step_inputs(
         semantic_context=semantic_context,
         prepared_source=prepared_source,
         selected_source_authority=selected_source_authority,
-        learning_first_cache=learning_first_cache)
+        learning_first_cache=learning_first_cache,
+        prepared_learning_first_source_inputs=prepared_learning_first_source_inputs)
     prepared_observation = getattr(prepared, "_performance_observation", {})
     if isinstance(prepared_observation, dict):
         stage_metrics.update({
             name: float(value) for name, value in prepared_observation.items()
-            if name.startswith("factory_")
+            if name.startswith(("factory_", "pipeline_"))
         })
     salience_started = time.perf_counter()
     supervision = None
@@ -159,39 +187,32 @@ def _require_mentor_supervision_timed(
 
 def execute_factory_candidate_step(
     run_dir: Path, source_context, parent: CompleteStudent,
-    atlas_artifact_path: str, feature_artifact_path: str, delivered_rows,
-    *,
-    capability: str, delivery, requested_count: int,
-    source_seed: int, source_each: int,
-    optimizer_step_seed: int,
-    visit_provenance: BamfVisitProvenance,
-    teacher_strategy: dict,
-    teacher_hparams,
-    max_norm: float,
-    observation: FactoryDeliveryObservation,
+    atlas_artifact_path: str, feature_artifact_path: str, delivered_rows, *,
+    capability: str, delivery, requested_count: int, source_seed: int,
+    source_each: int, optimizer_step_seed: int,
+    visit_provenance: BamfVisitProvenance, teacher_strategy: dict, teacher_hparams,
+    max_norm: float, observation: FactoryDeliveryObservation,
     rehearsal_by_id: dict | None = None, rehearsal_bindings: dict | None = None,
-    rehearsal_authorities: dict | None = None,
-    fresh_support_by_id: dict | None = None,
-    memory_budget: MemoryBudget | None = None,
-    capture_diagnostics: bool = False,
-    salience_provider=None,
-    mentor_supervision=None,
-    candidate=None,
-    finalize_candidate: bool = True,
-    currentness_transaction=None,
+    rehearsal_authorities: dict | None = None, fresh_support_by_id: dict | None = None,
+    memory_budget: MemoryBudget | None = None, capture_diagnostics: bool = False,
+    salience_provider=None, mentor_supervision=None, candidate=None,
+    finalize_candidate: bool = True, currentness_transaction=None,
     candidate_step_started_at: float | None = None,
     currentness_binding_wall_seconds: float = 0.0,
     upstream_pre_neural_source_compile_wall_seconds: float = 0.0,
-    source_lane_wait_wall_seconds: float = 0.0, source_lesson_materialization_wall_seconds: float = 0.0,
-    mentor_observation_wall_seconds: float = 0.0, progress_emission_wall_seconds: float = 0.0,
-    observer_begin_step_wall_seconds: float = 0.0, candidate_delivery_setup_wall_seconds: float = 0.0,
-    semantic_context=None,
-    prepared_source=None,
-    accepted_cache=None,
-    selected_source_authority=None,
-    learning_first_cache=None,
-    distributed_profile=None,
-    distributed_executor=None,
+    source_lane_wait_wall_seconds: float = 0.0,
+    source_lesson_materialization_wall_seconds: float = 0.0,
+    mentor_observation_wall_seconds: float = 0.0,
+    progress_emission_wall_seconds: float = 0.0,
+    observer_begin_step_wall_seconds: float = 0.0,
+    candidate_delivery_setup_wall_seconds: float = 0.0, semantic_context=None,
+    prepared_source=None, accepted_cache=None, selected_source_authority=None,
+    learning_first_cache=None, prepared_learning_first_source_inputs=None,
+    pipeline_host_preparation_wall_seconds: float = 0.0,
+    pipeline_host_overlap_wall_seconds: float = 0.0,
+    pipeline_host_wait_wall_seconds: float = 0.0,
+    pipeline_accelerator_wait_for_host_wall_seconds: float = 0.0,
+    distributed_profile=None, distributed_executor=None,
 ) -> FactoryCandidateStep:
     """Compose C02→C08→B10/B11→candidate custody without publishing state.
 
@@ -218,7 +239,11 @@ def execute_factory_candidate_step(
         observer_begin_step_wall_seconds, candidate_delivery_setup_wall_seconds,
         semantic_context,
         prepared_source, accepted_cache, selected_source_authority,
-        learning_first_cache)
+        learning_first_cache, prepared_learning_first_source_inputs,
+        pipeline_host_preparation_wall_seconds,
+        pipeline_host_overlap_wall_seconds,
+        pipeline_host_wait_wall_seconds,
+        pipeline_accelerator_wait_for_host_wall_seconds)
     _require_mentor_supervision_timed(
         mentor_supervision, observation, parent, cache, teacher_strategy,
         source_seed, stage_metrics)

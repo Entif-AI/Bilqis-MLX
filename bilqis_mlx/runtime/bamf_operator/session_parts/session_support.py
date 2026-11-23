@@ -59,6 +59,14 @@ class BamfOperatorResult:
     source_prefetch_overlap_seconds: float = 0.0
     source_prefetch_prepared_steps: int = 0
     source_prefetch_serial_steps: int = 0
+    pipeline_submitted_steps: int = 0
+    pipeline_prepared_steps: int = 0
+    pipeline_discarded_steps: int = 0
+    pipeline_discarded_preparation_seconds: float = 0.0
+    pipeline_host_preparation_seconds: float = 0.0
+    pipeline_host_overlap_seconds: float = 0.0
+    pipeline_host_wait_seconds: float = 0.0
+    pipeline_accelerator_wait_for_host_seconds: float = 0.0
     admission_status: str | None = None
     admission_advances: int = 0
     elapsed_seconds: float = 0.0

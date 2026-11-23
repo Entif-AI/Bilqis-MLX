@@ -34,6 +34,14 @@ class SourcePrefetchMetrics:
     serial_steps: int = 0
     wait_seconds: float = 0.0
     overlap_seconds: float = 0.0
+    pipeline_submitted_steps: int = 0
+    pipeline_prepared_steps: int = 0
+    pipeline_discarded_steps: int = 0
+    pipeline_discarded_preparation_seconds: float = 0.0
+    pipeline_host_preparation_seconds: float = 0.0
+    pipeline_host_overlap_seconds: float = 0.0
+    pipeline_host_wait_seconds: float = 0.0
+    pipeline_accelerator_wait_for_host_seconds: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -50,6 +58,7 @@ class CandidateLessonRows:
     fresh_support_authority: object = None
     fresh_support_unavailable_reason: str | None = None
     fresh_support_depth_control: str | None = None
+    prefetch_identity: str | None = None
 
     @property
     def delivered(self) -> tuple:
@@ -195,7 +204,7 @@ class CandidateSourceLane:
             tuple(request.get("rehearsal_bindings", ())),
             tuple(self.rehearsal_custody.pop(ordinal, ())),
             tuple(fresh_support), fresh_binding, fresh_authority,
-            fresh_reason, fresh_control)
+            fresh_reason, fresh_control, request["identity"])
 
     def rows(self, ordinal: int):
         return self.lesson(ordinal).direct
