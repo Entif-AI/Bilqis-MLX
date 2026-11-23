@@ -13,6 +13,7 @@ from bilqis_mlx.learning.teacher_lineage import (
 from bilqis_mlx.learning.teacher_lineage import restore_teacher_lineage
 from bilqis_mlx.learning.teacher_lineage_records import digest, invalid
 from bilqis_mlx.runtime.accepted_teacher_custody import BoundTeacherVisit
+from bilqis_mlx.semantic_sampling import DEFAULT_BINARY_BALANCE
 
 
 TRAJECTORY_SCHEMA = "bilqis.bamf.c16.3-teacher-trajectory/v1"
@@ -120,6 +121,7 @@ def select_foundation_priority_visit(
     from bilqis_mlx.learning.learning_experiment import Settings
     from bilqis_mlx.runtime.accepted_priority_visit import select_accepted_priority_visit
     from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
+    from bilqis_mlx.runtime.logical_batch import BamfLogicalBatchContract
     from bilqis_mlx.runtime.priority_authority import issue_foundation_priority_authority
 
     parent = load_accepted_generation(run_dir)
@@ -141,6 +143,9 @@ def select_foundation_priority_visit(
         }
     if progress is not None:
         progress("teacher: selecting current priority visit")
+    selected_source_each = (
+        DEFAULT_BINARY_BALANCE.minimum_total if logical_batch_size is None
+        else BamfLogicalBatchContract(logical_batch_size).direct_source_rows)
     result = select_accepted_priority_visit(
         run_dir, source_context, authority.frontier, authority.history,
         authority.planning,
@@ -149,6 +154,9 @@ def select_foundation_priority_visit(
         program=program, now=authority.now,
         lawful_frontier=authority.lawful_frontier,
         cadence_authorization=authority.selection_cadence,
+        selected_source_each=selected_source_each,
+        planning_offer_fanout_wall_seconds=(
+            authority.planning_offer_fanout_wall_seconds),
         total_capabilities=len(source_context.release.execution_plan.capabilities),
         accepted_parent=parent, planning_generation=authority.planning_generation,
         resource_holds=resource_holds, **bootstrap)

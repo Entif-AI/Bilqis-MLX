@@ -53,6 +53,7 @@ def test_accepted_selection_calls_policy_once(priority):
         current_json: str
     epoch = Epoch('{}')
     option = SimpleNamespace(stable_id='o', action_kind=3, eligible_since=7,
+        salience_inputs_digest='s' * 64,
         downstream_unlocks=2, context=SimpleNamespace(capability_id='cap', scope='scope'))
     frontier = SimpleNamespace(evidence=(('o', 'evidence'),))
     parent = SimpleNamespace(retained_state='student', run_identity=SimpleNamespace(digest='run', run_seed=5), generation=4)
@@ -80,14 +81,25 @@ def test_accepted_selection_calls_policy_once(priority):
          patch.object(priority, 'derive_teacher_visit_identity', return_value=identity), \
          patch.object(priority, 'record_teacher_visit_identity', return_value='recorded'), \
          patch.object(priority, '_issue_bound_visit', return_value=Visit(identity)), \
+         patch.object(priority, 'expand_selected_priority_source_offer',
+                      side_effect=lambda offer, *_args, **_kwargs: SimpleNamespace(
+                          source_each=32, capability_id=offer.capability_id,
+                          source_seed=offer.source_seed,
+                          source_authority=SimpleNamespace(content_sha256='f' * 64),
+                          _planning_generation=offer._planning_generation)) as expand, \
          patch.object(priority.time, 'perf_counter', side_effect=(10.0, 10.25)):
         result = priority.select_accepted_priority_visit('/run', SimpleNamespace(release=None), frontier, None, None,
             (('o', qualified.offers[0][1]),), None, school, None, None,
-            program=None, now=1, lawful_frontier=lawful())
+            program=None, now=1, lawful_frontier=lawful(), selected_source_each=32,
+            planning_offer_fanout_wall_seconds=0.5)
     assert result.status == 'TEACHER_SELECTED'
     assert result.policy == {'lr': 0.5}
     assert result.source_materialization_wall_seconds == 0.25
     assert result.ranking_evidence['dispatch_tier'] == 1
+    assert result.ranking_evidence['salience_inputs_digest'] == 's' * 64
+    assert result.ranking_evidence['planning_source_receipt_sha256'] == 'p' * 64
+    assert result.ranking_evidence['selected_source_receipt_sha256'] == 'f' * 64
+    assert result.planning_offer_fanout_wall_seconds == 0.5
     policy.assert_called_once()
     assert policy.call_args.args[2] == 'cap'
     current_projection.assert_called_once_with('/run', parent, cache, base_projection.return_value)
@@ -96,6 +108,48 @@ def test_accepted_selection_calls_policy_once(priority):
         'diagnostics': {'salience': 'verified'},
     }
     assert result.metadata['selected_teacher_snapshot_required'] is False
+    expand.assert_called_once()
+    assert expand.call_args.args[0] is qualified.offers[0][1]
+    assert expand.call_args.kwargs['source_each'] == 32
+    assert result.offer.source_each == 32
+
+
+def test_selected_offer_expansion_failure_never_issues_policy_or_visit(priority):
+    option = SimpleNamespace(
+        stable_id='o', action_kind=3, eligible_since=7, downstream_unlocks=2,
+        salience_inputs_digest='s' * 64,
+        context=SimpleNamespace(capability_id='cap', scope='scope'))
+    frontier = SimpleNamespace(evidence=(('o', 'evidence'),))
+    parent = SimpleNamespace(retained_state='student')
+    school = SimpleNamespace(
+        stage='MAIN', current_student=SimpleNamespace(sha256='student-id'))
+    offer = Offer()
+    qualified = SimpleNamespace(
+        ranked=SimpleNamespace(ordered=(option,), tiers=(('o', 1),)),
+        offers=(('o', offer),), holds=())
+    with patch.object(priority, '_accepted_parent', return_value=(parent, object())), \
+         patch.object(priority, '_c03_projection', return_value=SimpleNamespace(teacher_state={})), \
+         patch.object(priority, 'current_teacher_projection', side_effect=lambda run, parent, cache, projection: projection), \
+         patch.object(priority, 'restore_teacher_lineage', return_value='epoch'), \
+         patch.object(priority, 'candidate_identity_for_canonical_consumer', return_value='student-id'), \
+         patch.object(priority, '_teacher', return_value={}), \
+         patch.object(priority, 'contract_digest', return_value='epoch-digest'), \
+         patch.object(priority, 'salience_priority_features', return_value={}), \
+         patch.object(priority, 'requalify_priority', return_value=qualified), \
+         patch.object(priority, '_grade', return_value='g'), \
+         patch.object(priority, 'expand_selected_priority_source_offer', side_effect=ValueError('held')), \
+         patch.object(priority, 'select_visit_policy') as policy, \
+         patch.object(priority, 'derive_teacher_visit_identity') as identity, \
+         patch.object(priority, '_issue_bound_visit') as visit:
+        result = priority.select_accepted_priority_visit(
+            '/run', SimpleNamespace(release=None), frontier, None, None,
+            (('o', offer),), None, school, None, None,
+            program=None, now=1, lawful_frontier=lawful(), selected_source_each=32)
+    assert result.status == 'NO_ADMISSIBLE_TEACHING'
+    assert result.holds == (('o', 'SOURCE_OFFER_HELD'),)
+    policy.assert_not_called()
+    identity.assert_not_called()
+    visit.assert_not_called()
 
 
 @pytest.mark.parametrize('grades', [

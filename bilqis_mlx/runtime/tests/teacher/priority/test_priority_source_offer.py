@@ -82,6 +82,100 @@ def test_priority_offer_qualifies_source_without_heavy_context_or_prefix_build()
         fixture.doCleanups()
 
 
+def test_selected_offer_expansion_reuses_seed_and_issues_full_fresh_authority():
+    from bilqis_mlx.runtime import priority_source_offer as offer_module
+    from bilqis_mlx.runtime import priority_planning_generation as planning_module
+    from bilqis_mlx.runtime.tests.batch import test_atlas_training_adapter as fixture_module
+
+    fixture = fixture_module.AtlasTrainingAdapterTest()
+    fixture.setUp()
+    try:
+        context = replace(
+            fixture.context, run_dir=Path("/run"), source_root=Path("/source"))
+        planning = object.__new__(planning_module.PriorityPlanningGeneration)
+        object.__setattr__(planning, "_issuance", planning_module._PLANNING_ISSUER)
+        object.__setattr__(
+            planning, "_target_registrar",
+            SimpleNamespace(register=lambda *_args, **_kwargs: None))
+        cache = SimpleNamespace(
+            accepted_manifest_sha256="a" * 64,
+            generation_binding="b" * 64)
+        authenticated = SimpleNamespace(
+            receipt=SimpleNamespace(
+                generation_manifest_sha256=cache.accepted_manifest_sha256),
+            features=SimpleNamespace(semantic_release="0" * 64))
+        with patch.object(
+                offer_module, "_require_planning_generation",
+                return_value=(cache, authenticated)):
+            planning_offer = offer_module.prepare_priority_source_offer(
+                context, object(), "unused", capability="Z.C0",
+                source_seed=17, source_each=4,
+                planning_generation=planning)
+            selected_offer = offer_module.expand_selected_priority_source_offer(
+                planning_offer, context, object(), source_each=32)
+
+        assert planning_offer.source_each == 4
+        assert len(planning_offer.rows()) == 4
+        assert selected_offer.source_each == 32
+        assert len(selected_offer.rows()) == 32
+        assert selected_offer.source_seed == planning_offer.source_seed == 17
+        assert selected_offer._planning_generation is planning
+        assert selected_offer.source_authority is not planning_offer.source_authority
+        assert selected_offer.source_authority.each == 32
+        assert context._source_preparation_metrics.provider_draws == 2
+    finally:
+        fixture.doCleanups()
+
+
+def test_selected_offer_expansion_rejects_provider_continuity_drift():
+    from bilqis_mlx.runtime import priority_source_offer as offer_module
+    from bilqis_mlx.runtime import priority_planning_generation as planning_module
+    from bilqis_mlx.runtime.tests.batch import test_atlas_training_adapter as fixture_module
+
+    fixture = fixture_module.AtlasTrainingAdapterTest()
+    fixture.setUp()
+    try:
+        context = replace(
+            fixture.context, run_dir=Path("/run"), source_root=Path("/source"))
+        planning = object.__new__(planning_module.PriorityPlanningGeneration)
+        object.__setattr__(planning, "_issuance", planning_module._PLANNING_ISSUER)
+        object.__setattr__(
+            planning, "_target_registrar",
+            SimpleNamespace(register=lambda *_args, **_kwargs: None))
+        cache = SimpleNamespace(
+            accepted_manifest_sha256="a" * 64,
+            generation_binding="b" * 64)
+        authenticated = SimpleNamespace(
+            receipt=SimpleNamespace(
+                generation_manifest_sha256=cache.accepted_manifest_sha256),
+            features=SimpleNamespace(semantic_release="0" * 64))
+        with patch.object(
+                offer_module, "_require_planning_generation",
+                return_value=(cache, authenticated)):
+            planning_offer = offer_module.prepare_priority_source_offer(
+                context, object(), "unused", capability="Z.C0",
+                source_seed=17, source_each=4,
+                planning_generation=planning)
+            original_prepare = offer_module.prepare_priority_source_offer
+
+            def drifted_prepare(*args, **kwargs):
+                expanded = original_prepare(*args, **kwargs)
+                object.__setattr__(
+                    expanded.source_authority, "provider_implementation_sha256",
+                    "provider-drift")
+                return expanded
+
+            with patch.object(
+                    offer_module, "prepare_priority_source_offer",
+                    side_effect=drifted_prepare), pytest.raises(BilqisError) as error:
+                offer_module.expand_selected_priority_source_offer(
+                    planning_offer, context, object(), source_each=32)
+        assert error.value.context["reason"] == (
+            "BAMF_PRIORITY_SELECTED_SOURCE_EXPANSION_DRIFT")
+    finally:
+        fixture.doCleanups()
+
+
 @pytest.mark.parametrize('kind', ['SOURCE', 'RIGHTS'])
 def test_lightweight_priority_offer_holds_before_materialization(kind):
     from bilqis_mlx.runtime import priority_source_offer as offer_module
