@@ -1,6 +1,7 @@
 """Private Factory-owned C05 screening and baseline issuance."""
 from dataclasses import replace
 
+from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.learning._atlas_candidate.identity_binding import (
     bind_candidate_identity_or_fallback, candidate_identity_binding_for_state,
     candidate_identity_for_canonical_consumer,
@@ -222,7 +223,8 @@ def _issue_factory_evaluation(
             parent_identity_sha256
             if isinstance(parent_identity_sha256, str)
             else cached_parent_identity)
-    if not isinstance(parent_identity, str) or len(parent_identity) != 64:
+    if (not isinstance(parent_identity, str)
+            or len(parent_identity) != SHA256_HEX_LENGTH):
         _invalid("BAMF_C05_PARENT_IDENTITY_REQUIRED")
     if strict:
         candidate_identity = candidate_identity_for_canonical_consumer(

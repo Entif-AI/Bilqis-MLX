@@ -45,6 +45,7 @@ from .capability_evaluation import _invalid
 _LEGACY_BATCH_ROWS = 24
 _LEGACY_POSITION_LIMIT = 96
 _MIN_SHARED_BATCH_ROWS = 2
+_MIN_RAGGED_PARTITION_ROWS = _MIN_SHARED_BATCH_ROWS * 2
 _ACTIVATION_POSITION_BUDGET = _LEGACY_BATCH_ROWS * _LEGACY_POSITION_LIMIT
 _ATTENTION_POSITION_BUDGET = _LEGACY_BATCH_ROWS * _LEGACY_POSITION_LIMIT ** 2
 _RAGGED_LINEAR_COST_RATIO = 0.90
@@ -105,7 +106,7 @@ def _learning_first_partition_indices(items) -> tuple[tuple[int, ...], ...]:
     """Split one ragged ordinary C05 chunk only when padding waste is substantial."""
     count = len(items)
     whole = (tuple(range(count)),)
-    if count < 4:
+    if count < _MIN_RAGGED_PARTITION_ROWS:
         return whole
     widths = tuple(_positions(item) for item in items)
     if any(width < 1 for width in widths):

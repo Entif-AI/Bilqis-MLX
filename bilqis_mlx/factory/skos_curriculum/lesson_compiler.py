@@ -29,7 +29,7 @@ def _ordered_other(
     """Select from one ordered set with a known member removed."""
     width = len(ordered) - 1
     if width < 1:
-        raise ValueError("source lesson contrast pool exhausted")
+        _fail("BAMF_SOURCE_LESSON_CONTRAST_POOL_EXHAUSTED")
     selected = position % width
     if selected >= own_index:
         selected += 1

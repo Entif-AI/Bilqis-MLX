@@ -1,5 +1,6 @@
 """Learning-first ahead-preparation identities and candidate-local caches."""
 from dataclasses import dataclass, field
+from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.factory.teaching import content_digest
 from bilqis_mlx.runtime.bamf_bundle import is_authenticated_generation_feature_context
 from bilqis_mlx.runtime.source_execution import SourceExecutionContext
@@ -53,7 +54,8 @@ def prepare_learning_first_source_inputs_ahead(
             or type(source_seed) is not int or source_seed < 0
             or type(source_each) is not int or source_each < 1
             or (source_identity is not None and (
-                not isinstance(source_identity, str) or len(source_identity) != 64
+                not isinstance(source_identity, str)
+                or len(source_identity) != SHA256_HEX_LENGTH
                 or any(char not in "0123456789abcdef" for char in source_identity)))):
         _invalid("LEARNING_FIRST_AHEAD_PREPARATION_INVALID")
     binding = _learning_first_preparation_binding(source_context, authenticated)
@@ -83,7 +85,8 @@ def _prepared_ahead_matches(
     binding = _learning_first_preparation_binding(source_context, authenticated)
     packet_bound = source_identity is not None
     if packet_bound:
-        if (not isinstance(source_identity, str) or len(source_identity) != 64
+        if (not isinstance(source_identity, str)
+                or len(source_identity) != SHA256_HEX_LENGTH
                 or any(char not in "0123456789abcdef" for char in source_identity)
                 or prepared.source_identity != source_identity):
             return False

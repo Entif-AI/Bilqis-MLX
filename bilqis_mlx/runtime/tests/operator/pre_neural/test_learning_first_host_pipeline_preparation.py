@@ -5,6 +5,7 @@ import unittest
 from unittest.mock import patch
 
 from bilqis_mlx.factory.teaching import content_digest, describe_delivered_teaching
+import bilqis_mlx.runtime.factory_training_preparation as training_preparation
 from bilqis_mlx.runtime.backbone_identity import execution_generation_digest
 from bilqis_mlx.runtime.bamf_operator.session import _execution_context
 from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
@@ -79,14 +80,17 @@ class LearningFirstHostPipelinePreparationTests(
                 visit_provenance=visit_provenance("B.AND"),
                 teacher_strategy={"policy": "learning-first"},
                 learning_first_cache=LearningFirstPreparationCache())
-            pipelined = prepare_factory_training_batch(
-                context, parent, atlas_path, feature_path, rows, generation,
-                capability="B.AND", delivery=delivery, requested_count=4,
-                source_seed=12345, source_each=4, optimizer_step_seed=7,
-                visit_provenance=visit_provenance("B.AND"),
-                teacher_strategy={"policy": "learning-first"},
-                learning_first_cache=LearningFirstPreparationCache(),
-                prepared_learning_first_source_inputs=ahead)
+            with patch.object(
+                    training_preparation, "_prepare_learning_first_model_sources",
+                    side_effect=AssertionError("ahead preparation recomputed")):
+                pipelined = prepare_factory_training_batch(
+                    context, parent, atlas_path, feature_path, rows, generation,
+                    capability="B.AND", delivery=delivery, requested_count=4,
+                    source_seed=12345, source_each=4, optimizer_step_seed=7,
+                    visit_provenance=visit_provenance("B.AND"),
+                    teacher_strategy={"policy": "learning-first"},
+                    learning_first_cache=LearningFirstPreparationCache(),
+                    prepared_learning_first_source_inputs=ahead)
 
         self.assertEqual(control.training_batch.authority_digest,
                          pipelined.training_batch.authority_digest)
@@ -98,10 +102,6 @@ class LearningFirstHostPipelinePreparationTests(
         self.assertEqual(
             tuple(row.model_input.eligibility_digest for row in control.training_batch.rows),
             tuple(row.model_input.eligibility_digest for row in pipelined.training_batch.rows))
-        self.assertEqual(
-            pipelined._performance_observation["pipeline_prepared_ahead_used"], 1)
-        self.assertEqual(
-            pipelined._performance_observation["pipeline_discarded_prefetch_work"], 0)
 
     def test_validated_source_packet_identity_skips_downstream_content_rehash(self):
         _parent, context, _atlas_path, _feature_path, rows, _delivery, _generation = (
@@ -133,17 +133,18 @@ class LearningFirstHostPipelinePreparationTests(
                 source_seed=12345, source_each=4, optimizer_step_seed=7,
                 visit_provenance=visit_provenance("B.AND"),
                 teacher_strategy={"policy": "learning-first"})
-            recovered = prepare_factory_training_batch(
-                context, parent, atlas_path, feature_path, rows, generation,
-                capability="B.AND", delivery=delivery, requested_count=4,
-                source_seed=12345, source_each=4, optimizer_step_seed=7,
-                visit_provenance=visit_provenance("B.AND"),
-                teacher_strategy={"policy": "learning-first"},
-                prepared_learning_first_source_inputs=tampered)
+            original = training_preparation._prepare_learning_first_model_sources
+            with patch.object(
+                    training_preparation, "_prepare_learning_first_model_sources",
+                    wraps=original) as recompute:
+                recovered = prepare_factory_training_batch(
+                    context, parent, atlas_path, feature_path, rows, generation,
+                    capability="B.AND", delivery=delivery, requested_count=4,
+                    source_seed=12345, source_each=4, optimizer_step_seed=7,
+                    visit_provenance=visit_provenance("B.AND"),
+                    teacher_strategy={"policy": "learning-first"},
+                    prepared_learning_first_source_inputs=tampered)
 
         self.assertEqual(control.training_batch.authority_digest,
                          recovered.training_batch.authority_digest)
-        self.assertEqual(
-            recovered._performance_observation["pipeline_prepared_ahead_used"], 0)
-        self.assertEqual(
-            recovered._performance_observation["pipeline_discarded_prefetch_work"], 1)
+        recompute.assert_called_once()

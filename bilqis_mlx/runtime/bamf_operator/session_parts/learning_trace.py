@@ -1,7 +1,11 @@
 """Minimal ordinary-mode facts that change future teacher learning policy."""
 from __future__ import annotations
 
+from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.runtime.bamf_operator.evidence_parts.support import candidate_attempt_id
+
+def _invalid(reason: str) -> None:
+    ErrorBus.raise_(SCHOOL.BAMF_FIRST_STUDENT.INVALID, reason=reason)
 
 
 _CONTROL_FIELDS = (
@@ -39,7 +43,7 @@ class CandidateLearningTrace:
     def delivery(self, _release, _capability, step, rows, **facts):
         expected = self.parent_optimizer_step + self._steps + 1
         if type(step) is not int or step != expected or not rows:
-            raise ValueError("BAMF_LEARNING_TRACE_STEP_INVALID")
+            _invalid("BAMF_LEARNING_TRACE_STEP_INVALID")
         size = len(rows)
         if self._batch_size is None:
             self._batch_size = size
@@ -53,7 +57,7 @@ class CandidateLearningTrace:
 
     def summary(self) -> dict:
         if self._steps < 1 or not self._batch_size:
-            raise ValueError("BAMF_LEARNING_TRACE_EMPTY")
+            _invalid("BAMF_LEARNING_TRACE_EMPTY")
         return {
             "attempt_id": self.attempt_id,
             "candidate_steps": self._steps,

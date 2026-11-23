@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from contextvars import ContextVar
 
-from ..atlas_projection import FrozenAtlasSnapshot
+from ..atlas_projection import FrozenAtlasSnapshot, _fail
 from bilqis_mlx.b11_observation import note_atlas_reload
 from .snapshot_contracts import (
     AtlasArtifactIdentity, AtlasArtifactSelection, _require_registered_source_pin,
@@ -21,7 +21,7 @@ def reuse_pinned_atlas_snapshot(
     """Reuse one already-authenticated immutable pin inside an owner-scoped operation."""
     if (type(selection) is not AtlasArtifactSelection
             or type(snapshot) is not FrozenAtlasSnapshot):
-        raise TypeError("ATLAS_PROCESS_SNAPSHOT_REUSE_INVALID")
+        _fail("ATLAS_PROCESS_SNAPSHOT_REUSE_INVALID")
     token = _PROCESS_OWNED_SNAPSHOT.set((selection, snapshot))
     try:
         yield snapshot

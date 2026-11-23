@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 
+from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.compatibility.source_adapter_resume import (
     predecessor_compatible_source_registry,
 )
@@ -28,6 +29,9 @@ from bilqis_mlx.runtime.candidate_staging import (
     load_staged_candidates,
     persist_staged_candidate,
 )
+
+def _invalid(reason: str) -> None:
+    ErrorBus.raise_(SCHOOL.BAMF_FIRST_STUDENT.INVALID, reason=reason)
 
 
 def _repo_root() -> Path:
@@ -89,7 +93,7 @@ def _candidate_frontier_from_trust_identity(
     output = Path(run_dir) / "candidate-frontier"
     if (type(trust_identity) is not CandidateFrontierTrustIdentity
             or trust_identity.factory_release_sha256 != factory_release_sha256):
-        raise ValueError("BAMF_PLANNER_FRONTIER_TRUST_IDENTITY_INVALID")
+        _invalid("BAMF_PLANNER_FRONTIER_TRUST_IDENTITY_INVALID")
     builder_sha256 = trust_identity.builder_sha256
     input_digest = trust_identity.input_digest
     from bilqis_mlx.runtime.planner_frontier_trust import (

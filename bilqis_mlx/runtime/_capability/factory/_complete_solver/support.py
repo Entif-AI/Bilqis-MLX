@@ -16,6 +16,8 @@ from ..capability_evaluation import _invalid
 from ..factory_evaluation_compiler import CompiledFactoryEvaluationCase
 from ..factory_task_template import _source_task_owner, _source_view
 
+_LOWERED_TASK_PAIR_ARITY = 2
+
 
 @dataclass(frozen=True)
 class FactoryEvaluationInstrument:
@@ -148,7 +150,8 @@ def factory_evaluation_case_from_source(
         release=source_context.release,
         capability=execution,
     )
-    if (not isinstance(lowered, tuple) or len(lowered) != 2
+    if (not isinstance(lowered, tuple)
+            or len(lowered) != _LOWERED_TASK_PAIR_ARITY
             or type(lowered[0]) is not TaskGoal
             or type(lowered[1]) is not OperatorBinding
             or lowered[0].goal_id != row_id):

@@ -12,6 +12,8 @@ from .cognitive_solver_common import (
 )
 from .operator_registry import RouteKind
 
+_MAX_OPERATION_LIMIT = 64
+
 
 @dataclass(frozen=True)
 class CapabilityResult:
@@ -54,7 +56,7 @@ class CapabilityResult:
                     self.rights_epoch, self.correction_generation,
                     self.reserved_operations))
                 or type(self.operation_limit) is not int
-                or not 1 <= self.operation_limit <= 64
+                or not 1 <= self.operation_limit <= _MAX_OPERATION_LIMIT
                 or sum(item.operation_count for item in self.dag_receipts)
                 + self.reserved_operations > self.operation_limit
                 or any(item.source_binding_digest != self.source_binding_digest
