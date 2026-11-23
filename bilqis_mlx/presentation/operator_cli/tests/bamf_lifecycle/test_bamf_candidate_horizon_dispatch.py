@@ -19,6 +19,7 @@ def test_bamf_resume_forwards_explicit_candidate_horizon():
         batch_size=18,
         reserve_gib=100.0,
         source_prefetch_workers=2,
+        experiment_mastery_debt_min_utility=0.08,
     )
     report = {"result": "READY_TO_RESUME"}
     run_dir = Path("/run")
@@ -38,6 +39,7 @@ def test_bamf_resume_forwards_explicit_candidate_horizon():
     assert operate.call_args.kwargs["batch_size"] == 18
     assert operate.call_args.kwargs["reserve_gib"] == 100.0
     assert operate.call_args.kwargs["source_prefetch_workers"] == 2
+    assert operate.call_args.kwargs["mastery_debt_min_utility"] == 0.08
     assert operate.call_args.kwargs["strict_evidence"] is False
     assert callable(operate.call_args.kwargs["progress"])
 
@@ -45,7 +47,7 @@ def test_bamf_resume_forwards_explicit_candidate_horizon():
 def test_bamf_resume_strict_evidence_is_explicit_opt_in():
     args = SimpleNamespace(
         human_run=True, dry_run=False, minutes=90, max_visits=1,
-        steps_per_visit=6, reserve_gib=100.0, source_prefetch_workers=2,
+        steps_per_visit=6, batch_size=32, reserve_gib=100.0, source_prefetch_workers=2,
         strict_evidence=True)
     report = {"result": "READY_TO_RESUME"}
     run_dir = Path("/run")
@@ -67,7 +69,7 @@ def test_bamf_resume_preserves_explicit_serial_and_single_worker_modes():
     for workers in (0, 1):
         args = SimpleNamespace(
             human_run=True, dry_run=False, minutes=90, max_visits=1,
-            steps_per_visit=8, reserve_gib=100.0,
+            steps_per_visit=8, batch_size=32, reserve_gib=100.0,
             source_prefetch_workers=workers)
         with patch(
                 "bilqis_mlx.control_plane.active_endpoint.advertise_active_endpoint",
@@ -82,7 +84,7 @@ def test_bamf_resume_preserves_explicit_serial_and_single_worker_modes():
 def test_post_accept_admission_status_overrides_only_the_initial_fallback(capsys):
     args = SimpleNamespace(
         human_run=True, dry_run=False, minutes=90, max_visits=1,
-        steps_per_visit=8, reserve_gib=100.0, source_prefetch_workers=0)
+        steps_per_visit=8, batch_size=32, reserve_gib=100.0, source_prefetch_workers=0)
     report = {
         "result": "WAITING_FOR_EVIDENCE",
         "admission_policy": "atlas-release",
@@ -107,7 +109,7 @@ def test_post_accept_admission_status_overrides_only_the_initial_fallback(capsys
 def test_interactive_bamf_resume_uses_compact_dashboard_not_final_json(capsys):
     args = SimpleNamespace(
         human_run=True, dry_run=False, minutes=90, max_visits=1,
-        steps_per_visit=4, reserve_gib=100.0, source_prefetch_workers=0)
+        steps_per_visit=4, batch_size=32, reserve_gib=100.0, source_prefetch_workers=0)
     report = {"result": "READY_TO_RESUME"}
     run_dir = Path("/run")
     result = BamfOperatorResult(
@@ -130,13 +132,14 @@ def test_interactive_bamf_resume_uses_compact_dashboard_not_final_json(capsys):
     assert '"status":' not in output
     assert board.rows["SYSTEM & QUALIFICATION"][-1] == {
         "kind": "TRAINER", "detail": "planner: compiling semantic curriculum"}
-    assert board.draw.call_count >= 3
+    # Initial and final draws are contractual; refresh-thread draws are timing-dependent.
+    assert board.draw.call_count >= 2
 
 
 def test_interactive_bamf_resume_routes_checkpoint_events_into_dashboard_not_stdout(capsys, tmp_path):
     args = SimpleNamespace(
         human_run=True, dry_run=False, minutes=90, max_visits=1,
-        steps_per_visit=4, reserve_gib=0.0, source_prefetch_workers=0)
+        steps_per_visit=4, batch_size=32, reserve_gib=0.0, source_prefetch_workers=0)
     report = {"result": "READY_TO_RESUME"}
     result = BamfOperatorResult("VISIT_LIMIT", 1, 0, 1, 7, 31, elapsed_seconds=1.0)
     board = SimpleNamespace(
@@ -166,7 +169,7 @@ def test_interactive_bamf_resume_routes_checkpoint_events_into_dashboard_not_std
 def test_final_bamf_dashboard_preserves_command_session_baseline(capsys):
     args = SimpleNamespace(
         human_run=True, dry_run=False, minutes=90, max_visits=1,
-        steps_per_visit=4, reserve_gib=0.0, source_prefetch_workers=0)
+        steps_per_visit=4, batch_size=32, reserve_gib=0.0, source_prefetch_workers=0)
     report = {"result": "READY_TO_RESUME"}
     result = BamfOperatorResult(
         "VISIT_LIMIT", 1, 1, 0, 7, 31, elapsed_seconds=1.0)

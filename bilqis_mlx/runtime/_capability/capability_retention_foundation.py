@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+from decimal import Decimal, ROUND_HALF_UP
 
 from ..semantics.domains import contract_digest
 from .capability_evaluation import (
@@ -23,6 +24,19 @@ from .foundation_evidence import (
 _PAIR_WIDTH = 2
 _MIN_PROBE_EACH = 2
 _MAX_PROBE_EACH = 48
+MASTERY_DEBT_UTILITY_SCALE = 1_000_000
+
+
+def mastery_debt_utility_margin_units(value: float) -> int:
+    """Encode a launch-time utility threshold as deterministic millionths."""
+    if type(value) not in (int, float):
+        _invalid("BAMF_FOUNDATION_RETENTION_POLICY_INVALID")
+    decimal = Decimal(str(value))
+    if not decimal.is_finite() or decimal < 0:
+        _invalid("BAMF_FOUNDATION_RETENTION_POLICY_INVALID")
+    return int(
+        (decimal * MASTERY_DEBT_UTILITY_SCALE).to_integral_value(
+            rounding=ROUND_HALF_UP))
 
 
 @dataclass(frozen=True)
@@ -34,6 +48,7 @@ class FoundationRetentionPolicy:
     probe_each: int
     fixed_census_digest: str
     baseline_coverage: BaselineCoverage | None = None
+    mastery_debt_min_utility_units: int = 50_000
     schema_version: str = "bilqis.c05.foundation-retention-policy/v2"
 
     def __post_init__(self):
@@ -59,8 +74,17 @@ class FoundationRetentionPolicy:
                          or set(self.baseline_coverage.measured_capabilities)
                          | set(self.baseline_coverage.unmeasured_capabilities)
                          != set(dict(self.capability_groups))))
+                or type(self.mastery_debt_min_utility_units) is not int
+                or self.mastery_debt_min_utility_units < 0
                 or self.schema_version != "bilqis.c05.foundation-retention-policy/v2"):
             _invalid("BAMF_FOUNDATION_RETENTION_POLICY_INVALID")
+
+    @property
+    def mastery_debt_min_utility(self):
+        return self.mastery_debt_min_utility_units / MASTERY_DEBT_UTILITY_SCALE
+
+    def mastery_debt_utility_exceeds_margin(self, utility):
+        return utility * MASTERY_DEBT_UTILITY_SCALE > self.mastery_debt_min_utility_units
 
     def digest(self):
         return contract_digest(self)
@@ -231,7 +255,8 @@ def evaluate_foundation_fixed_school_candidate_with_evidence(
 
 
 __all__ = (
-    "FoundationRetentionPolicy", "evaluate_foundation_fixed_school_candidate",
+    "FoundationRetentionPolicy", "MASTERY_DEBT_UTILITY_SCALE",
+    "mastery_debt_utility_margin_units", "evaluate_foundation_fixed_school_candidate",
     "evaluate_foundation_fixed_school_candidate_with_evidence",
     "evaluate_foundation_retention_candidate", "retain_foundation_candidate",
 )

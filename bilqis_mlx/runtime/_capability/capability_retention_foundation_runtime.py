@@ -10,6 +10,17 @@ from .capability_evaluation import Assessment, EvidenceStage, _invalid
 from .capability_retention import AssessmentPair, Decision, DecisionStatus
 
 
+def _mastery_debt_min_utility(policy):
+    return float(getattr(policy, "mastery_debt_min_utility", 0.0))
+
+
+def _mastery_debt_utility_exceeds_margin(policy, utility):
+    exact_check = getattr(policy, "mastery_debt_utility_exceeds_margin", None)
+    if callable(exact_check):
+        return exact_check(utility)
+    return float(utility) > _mastery_debt_min_utility(policy)
+
+
 def observed_assessment(
         solver, cohort, generation, observer, completed, total, subject, role,
         *, evaluator):
@@ -107,6 +118,7 @@ def _fixed_school_score_context(
         ],
         "policy_sha256": policy.digest(),
         "probe_each": policy.probe_each,
+        "mastery_debt_min_utility": _mastery_debt_min_utility(policy),
         "baseline_coverage": (coverage.to_record() if coverage is not None else None),
     }
     if fixed.evidence_stage is EvidenceStage.FOUNDATION_ACQUISITION:
@@ -160,7 +172,9 @@ def final_fixed_school_decision(
                        if fixed_pair.delta(capability) < 0)
         authoritative = (target_capability, *protected)
         reason = "PAIRED_SCREEN_WITHIN_BUDGET"
-        if losses and _mastery_debt_utility(scores, authoritative)[0] <= 0:
+        if (losses and not _mastery_debt_utility_exceeds_margin(
+                policy,
+                _mastery_debt_utility(scores, authoritative)[0])):
             return Decision(
                 DecisionStatus.REJECT, "PROTECTED_CAPABILITY_REGRESSION",
                 parent_generation, candidate_generation,
@@ -174,7 +188,10 @@ def final_fixed_school_decision(
             lesson = tuple(
                 capability for capability in measured
                 if census[capability] == target_group)
-            if net(lesson) < 0 and _mastery_debt_utility(scores, lesson)[0] <= 0:
+            if (net(lesson) < 0 and
+                    not _mastery_debt_utility_exceeds_margin(
+                        policy,
+                        _mastery_debt_utility(scores, lesson)[0])):
                 reason = "FIXED_LESSON_GRADE_REGRESSION"
                 blocking_scope = "fixed_group:" + target_group
             else:
@@ -182,14 +199,18 @@ def final_fixed_school_decision(
                     grade = tuple(capability for capability in measured
                                   if census[capability] == group)
                     if (grade and net(grade) < 0
-                            and _mastery_debt_utility(scores, grade)[0] <= 0):
+                            and not _mastery_debt_utility_exceeds_margin(
+                                policy,
+                                _mastery_debt_utility(scores, grade)[0])):
                         reason = "ACTIVE_SCHOOL_GRADE_REGRESSION"
                         blocking_scope = "fixed_group:" + group
                         break
                 if (reason == "PAIRED_SCREEN_WITHIN_BUDGET"
                         and measured
                         and net(measured) < 0
-                        and _mastery_debt_utility(scores, measured)[0] <= 0):
+                        and not _mastery_debt_utility_exceeds_margin(
+                            policy,
+                            _mastery_debt_utility(scores, measured)[0])):
                     reason = "WHOLE_SCHOOL_NET_REGRESSION"
                     blocking_scope = "fixed_school"
     return Decision(

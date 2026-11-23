@@ -204,7 +204,8 @@ def decide(paired: dict, *, active_capability: str, phase: str,
                               if fixed.get("status") == "MEASURED" else None),
         active_frontier_grade_net_gain=protected_frontier_delta,
         whole_school_net_gain=frontier_net if frontier_measured else None,
-        fragile_losses=fragile_losses)
+        fragile_losses=fragile_losses,
+        min_utility=settings.mastery_debt_min_utility)
     projected_mature_debt, reason = _mature_debt.retention_reason(reason, frontier, mature_grades, mature_grade_debt or {})
     return _decision_record(
         reason=reason, fragile_replay=fragile_replay, fixed=fixed,

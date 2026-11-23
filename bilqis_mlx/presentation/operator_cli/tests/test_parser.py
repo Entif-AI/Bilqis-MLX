@@ -20,6 +20,10 @@ class OperatorTests(unittest.TestCase):
         stricter = _resume_command(active_run_dir(), LEGACY_SOURCE,
                                    Settings(mature_max_loss=0))
         self.assertIn("--retention-mature-max-loss 0", stricter)
+        margin = _resume_command(
+            active_run_dir(), LEGACY_SOURCE,
+            Settings(mastery_debt_min_utility=0.08))
+        self.assertIn("--retention-mastery-debt-min-utility 0.08", margin)
         self.assertNotIn("--experimental-retention", stricter)
         with tempfile.TemporaryDirectory() as tmp:
             unprotected = _resume_command(Path(tmp), LEGACY_SOURCE, None)
@@ -43,6 +47,16 @@ class OperatorTests(unittest.TestCase):
 
     def test_retention_defaults_on_and_explicit_independent_opt_out(self):
         self.assertFalse(parse_args(["train", "--resume"]).no_retention)
+        self.assertEqual(
+            parse_args(["train", "--resume"]).experiment_mastery_debt_min_utility,
+            0.05,
+        )
+        self.assertEqual(
+            parse_args([
+                "train", "--resume", "--retention-mastery-debt-min-utility", "0.08"
+            ]).experiment_mastery_debt_min_utility,
+            0.08,
+        )
         self.assertTrue(parse_args(["train", "--resume"]).full_grade_b)
         self.assertFalse(parse_args([
             "train", "--resume", "--reduced-grade-b"]

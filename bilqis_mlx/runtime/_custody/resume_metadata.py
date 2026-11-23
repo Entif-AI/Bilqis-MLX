@@ -76,15 +76,16 @@ def _reconcile_learning_settings(run_dir, receipt, course, settings, optimizer):
         raise ValueError(LEARNING_EXPERIMENT_RESUME_REQUIRES_IDENTICAL_OPT_IN)
     new = _dataclasses.asdict(settings)
     previous = inherited.get("settings")
-    if previous == new:
-        return receipt
     if not isinstance(previous, dict):
         raise ValueError(LEARNING_EXPERIMENT_HISTORY_INVALID)
     old = _dataclasses.asdict(_learning_learning_experiment.Settings(**previous))
+    if old == new:
+        return receipt
     if (new["probe_each"] != old["probe_each"] or
             new["protected_cap_limit"] != old["protected_cap_limit"] or
             new["introduction_extra_loss"] != old["introduction_extra_loss"] or
-            new["mature_max_loss"] >= old["mature_max_loss"]):
+            new["mature_max_loss"] > old["mature_max_loss"] or
+            new["mastery_debt_min_utility"] < old["mastery_debt_min_utility"]):
         raise ValueError(LEARNING_EXPERIMENT_RESUME_REQUIRES_IDENTICAL_OPT_IN)
     school = _runtime_state._state_from_json(receipt["school"], _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course))
     if int(optimizer.state["step"].item()) != school.current_student.optimizer_step:

@@ -218,13 +218,15 @@ def candidate_horizon_execution(
 def retention_result(
         run_dir, parent, context, atlas_path, selection, capability, cache, steps,
         capture, rejection_journal_ordinal, rejection_attempt_ordinal,
-        identity_before, progress, observer, *, emit_progress):
+        identity_before, progress, observer, *, emit_progress,
+        mastery_debt_min_utility=0.05):
     from .._session_execution import retention_result as _retention_result_impl
     return _retention_result_impl(
         run_dir, parent, context, atlas_path, selection, capability, cache, steps,
         capture, rejection_journal_ordinal, rejection_attempt_ordinal,
         identity_before, progress, observer,
-        evaluate_candidate=evaluate_factory_retention_candidate,
+        evaluate_candidate=lambda *args, **kwargs: evaluate_factory_retention_candidate(
+            *args, mastery_debt_min_utility=mastery_debt_min_utility, **kwargs),
         issue_decision=issue_factory_retention_decision,
         identity_delta=candidate_identity_metrics_delta,
         resource_observation=_resource_observation,
@@ -241,7 +243,8 @@ def execute_selected_visit(
         steps_per_visit, reserve_gib, progress, source_prefetch_workers,
         source_prefetch_executor, source_prefetch_metrics, observer,
         *, emit_progress, invalid,
-        distributed_profile=None, distributed_executor=None):
+        distributed_profile=None, distributed_executor=None,
+        mastery_debt_min_utility=0.05):
     rows = selection.offer.rows()
     if observer is not None:
         from ..evidence_projection import selected_visit_evidence, unknown_generated_grade_evidence
@@ -276,7 +279,8 @@ def execute_selected_visit(
     return retention_result(
         run_dir, parent, context, atlas_path, selection, capability, cache, steps,
         capture, journal_ordinal, attempt_ordinal, identity_before, progress, observer,
-        emit_progress=emit_progress)
+        emit_progress=emit_progress,
+        mastery_debt_min_utility=mastery_debt_min_utility)
 
 
 def accepted_admission_reentry(

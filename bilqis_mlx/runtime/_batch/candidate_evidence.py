@@ -151,7 +151,8 @@ def _candidate_grade_evidence(mx, run_dir, receipt, course, school, capability,
     protected.update(name for name in required if name != capability)
     grade_net = sum(pair[name]["after"]-pair[name]["before"] for name in required)
     if grade_net < 0 and not _learning_plasticity_escape.allows_early_grade_net(
-            plasticity_escape, pair, required):
+            plasticity_escape, pair, required,
+            min_utility=settings.mastery_debt_min_utility):
         return (pair, protected, required,
                 {"status": "NOT_MEASURED",
                  "reason": "SAME_GRADE_NET_REGRESSION"},

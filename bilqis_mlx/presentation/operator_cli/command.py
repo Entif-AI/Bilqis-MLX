@@ -229,6 +229,7 @@ def _invoke_learner(args, legacy_root, original_checkpoint, topology, experiment
         experiment_mature_max_loss=args.experiment_mature_max_loss,
         experiment_introduction_extra_loss=args.experiment_introduction_extra_loss,
         experiment_protected_cap_limit=args.experiment_protected_cap_limit,
+        experiment_mastery_debt_min_utility=args.experiment_mastery_debt_min_utility,
         stagnation_grace_grade=args.stagnation_grace_grade,
         stagnation_grace_steps=args.stagnation_grace_steps,
         admit_next_grade_with_debt=args.admit_next_grade_with_debt,

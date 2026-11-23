@@ -157,6 +157,7 @@ def evaluate_factory_retention_candidate(
     target_capability: str,
     *,
     run_dir: Path, observer=None, plasticity_escape=None,
+    mastery_debt_min_utility: float = 0.05,
 ):
     """Run C05 with no caller-selected solver, cohort, policy or coverage map."""
     if (type(candidate) is not CandidateTransaction
@@ -184,6 +185,7 @@ def evaluate_factory_retention_candidate(
         return _foundation_retention_evaluation(
             source_context, parent, candidate_bundle, candidate_state, artifact_path,
             release, plan, target_plan, training, cached_rows, cache,
+            mastery_debt_min_utility=mastery_debt_min_utility,
             **({"observer": observer} if observer is not None else {}))
     instruments = _local_retention_instruments(
         source_context, candidate_bundle, artifact_path, cached_rows, target_plan)

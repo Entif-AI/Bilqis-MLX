@@ -1,5 +1,5 @@
 """Additional C16.3 operator routing and rejection contracts."""
-from contextlib import nullcontext
+from contextlib import ExitStack, nullcontext
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.bamf_operator.session import _visit, operate_bamf
+from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
 
 
 def _evidence_receipt():
@@ -28,6 +29,69 @@ def _assert_rejected_resource(case, resource):
     case.assertEqual(resource["evidence_directory_fsyncs"], 1)
     case.assertEqual(resource["evidence_objects"], 4)
     case.assertEqual(resource["evidence_persistence_seconds"], 0.005)
+
+
+def _rejection_routing_fixture():
+    parent = SimpleNamespace(
+        retained_state=SimpleNamespace(optimizer_step=11),
+        optimizer_hyperparameters="hparams")
+    identity = SimpleNamespace(
+        visit_id="visit:beta", policy_key="policy:beta",
+        to_record=lambda: {"visit_id": "visit:beta"})
+    selection = SimpleNamespace(
+        status="TEACHER_SELECTED", option_id="capability:beta",
+        visit=SimpleNamespace(
+            identity=identity,
+            projection=SimpleNamespace(teacher_state={
+                "last_visit_receipt": {"schema": "fixture-receipt"}})),
+        offer=SimpleNamespace(
+            capability_id="capability:beta", source_seed=17,
+            rows=lambda: ({"id": "row:1"},)))
+    step = SimpleNamespace(
+        transaction=SimpleNamespace(
+            parent=SimpleNamespace(optimizer_step=11),
+            update_steps=1, training_authorities=("authority",)),
+        realized_cost={
+            "wall_seconds": 1.0, "optimizer_steps": 1,
+            "candidate_optimizer_steps": 1, "c08_memory_budget_bytes": 1})
+    decision = SimpleNamespace(
+        accepted=False, reason="retention_gate",
+        to_record=lambda: {"decision": "REJECTED"})
+    return SimpleNamespace(
+        parent=parent, context=SimpleNamespace(release=object()),
+        selection=selection, step=step, decision=decision,
+        capture=SimpleNamespace(finalize=lambda **_kwargs: _evidence_receipt()),
+        cache=SimpleNamespace(generation=1, accepted_manifest_sha256="a" * 64),
+        evaluation=SimpleNamespace(
+            candidate_state=object(), parent_state=parent.retained_state))
+
+
+def _run_rejection_routing_fixture(case):
+    prefix = "bilqis_mlx.runtime.bamf_operator.session."
+    native = "bilqis_mlx.runtime.bamf_operator.session_parts.native_session."
+    patches = (
+        (prefix + "_execution_context",
+         {"return_value": (case.parent, case.context, "atlas", "feature")}),
+        (prefix + "schedule_program_from_executable_release", {"return_value": "program"}),
+        (prefix + "accepted_priority_school", {"return_value": "school"}),
+        (prefix + "select_foundation_priority_visit", {"return_value": case.selection}),
+        (native + "bind_accepted_execution_cache", {"return_value": case.cache}),
+        (native + "rejection_attempt_ordinals", {"return_value": (1, 1)}),
+        (native + "candidate_step_horizon", {"return_value": 1}),
+        (native + "prepare_candidate_evidence_root", {}),
+        (native + "_Capture", {"return_value": case.capture}),
+        (native + "FactoryDeliveryObservation", {"return_value": "observation"}),
+        (native + "execute_learning_first_priority_candidate", {"return_value": case.step}),
+        (native + "evaluate_factory_retention_candidate", {"return_value": case.evaluation}),
+        (native + "issue_factory_retention_decision", {"return_value": case.decision}),
+    )
+    with ExitStack() as stack:
+        for target, kwargs in patches:
+            stack.enter_context(patch(target, **kwargs))
+        rejection = stack.enter_context(patch(prefix + "record_bamf_rejection"))
+        with evidence_mode(strict=False):
+            result = _visit(Path("/tmp"), 0.0)
+    return result, rejection.call_args.args[2]
 
 
 @patch("bilqis_mlx.runtime.bamf_operator.session._training_memory_context", nullcontext)
@@ -94,78 +158,9 @@ class BamfOperatorRoutingContinuationTests(unittest.TestCase):
             self.assertEqual(_visit("/run", 0.0), "HELD")
 
     def test_rejection_records_priority_replay_fields_without_advancing_parent(self):
-        parent = SimpleNamespace(
-            retained_state=SimpleNamespace(optimizer_step=11),
-            optimizer_hyperparameters="hparams",
-        )
-        context = SimpleNamespace(release=object())
-        identity = SimpleNamespace(
-            visit_id="visit:beta", policy_key="policy:beta",
-            to_record=lambda: {"visit_id": "visit:beta"})
-        selection = SimpleNamespace(
-            status="TEACHER_SELECTED",
-            option_id="capability:beta",
-            visit=SimpleNamespace(
-                identity=identity,
-                projection=SimpleNamespace(teacher_state={
-                    "last_visit_receipt": {"schema": "fixture-receipt"}})),
-            offer=SimpleNamespace(
-                capability_id="capability:beta", source_seed=17,
-                rows=lambda: ({"id": "row:1"},),
-            ),
-        )
-        transaction = SimpleNamespace(
-            parent=SimpleNamespace(optimizer_step=11),
-            update_steps=1,
-            training_authorities=("authority",),
-        )
-        step = SimpleNamespace(
-            transaction=transaction,
-            realized_cost={
-                "wall_seconds": 1.0, "optimizer_steps": 1,
-                "candidate_optimizer_steps": 1, "c08_memory_budget_bytes": 1,
-            })
-        decision = SimpleNamespace(
-            accepted=False,
-            reason="retention_gate",
-            to_record=lambda: {"decision": "REJECTED"},
-        )
-        evidence_receipt = _evidence_receipt()
-        capture = SimpleNamespace(finalize=lambda **_kwargs: evidence_receipt)
-        cache = SimpleNamespace(
-            generation=1, accepted_manifest_sha256="a" * 64)
-        evaluation = SimpleNamespace(
-            candidate_state=object(), parent_state=parent.retained_state)
-        with patch(
-                "bilqis_mlx.runtime.bamf_operator.session._execution_context",
-                return_value=(parent, context, "atlas", "feature")), patch(
-                "bilqis_mlx.runtime.bamf_operator.session.schedule_program_from_executable_release",
-                return_value="program"), patch(
-                "bilqis_mlx.runtime.bamf_operator.session.accepted_priority_school",
-                return_value="school"), patch(
-                "bilqis_mlx.runtime.bamf_operator.session.select_foundation_priority_visit",
-                return_value=selection), patch(
-                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.bind_accepted_execution_cache",
-                return_value=cache), patch(
-                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.rejection_attempt_ordinals",
-                return_value=(1, 1)), patch(
-                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.candidate_step_horizon",
-                return_value=1), patch(
-                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.prepare_candidate_evidence_root"), patch(
-                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session._Capture",
-                return_value=capture), patch(
-                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.FactoryDeliveryObservation",
-                return_value="observation"), patch(
-                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.execute_accepted_priority_candidate",
-                return_value=step), patch(
-                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.evaluate_factory_retention_candidate",
-                return_value=evaluation), patch(
-                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.issue_factory_retention_decision",
-                return_value=decision), patch(
-                "bilqis_mlx.runtime.bamf_operator.session.record_bamf_rejection") as rejection:
-            self.assertEqual(_visit(Path("/tmp"), 0.0), "REJECTED")
-
-        evidence = rejection.call_args.args[2]
+        case = _rejection_routing_fixture()
+        result, evidence = _run_rejection_routing_fixture(case)
+        self.assertEqual(result, "REJECTED")
         self.assertEqual(evidence["schema"], "bilqis.bamf.c16.3-rejection/v2")
         self.assertEqual(evidence["rejection_journal_ordinal"], 1)
         self.assertEqual(evidence["rejection_attempt_ordinal"], 1)
@@ -175,9 +170,9 @@ class BamfOperatorRoutingContinuationTests(unittest.TestCase):
         self.assertEqual(evidence["candidate_optimizer_step"], 12)
         self.assertEqual(evidence["retained_optimizer_step"], 11)
         self.assertEqual(evidence["retention_reason"], "retention_gate")
-        self.assertEqual(evidence["candidate_evidence"], evidence_receipt)
+        self.assertEqual(evidence["candidate_evidence"], _evidence_receipt())
         _assert_rejected_resource(self, evidence["resource"])
-        self.assertEqual(parent.retained_state.optimizer_step, 11)
+        self.assertEqual(case.parent.retained_state.optimizer_step, 11)
 
     def test_operator_executes_c03_selection_without_reading_factory_release_order(self):
         class OrderTrap:
@@ -250,14 +245,15 @@ class BamfOperatorRoutingContinuationTests(unittest.TestCase):
                 return_value=capture), patch(
                 "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.FactoryDeliveryObservation",
                 return_value="observation"), patch(
-                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.execute_accepted_priority_candidate",
+                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.execute_learning_first_priority_candidate",
                 side_effect=execute), patch(
                 "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.evaluate_factory_retention_candidate",
                 return_value=evaluation), patch(
                 "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.issue_factory_retention_decision",
                 return_value=decision), patch(
                 "bilqis_mlx.runtime.bamf_operator.session.record_bamf_rejection"):
-            self.assertEqual(_visit(Path("/tmp"), 0.0), "REJECTED")
+            with evidence_mode(strict=False):
+                self.assertEqual(_visit(Path("/tmp"), 0.0), "REJECTED")
 
 
 if __name__ == "__main__":
