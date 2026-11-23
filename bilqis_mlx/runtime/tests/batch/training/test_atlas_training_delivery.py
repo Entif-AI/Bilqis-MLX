@@ -118,6 +118,47 @@ class TrainingDeliveryTests(AtlasTrainingAdapterTest):
             self.assertEqual(
                 caught.exception.context["reason"], "OBSERVATION_DELIVERY_INVALID")
 
+    def test_observation_capture_accepts_exact_rehearsal_batch_and_rejects_reordering(self):
+        import tempfile
+        from bilqis_mlx.runtime.atlas_training_adapter import capture_realized_delivery
+        from bilqis_mlx.runtime.teacher_observation_capture import ObservationCapture, store_sidecar
+
+        target = self.context.draw_rows(seed=17, capability='Z.C2', each=1)
+        support_batch, parent_authority = self.context.draw_bound_rows(
+            seed=23, capability='Z.C0', each=2)
+        support = support_batch[:1]
+        support_authority = self.context.bind_authorized_subset_rows(
+            support_batch, support, parent_authority)
+        target_authority = self.context.bind_rows(
+            target, seed=17, capability='Z.C2', each=1)
+        rows = (*target, *support)
+        batch = self.compile(
+            rows, delivery_capability='Z.C2', source_authority=target_authority,
+            rehearsal_by_id={support[0]['id']: 'prior'},
+            rehearsal_authorities={support[0]['id']: support_authority})
+
+        with tempfile.TemporaryDirectory() as root:
+            capture = ObservationCapture(root, {})
+            capture.attempt_id = 'fixture-rehearsal-attempt'
+            capture.proposal_id = store_sidecar(
+                root, {'attempt_id': capture.attempt_id})['sha256']
+            capture.select_option('Z.C2', None)
+            capture_realized_delivery(
+                batch, self.context, capture, 'Z.C2', 1, rows,
+                generation_binding=batch.generation_binding, option_rows=target,
+                priority=(), preservation=(), support=(), enrichment=(),
+                guidance=None, controls={}, seed=42, cost={'wall_seconds': 0.25},
+                prior=support)
+            with self.assertRaises(BilqisError) as caught:
+                capture_realized_delivery(
+                    batch, self.context, capture, 'Z.C2', 1, tuple(reversed(rows)),
+                    generation_binding=batch.generation_binding, option_rows=target,
+                    priority=(), preservation=(), support=(), enrichment=(),
+                    guidance=None, controls={}, seed=42,
+                    cost={'wall_seconds': 0.25}, prior=support)
+            self.assertEqual(
+                caught.exception.context["reason"], "OBSERVATION_DELIVERY_INVALID")
+
     def test_training_and_inference_use_one_selector_without_inference_targets(self):
         from bilqis_mlx.runtime.atlas_training_adapter import execute_with_backend
         batch = self.compile(self.rows)
