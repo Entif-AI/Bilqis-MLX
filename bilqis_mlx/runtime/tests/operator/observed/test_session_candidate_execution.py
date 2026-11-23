@@ -120,6 +120,62 @@ class SessionCandidateExecutionTests(unittest.TestCase):
         self.assertEqual(
             {name: events[0][name] for name in STEP_COST_FIELDS}, cost)
 
+    def test_twelve_step_shadow_ladder_records_rungs_without_shortening_horizon(self):
+        from bilqis_mlx.runtime.bamf_operator.session_parts.native_session import execute_horizon
+        from bilqis_mlx.runtime.bamf_operator.session import _emit_progress, _invalid
+
+        parent = NS(
+            teacher_state={}, retained_state=NS(optimizer_step=20),
+            optimizer_hyperparameters='hp')
+        selection = NS(
+            offer=NS(source_seed=1, capability_id='cap'),
+            visit=NS(identity=NS(visit_id='v')))
+        cache = NS(generation=1, accepted_manifest_sha256='a' * 64)
+        steps = [NS(
+            transaction=NS(parent=NS(optimizer_step=20), update_steps=ordinal),
+            realized_cost={'candidate_step_wall_seconds': 1.0},
+        ) for ordinal in range(1, 13)]
+        capture = NS(
+            configure_multifidelity=unittest.mock.Mock(),
+            record_multifidelity_rung=unittest.mock.Mock(),
+        )
+        prefix = 'bilqis_mlx.runtime.bamf_operator.session_parts.native_session.'
+        probes = []
+
+        def shadow_probe(*_args, parent_correct=None, **_kwargs):
+            ordinal = (2, 4, 8, 12)[len(probes)]
+            probes.append(ordinal)
+            return {
+                'parent_correct': 3 if parent_correct is None else parent_correct,
+                'candidate_correct': 3,
+                'total': 6,
+                'target_correct_delta': 0,
+                'actual_authority_changed': False,
+            }
+
+        with patch(prefix + 'prepare_candidate_evidence_root'), patch(
+                prefix + '_Capture', return_value=capture), patch(
+                prefix + 'FactoryDeliveryObservation'), patch(
+                prefix + 'execute_accepted_priority_candidate', side_effect=steps) as execute, patch(
+                prefix + 'measure_current_retention_shadow_target', side_effect=shadow_probe):
+            actual, _capture = execute_horizon(
+                Path('/tmp'), selection, NS(), parent, 'atlas', 'feature',
+                ({'id': 'row'},), 12, cache, 1, None, 0, None, None, None, None,
+                emit_progress=_emit_progress, invalid=_invalid)
+
+        self.assertEqual(len(actual), 12)
+        self.assertEqual(execute.call_count, 12)
+        self.assertEqual(probes, [2, 4, 8, 12])
+        self.assertEqual(
+            capture.configure_multifidelity.call_args.kwargs['rungs'],
+            (2, 4, 8, 12))
+        self.assertEqual(
+            [call.kwargs['step'] for call in capture.record_multifidelity_rung.call_args_list],
+            [2, 4, 8, 12])
+        self.assertTrue(all(
+            call.kwargs['target_probe']['actual_authority_changed'] is False
+            for call in capture.record_multifidelity_rung.call_args_list))
+
 
 def _complete_step_cost():
     from bilqis_mlx.runtime.bamf_operator.performance import STEP_COST_FIELDS

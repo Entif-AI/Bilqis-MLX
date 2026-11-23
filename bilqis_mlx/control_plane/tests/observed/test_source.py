@@ -102,7 +102,7 @@ class ObservedSourceTests(unittest.TestCase):
         self.assertEqual(row.candidate_steps[0].b11_provider_draw_count, 16)
 
     def test_v4_runtime_snapshot_projects_typed_visit_and_grade_evidence(self):
-        from bilqis_mlx.runtime.bamf_operator.evidence_projection import (
+        from bilqis_mlx.runtime.bamf_operator.evidence_parts.projection import (
             unknown_generated_grade_evidence,
         )
         row = visit(

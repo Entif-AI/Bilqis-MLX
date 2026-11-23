@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from bilqis_mlx.runtime.bamf_operator.session import prepare_bamf_visit
-from bilqis_mlx.runtime.bamf_operator._session_execution import retention_result
+from bilqis_mlx.runtime.bamf_operator.session_parts.session_execution import retention_result
 
 
 @pytest.mark.parametrize('selection_status', ['HELD', 'ACTION_REQUIRED'])

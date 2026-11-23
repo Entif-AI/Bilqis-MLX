@@ -8,13 +8,13 @@ from unittest.mock import Mock, patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.presentation.operator_cli.parser import parse_args
-from bilqis_mlx.runtime.bamf_operator._session_execution import operate as operate_session
+from bilqis_mlx.runtime.bamf_operator.session_parts.session_execution import operate as operate_session
 from bilqis_mlx.runtime.bamf_operator.session import operate_bamf
 from bilqis_mlx.runtime.operator_session import (
     DEFAULT_CANDIDATE_HORIZON,
     MAX_CANDIDATE_HORIZON,
 )
-from bilqis_mlx.runtime.bamf_operator.session_support import BamfOperatorResult
+from bilqis_mlx.runtime.bamf_operator.session_parts.session_support import BamfOperatorResult
 
 
 class _Observer:

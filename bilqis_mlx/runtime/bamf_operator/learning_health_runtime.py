@@ -7,7 +7,7 @@ from bilqis_mlx.diagnostics.learning_health import (
 from bilqis_mlx.learning._atlas_candidate.identity_binding import (
     candidate_identity_for_canonical_consumer,
 )
-from .evidence_projection import complete_visit_evidence, selected_visit_evidence
+from .evidence_parts.projection import complete_visit_evidence, selected_visit_evidence
 
 _MAX_CAPABILITIES = 48
 

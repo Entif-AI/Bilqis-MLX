@@ -20,6 +20,10 @@ from bilqis_mlx.runtime.factory_candidate_training import FactoryDeliveryObserva
 from bilqis_mlx.runtime.factory_retention_owner import (
     bind_current_retention_source_rows, bind_factory_baseline_successor,
     derive_current_plasticity_escape_state, evaluate_factory_retention_candidate,
+    measure_current_retention_shadow_target,
+)
+from bilqis_mlx.learning.teacher_multifidelity import (
+    DEFAULT_SHADOW_POLICY, active_rungs,
 )
 from bilqis_mlx.runtime._factory_identity_evaluation import (
     _finalize_factory_generation_authority,
@@ -30,9 +34,9 @@ from bilqis_mlx.runtime.priority_rejection_replay import (
 )
 from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import currentness_metrics
 
-from ..evidence import CandidateEvidenceCapture as _Capture, prepare_candidate_evidence_root
+from ..evidence_parts import CandidateEvidenceCapture as _Capture, prepare_candidate_evidence_root
 from ..performance import measure_observed_phase, observe_completed_step
-from ..session_support import BamfPreparedVisit, _resource_observation, _step_seed
+from .session_support import BamfPreparedVisit, _resource_observation, _step_seed
 from ..source_prefetch import CandidateSourceLane, SourcePrefetchMetrics
 from .rehearsal import compile_rehearsal_plan
 from .candidate_execution import (
@@ -156,8 +160,11 @@ def execute_horizon(
         cache, candidate_attempt_ordinal, progress, source_prefetch_workers,
         source_prefetch_executor, source_prefetch_metrics, observer, adviser_pool,
         *, emit_progress, invalid, rehearsal_plan=None, candidate_visit=None,
-        candidate_executor=execute_accepted_priority_candidate,
+        candidate_executor=None,
         distributed_profile=None, distributed_executor=None):
+    candidate_executor = (
+        execute_accepted_priority_candidate
+        if candidate_executor is None else candidate_executor)
     candidate_kwargs = {
         "candidate_visit": candidate_visit,
         "distributed_profile": distributed_profile,
@@ -177,7 +184,9 @@ def execute_horizon(
         step_seed=_step_seed,
         emit_progress=emit_progress, invalid=invalid,
         observe_completed_step_fn=observe_completed_step,
-        rehearsal_plan=rehearsal_plan)
+        rehearsal_plan=rehearsal_plan,
+        shadow_policy=DEFAULT_SHADOW_POLICY, shadow_rungs_fn=active_rungs,
+        shadow_probe_fn=measure_current_retention_shadow_target)
 
 
 def candidate_horizon_execution(
@@ -220,7 +229,7 @@ def retention_result(
         capture, rejection_journal_ordinal, rejection_attempt_ordinal,
         identity_before, progress, observer, *, emit_progress,
         mastery_debt_min_utility=0.05):
-    from .._session_execution import retention_result as _retention_result_impl
+    from .retention import retention_result as _retention_result_impl
     return _retention_result_impl(
         run_dir, parent, context, atlas_path, selection, capability, cache, steps,
         capture, rejection_journal_ordinal, rejection_attempt_ordinal,
@@ -247,7 +256,9 @@ def execute_selected_visit(
         mastery_debt_min_utility=0.05):
     rows = selection.offer.rows()
     if observer is not None:
-        from ..evidence_projection import selected_visit_evidence, unknown_generated_grade_evidence
+        from ..evidence_parts.projection import (
+            selected_visit_evidence, unknown_generated_grade_evidence,
+        )
         visit_evidence = selected_visit_evidence(selection)
         selected_policy = getattr(selection, "policy", None)
         observer.update(

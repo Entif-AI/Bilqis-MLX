@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "db2c0233147069414c83fae76bcbad9c51ca58c5",
-  "updated_at": "2026-11-23T03:52:29+00:00",
+  "observed_unified": "7e8a4b1c8f6224489770db0835e5be9d7fd59398",
+  "updated_at": "2026-11-23T04:04:21+00:00",
   "exception": null,
   "items": [
     {
@@ -540,6 +540,16 @@
       "summary": "Issue #1537 is turned in as PR #1563. A bounded process-live exact-identity cache reuses only selected-source heavy preparation while fresh process-live source-owner validation/rebinding, B11 proof/binding, motif inputs, correction owners, registration and currentness remain visit-local. The exact neural-inert production-shaped runtime proof at 86cb2ae8 measured 0.314225 s cold and 0.131034/0.150893 s warm selected-source handoffs versus the durable #1518 10.020139 s baseline. Current main db2c0233 was merged normally, preserving #1562 logical-batch source sizing alongside #1537 cache handoff. Hosted portable-core first required the 394-line source-materialization test to be split; placing the extracted 237-line cache suite directly beside 17 existing modules then triggered the directory encounter rule, so it was moved into a new source_materialization test compartment. The parent remains at its baseline 17 direct modules, the original test is 142 lines, the extracted suite is 237 lines, and the focused merged surface passes 13 tests. No human trainer or neural optimizer update was used.",
       "resume_trigger": null,
       "preserved_branch": "codex/1537-source-materialization-20261122"
+    },
+    {
+      "issue": 1541,
+      "pr": 1581,
+      "state": "TURNED_IN",
+      "head_sha": "98804e6dbe10f7af8b4ff7419a74a96bf4538778",
+      "head_sha_role": "verified implementation head before #1541 turn-in bookkeeping receipt",
+      "summary": "Issue #1541 is turned in as PR #1581 with the persistent BAMF operator collecting neural-inert 2/4/8/full-budget target-sentinel evidence inside canonical #333 candidate evidence while leaving the real horizon and C05 retention/adoption authority unchanged. The inherited 128-review factory-replay window remains NOT_QUALIFIED at 4/71 false kills (5.6338%) and is not reused as current qualification evidence; fresh records now carry false-kill/false-continue truth and measured projected wall savings while unsupported uncertainty, preservation, early-retention and retentions/hour claims remain explicit NOT_MEASURED/NOT_QUALIFIED pending production-shaped evidence. The mandatory AGENTS structure interruption also split the encountered BAMF evidence/session ownership below file and directory thresholds. Focused verification passed 55 tests, all 97 changed tests collected after relocation, flow control and diff hygiene were green, independent read-only review found no blocker, and no agent neural run or human production mutation occurred.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/1541-adaptive-budget-20261122"
     },
     {
       "issue": 1513,

@@ -18,18 +18,18 @@ from .telemetry import TrainerObservation
 from bilqis_mlx.runtime.operator_session import (
     DEFAULT_CANDIDATE_HORIZON, MAX_CANDIDATE_HORIZON,
 )
-from .session_support import (
+from .session_parts.session_support import (
     BamfPreparedVisit, _execution_context, _resource_observation, _step_seed,
 )
 from .source_prefetch import (
     NATIVE_SOURCE_WORKER_COUNTS, SourcePrefetchMetrics,
 )
-from .evidence import CandidateEvidenceCapture as _Capture
+from .evidence_parts import CandidateEvidenceCapture as _Capture
 from .session_parts.stop_receipt import (
     record_normal_stop_receipt, stop_resource_witness,
 )
-from ._session_execution import operate as _operate_impl
-from ._session_visit import visit as _visit_impl
+from .session_parts.session_execution import operate as _operate_impl
+from .session_parts.session_visit import visit as _visit_impl
 from .session_parts.native_session import (
     accepted_admission_reentry as _accepted_admission_reentry_impl,
     adopt_and_activate_certified_successor as _adopt_and_activate_certified_successor,
@@ -44,7 +44,7 @@ from .session_parts.prepare_visit import prepare_bamf_visit_impl as _prepare_bam
 
 def _invalid(reason: str):
     ErrorBus.raise_(SCHOOL.BAMF_FIRST_STUDENT.INVALID, reason=reason)
-from .session_support import BamfOperatorResult
+from .session_parts.session_support import BamfOperatorResult
 def _emit_progress(progress, message: str) -> None:
     if progress is not None:
         progress(message)

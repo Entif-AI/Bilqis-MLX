@@ -62,6 +62,7 @@ def _prepare_native_resource_visit(temporary):
         ("bind_accepted_execution_cache", {"return_value": cache}),
         ("candidate_step_horizon", {"return_value": 1}),
         ("rejection_attempt_ordinals", {"return_value": (1, 1)}),
+        ("prepare_accepted_priority_candidate_visit", {"return_value": "candidate-visit"}),
         ("_Capture", {"return_value": capture}),
         ("FactoryDeliveryObservation", {"return_value": "observation"}),
         ("execute_accepted_priority_candidate", {"return_value": step}),
@@ -129,7 +130,7 @@ def _assert_horizon_result(
         Path("/run"), parent, cache, "capability:horizon", 16)
     evaluate.assert_called_once_with(
         context, transactions[-1], "atlas", "capability:horizon",
-        run_dir=Path("/run"))
+        run_dir=Path("/run"), mastery_debt_min_utility=0.05)
     decide.assert_called_once_with(evaluate.return_value)
     event = derive.call_args.kwargs["delivery_events"][0]
     case.assertIs(prepared.resource, event["resource"])
@@ -185,7 +186,7 @@ class BamfOperatorRoutingTests(unittest.TestCase):
 
     def test_candidate_horizon_buffers_step_evidence_until_one_boundary_write(self):
         from bilqis_mlx.factory.teaching import content_digest
-        from bilqis_mlx.runtime.bamf_operator.evidence import (
+        from bilqis_mlx.runtime.bamf_operator.evidence_parts import (
             CandidateEvidenceCapture as _Capture, prepare_candidate_evidence_root,
         )
 

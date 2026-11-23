@@ -15,7 +15,7 @@ from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
     bind_accepted_execution_feature_context,
 )
 from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
-from .evidence_validation import validate_candidate_horizon_event
+from ..evidence_parts.validation import validate_candidate_horizon_event
 
 
 

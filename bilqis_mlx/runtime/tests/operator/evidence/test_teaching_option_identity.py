@@ -5,11 +5,11 @@ from types import SimpleNamespace
 import unittest
 
 from bilqis_mlx.factory.teaching import content_digest
-from bilqis_mlx.runtime.bamf_operator.evidence import (
+from bilqis_mlx.runtime.bamf_operator.evidence_parts import (
     CandidateEvidenceCapture,
     prepare_candidate_evidence_root,
 )
-from bilqis_mlx.runtime.bamf_operator.evidence_validation import (
+from bilqis_mlx.runtime.bamf_operator.evidence_parts.validation import (
     read_candidate_horizon_evidence,
     validate_candidate_horizon_event,
 )
