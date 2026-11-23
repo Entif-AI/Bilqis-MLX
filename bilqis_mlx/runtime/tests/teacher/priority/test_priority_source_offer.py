@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
 from bilqis_mlx.runtime.priority_source_offer import (
     PreparedPrioritySourceOffer, _canonical_rows, _decode_rows,
 )
@@ -241,7 +242,7 @@ def test_planning_generation_rejects_acceptance_change_during_binding():
     cache = SimpleNamespace(
         run_id='run', generation=0, accepted_manifest_sha256='a' * 64,
         generation_binding='c' * 64, _correction_registry=None,
-        _candidate_identity_sha256='d' * 64,
+        _candidate_identity_sha256='d' * 64, _bundle_currentness=object(),
     )
     optimizer = SimpleNamespace(
         parameters={}, m={}, v={}, update_counts={})
@@ -255,7 +256,7 @@ def test_planning_generation_rejects_acceptance_change_during_binding():
             currentness_transaction, 'CompleteStudent', SimpleNamespace), patch.object(
             currentness_transaction, '_pointer_snapshot',
             side_effect=(before, after)), patch.object(
-            currentness_transaction, 'bind_bamf_bundle_currentness',
+            currentness_transaction, 'require_bamf_bundle_currentness',
             return_value=object()), patch.object(
             currentness_transaction, 'bind_source_authority_currentness',
             return_value=object()):

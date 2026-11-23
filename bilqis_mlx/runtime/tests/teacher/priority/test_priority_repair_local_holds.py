@@ -25,6 +25,7 @@ def _option(stable_id, action_kind, capability):
         action_kind=action_kind,
         eligible_since=7,
         downstream_unlocks=2,
+        salience_inputs_digest="s" * 64,
         context=SimpleNamespace(capability_id=capability, scope="scope"),
     )
 
@@ -53,7 +54,7 @@ def _select(priority, options, offers, **kwargs):
     with patch.object(priority, "_accepted_parent", return_value=(parent, cache)), \
          patch.object(priority, "_c03_projection", return_value=SimpleNamespace(teacher_state={})), \
          patch.object(priority, "restore_teacher_lineage", return_value=_Epoch()), \
-         patch.object(priority, "candidate_identity_digest", return_value="student-id"), \
+         patch.object(priority, "candidate_identity_for_canonical_consumer", return_value="student-id"), \
          patch.object(priority, "_teacher", return_value={}), \
          patch.object(priority, "contract_digest", return_value="epoch-digest"), \
          patch.object(priority, "salience_priority_features", return_value={}), \

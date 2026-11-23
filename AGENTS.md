@@ -214,6 +214,17 @@ evidence-plane authority. Causal replay inside autodiff must reuse model-derived
 inference choices from the exact issued execution context. Supervision targets and
 masks affect loss only and must not replace the model's causal branch history.
 
+**BAMF strict-mode execution and performance boundary — 2026-11-23:** Ordinary
+training is learning-first. Heavy accepted-state custody/currentness proofs,
+source-wide qualification fanout, salience/evidence signing ceremony, and feature
+authentication that exist only to produce strict evidence MUST NOT run on the
+ordinary hot path. They remain required when the operator explicitly enables
+`--strict-mode`. This fast path is session/generation scoped, not a global waiver:
+publication, accepted-generation transition, cold resume, and corruption/drift
+boundaries remain fail-closed and must invalidate any process-live trust when the
+accepted generation changes. Judge this boundary by production-shaped end-to-end
+training throughput, not by a unit witness showing that one proof call disappeared.
+
 Open the lane-to-unified PR only after the candidate is otherwise ready to merge:
 the design review is complete, required differential evidence is green or validly
 reused, required detached witnesses are reconciled, design-to-code drift is

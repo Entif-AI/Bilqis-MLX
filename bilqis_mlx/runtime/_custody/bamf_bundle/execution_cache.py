@@ -237,12 +237,16 @@ def require_accepted_execution_cache(cache) -> AcceptedExecutionCache:
     from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
         strict_mode_enabled,
     )
-    if not strict_mode_enabled():
-        return cache
     currentness = getattr(cache, "_currentness_transaction", None)
     if currentness is not None:
         from .currentness_transaction import require_accepted_currentness
-        require_accepted_currentness(currentness, cache)
+        from bilqis_mlx.runtime._learning_first.accepted_currentness import (
+            require_accepted_currentness_identity,
+        )
+        require = (
+            require_accepted_currentness
+            if strict_mode_enabled() else require_accepted_currentness_identity)
+        require(currentness, cache)
         return cache
     from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import (
         _require_owned_execution_cache,

@@ -23,6 +23,7 @@ from bilqis_mlx.semantic_sampling import DEFAULT_BINARY_BALANCE
 from bilqis_mlx.runtime import checkpoint_outbox
 from bilqis_mlx.runtime import priority_rejection_replay as rejection_replay
 from bilqis_mlx.runtime.bamf_bundle.records import canonical
+from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
 
 
 def _registry(private_hex="44" * 32):
@@ -117,7 +118,7 @@ def test_foundation_priority_issuer_emits_unknown_evidence_and_c06_rotation_only
     (registry, signer, source_context, planning, parent,
      planning_generation, offer, cache, lawful) = _foundation_case()
     plane = SimpleNamespace(sync_event_ledger=lambda *_args: None)
-    with TemporaryDirectory() as run_dir, patch.object(
+    with TemporaryDirectory() as run_dir, evidence_mode(strict=True), patch.object(
         rejection_replay, "data_plane", return_value=plane), patch(
         "bilqis_mlx.runtime.bamf_bundle.accepted_runtime._accepted_correction_registry",
         return_value=(cache, registry),

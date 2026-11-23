@@ -18,6 +18,7 @@ from bilqis_mlx.runtime.autonomy_state import (
     read_autonomy_state,
 )
 from bilqis_mlx.runtime.bamf_operator.session import _execution_context
+from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
 from bilqis_mlx.runtime.foundation_teacher_owner import (
     current_foundation_teacher_projection,
 )
@@ -136,6 +137,36 @@ def test_cadence_can_only_narrow_lawful_ready_offer_set():
             context, object(), "/atlas", 17, object(), frontier, authorized)
     assert tuple(item.capability_id for item in capabilities) == ("cap:beta",)
     assert tuple(item[0] for item in offers) == ("cap:beta",)
+
+
+def test_learning_first_offer_fanout_never_draws_or_qualifies_source_rows():
+    context = _source_context("cap:alpha", "cap:beta")
+    frontier = _frontier("cap:alpha", "cap:beta")
+
+    def intent(_context, _parent, _path, *, capability, source_seed, source_each,
+               planning_generation, materialization_cache=None):
+        return SimpleNamespace(
+            capability_id=capability,
+            source_seed=source_seed,
+            source_each=source_each,
+            planning_generation=planning_generation,
+            materialization_cache=materialization_cache,
+        )
+
+    with evidence_mode(strict=False), patch.object(
+            authority, "prepare_priority_source_offer",
+            side_effect=AssertionError(
+                "learning-first planning must not prepare source-backed offers")), patch.object(
+            authority, "plan_priority_source_intent", create=True,
+            side_effect=intent) as plan:
+        capabilities, offers = authority._priority_offers(
+            context, object(), "/atlas", 17, object(), frontier,
+            frontier.ready_capability_ids, 2)
+
+    assert tuple(item.capability_id for item in capabilities) == (
+        "cap:alpha", "cap:beta")
+    assert tuple(item[0] for item in offers) == ("cap:alpha", "cap:beta")
+    assert plan.call_count == 2
 
 
 class LawfulPriorityRuntimeTests(PreNeuralJourneySupport, unittest.TestCase):

@@ -70,7 +70,7 @@ def priority():
                 _require_current_visit=None, _selection_projection=None,
                 current_teacher_projection=lambda run, parent, cache, projection: projection),
         "bilqis_mlx.runtime.priority_qualification": _module(
-            _grade=None, requalify_priority=None),
+            _grade=None, _planning_hold=None, requalify_priority=None),
     }
     name = "bilqis_mlx.runtime.priority_selection_failure_boundary_test"
     path = Path(__file__).resolve().parents[3] / "_teacher/priority/accepted_priority_visit.py"
@@ -127,7 +127,8 @@ def _base_patches(priority, parent, cache, qualified):
             return_value=SimpleNamespace(teacher_state={})),
         patch.object(priority, "restore_teacher_lineage", return_value=_Epoch()),
         patch.object(
-            priority, "candidate_identity_digest", return_value="student-id"),
+            priority, "candidate_identity_for_canonical_consumer",
+            return_value="student-id"),
         patch.object(priority, "_teacher", return_value={}),
         patch.object(priority, "contract_digest", return_value="epoch-digest"),
         patch.object(priority, "requalify_priority", return_value=qualified),
