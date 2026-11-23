@@ -9,15 +9,19 @@ from .contracts import (
     _digest, _invalid,
 )
 
+_PRECEDING_GROUP_INDEX = -2
+_MIN_REBALANCE_DONOR_ROWS = 3
+
 
 def _contiguous_groups(row_count: int, size: int) -> tuple[tuple[int, ...], ...]:
     groups = [
         tuple(range(start, min(start + size, row_count)))
         for start in range(0, row_count, size)
     ]
-    if len(groups) > 1 and len(groups[-1]) == 1 and len(groups[-2]) > 2:
-        tail = groups[-2][-1]
-        groups[-2] = groups[-2][:-1]
+    if (len(groups) > 1 and len(groups[-1]) == 1
+            and len(groups[_PRECEDING_GROUP_INDEX]) >= _MIN_REBALANCE_DONOR_ROWS):
+        tail = groups[_PRECEDING_GROUP_INDEX][-1]
+        groups[_PRECEDING_GROUP_INDEX] = groups[_PRECEDING_GROUP_INDEX][:-1]
         groups[-1] = (tail, *groups[-1])
     return tuple(groups)
 
