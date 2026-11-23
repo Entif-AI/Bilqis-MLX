@@ -9,7 +9,7 @@ from bilqis_mlx.errors import BilqisError, SCHOOL
 from bilqis_mlx.runtime.bamf_operator.session_parts.native_session import (
     priority_hold_result,
 )
-from bilqis_mlx.runtime.bamf_operator._session_execution import _terminal_visit_status
+from bilqis_mlx.runtime.bamf_operator.session_parts.session_execution import _terminal_visit_status
 
 
 def test_recovery_exhaustion_rearms_same_grade_without_certification():

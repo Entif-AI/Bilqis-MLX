@@ -8,11 +8,11 @@ import pytest
 
 from bilqis_mlx.errors import BilqisError, SCHOOL
 from bilqis_mlx.runtime.atlas_memory_retry import RESOURCE_REJECTION_SCHEMA
-from bilqis_mlx.runtime.bamf_operator._session_execution import _run_visits
-from bilqis_mlx.runtime.bamf_operator._session_visit import visit
+from bilqis_mlx.runtime.bamf_operator.session_parts.session_execution import _run_visits
+from bilqis_mlx.runtime.bamf_operator.session_parts.session_visit import visit
 from bilqis_mlx.runtime.bamf_operator.session_parts.retention import _instruction_event
 from bilqis_mlx.runtime.bamf_operator.session_parts.stop_receipt import _resume_state
-from bilqis_mlx.runtime.bamf_operator.session_support import BamfPreparedVisit
+from bilqis_mlx.runtime.bamf_operator.session_parts.session_support import BamfPreparedVisit
 
 
 @pytest.mark.parametrize("has_peer", (True, False))

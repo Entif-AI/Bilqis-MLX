@@ -55,7 +55,11 @@ class BamfOperatorNativeSessionTests(unittest.TestCase):
         retained = SimpleNamespace(optimizer_step=15)
         successor = object()
         evidence = _evidence_receipt(900, 6, 0.01)
-        capture = SimpleNamespace(finalize=lambda **_kwargs: evidence)
+        capture = SimpleNamespace(
+            finalize=lambda **_kwargs: evidence,
+            configure_multifidelity=lambda **_kwargs: None,
+            record_multifidelity_rung=lambda **_kwargs: None,
+        )
         with patch(
                 "bilqis_mlx.runtime.bamf_operator.session._execution_context",
                 return_value=(parent, context, "atlas", "feature")), patch(
@@ -67,7 +71,7 @@ class BamfOperatorNativeSessionTests(unittest.TestCase):
                 return_value=selection), patch(
                 "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.bind_accepted_execution_cache",
                 return_value=cache), patch(
-                "bilqis_mlx.runtime.bamf_operator.session.bind_current_retention_protection_plan",
+                "bilqis_mlx.runtime.bamf_operator.session_parts.prepare_visit.bind_current_retention_protection_plan",
                 return_value="plan") as bind_plan, patch(
                 "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.bind_current_retention_source_rows",
                 return_value="rows") as bind_rows, patch(
@@ -75,6 +79,8 @@ class BamfOperatorNativeSessionTests(unittest.TestCase):
                 return_value=4) as horizon, patch(
                 "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.rejection_attempt_ordinals",
                 return_value=(1, 1)), patch(
+                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.prepare_accepted_priority_candidate_visit",
+                return_value="candidate-visit"), patch(
                 "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.prepare_candidate_evidence_root"), patch(
                 "bilqis_mlx.runtime.bamf_operator.session_parts.native_session._Capture",
                 return_value=capture) as capture_factory, patch(
@@ -82,6 +88,11 @@ class BamfOperatorNativeSessionTests(unittest.TestCase):
                 return_value="observation"), patch(
                 "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.execute_accepted_priority_candidate",
                 side_effect=execute) as execute_candidate, patch(
+                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.measure_current_retention_shadow_target",
+                return_value={
+                    "parent_correct": 3, "candidate_correct": 3, "total": 6,
+                    "target_correct_delta": 0, "actual_authority_changed": False,
+                }), patch(
                 "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.evaluate_factory_retention_candidate",
                 return_value=SimpleNamespace(
                     candidate_state=retained, parent_state=parent.retained_state)) as evaluate, patch(
@@ -94,7 +105,7 @@ class BamfOperatorNativeSessionTests(unittest.TestCase):
                 "bilqis_mlx.runtime.bamf_operator.championship."
                 "bind_accepted_championship_successor",
                 return_value=successor), patch(
-                "bilqis_mlx.runtime.bamf_operator.session_support.shutil.disk_usage",
+                "bilqis_mlx.runtime.bamf_operator.session_parts.session_support.shutil.disk_usage",
                 return_value=SimpleNamespace(used=123)):
             prepared = prepare_bamf_visit(Path("/run"), steps_per_visit=16)
 
@@ -114,7 +125,7 @@ class BamfOperatorNativeSessionTests(unittest.TestCase):
             feature_artifact_path="feature",
         )
         metrics = {}
-        prefix = "bilqis_mlx.runtime.bamf_operator.session_support."
+        prefix = "bilqis_mlx.runtime.bamf_operator.session_parts.session_support."
         with patch(prefix + "AcceptedRuntimeHost", return_value=host), patch(
                 prefix + "load_accepted_generation", return_value=parent), patch(
                 prefix + "bind_accepted_execution_feature_context",
@@ -132,7 +143,7 @@ class BamfOperatorNativeSessionTests(unittest.TestCase):
         })
 
     def test_resource_observation_reports_semantic_materialization_counts(self):
-        from bilqis_mlx.runtime.bamf_operator.session_support import _resource_observation
+        from bilqis_mlx.runtime.bamf_operator.session_parts.session_support import _resource_observation
 
         cost = {
             "wall_seconds": 1.0,
@@ -147,7 +158,7 @@ class BamfOperatorNativeSessionTests(unittest.TestCase):
         step = SimpleNamespace(
             transaction=SimpleNamespace(update_steps=1), realized_cost=cost)
         with patch(
-                "bilqis_mlx.runtime.bamf_operator.session_support.shutil.disk_usage",
+                "bilqis_mlx.runtime.bamf_operator.session_parts.session_support.shutil.disk_usage",
                 return_value=SimpleNamespace(used=123)):
             resource = _resource_observation(Path("/run"), step)
         self.assertEqual(resource["atlas_reload_count"], 0)
@@ -185,11 +196,11 @@ class BamfOperatorNativeSessionTests(unittest.TestCase):
             selection=SimpleNamespace(path="/atlas"),
             feature_artifact_path="/feature")
         with patch(
-                "bilqis_mlx.runtime.bamf_operator.session_support.load_accepted_generation",
+                "bilqis_mlx.runtime.bamf_operator.session_parts.session_support.load_accepted_generation",
                 return_value=parent), patch(
-                "bilqis_mlx.runtime.bamf_operator.session_support.AcceptedRuntimeHost",
+                "bilqis_mlx.runtime.bamf_operator.session_parts.session_support.AcceptedRuntimeHost",
                 return_value=host), patch(
-                "bilqis_mlx.runtime.bamf_operator.session_support.bind_accepted_execution_feature_context",
+                "bilqis_mlx.runtime.bamf_operator.session_parts.session_support.bind_accepted_execution_feature_context",
                 return_value=authenticated):
             self.assertEqual(
                 _execution_context(Path("/run")),

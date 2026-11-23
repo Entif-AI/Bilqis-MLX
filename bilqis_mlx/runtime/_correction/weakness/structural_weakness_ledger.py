@@ -69,7 +69,7 @@ def apply_rejection_weaknesses(
 
 def _resolution_authority(run_dir, wrapper, source_context, selection, assessment, instruments):
     from bilqis_mlx.factory._model.weakness import WeaknessClassId
-    from bilqis_mlx.runtime.bamf_operator.evidence_validation import (
+    from bilqis_mlx.runtime.bamf_operator.evidence_parts.validation import (
         read_candidate_horizon_evidence,
     )
     from bilqis_mlx.runtime.capability_retention import Assessment, EvidenceKind

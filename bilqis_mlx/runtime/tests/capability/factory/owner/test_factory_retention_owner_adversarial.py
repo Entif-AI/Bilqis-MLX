@@ -192,6 +192,73 @@ class FactoryRetentionOwnerAdversarialTests(unittest.TestCase):
         )
         self.assertEqual(owner._training_capabilities(candidate), ("B.IDBOOLOPS",))
 
+    def test_multifidelity_shadow_target_is_observational_and_reuses_parent_score(self):
+        target = "B.IDBOOLOPS"
+        source, candidate, *_ = _foundation_owner_fixture()
+        plan, target_plan, instrument = _foundation_retention_plan(target)
+        source.require_accepted_runtime = Mock()
+        source.run_dir = Path("unused")
+        parent = SimpleNamespace()
+        candidate_bundle = SimpleNamespace()
+        candidate_state = SimpleNamespace()
+        cache = SimpleNamespace()
+        candidate_assessment = SimpleNamespace(score=Mock(return_value=(4, 6)))
+        parent_assessment = SimpleNamespace(score=Mock(return_value=(3, 6)))
+
+        with patch.multiple(
+                owner,
+                _candidate_from_live_parent=Mock(return_value=(
+                    parent, candidate_bundle, candidate_state, cache)),
+                require_current_retention_source_rows=Mock(return_value=(
+                    plan, target_plan, ((target, 7, ({"id": "row"},)),))),
+                split_cached_rows=Mock(return_value=((7, ({"id": "row"},)), ())),
+                _instruments=Mock(return_value=(instrument,)),
+                EvaluationCohort=Mock(return_value=object()),
+                case_census_digest=Mock(return_value="7" * 64),
+                factory_complete_solver=Mock(side_effect=(
+                    (object(), "c" * 64), (object(), "p" * 64))),
+                evaluate_capabilities=Mock(side_effect=(
+                    candidate_assessment, parent_assessment)),
+        ):
+            first = owner.measure_current_retention_shadow_target(
+                source, candidate, "artifact", target, run_dir=Path("unused"))
+
+        self.assertEqual(first["target_correct_delta"], 1)
+        self.assertEqual(first["parent_correct"], 3)
+        self.assertEqual(first["candidate_correct"], 4)
+        self.assertFalse(first["final_c05_authority"])
+        self.assertFalse(first["actual_authority_changed"])
+        source.require_accepted_runtime.assert_called_once_with(Path("unused"))
+
+        candidate_assessment = SimpleNamespace(score=Mock(return_value=(5, 6)))
+        solver = Mock(return_value=(object(), "d" * 64))
+        evaluator = Mock(return_value=candidate_assessment)
+        bound = Mock(return_value=(
+            parent, candidate_bundle, candidate_state, cache))
+        with patch.multiple(
+                owner,
+                _candidate_from_bound_parent=bound,
+                _candidate_from_live_parent=Mock(
+                    side_effect=AssertionError("bound shadow probe must not reload parent")),
+                require_current_retention_source_rows=Mock(return_value=(
+                    plan, target_plan, ((target, 7, ({"id": "row"},)),))),
+                split_cached_rows=Mock(return_value=((7, ({"id": "row"},)), ())),
+                _instruments=Mock(return_value=(instrument,)),
+                EvaluationCohort=Mock(return_value=object()),
+                case_census_digest=Mock(return_value="7" * 64),
+                factory_complete_solver=solver,
+                evaluate_capabilities=evaluator,
+        ):
+            later = owner.measure_current_retention_shadow_target(
+                source, candidate, "artifact", target, run_dir=Path("unused"),
+                parent_correct=3, accepted_parent=parent, execution_cache=cache)
+
+        self.assertEqual(later["target_correct_delta"], 2)
+        bound.assert_called_once_with(parent, cache, candidate)
+        self.assertEqual(solver.call_count, 1)
+        self.assertEqual(evaluator.call_count, 1)
+        self.assertEqual(source.require_accepted_runtime.call_count, 1)
+
     def test_optimizer_delta_summary_distinguishes_decay_only_from_gradient_driven_change(self):
         parent = SimpleNamespace(retained_state=SimpleNamespace(
             optimizer=SimpleNamespace(parameters={

@@ -19,7 +19,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
-from bilqis_mlx.runtime.bamf_operator.session_support import _execution_context
+from bilqis_mlx.runtime.bamf_operator.session_parts.session_support import _execution_context
 from bilqis_mlx.runtime.factory_retention_owner import (
     bind_current_retention_protection_plan,
 )

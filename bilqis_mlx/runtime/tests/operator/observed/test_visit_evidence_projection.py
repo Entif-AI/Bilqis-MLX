@@ -3,9 +3,9 @@ from tempfile import TemporaryDirectory
 from types import SimpleNamespace as NS
 import unittest
 
-from bilqis_mlx.runtime.bamf_operator.evidence import prepare_candidate_evidence_root
+from bilqis_mlx.runtime.bamf_operator.evidence_parts import prepare_candidate_evidence_root
 from bilqis_mlx.runtime.teacher_observation_capture import store_sidecar
-from bilqis_mlx.runtime.bamf_operator.evidence_projection import (
+from bilqis_mlx.runtime.bamf_operator.evidence_parts.projection import (
     apply_candidate_evidence, selected_visit_evidence, unknown_generated_grade_evidence,
 )
 

@@ -63,7 +63,7 @@ def _proof(monkeypatch, tmp_path):
         "bilqis_mlx.runtime.factory_complete_solver.FactoryEvaluationInstrument",
         _Instrument)
     monkeypatch.setattr(
-        "bilqis_mlx.runtime.bamf_operator.evidence_validation.read_candidate_horizon_evidence",
+        "bilqis_mlx.runtime.bamf_operator.evidence_parts.validation.read_candidate_horizon_evidence",
         lambda _run_dir, _receipt: {"source_objects": {"old": rejected}})
     return context, selection, teacher, carried[0], evidence, assessment, fresh_row, _Instrument
 

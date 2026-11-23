@@ -6,7 +6,7 @@ from pathlib import Path
 import random
 
 from bilqis_mlx.learning.teacher_visit_identity import TeacherVisitIdentity, require_teacher_visit_receipt
-from bilqis_mlx.runtime.bamf_operator.evidence_validation import read_candidate_horizon_evidence
+from bilqis_mlx.runtime.bamf_operator.evidence_parts.validation import read_candidate_horizon_evidence
 from bilqis_mlx.runtime.priority_rejection_replay import current_rejection_outcomes
 from bilqis_mlx.runtime.state import _fingerprint
 

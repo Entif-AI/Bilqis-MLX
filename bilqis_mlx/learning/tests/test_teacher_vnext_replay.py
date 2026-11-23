@@ -143,6 +143,7 @@ class TeacherVNextReplayTests(unittest.TestCase):
         self.assertEqual(target_correct_delta(.5, .5625, 32), 2.)
 
         self.assertEqual(active_rungs(DEFAULT_SHADOW_POLICY, 16), (2, 4, 8, 16))
+        self.assertEqual(active_rungs(DEFAULT_SHADOW_POLICY, 12), (2, 4, 8, 12))
         recovered = evaluate_shadow(
             DEFAULT_SHADOW_POLICY,
             probes=((2, 0), (4, 1), (8, 0), (16, 2)),
@@ -157,6 +158,27 @@ class TeacherVNextReplayTests(unittest.TestCase):
         self.assertEqual(inert_until_eight["first_would_stop_step"], 8)
         self.assertTrue(inert_until_eight["false_kill"])
         self.assertEqual(inert_until_eight["shadow_steps_saved"], 8)
+
+    def test_activation_receipt_reports_false_continue_quality(self):
+        from bilqis_mlx.learning.teacher_multifidelity import (
+            DEFAULT_SHADOW_POLICY, evaluate_shadow, qualify_activation,
+        )
+
+        false_continue = evaluate_shadow(
+            DEFAULT_SHADOW_POLICY,
+            probes=((2, 1), (4, 1), (8, 1), (12, 1)),
+            final_retained=False, full_budget_steps=12)
+        would_stop = evaluate_shadow(
+            DEFAULT_SHADOW_POLICY,
+            probes=((2, 0), (4, 0), (8, 0), (12, 0)),
+            final_retained=False, full_budget_steps=12)
+        receipt = qualify_activation((false_continue, would_stop))
+
+        self.assertEqual(receipt["continue_recommendations"], 1)
+        self.assertEqual(receipt["false_continues"], 1)
+        self.assertEqual(receipt["false_continue_rate"], 1.0)
+        self.assertEqual(receipt["retained_would_kill"], 0)
+        self.assertEqual(receipt["status"], "NOT_QUALIFIED")
 
 
 

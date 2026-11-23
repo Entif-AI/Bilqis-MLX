@@ -26,7 +26,7 @@ from bilqis_mlx.runtime.bamf_rejection import (
 )
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.cold_resume_probe import retained_digest
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import shape_patch
-from bilqis_mlx.runtime.bamf_operator.evidence import CandidateEvidenceCapture, prepare_candidate_evidence_root
+from bilqis_mlx.runtime.bamf_operator.evidence_parts import CandidateEvidenceCapture, prepare_candidate_evidence_root
 from bilqis_mlx.runtime.capability_retention import DecisionStatus
 from bilqis_mlx.runtime.outcomes.issuance import build_outcome
 from bilqis_mlx.runtime.outcomes.replay import replay_rejected_outcomes

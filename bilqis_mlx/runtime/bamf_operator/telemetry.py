@@ -129,7 +129,7 @@ class TrainerObservation:
                 return
             scorecard = fields.pop('retention_scorecard', None)
             if scorecard is not None:
-                from .evidence_projection import merge_retention_scorecard
+                from .evidence_parts.projection import merge_retention_scorecard
                 current = self.record.get('visit_evidence') or {
                     'schema': 'bilqis.bamf.visit-evidence/v1', 'state': 'PARTIAL'}
                 self.record['visit_evidence'] = merge_retention_scorecard(

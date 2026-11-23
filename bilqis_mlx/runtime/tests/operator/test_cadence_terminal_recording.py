@@ -2,7 +2,7 @@
 from contextlib import nullcontext
 from types import SimpleNamespace
 
-from bilqis_mlx.runtime.bamf_operator._session_visit import visit
+from bilqis_mlx.runtime.bamf_operator.session_parts.session_visit import visit
 from bilqis_mlx.runtime.bamf_operator.performance import measure_observed_phase
 
 

@@ -135,11 +135,15 @@ def qualify_activation(reviews, *,
     if any(not isinstance(row, dict) or row.get("mode") != "SHADOW" for row in rows):
         raise ValueError(TeacherMultifidelityError.REVIEW_INVALID.value)
     false_kills = sum(bool(row.get("false_kill")) for row in rows)
+    false_continues = sum(bool(row.get("false_continue")) for row in rows)
     stops = sum(row.get("first_would_stop_step") is not None for row in rows)
+    continues = len(rows) - stops
     mean_saved = (
         sum(float(row.get("shadow_steps_saved", 0)) for row in rows) / len(rows)
         if rows else 0.)
     false_kill_rate = false_kills / stops if stops else 0. if rows else None
+    false_continue_rate = (
+        false_continues / continues if continues else 0. if rows else None)
     qualified = (
         len(rows) >= policy.minimum_reviews and
         false_kill_rate is not None and
@@ -151,8 +155,12 @@ def qualify_activation(reviews, *,
         "status": "QUALIFIED" if qualified else "NOT_QUALIFIED",
         "reviews": len(rows),
         "early_stop_recommendations": stops,
+        "continue_recommendations": continues,
         "false_kills": false_kills,
         "false_kill_rate": false_kill_rate,
+        "false_continues": false_continues,
+        "false_continue_rate": false_continue_rate,
+        "retained_would_kill": false_kills,
         "mean_shadow_steps_saved": mean_saved,
         "authority_changed": False,
     }
