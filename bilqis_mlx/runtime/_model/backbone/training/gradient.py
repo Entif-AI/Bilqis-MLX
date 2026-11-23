@@ -14,7 +14,9 @@ from bilqis_mlx.runtime.backbone_identity import (
 )
 from bilqis_mlx.runtime.bamf_bundle.execution_cache import bind_execution_generation
 from bilqis_mlx.runtime.model_topology_v2 import validate_bamf_parameters
-from bilqis_mlx.runtime.autodiff_trace import defer_host_tensor_validation
+from bilqis_mlx.runtime.autodiff_trace import (
+    defer_host_tensor_validation, mlx_autodiff_parameter_tree,
+)
 from bilqis_mlx.b11_observation import (
     attach_performance_observation, source_replay_observation,
 )
@@ -144,7 +146,8 @@ def _learning_first_value_and_grad_impl(
                 return execution.loss.total
 
         autodiff_started = time.perf_counter()
-        loss_total, gradients = mx.value_and_grad(objective)(params)
+        loss_total, gradients = mx.value_and_grad(objective)(
+            mlx_autodiff_parameter_tree(params))
         mx.eval(loss_total, gradients)
         autodiff_wall_seconds = time.perf_counter() - autodiff_started
     _require_finite_tensor_tree(gradients, "B11_GRADIENT_NONFINITE")
@@ -219,7 +222,8 @@ def _bamf_value_and_grad_impl(
         )
         autodiff_started = time.perf_counter()
         with b11_source_authority_launch_epoch((compiled_batch,)):
-            loss_total, gradients = mx.value_and_grad(objective)(params)
+            loss_total, gradients = mx.value_and_grad(objective)(
+                mlx_autodiff_parameter_tree(params))
         mx.eval(loss_total, gradients)
         autodiff_wall_seconds = time.perf_counter() - autodiff_started
     return _finalize_gradient_execution(

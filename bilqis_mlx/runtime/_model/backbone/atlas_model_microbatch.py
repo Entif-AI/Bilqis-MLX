@@ -33,7 +33,9 @@ from .microbatch.route_kernel import (
     prepare_route_microbatch_kernel, route_microbatch_compatible,
     route_microbatch_loss_and_trajectory,
 )
-from bilqis_mlx.runtime.autodiff_trace import defer_host_tensor_validation
+from bilqis_mlx.runtime.autodiff_trace import (
+    defer_host_tensor_validation, mlx_autodiff_parameter_tree,
+)
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.b11_observation import (
     attach_performance_observation, source_replay_observation,
@@ -102,9 +104,10 @@ def _materialize_gradient(
         "b11_materialization_barrier_count": 1,
         "b11_host_readback_count": 0,
     }
+    autodiff_params = mlx_autodiff_parameter_tree(params)
     if not route_vectorized:
         started = time.perf_counter()
-        mean_loss, gradients = mx.value_and_grad(objective)(params)
+        mean_loss, gradients = mx.value_and_grad(objective)(autodiff_params)
         timings["b11_autodiff_dispatch_wall_seconds"] = time.perf_counter() - started
         _attach_dispatch_timings(timings, holder)
         finite_witness = _finite_gradient_witness(mean_loss, gradients)
@@ -119,7 +122,7 @@ def _materialize_gradient(
     started = time.perf_counter()
     (mean_loss, route_hidden, route_trajectory, route_logits,
      refinement_route_logits), gradients = mx.value_and_grad(
-        objective)(params)
+        objective)(autodiff_params)
     timings["b11_autodiff_dispatch_wall_seconds"] = time.perf_counter() - started
     _attach_dispatch_timings(timings, holder)
     finite_witness = _finite_gradient_witness(mean_loss, gradients)
