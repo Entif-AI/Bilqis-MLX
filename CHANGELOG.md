@@ -2,6 +2,16 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.5.1](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.5.0...v1.5.1) (2026-11-23)
+
+
+### Performance Improvements
+
+* **bamf:** overlap safe host preparation with Metal execution ([#1597](https://github.com/Entif-AI/Bilqis-MLX/issues/1597)) ([bb86a59](https://github.com/Entif-AI/Bilqis-MLX/commit/bb86a59fb2389e216f1239d8013df500159c59cd))
+* **bamf:** qualify accelerator work units ([#1601](https://github.com/Entif-AI/Bilqis-MLX/issues/1601)) ([7e34256](https://github.com/Entif-AI/Bilqis-MLX/commit/7e34256381a1d40707284e0be466dcb15092ec26))
+* **bamf:** qualify stable MLX compiled training kernel ([#1600](https://github.com/Entif-AI/Bilqis-MLX/issues/1600)) ([b49907b](https://github.com/Entif-AI/Bilqis-MLX/commit/b49907bac3e9dd0ac64ce6fe8784faf15976c617))
+* **bamf:** stop embedding full teacher history in outcomes ([#1598](https://github.com/Entif-AI/Bilqis-MLX/issues/1598)) ([c477669](https://github.com/Entif-AI/Bilqis-MLX/commit/c4776695737f850182167ffb111dd077fa1af0ce))
+
 ## [1.5.0](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.7...v1.5.0) (2026-11-23)
 
 
