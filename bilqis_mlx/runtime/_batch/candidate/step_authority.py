@@ -7,6 +7,12 @@ from threading import RLock
 from time import perf_counter
 import weakref
 
+from bilqis_mlx.errors import ErrorBus, SCHOOL
+
+
+def _invalid(reason: str) -> None:
+    ErrorBus.raise_(SCHOOL.BAMF_TRAINING_ADAPTER.INVALID, reason=reason)
+
 
 @dataclass
 class _Owner:
@@ -141,18 +147,18 @@ def issue_learning_first_step_authority(cache, parent, candidate, source_context
 
     cache = require_accepted_execution_cache(cache)
     if type(parent) is not CompleteStudent:
-        raise TypeError("learning-first parent must be CompleteStudent")
+        _invalid("LEARNING_FIRST_STEP_AUTHORITY_PARENT_INVALID")
     if candidate is not None and (
             type(candidate) is not CandidateTransaction
             or not candidate.learning_first
             or candidate.parent is not parent.retained_state):
-        raise ValueError("learning-first candidate authority drift")
+        _invalid("LEARNING_FIRST_STEP_AUTHORITY_CANDIDATE_DRIFT")
     release_sha256 = source_context.release.release_sha256
     if not isinstance(release_sha256, str) or not release_sha256:
-        raise ValueError("learning-first release identity required")
+        _invalid("LEARNING_FIRST_STEP_AUTHORITY_RELEASE_IDENTITY_REQUIRED")
     accepted_identity = getattr(cache, "_candidate_identity_sha256", None)
     if not isinstance(accepted_identity, str) or not accepted_identity:
-        raise ValueError("learning-first accepted identity required")
+        _invalid("LEARNING_FIRST_STEP_AUTHORITY_ACCEPTED_IDENTITY_REQUIRED")
     optimizer = parent.retained_state.optimizer if candidate is None else candidate.optimizer
     with _LOCK:
         owner = _owner_for(cache)
@@ -240,7 +246,7 @@ def require_learning_first_step_authority(token: str, *, parameters=None,
             authority = _TOKENS.get(token)
             if authority is None:
                 _METRICS["learning_first_step_token_misses"] += 1
-                raise ValueError("learning-first step authority missing or stale")
+                _invalid("LEARNING_FIRST_STEP_AUTHORITY_MISSING_OR_STALE")
             owner = _OWNERS.get(authority.cache_id)
             cache = authority.cache_ref()
             parent = authority.parent_ref()
@@ -286,7 +292,7 @@ def require_learning_first_step_authority(token: str, *, parameters=None,
                     or (extents_digest is not None
                         and extents_digest != authority.extents_digest)):
                 _METRICS["learning_first_step_token_misses"] += 1
-                raise ValueError("learning-first step authority drift")
+                _invalid("LEARNING_FIRST_STEP_AUTHORITY_DRIFT")
             _METRICS["learning_first_step_token_hits"] += 1
             return authority
     finally:

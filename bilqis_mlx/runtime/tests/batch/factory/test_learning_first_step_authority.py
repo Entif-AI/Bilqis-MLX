@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 
 import bilqis_mlx.runtime.atlas_model  # noqa: F401 - completes backbone import cycle
+from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime import atlas_model_training
 from bilqis_mlx.runtime.backbone_identity import require_execution_generation_binding
 from bilqis_mlx.runtime.candidate import step_authority
@@ -74,7 +75,7 @@ def test_latest_step_token_is_o1_and_revokes_previous_epoch():
             cache, parent, None, source)
 
     assert first != second
-    with pytest.raises(ValueError):
+    with pytest.raises(BilqisError):
         step_authority.require_learning_first_step_authority(first)
     metrics = step_authority.learning_first_step_authority_metrics_snapshot()
     assert metrics["learning_first_step_token_issues"] == 2
@@ -97,7 +98,7 @@ def test_speculative_token_cannot_validate_accepted_parent_parameters():
         authority = step_authority.require_learning_first_step_authority(
             token, parameters=candidate.optimizer.parameters)
         assert authority.speculative is True
-        with pytest.raises(ValueError):
+        with pytest.raises(BilqisError):
             step_authority.require_learning_first_step_authority(
                 token, parameters=parent.retained_state.optimizer.parameters)
 
@@ -126,7 +127,7 @@ def test_unchanged_candidate_reuses_token_and_update_reissues_it():
 
     assert reused == first
     assert second != first
-    with pytest.raises(ValueError):
+    with pytest.raises(BilqisError):
         step_authority.require_learning_first_step_authority(first)
     assert step_authority.require_learning_first_step_authority(
         second, parameters=candidate2.optimizer.parameters).candidate_step == 2
@@ -194,7 +195,7 @@ def test_governing_identity_drift_invalidates_current_step_token(drift):
     elif drift == "optimizer_lineage":
         parent.retained_state.optimizer = _Optimizer("other")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(BilqisError):
         step_authority.require_learning_first_step_authority(token)
 
 
@@ -211,7 +212,7 @@ def test_bound_candidate_drift_fails_closed_instead_of_reissuing():
         first = step_authority.issue_learning_first_step_authority(
             cache, parent, candidate, source)
         source.release.release_sha256 = "8" * 64
-        with pytest.raises(ValueError):
+        with pytest.raises(BilqisError):
             step_authority.bind_learning_first_step_authority(
                 cache, parent, candidate, source)
 
