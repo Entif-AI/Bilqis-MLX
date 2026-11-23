@@ -4,6 +4,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
+import pytest
+
 from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
 from bilqis_mlx.runtime.bamf_operator.session_parts.native_session import (
     candidate_horizon_execution,
@@ -77,12 +79,8 @@ def test_learning_first_horizon_fails_closed_when_accepted_rehearsal_plan_is_inv
     with evidence_mode(strict=False), patch(
             "bilqis_mlx.runtime.bamf_operator.session_parts.native_session."
             "compile_rehearsal_plan", side_effect=ValueError("rehearsal-invalid")):
-        try:
+        with pytest.raises(ValueError, match="rehearsal-invalid"):
             _run_horizon(selection, {}, cache=accepted_cache)
-        except ValueError as failure:
-            assert str(failure) == "rehearsal-invalid"
-        else:
-            raise AssertionError("accepted rehearsal failure was silently suppressed")
 
 
 def test_strict_horizon_preserves_legacy_source_authority_path():
