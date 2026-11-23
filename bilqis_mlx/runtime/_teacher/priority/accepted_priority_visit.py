@@ -1,5 +1,4 @@
 """Accepted C03 priority selection and one Factory candidate execution."""
-from copy import deepcopy
 from dataclasses import replace
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 import json
@@ -55,7 +54,6 @@ def _selected_priority_result(
         planning_offer, source_materialization_wall_seconds,
         planning_offer_fanout_wall_seconds):
     capability = option.context.capability_id
-    selection_base = deepcopy(teacher)
     key, policy, metadata = select_visit_policy(
         engine, teacher, capability, school, rng, learning_settings,
         option.context.scope,
@@ -64,14 +62,8 @@ def _selected_priority_result(
         grade, total_capabilities=total_capabilities,
         plasticity_escape=plasticity_escape)
     metadata = {**metadata, 'how_context': context_for_selection(
-        source_context.release, program, grade, school, option, teacher, metadata)}
-    from bilqis_mlx.runtime.outcomes.observations import _compact_selected_teacher
-    metadata = {
-        **metadata,
-        'selected_teacher_snapshot_required': (
-            _compact_selected_teacher(selection_base, metadata['how_context'])
-            != teacher),
-    }
+        source_context.release, program, grade, school, option, teacher, metadata,
+        total_capabilities)}
     if cadence_authorization is not None:
         metadata = {**metadata, 'cadence': cadence_authorization.to_record()}
     selected_epoch = replace(
