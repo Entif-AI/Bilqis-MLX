@@ -284,7 +284,11 @@ def require_live_accepted_currentness_step(
         parent: CompleteStudent) -> AcceptedCurrentnessStep:
     """Fence the final pre-neural boundary against live B13/C09 drift."""
     require_accepted_currentness_step(step, transaction, parent)
-    _require_live_mutable_edges(transaction, parent)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    if strict_mode_enabled():
+        _require_live_mutable_edges(transaction, parent)
     step._owner.require(step._epoch)
     return step
 
@@ -310,8 +314,12 @@ def require_accepted_currentness(transaction, cache=None, parent=None):
 def refresh_accepted_currentness(transaction, parent: CompleteStudent):
     """Check all mutable accepted-state edges once before the next neural step."""
     require_accepted_currentness(transaction, transaction._cache, parent)
-    _require_live_mutable_edges(transaction, parent)
-    transaction._metrics.increment("accepted_cache_currentness_count")
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    if strict_mode_enabled():
+        _require_live_mutable_edges(transaction, parent)
+        transaction._metrics.increment("accepted_cache_currentness_count")
     _activate(transaction)
     return _issue_currentness_step(transaction, parent)
 

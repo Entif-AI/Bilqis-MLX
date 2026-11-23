@@ -101,7 +101,7 @@ class BamfResumeTests(ResumeCase):
                 ])
             self.assertEqual((code, errors), (0, ""))
             self.assertEqual(json.loads(output)["status"], "VISIT_LIMIT")
-            self.assertFalse(operate.call_args.kwargs["strict_evidence"])
+            self.assertFalse(operate.call_args.kwargs["strict_mode"])
 
     def test_human_resume_with_ambiguous_flywheel_hold_does_not_start_learning(self):
             target = self.root / "accepted-bamf"

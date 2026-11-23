@@ -40,11 +40,29 @@ def test_bamf_resume_forwards_explicit_candidate_horizon():
     assert operate.call_args.kwargs["reserve_gib"] == 100.0
     assert operate.call_args.kwargs["source_prefetch_workers"] == 2
     assert operate.call_args.kwargs["mastery_debt_min_utility"] == 0.08
-    assert operate.call_args.kwargs["strict_evidence"] is False
+    assert operate.call_args.kwargs["strict_mode"] is False
     assert callable(operate.call_args.kwargs["progress"])
 
 
-def test_bamf_resume_strict_evidence_is_explicit_opt_in():
+def test_bamf_resume_strict_mode_is_explicit_opt_in():
+    args = SimpleNamespace(
+        human_run=True, dry_run=False, minutes=90, max_visits=1,
+        steps_per_visit=6, batch_size=32, reserve_gib=100.0, source_prefetch_workers=2,
+        strict_mode=True)
+    report = {"result": "READY_TO_RESUME"}
+    run_dir = Path("/run")
+    result = BamfOperatorResult("VISIT_LIMIT", 1, 0, 1, 0, 0)
+    with patch(
+            "bilqis_mlx.control_plane.active_endpoint.advertise_active_endpoint",
+            return_value=nullcontext()), patch(
+            "bilqis_mlx.runtime.bamf_operator.operate_bamf",
+            return_value=result) as operate:
+        handled, _code, _next = _dispatch_bamf_resume(args, run_dir, report)
+    assert handled is True
+    assert operate.call_args.kwargs["strict_mode"] is True
+
+
+def test_bamf_resume_strict_evidence_alias_still_enters_strict_mode():
     args = SimpleNamespace(
         human_run=True, dry_run=False, minutes=90, max_visits=1,
         steps_per_visit=6, batch_size=32, reserve_gib=100.0, source_prefetch_workers=2,
@@ -59,7 +77,7 @@ def test_bamf_resume_strict_evidence_is_explicit_opt_in():
             return_value=result) as operate:
         handled, _code, _next = _dispatch_bamf_resume(args, run_dir, report)
     assert handled is True
-    assert operate.call_args.kwargs["strict_evidence"] is True
+    assert operate.call_args.kwargs["strict_mode"] is True
 
 
 def test_bamf_resume_preserves_explicit_serial_and_single_worker_modes():

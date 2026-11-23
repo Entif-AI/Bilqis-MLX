@@ -212,9 +212,10 @@ def _resume(args, requested_topology, *, include_parent_graph=False):
             invalid("BAMF_OPERATOR_RESUME_ADMISSION_POLICY_CONFLICT")
         result = "READY_TO_RESUME"
 
-        strict_evidence = bool(getattr(args, "strict_evidence", True))
+        from .bamf_lifecycle_inputs import strict_mode_requested
+        strict_mode = strict_mode_requested(args)
         if (policy == "atlas-release" and args.human_run is True and not args.dry_run
-                and strict_evidence):
+                and strict_mode):
             from bilqis_mlx.runtime.atlas_flywheel_runtime import (
                 run_accepted_atlas_flywheel,
             )

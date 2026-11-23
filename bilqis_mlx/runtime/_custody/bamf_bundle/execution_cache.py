@@ -234,6 +234,11 @@ def require_accepted_execution_cache(cache) -> AcceptedExecutionCache:
     if type(cache) is not AcceptedExecutionCache:
         _invalid("B13_EXECUTION_CACHE_REQUIRED")
     cache.__post_init__()
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    if not strict_mode_enabled():
+        return cache
     currentness = getattr(cache, "_currentness_transaction", None)
     if currentness is not None:
         from .currentness_transaction import require_accepted_currentness

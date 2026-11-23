@@ -90,17 +90,29 @@ def bind_priority_planning_generation(source_context, parent, atlas_artifact_pat
     """Authenticate the accepted generation once before capability fan-out."""
     if type(source_context) is not SourceExecutionContext:
         _invalid_source_batch('BAMF_PRIORITY_SOURCE_CONTEXT_INVALID')
-    source_context.require_accepted_runtime(source_context.run_dir)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    strict = strict_mode_enabled()
+    if strict:
+        source_context.require_accepted_runtime(source_context.run_dir)
     if getattr(parent, 'run_identity', None) is None:
         _invalid_source_batch('BAMF_PRIORITY_PLANNING_GENERATION_INVALID')
     run_dir = Path(source_context.run_dir).resolve()
     cache = _current_cache(source_context, parent)
-    from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (
-        bind_accepted_currentness_transaction,
-    )
-    metrics = getattr(source_context._accepted_runtime_host, "currentness_metrics", None)
-    currentness = bind_accepted_currentness_transaction(
-        run_dir, parent, cache, metrics=metrics)
+    if strict:
+        from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (
+            bind_accepted_currentness_transaction,
+        )
+        metrics = getattr(source_context._accepted_runtime_host, "currentness_metrics", None)
+        currentness = bind_accepted_currentness_transaction(
+            run_dir, parent, cache, metrics=metrics)
+    else:
+        currentness = getattr(cache, "_currentness_transaction", None)
+        from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (
+            require_accepted_currentness,
+        )
+        currentness = require_accepted_currentness(currentness, cache, parent)
     from bilqis_mlx.runtime.bamf_bundle import (
         authenticate_bamf_execution_feature_context,
         is_authenticated_generation_feature_context,

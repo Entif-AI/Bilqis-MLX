@@ -52,7 +52,13 @@ def prepare_bamf_visit_impl(
     if (type(steps_per_visit) is not int
             or not 1 <= steps_per_visit <= MAX_CANDIDATE_HORIZON):
         invalid("BAMF_OPERATOR_SESSION_BOUNDS_INVALID")
-    emit_progress(progress, "validating accepted generation and source custody")
+    from .evidence_mode import strict_mode_enabled
+    emit_progress(
+        progress,
+        "validating accepted generation and source custody"
+        if strict_mode_enabled()
+        else "using accepted session execution context",
+    )
     visit_currentness_metrics = VisitCurrentnessMetrics()
     accepted_state_metrics = {}
     accepted_state_started = time.perf_counter()
@@ -88,7 +94,9 @@ def prepare_bamf_visit_impl(
     selection = select_priority_visit(
         run_dir, context, atlas_path, program=program, school=school,
         progress=progress, resource_holds=resource_holds,
-        planning_cache=planning_cache, logical_batch_size=batch_size)
+        planning_cache=planning_cache, logical_batch_size=batch_size,
+        **({"accepted_parent": parent, "accepted_cache": host_cache}
+           if not strict_mode_enabled() else {}))
     _record_planning_observation(observer, selection, planning_started)
     if selection.status != "TEACHER_SELECTED":
         if (selection.status == "NO_ADMISSIBLE_TEACHING"

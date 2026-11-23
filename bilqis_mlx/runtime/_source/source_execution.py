@@ -186,6 +186,16 @@ class SourceExecutionContext:
                 or type(host) is not AcceptedRuntimeHost
                 or host.run_dir.resolve() != Path(run_dir).resolve()):
             _invalid_source_batch("FACTORY_SOURCE_CORRECTION_RUNTIME_REQUIRED")
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_mode_enabled,
+        )
+        if not strict_mode_enabled():
+            cache = getattr(host, "_accepted_cache", None)
+            cache_run_dir = getattr(cache, "_run_dir", None)
+            if (cache is None or cache_run_dir is None
+                    or Path(cache_run_dir).resolve() != Path(run_dir).resolve()):
+                _invalid_source_batch("FACTORY_SOURCE_CORRECTION_RUNTIME_REQUIRED")
+            return
         host.source_authority()
 
     def source_authority(self):
