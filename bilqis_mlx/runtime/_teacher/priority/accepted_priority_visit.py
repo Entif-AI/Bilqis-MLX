@@ -165,6 +165,33 @@ def _empty_priority_result(run_dir, source_context, parent, frontier, history,
         cadence_authorization=cadence_authorization)
 
 
+def _qualified_priority_context(
+        run_dir, source_context, parent, cache, frontier, history, planning,
+        offers, program, school, learning_settings, lawful_frontier,
+        planning_generation, now, legacy_receipt, adaptation, prior_region):
+    projection = _c03_projection(
+        parent, legacy_receipt=legacy_receipt,
+        adaptation=adaptation, prior_region=prior_region)
+    projection = current_teacher_projection(run_dir, parent, cache, projection)
+    epoch = restore_teacher_lineage(projection.teacher_state)
+    teacher = _teacher(epoch, school)
+    if not isinstance(learning_settings, Settings):
+        _invalid('BAMF_SALIENCE_CONTEXTUAL_SETTINGS_REQUIRED')
+    qualified = requalify_priority(
+        run_dir, source_context, parent, frontier, history, planning, offers,
+        program, school, epoch, now=now, lawful_frontier=lawful_frontier,
+        planning_generation=planning_generation)
+    holds = [
+        (item.capability_id, item.code.value)
+        for item in lawful_frontier.exclusions
+    ]
+    holds.extend(qualified.holds)
+    return (
+        projection, epoch, teacher, qualified,
+        dict(qualified.offers), dict(frontier.evidence), holds,
+    )
+
+
 def select_accepted_priority_visit(
         run_dir, source_context, frontier, history, planning, offers,
         engine, school, rng, learning_settings, *, program, now,
@@ -184,25 +211,13 @@ def select_accepted_priority_visit(
         return _empty_priority_result(
             run_dir, source_context, parent, frontier, history, lawful_frontier,
             cadence_authorization, cadence_ids, cadence_metadata)
-    projection = _c03_projection(parent, legacy_receipt=legacy_receipt,
-                                 adaptation=adaptation, prior_region=prior_region)
-    projection = current_teacher_projection(run_dir, parent, cache, projection)
-    epoch = restore_teacher_lineage(projection.teacher_state)
-    teacher = _teacher(epoch, school)
-    if not isinstance(learning_settings, Settings):
-        _invalid('BAMF_SALIENCE_CONTEXTUAL_SETTINGS_REQUIRED')
-    qualified = requalify_priority(run_dir, source_context, parent, frontier, history,
-                                   planning, offers, program, school, epoch, now=now,
-                                   lawful_frontier=lawful_frontier,
-                                   planning_generation=planning_generation)
+    (projection, epoch, teacher, qualified, by_id, evidence, holds) = (
+        _qualified_priority_context(
+            run_dir, source_context, parent, cache, frontier, history, planning,
+            offers, program, school, learning_settings, lawful_frontier,
+            planning_generation, now, legacy_receipt, adaptation, prior_region))
     if cadence_ids is not None and not set(dict(qualified.offers)) <= set(cadence_ids):
         _invalid('BAMF_ACTIVE_GRADE_CADENCE_OFFER_DRIFT')
-    by_id, evidence = dict(qualified.offers), dict(frontier.evidence)
-    holds = [
-        (item.capability_id, item.code.value)
-        for item in lawful_frontier.exclusions
-    ]
-    holds.extend(qualified.holds)
     action_required_option_id = None
     for option in qualified.ranked.ordered:
         priority_features = salience_priority_features(
