@@ -27,7 +27,7 @@ def _native_target(row):
 def compile_learning_first_training_batch(
         delivered_rows, source_context, topology, *, delivery_capability,
         teacher_strategy, requested_count, optimizer_step_seed,
-        visit_provenance, rehearsal_by_id, generation_binding,
+        visit_provenance, rehearsal_by_id, fresh_support_by_id, generation_binding,
         prepared_model_sources, delivered_content_sha256):
     """Compile already-selected numerical lesson inputs without authority replay."""
     rows = tuple(delivered_rows)
@@ -83,7 +83,8 @@ def compile_learning_first_training_batch(
             identity, source_id, capability_id, operation_id,
             _freeze(teacher_strategy), requested_count, len(rows),
             (rehearsal_by_id or {}).get(identity), optimizer_step_seed,
-            visit_provenance, source_family_id, episode_id)
+            visit_provenance, source_family_id, episode_id,
+            auxiliary_role=(fresh_support_by_id or {}).get(identity))
         compiled_rows.append(BamfTrainingRow(
             model_input, target, _native_target(row), metadata))
     return _issue_training_batch(

@@ -61,18 +61,24 @@ class PreparedFactoryTrainingBatch:
 
 
 
-def _target_source_count(rows, rehearsal_by_id):
-    return len(rows) - len(rehearsal_by_id)
+def _target_source_count(rows, rehearsal_by_id, fresh_support_by_id=None):
+    return len(rows) - len(rehearsal_by_id) - len(fresh_support_by_id or {})
 
 
 def _validated_training_request(
         source_context, candidate, delivered_rows, generation_binding, *,
         capability, delivery, requested_count, source_seed, source_each,
         optimizer_step_seed, visit_provenance, teacher_strategy,
-        rehearsal_by_id=None):
+        rehearsal_by_id=None, fresh_support_by_id=None):
     rows = tuple(delivered_rows) if isinstance(delivered_rows, (tuple, list)) else ()
     rehearsal_by_id = {} if rehearsal_by_id is None else dict(rehearsal_by_id)
-    target_source_count = _target_source_count(rows, rehearsal_by_id)
+    fresh_support_by_id = (
+        {} if fresh_support_by_id is None else dict(fresh_support_by_id))
+    target_source_count = _target_source_count(
+        rows, rehearsal_by_id, fresh_support_by_id)
+    if (set(rehearsal_by_id) & set(fresh_support_by_id)
+            or any(value != "fresh_support" for value in fresh_support_by_id.values())):
+        _invalid("FACTORY_TRAINING_FRESH_SUPPORT_ROLE_INVALID")
     if (type(source_context) is not SourceExecutionContext
             or not isinstance(candidate, BamfBundleCandidate)
             or not rows or any(type(row) is not dict for row in rows)
@@ -180,7 +186,7 @@ def _prepared_source_inputs(
 def _compile_factory_training(
         rows, source_context, candidate, delivery, capability, teacher_strategy,
         requested_count, optimizer_step_seed, visit_provenance, source_authority,
-        rehearsal_by_id, rehearsal_authorities, source_rows,
+        rehearsal_by_id, fresh_support_by_id, rehearsal_authorities, source_rows,
         feature_artifact_path, generation_binding,
         authenticated, manifest, prepared_model_sources):
     from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
@@ -195,6 +201,7 @@ def _compile_factory_training(
             optimizer_step_seed=optimizer_step_seed,
             visit_provenance=visit_provenance,
             rehearsal_by_id=(rehearsal_by_id or {}),
+            fresh_support_by_id=(fresh_support_by_id or {}),
             generation_binding=generation_binding,
             prepared_model_sources=prepared_model_sources,
             delivered_content_sha256=content_digest(rows))
@@ -269,6 +276,7 @@ def prepare_factory_training_batch(
     visit_provenance: BamfVisitProvenance, teacher_strategy: dict,
     rehearsal_by_id: dict | None = None, rehearsal_bindings: dict | None = None,
     rehearsal_authorities: dict | None = None,
+    fresh_support_by_id: dict | None = None,
     semantic_context=None, prepared_source=None, selected_source_authority=None,
 ) -> PreparedFactoryTrainingBatch:
     """Compile one real Factory draw once, then bind each C02 row into B11.
@@ -283,7 +291,8 @@ def prepare_factory_training_batch(
         source_seed=source_seed, source_each=source_each,
         optimizer_step_seed=optimizer_step_seed,
         visit_provenance=visit_provenance, teacher_strategy=teacher_strategy,
-        rehearsal_by_id=rehearsal_by_id)
+        rehearsal_by_id=rehearsal_by_id,
+        fresh_support_by_id=fresh_support_by_id)
     request_validation_seconds = time.perf_counter() - stage_started
     stage_started = time.perf_counter()
     authenticated = semantic_context
@@ -314,7 +323,7 @@ def prepare_factory_training_batch(
     training = _compile_factory_training(
         rows, source_context, candidate, delivery, capability, teacher_strategy,
         requested_count, optimizer_step_seed, visit_provenance, source_authority,
-        rehearsal_by_id, rehearsal_authorities, source_rows,
+        rehearsal_by_id, fresh_support_by_id, rehearsal_authorities, source_rows,
         feature_artifact_path, generation_binding,
         authenticated, manifest, prepared_model_sources)
     compile_seconds = time.perf_counter() - stage_started
