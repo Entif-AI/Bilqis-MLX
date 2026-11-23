@@ -58,6 +58,10 @@ def _stage_timing_cost(stage_metrics):
         "mentor_supervision_currentness_wall_seconds", "mentor_evidence_validation_wall_seconds",
         "resource_plan_wall_seconds", "prepared_feature_context_wall_seconds",
         "candidate_training_orchestration_wall_seconds",
+        "pipeline_host_preparation_wall_seconds",
+        "pipeline_host_overlap_wall_seconds",
+        "pipeline_host_wait_wall_seconds",
+        "pipeline_accelerator_wait_for_host_wall_seconds",
     )
     result = {name: stage_metrics.get(name, 0.0) for name in optional}
     result.update({
@@ -67,6 +71,10 @@ def _stage_timing_cost(stage_metrics):
         "optimizer_admission_wall_seconds": stage_metrics["optimizer_admission_wall_seconds"],
         "motif_staging_wall_seconds": stage_metrics["motif_staging_wall_seconds"],
         "candidate_terminal_step": stage_metrics["candidate_terminal_step"],
+        "pipeline_prepared_ahead_used": int(
+            stage_metrics.get("pipeline_prepared_ahead_used", 0)),
+        "pipeline_discarded_prefetch_work": int(
+            stage_metrics.get("pipeline_discarded_prefetch_work", 0)),
     })
     return result
 
