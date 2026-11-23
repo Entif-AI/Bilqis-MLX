@@ -55,9 +55,9 @@ class DepthSelectionTests(unittest.TestCase):
                 "parameter_tree_digest": "tree",
             })()
 
-        with patch(
-                "bilqis_mlx.runtime._depth.depth_contracts.require_execution_generation_binding",
-                side_effect=require):
+        with patch.dict(
+                depth_parameter_view.__globals__,
+                {"require_execution_generation_binding": require}):
             view = depth_parameter_view(
                 parameters, spec=spec, extents=extents, boundary_group=1,
                 execution_binding=binding)
