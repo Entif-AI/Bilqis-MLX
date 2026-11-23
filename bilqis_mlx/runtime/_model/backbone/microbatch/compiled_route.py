@@ -14,7 +14,7 @@ from .route_kernel import route_microbatch_loss_and_trajectory
 
 _CACHE_LIMIT = 8
 _COMPILE_ENV = "BILQIS_MLX_COMPILE_STABLE_KERNEL"
-_DEFAULT_ENABLED = False
+_DEFAULT_ENABLED = True
 _CACHE = OrderedDict()
 _HITS = 0
 _MISSES = 0
@@ -32,7 +32,7 @@ class StableRouteCompileKey:
 
 
 def compile_stable_kernel_enabled() -> bool:
-    """Return the qualified production toggle, with an explicit benchmark override."""
+    """Return the qualified production toggle, with an explicit operator override."""
     value = os.environ.get(_COMPILE_ENV)
     if value is None:
         return _DEFAULT_ENABLED

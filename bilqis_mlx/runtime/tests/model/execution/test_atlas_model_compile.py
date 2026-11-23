@@ -12,6 +12,7 @@ from bilqis_mlx.learning.atlas_readout import DecisionKind, DecisionOutput, Deci
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 from bilqis_mlx.runtime.atlas_model_microbatch import _materialize_gradient
 from bilqis_mlx.runtime.microbatch.compiled_route import (
+    compile_stable_kernel_enabled,
     compiled_route_cache_stats,
     _reset_compiled_route_cache_for_tests,
     learning_first_compiled_route,
@@ -158,12 +159,14 @@ def test_compile_cache_reuses_same_stable_key_and_rebuilds_on_route_change():
     assert compiled_route_cache_stats() == {"entries": 2, "hits": 1, "misses": 2}
 
 
-def test_compilation_toggle_is_disabled_by_default():
+def test_compilation_toggle_is_enabled_by_default_and_can_be_disabled():
     _reset_compiled_route_cache_for_tests()
     with patch.dict("os.environ", {}, clear=True):
+        assert compile_stable_kernel_enabled()
+    with patch.dict("os.environ", {"BILQIS_MLX_COMPILE_STABLE_KERNEL": "0"}):
         compiled, state = learning_first_compiled_route(*_fixtures())
-    assert compiled is None
-    assert state == "disabled"
+        assert not compile_stable_kernel_enabled()
+    assert compiled is None and state == "disabled"
     assert compiled_route_cache_stats() == {"entries": 0, "hits": 0, "misses": 0}
 
 
