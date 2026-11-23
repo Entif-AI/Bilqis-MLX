@@ -2,6 +2,13 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.4.5](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.4...v1.4.5) (2026-11-23)
+
+
+### Performance Improvements
+
+* **bamf:** disable source authority ceremony by default ([#1567](https://github.com/Entif-AI/Bilqis-MLX/issues/1567)) ([731ad33](https://github.com/Entif-AI/Bilqis-MLX/commit/731ad337884b96feec456ea86fc6ab8edcb41f2c))
+
 ## [1.4.4](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.4.3...v1.4.4) (2026-11-22)
 
 
