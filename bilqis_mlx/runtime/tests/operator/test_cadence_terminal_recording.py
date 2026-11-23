@@ -2,6 +2,9 @@
 from contextlib import nullcontext
 from types import SimpleNamespace
 
+from bilqis_mlx.runtime.bamf_operator.championship import (
+    championship_boundary_capabilities,
+)
 from bilqis_mlx.runtime.bamf_operator.session_parts.session_visit import visit
 from bilqis_mlx.runtime.bamf_operator.performance import measure_observed_phase
 
@@ -92,3 +95,18 @@ def test_rejected_attempt_exposes_rejection_phase_and_wall_time():
     timing = [event for event in events if "rejection_wall_seconds" in event]
     assert len(timing) == 1
     assert timing[0]["rejection_wall_seconds"] >= 0.0
+
+
+def test_championship_boundary_accepts_current_and_legacy_cadence_schema():
+    base = {
+        "disposition": "TEACHING",
+        "authorized_capability_ids": ["cap"],
+        "phase_capability_ids": ["cap"],
+    }
+    for schema in (
+            "bilqis.bamf.active-grade-cadence-authorization/v1",
+            "bilqis.bamf.active-grade-cadence-authorization/v2"):
+        selection = SimpleNamespace(metadata={
+            "cadence": {**base, "schema": schema},
+        })
+        assert championship_boundary_capabilities(selection, "cap") == ("cap",)

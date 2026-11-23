@@ -16,6 +16,7 @@ from bilqis_mlx.learning.capability_championship_state import (
 from bilqis_mlx.runtime.capability_retention import Assessment, EvaluationCohort
 from bilqis_mlx.runtime.active_grade_cadence_contracts import (
     CADENCE_AUTHORIZATION_SCHEMA,
+    LEGACY_CADENCE_AUTHORIZATION_SCHEMA,
 )
 from bilqis_mlx.runtime.retention.championship_evidence import capability_championship_evidence
 from bilqis_mlx.runtime._factory_identity_evaluation import (
@@ -83,7 +84,10 @@ def championship_boundary_capabilities(selection, target_capability: str) -> tup
     metadata = getattr(selection, "metadata", None)
     cadence = metadata.get("cadence") if isinstance(metadata, dict) else None
     if (not isinstance(cadence, dict)
-            or cadence.get("schema") != CADENCE_AUTHORIZATION_SCHEMA
+            or cadence.get("schema") not in {
+                LEGACY_CADENCE_AUTHORIZATION_SCHEMA,
+                CADENCE_AUTHORIZATION_SCHEMA,
+            }
             or cadence.get("disposition") != "TEACHING"):
         return ()
     authorized = cadence.get("authorized_capability_ids")
