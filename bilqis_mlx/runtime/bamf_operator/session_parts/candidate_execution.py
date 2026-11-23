@@ -12,6 +12,7 @@ def _mentor_observation(
         "prior": tuple(getattr(lesson, "prior", ())),
         "preservation": tuple(getattr(lesson, "preservation", ())),
         "support": tuple(getattr(lesson, "retention_support", ())),
+        "fresh_support": tuple(getattr(lesson, "fresh_support", ())),
     }
     if adviser_pool is None:
         observation = delivery_observation_cls(
@@ -64,7 +65,7 @@ def _lesson_for_step(source_lane, rows, ordinal):
 def _candidate_capture(
         run_dir, selection, context, parent, cache, candidate_attempt_ordinal,
         source_prefetch_workers, source_prefetch_executor, source_prefetch_metrics,
-        horizon, rehearsal_plan, source_lane_cls, source_metrics_cls,
+        horizon, rehearsal_plan, policy_support_enabled, source_lane_cls, source_metrics_cls,
         prepare_evidence_root, capture_cls):
     source_lane = None
     if source_prefetch_metrics is not None or source_prefetch_workers:
@@ -72,7 +73,8 @@ def _candidate_capture(
         source_lane = source_lane_cls(
             selection, context, parent, horizon, workers=source_prefetch_workers,
             executor=source_prefetch_executor, metrics=metrics,
-            rehearsal_plan=rehearsal_plan)
+            rehearsal_plan=rehearsal_plan,
+            policy_support_enabled=policy_support_enabled)
     prepare_evidence_root(run_dir)
     introductory = None
     try:
@@ -135,6 +137,70 @@ def _observe_shadow_rung(
         if shadow_parent_correct is None else shadow_parent_correct)
 
 
+def _execute_horizon_step(
+        ordinal, horizon, source_lane, rows, selection, context, parent,
+        atlas_path, feature_path, capture, observer, adviser_pool, candidate,
+        shadow_rungs, shadow_parent_correct, shadow_probe_fn, run_dir, cache,
+        delivery_observation_cls, execute_candidate, step_seed, emit_progress,
+        progress, observe_completed_step_fn, invalid):
+    candidate_step_started_at = time.perf_counter()
+    begin_step_started = time.perf_counter()
+    begin_step = getattr(observer, "begin_step", None)
+    if callable(begin_step):
+        begin_step(ordinal, parent.retained_state.optimizer_step + ordinal)
+    observer_seconds = time.perf_counter() - begin_step_started
+    source_started = time.perf_counter()
+    wait_before = float(source_lane.metrics.wait_seconds) if source_lane is not None else 0.0
+    lesson, source_rows, enrichment_rows, rehearsal_rows = _lesson_for_step(
+        source_lane, rows, ordinal)
+    source_seconds = time.perf_counter() - source_started
+    wait_seconds = max(
+        0.0, (float(source_lane.metrics.wait_seconds) - wait_before)
+        if source_lane is not None else 0.0)
+    lesson_seconds = max(0.0, source_seconds - wait_seconds)
+    mentor_started = time.perf_counter()
+    observation, mentor_supervision = _mentor_observation(
+        adviser_pool, source_rows, lesson, selection, capture,
+        parent.retained_state.optimizer_step + ordinal,
+        delivery_observation_cls, observer)
+    mentor_seconds = time.perf_counter() - mentor_started
+    progress_started = time.perf_counter()
+    emit_progress(progress, f"executing candidate step {ordinal}/{horizon}")
+    progress_seconds = time.perf_counter() - progress_started
+    step = execute_candidate(
+        selection, context, atlas_path, feature_path,
+        teacher_hparams=parent.optimizer_hyperparameters, observation=observation,
+        optimizer_step_seed=step_seed(selection.visit.identity.visit_id, ordinal),
+        max_norm=1.0, candidate=candidate, finalize_candidate=(ordinal == horizon),
+        prepared_source_rows=(source_rows if source_lane is not None else None),
+        prepared_enrichment_rows=enrichment_rows, prepared_rehearsal_rows=rehearsal_rows,
+        rehearsal_by_id=getattr(lesson, "rehearsal_by_id", {}),
+        rehearsal_bindings=getattr(lesson, "rehearsal_bindings_by_id", {}),
+        rehearsal_authorities=getattr(lesson, "rehearsal_authorities_by_id", {}),
+        prepared_fresh_support_rows=getattr(lesson, "fresh_support", ()),
+        fresh_support_by_id=getattr(lesson, "fresh_support_by_id", {}),
+        fresh_support_binding=getattr(lesson, "fresh_support_binding", None),
+        fresh_support_authority=getattr(lesson, "fresh_support_authority", None),
+        fresh_support_unavailable_reason=getattr(
+            lesson, "fresh_support_unavailable_reason", None),
+        fresh_support_depth_control=getattr(lesson, "fresh_support_depth_control", None),
+        candidate_step_started_at=candidate_step_started_at,
+        source_prepare_wall_seconds=source_seconds,
+        source_lane_wait_wall_seconds=wait_seconds,
+        source_lesson_materialization_wall_seconds=lesson_seconds,
+        mentor_observation_wall_seconds=mentor_seconds,
+        progress_emission_wall_seconds=progress_seconds,
+        observer_begin_step_wall_seconds=observer_seconds)
+    candidate = step.transaction
+    if candidate.update_steps != ordinal:
+        invalid("BAMF_C16_3_CANDIDATE_HORIZON_DRIFT")
+    observe_completed_step_fn(observer, step, candidate)
+    shadow_parent_correct = _observe_shadow_rung(
+        ordinal, shadow_rungs, shadow_parent_correct, shadow_probe_fn,
+        context, candidate, atlas_path, selection, run_dir, parent, cache, capture)
+    return step, candidate, shadow_parent_correct
+
+
 def execute_horizon(
         run_dir, selection, context, parent, atlas_path, feature_path,
         rows, horizon, cache, candidate_attempt_ordinal, progress,
@@ -143,78 +209,27 @@ def execute_horizon(
         source_metrics_cls, prepare_evidence_root, capture_cls,
         delivery_observation_cls, execute_candidate, step_seed,
         emit_progress, invalid, observe_completed_step_fn, rehearsal_plan=None,
+        policy_support_enabled=False,
         shadow_policy=None, shadow_rungs_fn=None, shadow_probe_fn=None):
     source_lane, capture = _candidate_capture(
         run_dir, selection, context, parent, cache, candidate_attempt_ordinal,
         source_prefetch_workers, source_prefetch_executor, source_prefetch_metrics,
-        horizon, rehearsal_plan, source_lane_cls, source_metrics_cls,
+        horizon, rehearsal_plan, policy_support_enabled, source_lane_cls, source_metrics_cls,
         prepare_evidence_root, capture_cls)
     steps, candidate = [], None
     shadow_rungs = _configure_shadow(
         capture, horizon, shadow_policy, shadow_rungs_fn, shadow_probe_fn)
     shadow_parent_correct = None
     for ordinal in range(1, horizon + 1):
-        candidate_step_started_at = time.perf_counter()
-        begin_step_started = time.perf_counter()
-        begin_step = getattr(observer, "begin_step", None)
-        if callable(begin_step):
-            begin_step(ordinal, parent.retained_state.optimizer_step + ordinal)
-        observer_begin_step_wall_seconds = (
-            time.perf_counter() - begin_step_started)
-        source_prepare_started = time.perf_counter()
-        source_wait_before = (
-            float(source_lane.metrics.wait_seconds)
-            if source_lane is not None else 0.0)
-        lesson, source_rows, enrichment_rows, rehearsal_rows = _lesson_for_step(
-            source_lane, rows, ordinal)
-        source_prepare_wall_seconds = time.perf_counter() - source_prepare_started
-        source_lane_wait_wall_seconds = max(
-            0.0,
-            (float(source_lane.metrics.wait_seconds) - source_wait_before)
-            if source_lane is not None else 0.0)
-        source_lesson_materialization_wall_seconds = max(
-            0.0, source_prepare_wall_seconds - source_lane_wait_wall_seconds)
-        mentor_started = time.perf_counter()
-        observation, mentor_supervision = _mentor_observation(
-            adviser_pool, source_rows, lesson, selection, capture,
-            parent.retained_state.optimizer_step + ordinal,
-            delivery_observation_cls, observer)
-        mentor_observation_wall_seconds = time.perf_counter() - mentor_started
-        progress_started = time.perf_counter()
-        emit_progress(progress, f"executing candidate step {ordinal}/{horizon}")
-        progress_emission_wall_seconds = time.perf_counter() - progress_started
-        step = execute_candidate(
-            selection, context, atlas_path, feature_path,
-            teacher_hparams=parent.optimizer_hyperparameters,
-            observation=observation,
-            optimizer_step_seed=step_seed(selection.visit.identity.visit_id, ordinal),
-            max_norm=1.0, candidate=candidate,
-            finalize_candidate=(ordinal == horizon),
-            prepared_source_rows=(source_rows if source_lane is not None else None),
-            prepared_enrichment_rows=enrichment_rows,
-            prepared_rehearsal_rows=rehearsal_rows,
-            rehearsal_by_id=getattr(lesson, "rehearsal_by_id", {}),
-            rehearsal_bindings=getattr(lesson, "rehearsal_bindings_by_id", {}),
-            rehearsal_authorities=getattr(lesson, "rehearsal_authorities_by_id", {}),
-            candidate_step_started_at=candidate_step_started_at,
-            source_prepare_wall_seconds=source_prepare_wall_seconds,
-            source_lane_wait_wall_seconds=source_lane_wait_wall_seconds,
-            source_lesson_materialization_wall_seconds=(
-                source_lesson_materialization_wall_seconds),
-            mentor_observation_wall_seconds=mentor_observation_wall_seconds,
-            progress_emission_wall_seconds=progress_emission_wall_seconds,
-            observer_begin_step_wall_seconds=observer_begin_step_wall_seconds)
-        candidate = step.transaction
-        if candidate.update_steps != ordinal:
-            invalid("BAMF_C16_3_CANDIDATE_HORIZON_DRIFT")
+        step, candidate, shadow_parent_correct = _execute_horizon_step(
+            ordinal, horizon, source_lane, rows, selection, context, parent,
+            atlas_path, feature_path, capture, observer, adviser_pool, candidate,
+            shadow_rungs, shadow_parent_correct, shadow_probe_fn, run_dir, cache,
+            delivery_observation_cls, execute_candidate, step_seed, emit_progress,
+            progress, observe_completed_step_fn, invalid)
         steps.append(step)
-        observe_completed_step_fn(observer, step, candidate)
         if getattr(candidate, "motif_transition", None) is not None:
             break
-        shadow_parent_correct = _observe_shadow_rung(
-            ordinal, shadow_rungs, shadow_parent_correct, shadow_probe_fn,
-            context, candidate, atlas_path, selection, run_dir, parent, cache,
-            capture)
     return steps, capture
 
 

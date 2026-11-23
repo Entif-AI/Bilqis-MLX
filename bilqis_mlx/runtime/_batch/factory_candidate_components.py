@@ -70,6 +70,7 @@ class FactoryDeliveryObservation:
     guidance: object = None
     controls: dict = field(default_factory=dict)
     prior: tuple = ()
+    fresh_support: tuple = ()
     mentors: object = None
     _mentor_supervision: object = field(
         default=None, repr=False, compare=False)
