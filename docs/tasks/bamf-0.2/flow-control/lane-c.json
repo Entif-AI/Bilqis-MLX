@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "db2c0233147069414c83fae76bcbad9c51ca58c5",
-  "updated_at": "2026-11-23T03:46:52+00:00",
+  "updated_at": "2026-11-23T03:52:29+00:00",
   "exception": null,
   "items": [
     {
@@ -595,9 +595,9 @@
       "issue": 1580,
       "pr": 1582,
       "state": "TURNED_IN",
-      "head_sha": "0a2028ee0011ea21da8037261dafdb7e5747c12a",
-      "head_sha_role": "exact #1580 semantic/test head after amended-design EGM 0B/0M/0N; subsequent flow-control turn-in receipt commit is metadata only",
-      "summary": "#1580 is turned in as ready PR #1582 against reviewed unified f87293215. Ordinary learning-first BAMF restores accepted protection/weakness-driven prior/preservation/retention-support rehearsal without re-enabling strict source/provenance ceremony; actual delivered preservation/support roles are receipted into teacher realized-action credit while BAMF prior rows are not misreported as historical policy old mix. Failing-before covered both the non-strict rehearsal gate and missing receipt wiring; strict-mode rehearsal parity and fail-closed plan failure are pinned. Minimum sufficient proof is 5 learning-first + 6 rehearsal/receipt + 10 source-prefetch tests, legacy-trainer authority 7 tests + 2 subtests, green flow/static/diff gates, and fresh amended-design EGM 0B/0M/0N across Design, Structural and Codebase Details. Broad differential failure is pre-existing untouched CP07 baseline debt and is not #1580 proof. No human trainer or persistent neural optimizer mutation was performed; post-merge retention recovery remains human-operated.",
+      "head_sha": "f09895e5f615dc61cd45ac56bf242c020f3d41f7",
+      "head_sha_role": "exact #1580 semantic/test candidate plus hosted portable-core CI repair; subsequent flow-control receipt commit is metadata only",
+      "summary": "#1580 is turned in as ready PR #1582 against reviewed unified f87293215. Ordinary learning-first BAMF restores accepted protection/weakness-driven prior/preservation/retention-support rehearsal without re-enabling strict source/provenance ceremony; actual delivered preservation/support roles are receipted into teacher realized-action credit while BAMF prior rows are not misreported as historical policy old mix. Failing-before covered both the non-strict rehearsal gate and missing receipt wiring; strict-mode rehearsal parity and fail-closed plan failure are pinned. Minimum sufficient proof is 5 learning-first + 6 rehearsal/receipt + 10 source-prefetch tests, legacy-trainer authority 7 tests + 2 subtests, green flow/static/diff gates, and fresh amended-design EGM 0B/0M/0N across Design, Structural and Codebase Details. Broad differential failure is pre-existing untouched CP07 baseline debt and is not #1580 proof. No human trainer or persistent neural optimizer mutation was performed; post-merge retention recovery remains human-operated. Hosted portable-core then exposed one branch-local error-control ratchet violation in the new fail-closed regression: a raw AssertionError string was counted as opaque operator-contract debt and made ERROR_FIELD_MANUAL stale. The test now uses pytest.raises without changing production semantics; the exact fail-closed test and all 5 learning-first routing/failure/parity tests pass, and the failed hosted architecture/docs/error-control step reproduces green locally.",
       "resume_trigger": null,
       "preserved_branch": "codex/1580-teacher-rehearsal-20261122"
     }
