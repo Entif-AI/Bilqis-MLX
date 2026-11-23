@@ -63,6 +63,7 @@ def _capture_candidate_result(
         support=observation.support, enrichment=observation.enrichment,
         guidance=observation.guidance, controls=observation.controls,
         seed=observation.seed, cost=cost, prior=observation.prior,
+        fresh_support=observation.fresh_support,
         mentors=observation.mentors)
     cost["evidence_capture_wall_seconds"] = time.perf_counter() - evidence_started
     cost["wall_seconds"] = time.perf_counter() - start

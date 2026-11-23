@@ -104,6 +104,7 @@ class BamfLearningRowMetadata:
     episode_id: str | None = None
     source_row_content_sha256: None = None
     immediate_dependencies: tuple = ()
+    auxiliary_role: str | None = None
 
     def __post_init__(self) -> None:
         if (not isinstance(self.row_id, str) or not self.row_id
@@ -117,7 +118,9 @@ class BamfLearningRowMetadata:
                 or self.delivered_count < 1
                 or not all(hasattr(self.visit, name)
                            for name in ("run_seed", "visit_id", "capability_id"))
-                or self.immediate_dependencies != ()):
+                or self.immediate_dependencies != ()
+                or self.auxiliary_role not in (None, "fresh_support")
+                or (self.rehearsal is not None and self.auxiliary_role is not None)):
             _invalid("LEARNING_ROW_METADATA_INVALID")
 
 
