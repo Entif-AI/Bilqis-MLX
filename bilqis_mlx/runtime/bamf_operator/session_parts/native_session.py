@@ -207,7 +207,7 @@ def candidate_horizon_execution(
         if strict else execute_learning_first_priority_candidate)
     rehearsal_plan = (
         compile_rehearsal_plan(run_dir, parent, cache, context, selection)
-        if strict_evidence_enabled() and type(cache) is AcceptedExecutionCache else None)
+        if type(cache) is AcceptedExecutionCache else None)
     return _candidate_horizon_execution_impl(
         run_dir, parent, context, atlas_path, feature_path, selection, rows,
         capability, host_cache, steps_per_visit, progress, source_prefetch_workers,

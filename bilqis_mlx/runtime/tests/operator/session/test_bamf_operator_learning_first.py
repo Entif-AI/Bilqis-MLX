@@ -4,17 +4,20 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
+import pytest
+
 from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
 from bilqis_mlx.runtime.bamf_operator.session_parts.native_session import (
     candidate_horizon_execution,
 )
+from bilqis_mlx.runtime.bamf_bundle.execution_cache import AcceptedExecutionCache
 
 
 def _invalid(reason):
     raise ValueError(reason)
 
 
-def _run_horizon(selection, captured):
+def _run_horizon(selection, captured, *, cache=None):
     sentinel = object()
 
     def horizon_impl(*args, **kwargs):
@@ -27,7 +30,8 @@ def _run_horizon(selection, captured):
             side_effect=horizon_impl):
         result = candidate_horizon_execution(
             Path("/run"), object(), object(), "atlas", "features",
-            selection, (), "A.TEST", object(), 12, None, 0, None, None,
+            selection, (), "A.TEST", object() if cache is None else cache,
+            12, None, 0, None, None,
             None, None, emit_progress=lambda *_args: None, invalid=_invalid)
     assert result is sentinel
 
@@ -35,6 +39,11 @@ def _run_horizon(selection, captured):
 def _executor_from(captured):
     closure = inspect.getclosurevars(captured["execute_horizon_fn"]).nonlocals
     return closure["candidate_executor"]
+
+
+def _rehearsal_plan_from(captured):
+    closure = inspect.getclosurevars(captured["execute_horizon_fn"]).nonlocals
+    return closure["rehearsal_plan"]
 
 
 def test_learning_first_horizon_never_prepares_strict_source_authority():
@@ -50,6 +59,30 @@ def test_learning_first_horizon_never_prepares_strict_source_authority():
     assert _executor_from(captured) is native_session.execute_learning_first_priority_candidate
 
 
+def test_learning_first_horizon_preserves_rehearsal_with_accepted_cache():
+    selection = SimpleNamespace(status="TEACHER_SELECTED")
+    accepted_cache = object.__new__(AcceptedExecutionCache)
+    rehearsal_plan = object()
+    captured = {}
+    with evidence_mode(strict=False), patch(
+            "bilqis_mlx.runtime.bamf_operator.session_parts.native_session."
+            "compile_rehearsal_plan", return_value=rehearsal_plan) as compile_plan:
+        _run_horizon(selection, captured, cache=accepted_cache)
+
+    compile_plan.assert_called_once()
+    assert _rehearsal_plan_from(captured) is rehearsal_plan
+
+
+def test_learning_first_horizon_fails_closed_when_accepted_rehearsal_plan_is_invalid():
+    selection = SimpleNamespace(status="TEACHER_SELECTED")
+    accepted_cache = object.__new__(AcceptedExecutionCache)
+    with evidence_mode(strict=False), patch(
+            "bilqis_mlx.runtime.bamf_operator.session_parts.native_session."
+            "compile_rehearsal_plan", side_effect=ValueError("rehearsal-invalid")):
+        with pytest.raises(ValueError, match="rehearsal-invalid"):
+            _run_horizon(selection, {}, cache=accepted_cache)
+
+
 def test_strict_horizon_preserves_legacy_source_authority_path():
     selection = SimpleNamespace(status="TEACHER_SELECTED")
     captured = {}
@@ -60,5 +93,23 @@ def test_strict_horizon_preserves_legacy_source_authority_path():
         _run_horizon(selection, captured)
 
     strict_prepare.assert_called_once()
+    from bilqis_mlx.runtime.bamf_operator.session_parts import native_session
+    assert _executor_from(captured) is native_session.execute_accepted_priority_candidate
+
+
+def test_strict_horizon_preserves_rehearsal_with_accepted_cache():
+    selection = SimpleNamespace(status="TEACHER_SELECTED")
+    accepted_cache = object.__new__(AcceptedExecutionCache)
+    rehearsal_plan = object()
+    captured = {}
+    with evidence_mode(strict=True), patch(
+            "bilqis_mlx.runtime.bamf_operator.session_parts.native_session."
+            "compile_rehearsal_plan", return_value=rehearsal_plan) as compile_plan, patch(
+            "bilqis_mlx.runtime.bamf_operator.session_parts.native_session."
+            "prepare_accepted_priority_candidate_visit", return_value=object()):
+        _run_horizon(selection, captured, cache=accepted_cache)
+
+    compile_plan.assert_called_once()
+    assert _rehearsal_plan_from(captured) is rehearsal_plan
     from bilqis_mlx.runtime.bamf_operator.session_parts import native_session
     assert _executor_from(captured) is native_session.execute_accepted_priority_candidate

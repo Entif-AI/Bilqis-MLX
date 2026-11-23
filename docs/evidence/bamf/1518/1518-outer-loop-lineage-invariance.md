@@ -327,6 +327,11 @@ fixture `owner:c06` signer so disposable C09/C06 authority was internally cohere
 Those substitutions are disclosed in the witness payload. They are scaffolding for a
 non-authorizing throughput measurement, not claims of live legacy-trainer authority.
 
+Current legacy-trainer adaptation authority is separately governed by
+`docs/tasks/bamf-0.2/LEGACY_TRAINER_AUTHORITY.md`; its canonical source run is
+`/Users/emilie/Code/.worktrees/bilqis-mlx/337-replay-349-20261026/runs/microspenics-349-replay`.
+This historical #1518 witness does not supersede that current adaptation oracle.
+
 Measured operator-path timings:
 
 - accepted-state setup: `0.326840 s`;

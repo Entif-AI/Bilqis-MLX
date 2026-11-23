@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
-  "observed_unified": "127345066ecc765799f50444e1c65f8ae76e101a",
-  "updated_at": "2026-11-23T02:47:57+00:00",
+  "observed_unified": "7e8a4b1c8f6224489770db0835e5be9d7fd59398",
+  "updated_at": "2026-11-23T04:05:00+00:00",
   "exception": null,
   "items": [
     {
@@ -600,6 +600,16 @@
       "summary": "#1566 remains turned in as PR #1567 under ADR-153. The sub-second learning-first/C05 repair remains intact. A subsequent hosted portable-core run exposed only operator-contract ratchet debt: two opaque numeric guards for the three-field training-source coordinate and one raw ValueError identity in learning-first schema lookup. The repair names the coordinate contract fields and routes schema unavailability through the existing structured BAMF training-adapter error boundary. Targeted operator-contract comparison against origin/main reports 0 new debt; C05 adversarial 10/10 and learning-first source 2/2 remain green; Factory architecture, docs, BAMF flow-control, diff hygiene, and 3-file smell audit are green. No performance or custody semantics changed and no sovereign human trainer state was mutated.",
       "resume_trigger": null,
       "preserved_branch": "codex/1566-training-first-bypass-20261122"
+    },
+    {
+      "issue": 1580,
+      "pr": 1582,
+      "state": "TURNED_IN",
+      "head_sha": "37086a3741376df720a39426987c7be66d74bd30",
+      "head_sha_role": "exact #1580 integrated semantic/test head after consuming main 7e8a4b1c8; subsequent flow-control receipt commit is metadata only",
+      "summary": "#1580 is turned in as ready PR #1582 against reviewed unified f87293215. Ordinary learning-first BAMF restores accepted protection/weakness-driven prior/preservation/retention-support rehearsal without re-enabling strict source/provenance ceremony; actual delivered preservation/support roles are receipted into teacher realized-action credit while BAMF prior rows are not misreported as historical policy old mix. Failing-before covered both the non-strict rehearsal gate and missing receipt wiring; strict-mode rehearsal parity and fail-closed plan failure are pinned. Minimum sufficient proof is 5 learning-first + 6 rehearsal/receipt + 10 source-prefetch tests, legacy-trainer authority 7 tests + 2 subtests, green flow/static/diff gates, and fresh amended-design EGM 0B/0M/0N across Design, Structural and Codebase Details. Broad differential failure is pre-existing untouched CP07 baseline debt and is not #1580 proof. No human trainer or persistent neural optimizer mutation was performed; post-merge retention recovery remains human-operated. Hosted portable-core then exposed one branch-local error-control ratchet violation in the new fail-closed regression: a raw AssertionError string was counted as opaque operator-contract debt and made ERROR_FIELD_MANUAL stale. The test now uses pytest.raises without changing production semantics; the exact fail-closed test and all 5 learning-first routing/failure/parity tests pass, and the failed hosted architecture/docs/error-control step reproduces green locally. Merge-conflict repair consumed reviewed main 7e8a4b1c8 (#1581): the only textual conflict was the lane-C header, resolved to the newly consumed unified SHA while preserving both #1541 and #1580 records. native_session.py auto-merged both #1581 adaptive-budget shadow plumbing and #1580 non-strict rehearsal planning. Post-merge seam proof passed 5 learning-first tests, 6 rehearsal/receipt tests, the overlapping #1581 native-session horizon test, BAMF flow control, and diff hygiene.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/1580-teacher-rehearsal-20261122"
     }
   ]
 }
