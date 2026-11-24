@@ -1,13 +1,5 @@
 #!/usr/bin/env sh
 set -eu
 
-if git rev-parse --verify '@{upstream}' >/dev/null 2>&1; then
-  base='@{upstream}'
-elif git rev-parse --verify HEAD^ >/dev/null 2>&1; then
-  base='HEAD^'
-else
-  base='HEAD'
-fi
-
-BILQIS_QUALITY_BASE_REF="$base" npm run quality:changed
-npm run release:check
+# Pass Git's ref-update records unchanged to the exact-head CI gate.
+exec python3 -B -m scripts.quality.pre_push "$@"

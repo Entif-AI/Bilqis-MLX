@@ -50,17 +50,24 @@ class _SessionExecutionContext:
         self.strict = bool(strict)
         self.loader = loader
         self.snapshot = None
+        self.prepared_tasks = None
 
     def __call__(self, run_dir: Path, **kwargs):
         if self.strict:
             return self.loader(run_dir, **kwargs)
         if self.snapshot is None:
             self.snapshot = self.loader(run_dir, **kwargs)
+            from .session_parts.prepared_task_catalog import attach_catalog
+            self.prepared_tasks = attach_catalog(self.snapshot, self.prepared_tasks)
         return self.snapshot
 
     def accepted_publication(self) -> None:
         if not self.strict:
             self.snapshot = None
+
+    def persist_tasks(self):
+        if self.prepared_tasks is not None:
+            self.prepared_tasks.persist()
 
 def _invalid(reason: str):
     ErrorBus.raise_(SCHOOL.BAMF_FIRST_STUDENT.INVALID, reason=reason)
@@ -281,7 +288,8 @@ def operate_bamf(
                 emit_progress=_emit_progress, monotonic=time.monotonic,
                 load_generation=load_accepted_generation, result_type=BamfOperatorResult,
                 resource_snapshot=stop_resource_witness,
-                record_stop=record_normal_stop_receipt, elapsed_clock=time.perf_counter,
+                record_stop=record_normal_stop_receipt,
+                before_stop=session_execution_context.persist_tasks, elapsed_clock=time.perf_counter,
                 before_visits=maintenance.before_visits,
                 training_memory_context=_training_memory_context,
                 bind_run_authority=(

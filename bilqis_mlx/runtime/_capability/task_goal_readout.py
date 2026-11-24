@@ -1,10 +1,10 @@
 """B10 route decisions for bounded C04 TaskGoal holes."""
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import dataclass, replace
 
 from bilqis_mlx.learning.atlas_readout import (
-    AnswerPlan, DecisionKind, DecisionSpec, ExecutionMode, ModelOutput,
+    AnswerPlan, DecisionKind, DecisionOutput, DecisionSpec, ExecutionMode, ModelOutput,
 )
 from bilqis_mlx.learning.atlas_readout.plan import ROUTE_MODALITY
 from bilqis_mlx.semantics.frame_schema import SourceSpan
@@ -20,7 +20,7 @@ from .capability_evaluation import _invalid
 from .factory_task_authority import (
     FactoryTaskAuthority, bind_factory_task_compiled_batch,
 )
-from .refinement_request import refinement_request_disposition
+from .refinement_request import RefinementRequestDisposition, refinement_request_disposition
 
 
 def _operator_id(node: DAGNode) -> str:
@@ -84,12 +84,36 @@ def task_goal_route_plan(goal: TaskGoal, compiled_batch, snapshot, generation_bi
     route = task_goal_route_decisions(goal)
     if not route:
         _invalid("BAMF_C04_TASK_GOAL_ROUTE_REQUIRED")
+    return _bind_route_plan(route, refinement_request_disposition(goal),
+                            compiled_batch, snapshot, generation_binding)
+
+
+def _bind_route_plan(route, refinement, compiled_batch, snapshot, generation_binding):
     compiled = compiled_batch.compiled.compiled.rows[0]
     return AnswerPlan(
         ROUTE_MODALITY, len(compiled.positions), route, None, snapshot,
-        SourceSpan(0, 0), generation_binding,
-        refinement_request=refinement_request_disposition(goal),
-    )
+        SourceSpan(0, 0), generation_binding, refinement_request=refinement)
+
+
+@dataclass(frozen=True)
+class PreparedTaskRoute:
+    """Reusable supervision; no learner, visit, feature snapshot or grant custody."""
+
+    decisions: tuple[DecisionSpec, ...]
+    targets: tuple[DecisionOutput, ...]
+    mask: tuple[tuple[str, bool], ...]
+    refinement: RefinementRequestDisposition
+
+    def bind(self, compiled_batch, snapshot, generation_binding):
+        plan = _bind_route_plan(self.decisions, self.refinement, compiled_batch,
+                                snapshot, generation_binding)
+        return self.targets, dict(self.mask), plan
+
+
+def prepare_task_goal_route(goal: TaskGoal, resolved: TaskGoal) -> PreparedTaskRoute:
+    targets, mask = task_goal_training_targets(goal, resolved)
+    return PreparedTaskRoute(task_goal_route_decisions(goal), targets, tuple(mask.items()),
+                             refinement_request_disposition(goal))
 
 
 def task_goal_training_targets(goal: TaskGoal, resolved: TaskGoal):
@@ -127,7 +151,6 @@ def task_goal_training_targets(goal: TaskGoal, resolved: TaskGoal):
                 _invalid("BAMF_C04_TASK_GOAL_TRAINING_TARGET_INVALID")
     if set(values) != {item.decision_id for item in route}:
         _invalid("BAMF_C04_TASK_GOAL_TRAINING_TARGET_INVALID")
-    from bilqis_mlx.learning.atlas_readout import DecisionOutput
     return (
         tuple(DecisionOutput(item.decision_id, values[item.decision_id])
               for item in route),
@@ -272,5 +295,5 @@ __all__ = (
     "proposal_from_task_goal_output",
     "task_goal_route_plan",
     "task_goal_route_decisions",
-    "task_goal_training_targets",
+    "task_goal_training_targets", "PreparedTaskRoute", "prepare_task_goal_route",
 )

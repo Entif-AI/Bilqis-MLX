@@ -102,9 +102,13 @@ class DataPlaneEventMixin:
                 "scanned_bytes": end - start, "indexed_events": count,
                 "rebuilt": rebuild}
 
-    def indexed_event_tail(self, run_dir: Path, after_byte: int = 0) -> dict:
-        """Return ordered indexed payloads after one durable byte frontier."""
+    def indexed_event_tail(self, run_dir: Path, after_byte: int = 0, *,
+                           rejection_generation: int | None = None) -> dict:
+        """Return ordered payloads; optionally project one generation's rejections."""
         if type(after_byte) is not int or after_byte < 0:
+            raise ValueError(DataPlaneError.EVENT_CURSOR_INVALID.value)
+        if rejection_generation is not None and (
+                type(rejection_generation) is not int or rejection_generation < 0):
             raise ValueError(DataPlaneError.EVENT_CURSOR_INVALID.value)
         synced = self.sync_event_ledger(run_dir)
         key = synced["run_dir"]
@@ -112,17 +116,28 @@ class DataPlaneEventMixin:
             identity = self._db.execute(
                 "SELECT st_dev,st_ino,indexed_bytes FROM event_ledgers WHERE run_dir=?",
                 (key,)).fetchone()
-            rows = self._db.execute(
-                "SELECT sequence,start_byte,end_byte,payload FROM event_stream "
-                "WHERE run_dir=? AND end_byte>? ORDER BY sequence",
-                (key, after_byte)).fetchall()
-        events = tuple(json.loads(row[3]) for row in rows)
+            rows = self._indexed_payloads(key, after_byte, rejection_generation)
+        events = tuple(json.loads(row[0]) for row in rows)
         return {
             **synced,
             "ledger_identity": None if identity is None else (identity[0], identity[1]),
             "events": events,
             "event_count": len(events),
         }
+
+    def _indexed_payloads(self, key, after_byte, rejection_generation):
+        query = "SELECT payload FROM event_stream WHERE run_dir=? AND end_byte>?"
+        parameters = (key, after_byte)
+        if rejection_generation is not None:
+            # SQLite performs the first-pass projection without transferring or
+            # decoding unrelated historical payloads in Python. Non-SQLite JSON
+            # still reaches the existing Python validator rather than disappearing.
+            query += (" AND CASE WHEN json_valid(CAST(payload AS TEXT)) THEN "
+                      "(json_extract(CAST(payload AS TEXT),'$.event')=? AND "
+                      "json_extract(CAST(payload AS TEXT),'$.generation')=?) "
+                      "ELSE 1 END")
+            parameters += ("BAMF_CANDIDATE_REJECTED", rejection_generation)
+        return self._db.execute(query + " ORDER BY sequence", parameters).fetchall()
 
     def event_projection_state(
             self, run_dir: Path, projection_key: str, schema_version: str) -> dict | None:

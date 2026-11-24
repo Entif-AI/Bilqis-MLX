@@ -5,10 +5,13 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: "15 8 * * 1"
 
 permissions:
   contents: read
   pull-requests: read
+  actions: read
 
 concurrency:
   group: bilqis-portable-${{ github.event.pull_request.number || github.ref }}
@@ -19,6 +22,8 @@ jobs:
     name: portable-core
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      BILQIS_VERIFICATION_FULL: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     outputs:
       skos_action: ${{ steps.skos.outputs.action }}
       skos_reason: ${{ steps.skos.outputs.reason }}
@@ -31,8 +36,24 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+      - name: Resolve verification ledger location
+        id: ledger-path
+        shell: bash
+        run: |
+          directory=$(mktemp -d "$RUNNER_TEMP/bilqis-verification-core-XXXXXX")
+          echo "BILQIS_VERIFICATION_LEDGER=$directory/ledger.sqlite3" >> "$GITHUB_ENV"
+          echo "BILQIS_VERIFICATION_TRUSTED_DESTINATION=$directory/trusted/ledger.sqlite3" >> "$GITHUB_ENV"
+          echo "path=$directory/ledger.sqlite3" >> "$GITHUB_OUTPUT"
+      - name: Restore trusted main verification receipts
+        id: restore-verification
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 -B -m scripts.quality.restore_verification_ledger
+          --scope core --destination "$BILQIS_VERIFICATION_TRUSTED_DESTINATION"
+          --output "$BILQIS_VERIFICATION_LEDGER"
       - name: Validate release manifests and changelog
-        run: python3 -B scripts/maintenance/release_version.py --check
+        run: bash scripts/quality/ci_checks.sh release
       - name: Resolve truthful comparison base
         id: comparison-base
         env:
@@ -50,135 +71,80 @@ jobs:
             --push-base "$PUSH_BASE_SHA")
           echo "Comparison base: $BASE_REF"
           echo "base_ref=$BASE_REF" >> "$GITHUB_OUTPUT"
-      - name: Require fresh expensive verification
+      - name: Require all expensive verification surfaces
         id: test-impact
         shell: bash
         run: |
           set -euo pipefail
           # EXPENSIVE_SUITE_REUSE_DISABLED_UNTIL_PROOF_BOUND
-          # The previous path-only policy could reuse a failed or never-run
-          # baseline. Until reuse is backed by an exact passing-head receipt
-          # plus a dependency-frontier digest, every workflow proves the
-          # expensive verification surfaces afresh.
+          # Keep every gate in the workflow. Individual checks may now reuse
+          # exact passing receipts; the aggregate path-only skip stays disabled.
           echo "expensive_tests=true" >> "$GITHUB_OUTPUT"
-          echo "Fresh expensive verification required: reusable proof is disabled."
+          echo "All verification surfaces required; individual proof reuse is enabled."
       - name: Enforce ratified development structure on changed paths
         env:
           QUALITY_BASE_REF: ${{ steps.comparison-base.outputs.base_ref }}
-        run: |
-          BASE_REF="$QUALITY_BASE_REF"
-          case "$BASE_REF" in
-            ""|0000000000000000000000000000000000000000) BASE_REF=HEAD ;;
-          esac
-          python3 -B scripts/check_module_size.py --changed-from "$BASE_REF"
-          python3 -B scripts/quality/check_governance_integrity.py --base-ref "$BASE_REF"
+        run: bash scripts/quality/ci_checks.sh structure
       - name: Check BAMF flow-control policy
-        run: |
-          python3 -B scripts/check_bamf_flow_control.py
+        run: bash scripts/quality/ci_checks.sh flow-control
       - name: Check BAMF predecessor invariant transfer
-        run: |
-          python3 -B scripts/check_bamf_invariant_transfer.py
+        run: bash scripts/quality/ci_checks.sh invariant-transfer
       - name: Verify detached witness lifecycle
-        run: >-
-          python3 -B -m unittest
-          scripts.tests.bamf.test_checked_launch
-          scripts.tests.bamf.test_detached_long_run
+        run: bash scripts/quality/ci_checks.sh detached-witness
       - name: Install historical semantic integrity dependencies
         if: steps.test-impact.outputs.expensive_tests == 'true'
         run: python3 -m pip install -r lib/ithkuil/requirements-semantic.txt
       - name: Check historical semantic integrity
         if: steps.test-impact.outputs.expensive_tests == 'true'
-        run: python3 -B scripts/check_historical_abi.py
+        run: bash scripts/quality/ci_checks.sh historical-abi
       - name: Check legacy semantic package ownership
         if: >-
           ${{
             steps.test-impact.outputs.expensive_tests == 'true' &&
             (!contains(github.ref_name, 'bamf') && !contains(github.head_ref, 'bamf') && !contains(github.base_ref, 'bamf'))
           }}
-        run: python3 -B scripts/check_semantic_boundaries.py
+        run: bash scripts/quality/ci_checks.sh legacy-semantic
       - name: Verify portable BAMF semantic contracts
         if: >-
           ${{
             steps.test-impact.outputs.expensive_tests == 'true' &&
             (contains(github.ref_name, 'bamf') || contains(github.head_ref, 'bamf') || contains(github.base_ref, 'bamf'))
           }}
-        run: >-
-          python3 -B scripts/run_tests.py
-          bilqis_mlx/factory/tests/curriculum/test_factory_construction.py
-          bilqis_mlx/factory/tests/test_curriculum_compiler.py
-          bilqis_mlx/factory/tests/test_grade_admission.py
-          bilqis_mlx/semantics/tests/foundation/test_domain_contracts.py
-          bilqis_mlx/verification/tests/test_construction_contracts.py
-          bilqis_mlx/verification/coverage/tests
-          bilqis_mlx/source_adapters/predecessor_parity/tests/test_contracts.py
-          bilqis_mlx/factory/tests/lifecycle/test_release_outcome_contracts.py
+        run: bash scripts/quality/ci_checks.sh bamf-contracts
       - name: Check architecture, documentation and error contracts
         env:
           QUALITY_BASE_REF: ${{ steps.comparison-base.outputs.base_ref }}
-        run: |
-          python3 -B scripts/check_factory_architecture.py
-          python3 -B scripts/quality/check_docs.py
-          if [ -n "$QUALITY_BASE_REF" ]; then
-            python3 -B scripts/error_control_plane.py --check --base-ref "$QUALITY_BASE_REF"
-          else
-            python3 -B scripts/error_control_plane.py --check
-          fi
+        run: bash scripts/quality/ci_checks.sh architecture
       - name: Verify Model Forensics shell and Electron security boundary
-        run: |
-          node --version
-          npm ci --ignore-scripts
-          npm run bamf:test
-          npm run bamf:security:test
+        run: bash scripts/quality/ci_checks.sh frontend
+      - name: Refresh main code smell inventory incrementally
+        if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule') }}
+        run: python3 -B scripts/code_smell_audit.py --json > /dev/null
       - name: Reject newly introduced code hygiene regressions
         env:
           QUALITY_BASE_REF: ${{ steps.comparison-base.outputs.base_ref }}
-        run: |
-          BASE_REF="$QUALITY_BASE_REF"
-          case "$BASE_REF" in
-            ""|0000000000000000000000000000000000000000) BASE_REF=HEAD ;;
-          esac
-          python3 -B scripts/code_smell_audit.py --changed-from "$BASE_REF" \
-            --check-baseline docs/evidence/development/code_smell_baseline.json
+        run: bash scripts/quality/ci_checks.sh code-smell
       - name: Install portable custody dependencies
         if: steps.test-impact.outputs.expensive_tests == 'true'
         run: python3 -m pip install numpy==2.4.4
       - name: Portable non-neural custody and release tests
         if: steps.test-impact.outputs.expensive_tests == 'true'
-        run: >-
-          python3 -B scripts/run_tests.py
-          bilqis_mlx/learning/_teaching/tests/test_teacher_observations.py
-          bilqis_mlx/runtime/tests/teacher/test_teacher_observation_capture.py
-          bilqis_mlx/runtime/tests/teacher/test_capture_identity.py
-          bilqis_mlx/semantics/frame_codec_parts/tests
-          bilqis_mlx/runtime/operator_session/tests
-          bilqis_mlx/compatibility/live_release_parts/tests/test_providers.py
-          bilqis_mlx/runtime/tests/teacher/test_teacher_observation_replay.py
-          bilqis_mlx/runtime/tests/operator/test_qualification.py
-          bilqis_mlx/runtime/tests/model/parity/test_model_topology.py
-          bilqis_mlx/runtime/tests/model/test_topology_lifecycle.py
-          bilqis_mlx/runtime/tests/custody/test_state_archive.py
-          bilqis_mlx/learning/_retention/tests/test_whole_student_retention.py
-          scripts/tests/test_release_version.py
-          scripts/tests/test_docs.py
-          scripts/tests/test_run_tests.py
-          scripts/tests/test_run_tests_package_collision.py
-          scripts/tests/tooling/test_skos_test_policy.py
-          scripts/tests/governance/test_module_size.py
-          scripts/tests/governance/test_governance_integrity.py
-          bilqis_mlx/factory/tests/lifecycle/test_release.py
-          bilqis_mlx/factory/tests/lifecycle/test_generation.py
-          bilqis_mlx/factory/tests/curriculum/test_historical_generalization.py
-          bilqis_mlx/runtime/tests/operator/test_admission.py
-          bilqis_mlx/runtime/tests/operator/test_admission_cold_readback.py
+        run: bash scripts/quality/ci_checks.sh portable-custody
       - name: Plan semantic profile verification
         id: skos
         if: steps.test-impact.outputs.expensive_tests == 'true'
         env:
           SKOS_BASE_REF: ${{ steps.comparison-base.outputs.base_ref }}
-        run: |
-          python3 -B scripts/skos_test_policy.py plan \
-            --base-ref "$SKOS_BASE_REF" \
-            --github-output "$GITHUB_OUTPUT"
+        run: bash scripts/quality/ci_checks.sh semantic-plan
+      - name: Publish passing main verification receipts
+        if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule') }}
+        continue-on-error: true
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: verification-ledger-core-${{ github.run_attempt }}
+          path: ${{ steps.ledger-path.outputs.path }}
+          if-no-files-found: ignore
+          retention-days: 30
   bamf-readiness:
     name: bamf-readiness
     needs: core
@@ -189,25 +155,56 @@ jobs:
     # step starts. Keep enough queue headroom so runner scarcity cannot turn a
     # never-executed gate into an "abandoned" portable-verification failure.
     timeout-minutes: 45
+    env:
+      BILQIS_VERIFICATION_FULL: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     steps:
       - name: Checkout private source without persisted credentials
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
           fetch-depth: 0
+      - name: Resolve verification ledger location
+        id: ledger-path
+        shell: bash
+        run: |
+          directory=$(mktemp -d "$RUNNER_TEMP/bilqis-verification-readiness-XXXXXX")
+          echo "BILQIS_VERIFICATION_LEDGER=$directory/ledger.sqlite3" >> "$GITHUB_ENV"
+          echo "BILQIS_VERIFICATION_TRUSTED_DESTINATION=$directory/trusted/ledger.sqlite3" >> "$GITHUB_ENV"
+          echo "path=$directory/ledger.sqlite3" >> "$GITHUB_OUTPUT"
+      - name: Restore trusted main verification receipts
+        id: restore-verification
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 -B -m scripts.quality.restore_verification_ledger
+          --scope readiness --destination "$BILQIS_VERIFICATION_TRUSTED_DESTINATION"
+          --output "$BILQIS_VERIFICATION_LEDGER"
       - name: Set up isolated Python for MLX readiness
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.14'
+      - name: Prepare isolated Python readiness source
+        run: >-
+          python3 -B -m scripts.quality.verification_projection
+          --output "$RUNNER_TEMP/bilqis-readiness-source"
       - name: Install BAMF readiness dependencies
         run: >-
-          python3 -m pip install -e .
-          -r lib/ithkuil/requirements-semantic.txt
+          python3 -m pip install -e "$BILQIS_READINESS_SOURCE"
+          -r "$BILQIS_READINESS_SOURCE/lib/ithkuil/requirements-semantic.txt"
           mlx==0.31.1 numpy==2.4.4
       - name: Verify canonical native instrumentation imports
-        run: python3 -B -m unittest scripts.tests.bamf.test_checked_witness
+        run: bash scripts/quality/ci_checks.sh native-witness
       - name: Verify launch-critical BAMF journey with no skipped tests
-        run: npm run bamf:readiness
+        run: bash scripts/quality/ci_checks.sh readiness
+      - name: Publish passing main verification receipts
+        if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule') }}
+        continue-on-error: true
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: verification-ledger-readiness-${{ github.run_attempt }}
+          path: ${{ steps.ledger-path.outputs.path }}
+          if-no-files-found: ignore
+          retention-days: 30
 
   semantic-diff:
     name: semantic-profile-diff
@@ -229,7 +226,7 @@ jobs:
       - name: Verify impacted deterministic semantic profile
         env:
           SKOS_BASE_REF: ${{ needs.core.outputs.comparison_base }}
-        run: python3 -B scripts/skos_test_policy.py run --base-ref "$SKOS_BASE_REF"
+        run: bash scripts/quality/ci_checks.sh semantic-diff
 
   semantic-full:
     name: semantic-profile-full-${{ matrix.shard }}
@@ -255,12 +252,7 @@ jobs:
       - name: Verify exhaustive deterministic semantic profile shard
         env:
           SKOS_BASE_REF: ${{ needs.core.outputs.comparison_base }}
-        run: >-
-          python3 -B scripts/skos_test_policy.py run
-          --base-ref "$SKOS_BASE_REF"
-          --full-shard-index ${{ matrix.shard }}
-          --full-shard-count 8
-
+        run: SKOS_SHARD_INDEX=${{ matrix.shard }} bash scripts/quality/ci_checks.sh semantic-shard
   portable:
     name: portable
     needs: [core, bamf-readiness, semantic-diff, semantic-full]
