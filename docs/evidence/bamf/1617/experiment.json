@@ -1,0 +1,1579 @@
+{
+  "baseline": {
+    "accepted": 1,
+    "attempted_steps": 36,
+    "attempts": [
+      {
+        "capability": "A.PARENT",
+        "reason": "NO_MEASURABLE_TARGET_GAIN",
+        "retained": 0,
+        "steps": 12
+      },
+      {
+        "capability": "A.EDGE",
+        "reason": "PAIRED_SCREEN_WITHIN_BUDGET",
+        "retained": 12,
+        "steps": 12
+      },
+      {
+        "capability": "A.MEMBER",
+        "reason": "TARGET_BASELINE_REGRESSION",
+        "retained": 0,
+        "steps": 12
+      }
+    ],
+    "competence_gain_per_hour": -160.92435569729332,
+    "completed_trials_per_hour": 96.554613418376,
+    "dashboard_draws": {
+      "count": 212,
+      "seconds": 3.752058004261926
+    },
+    "exam": {
+      "correct": 39,
+      "generation": 52,
+      "optimizer_step": 521,
+      "scores": {
+        "A.EDGE": [
+          5,
+          12
+        ],
+        "A.IDENTITY": [
+          10,
+          12
+        ],
+        "A.LINK": [
+          5,
+          12
+        ],
+        "A.MAPS": [
+          7,
+          12
+        ],
+        "A.MEMBER": [
+          5,
+          12
+        ],
+        "A.PARENT": [
+          7,
+          12
+        ]
+      },
+      "total": 72
+    },
+    "exam_cohort": "af63c8cf6069c8960fbe5a0cae84d35e4ec6ad78445d28b31a5ed51ff79b0ded",
+    "generation": 52,
+    "initial_manifest": "317f6785f99dfb6cf4ab76ccea420110ef91f9ceaef01cc47d9e2e9ca3f06dfe",
+    "operations": {
+      "bilqis_mlx.boolean_composite.constructor_digest": {
+        "calls": 1872,
+        "exclusive_seconds": 0.26291379472240806,
+        "seconds": 0.26291379472240806
+      },
+      "bilqis_mlx.boolean_identification.constructor_digest": {
+        "calls": 936,
+        "exclusive_seconds": 0.06613031006418169,
+        "seconds": 0.1849438885692507
+      },
+      "bilqis_mlx.factory.adapters.SourceAdapterRegistry.resolve_owner": {
+        "calls": 1791,
+        "exclusive_seconds": 0.006313383346423507,
+        "seconds": 0.006313383346423507
+      },
+      "bilqis_mlx.factory.generation_compat.runtime_adapter_for_release": {
+        "calls": 68,
+        "exclusive_seconds": 0.0026771253906190395,
+        "seconds": 0.0026771253906190395
+      },
+      "bilqis_mlx.learning._atlas_candidate.step.learning_first_candidate_step": {
+        "calls": 36,
+        "exclusive_seconds": 1.0870934156700969,
+        "seconds": 1.0870934156700969
+      },
+      "bilqis_mlx.live_grade_c.provider_implementation_digest": {
+        "calls": 501,
+        "exclusive_seconds": 0.13964522373862565,
+        "seconds": 0.13964522373862565
+      },
+      "bilqis_mlx.runtime._complete_solver.support._factory_gold": {
+        "calls": 66,
+        "exclusive_seconds": 0.0006850822828710079,
+        "seconds": 0.0006850822828710079
+      },
+      "bilqis_mlx.runtime._complete_solver.support.factory_evaluation_case_from_source": {
+        "calls": 18,
+        "exclusive_seconds": 0.00297645409591496,
+        "seconds": 0.14708675118163228
+      },
+      "bilqis_mlx.runtime.accepted_priority_learning_first.execute_learning_first_priority_candidate": {
+        "calls": 36,
+        "exclusive_seconds": 0.027254383312538266,
+        "seconds": 80.03933496167883
+      },
+      "bilqis_mlx.runtime.atlas_model_microbatch._materialize_gradient": {
+        "calls": 72,
+        "exclusive_seconds": 65.574847957585,
+        "seconds": 65.574847957585
+      },
+      "bilqis_mlx.runtime.atlas_model_microbatch.bamf_microbatch_value_and_grad": {
+        "calls": 72,
+        "exclusive_seconds": 0.4393353273626417,
+        "seconds": 66.28082587872632
+      },
+      "bilqis_mlx.runtime.atlas_resources.plan_microbatches": {
+        "calls": 36,
+        "exclusive_seconds": 0.05706816911697388,
+        "seconds": 0.05706816911697388
+      },
+      "bilqis_mlx.runtime.atlas_training_delivery.capture_realized_delivery": {
+        "calls": 36,
+        "exclusive_seconds": 0.00038525299169123173,
+        "seconds": 0.00038525299169123173
+      },
+      "bilqis_mlx.runtime.bamf_operator.session._execute_selected_visit": {
+        "calls": 3,
+        "exclusive_seconds": 1.337612047791481e-05,
+        "seconds": 89.43897420912981
+      },
+      "bilqis_mlx.runtime.bamf_operator.session._visit": {
+        "calls": 3,
+        "exclusive_seconds": 1.1766290829982609,
+        "seconds": 108.97201049909927
+      },
+      "bilqis_mlx.runtime.bamf_operator.session.prepare_bamf_visit": {
+        "calls": 3,
+        "exclusive_seconds": 2.8500333428382874e-05,
+        "seconds": 103.76098075020127
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.candidate_execution._execute_horizon_step": {
+        "calls": 36,
+        "exclusive_seconds": 0.0033399953972548246,
+        "seconds": 80.04267495707609
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.candidate_execution.candidate_horizon_execution": {
+        "calls": 3,
+        "exclusive_seconds": 0.00026983534917235374,
+        "seconds": 81.86215491732582
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.candidate_execution.execute_horizon": {
+        "calls": 3,
+        "exclusive_seconds": 0.0072426272090524435,
+        "seconds": 81.8362651260104
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.fresh_support.materialize_fresh_support": {
+        "calls": 36,
+        "exclusive_seconds": 0.0020974210929125547,
+        "seconds": 0.0808219606988132
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.candidate_horizon_execution": {
+        "calls": 3,
+        "exclusive_seconds": 0.005457582650706172,
+        "seconds": 82.0665849999059
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.execute_horizon": {
+        "calls": 3,
+        "exclusive_seconds": 6.879004649817944e-05,
+        "seconds": 81.8363339160569
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.execute_selected_visit": {
+        "calls": 3,
+        "exclusive_seconds": 0.0009847083128988743,
+        "seconds": 89.43896083300933
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.pipeline.host_preparation.CandidateHostPreparationPipeline._prepare": {
+        "calls": 36,
+        "exclusive_seconds": 0.0004077572375535965,
+        "seconds": 9.648888208903372
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.pipeline.host_preparation.CandidateHostPreparationPipeline.take": {
+        "calls": 36,
+        "exclusive_seconds": 1.563376083271578,
+        "seconds": 1.563376083271578
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.prepare_visit.prepare_bamf_visit_impl": {
+        "calls": 3,
+        "exclusive_seconds": 9.222325580194592,
+        "seconds": 103.76095224986784
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.rehearsal.compile_rehearsal_plan": {
+        "calls": 3,
+        "exclusive_seconds": 0.1846214586403221,
+        "seconds": 0.1989724999293685
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.rehearsal.materialize_rehearsal_rows": {
+        "calls": 36,
+        "exclusive_seconds": 0.0032114023342728615,
+        "seconds": 1.9728379528969526
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.retention._accepted_successor": {
+        "calls": 3,
+        "exclusive_seconds": 1.226042291149497,
+        "seconds": 1.2318019580561668
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.retention._evaluate_retention": {
+        "calls": 3,
+        "exclusive_seconds": 1.3827636723872274,
+        "seconds": 6.139524791622534
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.session_support._execution_context": {
+        "calls": 2,
+        "exclusive_seconds": 2.1746185841038823,
+        "seconds": 2.18282408406958
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.session_visit._publish_accepted": {
+        "calls": 1,
+        "exclusive_seconds": 4.034400665899739,
+        "seconds": 4.034400665899739
+      },
+      "bilqis_mlx.runtime.bamf_operator.source_prefetch.CandidateSourceLane._request": {
+        "calls": 36,
+        "exclusive_seconds": 0.0008022962138056755,
+        "seconds": 2.065173167968169
+      },
+      "bilqis_mlx.runtime.bamf_operator.source_prefetch.CandidateSourceLane._submit": {
+        "calls": 36,
+        "exclusive_seconds": 0.08180583245120943,
+        "seconds": 2.1469790004193783
+      },
+      "bilqis_mlx.runtime.bamf_operator.source_prefetch.CandidateSourceLane.lesson": {
+        "calls": 36,
+        "exclusive_seconds": 1.054722539614886,
+        "seconds": 2.9959691665135324
+      },
+      "bilqis_mlx.runtime.bamf_operator.source_prefetch_contracts.priority_source_request": {
+        "calls": 36,
+        "exclusive_seconds": 0.01071095815859735,
+        "seconds": 0.01071095815859735
+      },
+      "bilqis_mlx.runtime.c08_gradient_accumulation.accumulate_logical_batch_gradients": {
+        "calls": 36,
+        "exclusive_seconds": 0.8437584519851953,
+        "seconds": 67.15305083082058
+      },
+      "bilqis_mlx.runtime.candidate.execution._learning_first_admit": {
+        "calls": 36,
+        "exclusive_seconds": 0.022370166843757033,
+        "seconds": 1.109463582513854
+      },
+      "bilqis_mlx.runtime.candidate.step._candidate_cache_and_generation": {
+        "calls": 36,
+        "exclusive_seconds": 0.0074028747621923685,
+        "seconds": 0.0074028747621923685
+      },
+      "bilqis_mlx.runtime.factory_candidate_components._resource_plan": {
+        "calls": 36,
+        "exclusive_seconds": 1.0113064986653626,
+        "seconds": 1.0683746677823365
+      },
+      "bilqis_mlx.runtime.factory_candidate_microbatch._learning_first_task_goals": {
+        "calls": 297,
+        "exclusive_seconds": 0.09180623013526201,
+        "seconds": 9.774543075356632
+      },
+      "bilqis_mlx.runtime.factory_candidate_microbatch._row_execution_inputs": {
+        "calls": 1356,
+        "exclusive_seconds": 0.025906476192176342,
+        "seconds": 9.800449551548809
+      },
+      "bilqis_mlx.runtime.factory_candidate_microbatch.execute_factory_logical_batch": {
+        "calls": 36,
+        "exclusive_seconds": 0.005248950328677893,
+        "seconds": 76.95874933269806
+      },
+      "bilqis_mlx.runtime.factory_candidate_training.execute_factory_candidate_step": {
+        "calls": 36,
+        "exclusive_seconds": 0.10988082969561219,
+        "seconds": 80.01080962270498
+      },
+      "bilqis_mlx.runtime.factory_complete_solver._factory_evaluation_instrument": {
+        "calls": 48,
+        "exclusive_seconds": 0.0008742914069443941,
+        "seconds": 3.0515933325514197
+      },
+      "bilqis_mlx.runtime.factory_complete_solver.factory_complete_solver": {
+        "calls": 8,
+        "exclusive_seconds": 0.0027531241066753864,
+        "seconds": 0.0027531241066753864
+      },
+      "bilqis_mlx.runtime.factory_complete_solver.factory_evaluation_instruments": {
+        "calls": 8,
+        "exclusive_seconds": 0.00023449910804629326,
+        "seconds": 3.051827831659466
+      },
+      "bilqis_mlx.runtime.factory_evaluation_compiler.compile_factory_evaluation_case": {
+        "calls": 48,
+        "exclusive_seconds": 0.20653463806957006,
+        "seconds": 3.0298182072583586
+      },
+      "bilqis_mlx.runtime.factory_task_template._factory_task_template_from_validated": {
+        "calls": 48,
+        "exclusive_seconds": 0.025028338422998786,
+        "seconds": 0.4490573755465448
+      },
+      "bilqis_mlx.runtime.factory_training_bridge.prepare_factory_training_batch": {
+        "calls": 36,
+        "exclusive_seconds": 0.6862960846628994,
+        "seconds": 0.7565530822612345
+      },
+      "bilqis_mlx.runtime.factory_training_preparation._learning_first_source_inputs": {
+        "calls": 36,
+        "exclusive_seconds": 0.004094914998859167,
+        "seconds": 0.004094914998859167
+      },
+      "bilqis_mlx.runtime.factory_training_preparation.prepare_learning_first_source_inputs_ahead": {
+        "calls": 36,
+        "exclusive_seconds": 0.00015820260159671307,
+        "seconds": 6.652511285152286
+      },
+      "bilqis_mlx.runtime.factory_training_preparation_cache.prepare_learning_first_source_inputs_ahead": {
+        "calls": 36,
+        "exclusive_seconds": 0.0013595432974398136,
+        "seconds": 6.65235308255069
+      },
+      "bilqis_mlx.runtime.factory_training_source._prepare_learning_first_model_sources": {
+        "calls": 36,
+        "exclusive_seconds": 1.0992945821490139,
+        "seconds": 1.0992945821490139
+      },
+      "bilqis_mlx.runtime.learning_first_compiler.compile_learning_first_training_batch": {
+        "calls": 36,
+        "exclusive_seconds": 0.06616208259947598,
+        "seconds": 0.06616208259947598
+      },
+      "bilqis_mlx.runtime.learning_first_source.prepare_learning_first_source_rows": {
+        "calls": 36,
+        "exclusive_seconds": 5.546710935188457,
+        "seconds": 5.551698957104236
+      },
+      "bilqis_mlx.runtime.microbatch.compiled_batch.microbatch_compatible": {
+        "calls": 144,
+        "exclusive_seconds": 0.04770029825158417,
+        "seconds": 0.04770029825158417
+      },
+      "bilqis_mlx.runtime.microbatch.compiled_route.learning_first_compiled_route": {
+        "calls": 72,
+        "exclusive_seconds": 0.01381591777317226,
+        "seconds": 0.01381591777317226
+      },
+      "bilqis_mlx.runtime.microbatch.route_kernel.prepare_route_microbatch_kernel": {
+        "calls": 82,
+        "exclusive_seconds": 0.2531312128994614,
+        "seconds": 0.2531312128994614
+      },
+      "bilqis_mlx.runtime.priority_rejection_replay._current_projection": {
+        "calls": 19,
+        "exclusive_seconds": 2.226910251425579,
+        "seconds": 2.226910251425579
+      },
+      "bilqis_mlx.runtime.retention.local_screen.foundation_local_retention_screen": {
+        "calls": 3,
+        "exclusive_seconds": 0.8798049984034151,
+        "seconds": 4.705633040750399
+      },
+      "bilqis_mlx.runtime.source_batch_authority.bind_authorized_subset_rows": {
+        "calls": 204,
+        "exclusive_seconds": 0.0043038008734583855,
+        "seconds": 0.013830079697072506
+      },
+      "bilqis_mlx.runtime.source_batch_authority.draw_bound_rows": {
+        "calls": 207,
+        "exclusive_seconds": 0.005577532574534416,
+        "seconds": 2.7584269552025944
+      },
+      "bilqis_mlx.runtime.source_batch_authority.source_content_digest": {
+        "calls": 711,
+        "exclusive_seconds": 0.02080968883819878,
+        "seconds": 0.02080968883819878
+      },
+      "bilqis_mlx.runtime.source_execution.SourceExecutionContext.bind_authorized_subset_rows": {
+        "calls": 204,
+        "exclusive_seconds": 0.00035721994936466217,
+        "seconds": 0.014187299646437168
+      },
+      "bilqis_mlx.runtime.source_execution.SourceExecutionContext.draw_bound_rows": {
+        "calls": 207,
+        "exclusive_seconds": 0.0005775853060185909,
+        "seconds": 2.759004540508613
+      },
+      "bilqis_mlx.runtime.source_execution.SourceExecutionContext.draw_rows": {
+        "calls": 228,
+        "exclusive_seconds": 2.8050554178189486,
+        "seconds": 2.8050554178189486
+      },
+      "bilqis_mlx.runtime.source_prefetch.thaw_source_packet": {
+        "calls": 36,
+        "exclusive_seconds": 0.01723908493295312,
+        "seconds": 0.01723908493295312
+      },
+      "bilqis_mlx.semantics._cognitive_dag.execution.execute_dag": {
+        "calls": 144,
+        "exclusive_seconds": 0.008212337270379066,
+        "seconds": 0.05206958623602986
+      },
+      "bilqis_mlx.semantics.cognitive_operators.registry.OperatorRegistry.resolve": {
+        "calls": 804,
+        "exclusive_seconds": 0.00586061249487102,
+        "seconds": 0.2850378751754761
+      },
+      "bilqis_mlx.semantics.cognitive_operators.registry._implementation_digest": {
+        "calls": 19284,
+        "exclusive_seconds": 9.827962598763406,
+        "seconds": 9.827962598763406
+      },
+      "bilqis_mlx.semantics.cognitive_operators.registry._source_contract": {
+        "calls": 19284,
+        "exclusive_seconds": 0.1852628735359758,
+        "seconds": 0.1852628735359758
+      },
+      "bilqis_mlx.semantics.cognitive_operators.registry.default_registry": {
+        "calls": 660,
+        "exclusive_seconds": 0.15709496033377945,
+        "seconds": 9.891143169952556
+      },
+      "bilqis_mlx.semantics.cognitive_operators.registry.operator_grant_digest": {
+        "calls": 708,
+        "exclusive_seconds": 0.01419005449861288,
+        "seconds": 0.01419005449861288
+      },
+      "bilqis_mlx.source_adapters.atom_binding.verify_source_row": {
+        "calls": 48,
+        "exclusive_seconds": 0.4965624939650297,
+        "seconds": 1.1124577932059765
+      },
+      "bilqis_mlx.source_adapters.atoms.authority.canonical_graph_for": {
+        "calls": 288,
+        "exclusive_seconds": 0.9510642073582858,
+        "seconds": 1.8972676158882678
+      },
+      "bilqis_mlx.source_adapters.event_authority.provider_implementation_digest": {
+        "calls": 1806,
+        "exclusive_seconds": 0.47008922044187784,
+        "seconds": 0.47008922044187784
+      },
+      "bilqis_mlx.source_adapters.grade_a_presentation.constructor_digest": {
+        "calls": 936,
+        "exclusive_seconds": 0.13980379072017968,
+        "seconds": 0.13980379072017968
+      },
+      "bilqis_mlx.source_adapters.school._weakness_classifier_digest": {
+        "calls": 1740,
+        "exclusive_seconds": 0.09313189797103405,
+        "seconds": 0.09313189797103405
+      },
+      "bilqis_mlx.source_adapters.school.live_source_registry": {
+        "calls": 435,
+        "exclusive_seconds": 0.41127431159839034,
+        "seconds": 1.5068653370253742
+      },
+      "bilqis_mlx.source_adapters.task_goal_registry.live_task_goal_lowerers": {
+        "calls": 66,
+        "exclusive_seconds": 0.0243430791888386,
+        "seconds": 0.10046629142016172
+      },
+      "bilqis_mlx.source_adapters.task_goal_registry.require_task_goal_lowerer": {
+        "calls": 66,
+        "exclusive_seconds": 0.000314624747261405,
+        "seconds": 0.10078091616742313
+      }
+    },
+    "optimizer_step": 521,
+    "peak_mlx_bytes": 15904622512,
+    "raw_profile_sha256": "7f77e343109d6da1f5b055a2e9f36319327157a32bfc561033f9d1d364f20fa5",
+    "raw_result_sha256": "879a3ba49e42bf0e504fb10ed7d51ff68b73c60ca0e8b5398ab13099a0c56a4d",
+    "rejected": 2,
+    "scope_counts": {},
+    "status": "VISIT_LIMIT",
+    "steps_per_minute": 19.310922683675198,
+    "visits": 3,
+    "wall_seconds": 111.8537956669461
+  },
+  "baseline_launcher": {
+    "command_returncode": 1,
+    "final_snapshot_sha256": "0a2d68cacf687dc2aeb80fce6fe7c4e7ca6a0b4882ba355f1c4215cb9e0a7c9d",
+    "finished_at": "2026-11-24T11:15:44.136477+00:00",
+    "returncode": 1,
+    "snapshot_sha256": "0a2d68cacf687dc2aeb80fce6fe7c4e7ca6a0b4882ba355f1c4215cb9e0a7c9d",
+    "source_mutated": false,
+    "source_sha256": "0a2d68cacf687dc2aeb80fce6fe7c4e7ca6a0b4882ba355f1c4215cb9e0a7c9d",
+    "started_at": "2026-11-24T11:11:58.578177+00:00",
+    "status": "FAIL"
+  },
+  "baseline_launcher_receipt_sha256": "b67fec55fc80aaa12f6c26a047d366c10f113bfd8d65597639c25a70499c9812",
+  "baseline_retained": {
+    "generation": 52,
+    "implementation_sha256": "89e5f55900781f4ea4a15676be26dc90accde0ec0518dc751818d24f75a6d176",
+    "manifest_sha256": "8a5dc37a9c849c04fca7a5473aeb911d02e8c7ffb7f4b413f138a2f8ec832140",
+    "optimizer": {
+      "hyperparameters": {
+        "betas": [
+          0.88,
+          0.97
+        ],
+        "eps": 1e-07,
+        "learning_rate": 0.0007,
+        "weight_decay": 0.03
+      },
+      "identity_scheme": "bilqis.mlx.candidate-identity/raw-v2",
+      "schema": "bilqis.mlx.adamw-count-state/provisional-v1",
+      "step": 521
+    },
+    "sidecars": {
+      "baseline_evidence": {
+        "filename": "baseline-evidence.json",
+        "object_sha256": "01677fc804bfd20dedd6c2e57abf66474f448b6a636c83394811253ee3c5289b",
+        "sha256": "01677fc804bfd20dedd6c2e57abf66474f448b6a636c83394811253ee3c5289b"
+      },
+      "championship_state": {
+        "filename": "championship-state.json",
+        "object_sha256": "c043fb4e2325c99fcfa5c03cd37b06431e8c2e8ffc80e70b93cdcca98f1a4d02",
+        "sha256": "c043fb4e2325c99fcfa5c03cd37b06431e8c2e8ffc80e70b93cdcca98f1a4d02"
+      },
+      "compiler_features": {
+        "filename": "compiler-features.json",
+        "object_sha256": "aaced241f080a1ff2cb325d657d851d703e8757807c9a66a117971ecb46eefcc",
+        "sha256": "aaced241f080a1ff2cb325d657d851d703e8757807c9a66a117971ecb46eefcc"
+      },
+      "correction_frontier": {
+        "filename": "correction-frontier.json",
+        "object_sha256": "75a01265c52d449c8ab67c0d43b680f99ca199c216d83dbc342f01827820b0c1",
+        "sha256": "75a01265c52d449c8ab67c0d43b680f99ca199c216d83dbc342f01827820b0c1"
+      },
+      "evaluation_contract": {
+        "filename": "evaluation-contract.json",
+        "object_sha256": "c454837d3f69513e6d20b82dabecda5a6904e7b4af76bba157b3e17eda8894c9",
+        "sha256": "c454837d3f69513e6d20b82dabecda5a6904e7b4af76bba157b3e17eda8894c9"
+      },
+      "learning_health_state": {
+        "filename": "learning-health-state.json",
+        "object_sha256": "0e5e033022bd15ede6e06397eb4b0adf046f20944550c89e3e899075c4de56b6",
+        "sha256": "0e5e033022bd15ede6e06397eb4b0adf046f20944550c89e3e899075c4de56b6"
+      },
+      "motif_allocation": {
+        "filename": "motif-allocation.json",
+        "object_sha256": "131768d797392dd30e205ba4e2f37a924bb47ad47438ffb4ae659e4078ae8bc3",
+        "sha256": "131768d797392dd30e205ba4e2f37a924bb47ad47438ffb4ae659e4078ae8bc3"
+      },
+      "outbox": {
+        "filename": "outbox.json",
+        "object_sha256": "2927af1bd2b76dfba10fa33bdbe069e864d128497d2283894808cb8f35d4d614",
+        "sha256": "2927af1bd2b76dfba10fa33bdbe069e864d128497d2283894808cb8f35d4d614"
+      },
+      "plasticity_policy": {
+        "filename": "plasticity-policy.json",
+        "object_sha256": "9a72e96a38f1101da7cf020ef7f3f8ef81a9de029b3de2925eae36105c1f6046",
+        "sha256": "9a72e96a38f1101da7cf020ef7f3f8ef81a9de029b3de2925eae36105c1f6046"
+      },
+      "run_identity": {
+        "filename": "run-identity.json",
+        "object_sha256": "d6e133267d4b3d5b8c0baf0f6b1987e7feb0ebf2736e01cc029157e2352e3803",
+        "sha256": "d6e133267d4b3d5b8c0baf0f6b1987e7feb0ebf2736e01cc029157e2352e3803"
+      },
+      "semantic_abi": {
+        "filename": "semantic-abi.json",
+        "object_sha256": "49304b6d1b17e7a9ecaf03112dff561d641193908bda4681ba995a54fa31c197",
+        "sha256": "49304b6d1b17e7a9ecaf03112dff561d641193908bda4681ba995a54fa31c197"
+      },
+      "step_proofs": {
+        "filename": "step-proofs.json",
+        "object_sha256": "d0d65ec5b0876143ca1770dc906907659a562f3c038002c1914a2ebc1527f3f2",
+        "sha256": "d0d65ec5b0876143ca1770dc906907659a562f3c038002c1914a2ebc1527f3f2"
+      },
+      "teacher_state": {
+        "filename": "teacher-state.json",
+        "object_sha256": "dec286eb7de82158f3ef8ca75482fd518d2db48f087ab6b56a47309362c94f6a",
+        "sha256": "dec286eb7de82158f3ef8ca75482fd518d2db48f087ab6b56a47309362c94f6a"
+      }
+    },
+    "tensors": {
+      "filename": "bamf-state.safetensors",
+      "object_sha256": "ae707574460592fec6622941377281d8eb702f468528be24cea8644f31296297",
+      "optimizer_step": 521,
+      "schema": "bilqis.mlx.bamf-named-state/v2",
+      "sha256": "ae707574460592fec6622941377281d8eb702f468528be24cea8644f31296297",
+      "tensor_count": 856,
+      "uncompressed_bytes": 953848264
+    },
+    "training_objective_digest": "1f5364b16fbff01e48b3d571bdc682bf30f03d57aacb06aa1ff8e49cbe7e20f8"
+  },
+  "baseline_source_commit": "30f9b3b2eee3e9b10fae09221e7231b185fc9c38",
+  "baseline_visits": [
+    {
+      "attempted_steps": 12,
+      "capability": "A.PARENT",
+      "parent_manifest_sha256": "317f6785f99dfb6cf4ab76ccea420110ef91f9ceaef01cc47d9e2e9ca3f06dfe",
+      "realized_delivery": {
+        "answer_kinds": [],
+        "batch_size": 38,
+        "candidate_steps": 12,
+        "contrast_controls": {},
+        "depth_controls": {
+          "SOURCE_TOKEN_LENGTH_PROXY_FRESH_SUPPORT": 12
+        },
+        "distill_weight_applied": 0.0,
+        "enrichment_examples": 0,
+        "fragile_preservation_delivered": 0,
+        "fresh_support_delivered": 12,
+        "guided_optimizer_steps": 0,
+        "learning_rate": 0.00013,
+        "old_grade_examples_delivered": 0,
+        "optimizer_batches_observed": 12,
+        "priority_weakness_targets_delivered": 0,
+        "retention_support_delivered": 60,
+        "semantic_patterns_delivered": 0,
+        "semantic_patterns_required": 0,
+        "weakness_targets_delivered": 0
+      },
+      "reason": "NO_MEASURABLE_TARGET_GAIN",
+      "retained_steps": 0,
+      "scores": [
+        [
+          "A.PARENT",
+          3,
+          3,
+          6
+        ]
+      ],
+      "selected_policy": {
+        "contrast": 0.0,
+        "depth": 4,
+        "distill": 0.38,
+        "lr": 0.00013,
+        "old": 12,
+        "preview": 4
+      },
+      "selection_seed": 594,
+      "visit_id": "76139d76937e9efa97b549e917a4dfab2d9ea6fb2146f1e6dd82f60c929989e2"
+    },
+    {
+      "attempted_steps": 12,
+      "capability": "A.EDGE",
+      "parent_manifest_sha256": "317f6785f99dfb6cf4ab76ccea420110ef91f9ceaef01cc47d9e2e9ca3f06dfe",
+      "realized_delivery": {
+        "answer_kinds": [],
+        "batch_size": 38,
+        "candidate_steps": 12,
+        "contrast_controls": {},
+        "depth_controls": {
+          "SOURCE_TOKEN_LENGTH_PROXY_FRESH_SUPPORT": 12
+        },
+        "distill_weight_applied": 0.0,
+        "enrichment_examples": 0,
+        "fragile_preservation_delivered": 0,
+        "fresh_support_delivered": 12,
+        "guided_optimizer_steps": 0,
+        "learning_rate": 4e-05,
+        "old_grade_examples_delivered": 0,
+        "optimizer_batches_observed": 12,
+        "priority_weakness_targets_delivered": 0,
+        "retention_support_delivered": 60,
+        "semantic_patterns_delivered": 0,
+        "semantic_patterns_required": 0,
+        "weakness_targets_delivered": 0
+      },
+      "reason": "PAIRED_SCREEN_WITHIN_BUDGET",
+      "retained_steps": 12,
+      "scores": [
+        [
+          "A.EDGE",
+          2,
+          4,
+          6
+        ],
+        [
+          "A.IDENTITY",
+          5,
+          6,
+          6
+        ],
+        [
+          "A.LINK",
+          5,
+          5,
+          6
+        ],
+        [
+          "A.MAPS",
+          4,
+          4,
+          6
+        ],
+        [
+          "A.MEMBER",
+          5,
+          5,
+          6
+        ],
+        [
+          "A.PARENT",
+          3,
+          4,
+          6
+        ]
+      ],
+      "selected_policy": {
+        "contrast": 0.0,
+        "depth": 4,
+        "distill": 0.38,
+        "lr": 4e-05,
+        "old": 12,
+        "preview": 4
+      },
+      "selection_seed": 594,
+      "visit_id": "04874627655f7f3266e22565aff64c44bf2833834b16bec614b7645a7f9d3312"
+    },
+    {
+      "attempted_steps": 12,
+      "capability": "A.MEMBER",
+      "parent_manifest_sha256": "8a5dc37a9c849c04fca7a5473aeb911d02e8c7ffb7f4b413f138a2f8ec832140",
+      "realized_delivery": {
+        "answer_kinds": [],
+        "batch_size": 37,
+        "candidate_steps": 12,
+        "contrast_controls": {},
+        "depth_controls": {
+          "UNBIASED_FRESH_SUPPORT_SOURCE_GROUPS": 12
+        },
+        "distill_weight_applied": 0.0,
+        "enrichment_examples": 0,
+        "fragile_preservation_delivered": 0,
+        "fresh_support_delivered": 0,
+        "guided_optimizer_steps": 0,
+        "learning_rate": 0.0003,
+        "old_grade_examples_delivered": 0,
+        "optimizer_batches_observed": 12,
+        "priority_weakness_targets_delivered": 0,
+        "retention_support_delivered": 60,
+        "semantic_patterns_delivered": 0,
+        "semantic_patterns_required": 0,
+        "weakness_targets_delivered": 0
+      },
+      "reason": "TARGET_BASELINE_REGRESSION",
+      "retained_steps": 0,
+      "scores": [
+        [
+          "A.MEMBER",
+          4,
+          2,
+          6
+        ]
+      ],
+      "selected_policy": {
+        "contrast": 0.0,
+        "depth": 2,
+        "distill": 0.38,
+        "lr": 0.0003,
+        "old": 8,
+        "preview": 4
+      },
+      "selection_seed": 595,
+      "visit_id": "f399d09a72b9f2bbbd00cdf8dbf11f70842dd5fb201eff93796979252fbe33d9"
+    }
+  ],
+  "comparison": {
+    "equal_all_retention_decisions": true,
+    "equal_all_visit_scores": false,
+    "equal_first_two_visit_projections": true,
+    "equal_fixed_exam": true,
+    "equal_optimizer_metadata": true,
+    "equal_retained_tensor_object": true,
+    "per_step_gradient_parity": "NOT_MEASURED",
+    "speedup": 1.2099994380548982
+  },
+  "configuration": {
+    "fixed_exam_questions": 72,
+    "initial_fixed_exam_correct": 44,
+    "initial_generation": 51,
+    "initial_optimizer_step": 509,
+    "logical_batch_size": 32,
+    "memory_limit_bytes": 25769803776,
+    "source_prefetch_workers": 2,
+    "steps_per_visit": 12,
+    "strict_fixed_exam": true,
+    "strict_training": false,
+    "visits": 3
+  },
+  "disposition": "QUALIFIED_RESIDUAL_FOR_PARENT_INTEGRATION_NOT_PRODUCTION_ADMISSION",
+  "donor_profiler_sha256": "98234c55aa774da03d0d71f9382c150d85ef71e2aa4417e3fc43a99809badfa8",
+  "frozen_fixture_driver_sha256": "e87bb2598c6a15657a328cae86f97c00f6b55af5c9136c728b5fc4a0e01446ed",
+  "prepared": {
+    "accepted": 1,
+    "attempted_steps": 36,
+    "attempts": [
+      {
+        "capability": "A.PARENT",
+        "reason": "NO_MEASURABLE_TARGET_GAIN",
+        "retained": 0,
+        "steps": 12
+      },
+      {
+        "capability": "A.EDGE",
+        "reason": "PAIRED_SCREEN_WITHIN_BUDGET",
+        "retained": 12,
+        "steps": 12
+      },
+      {
+        "capability": "A.MEMBER",
+        "reason": "TARGET_BASELINE_REGRESSION",
+        "retained": 0,
+        "steps": 12
+      }
+    ],
+    "competence_gain_per_hour": -194.71837996307147,
+    "completed_trials_per_hour": 116.8310279778429,
+    "dashboard_draws": {
+      "count": 173,
+      "seconds": 3.5536824176087976
+    },
+    "exam": {
+      "correct": 39,
+      "generation": 52,
+      "optimizer_step": 521,
+      "scores": {
+        "A.EDGE": [
+          5,
+          12
+        ],
+        "A.IDENTITY": [
+          10,
+          12
+        ],
+        "A.LINK": [
+          5,
+          12
+        ],
+        "A.MAPS": [
+          7,
+          12
+        ],
+        "A.MEMBER": [
+          5,
+          12
+        ],
+        "A.PARENT": [
+          7,
+          12
+        ]
+      },
+      "total": 72
+    },
+    "exam_cohort": "af63c8cf6069c8960fbe5a0cae84d35e4ec6ad78445d28b31a5ed51ff79b0ded",
+    "generation": 52,
+    "initial_manifest": "317f6785f99dfb6cf4ab76ccea420110ef91f9ceaef01cc47d9e2e9ca3f06dfe",
+    "operations": {
+      "bilqis_mlx.boolean_composite.constructor_digest": {
+        "calls": 402,
+        "exclusive_seconds": 0.04338024999015033,
+        "seconds": 0.04338024999015033
+      },
+      "bilqis_mlx.boolean_identification.constructor_digest": {
+        "calls": 201,
+        "exclusive_seconds": 0.009992785984650254,
+        "seconds": 0.0315917890984565
+      },
+      "bilqis_mlx.factory.adapters.SourceAdapterRegistry.resolve_owner": {
+        "calls": 1791,
+        "exclusive_seconds": 0.005906459642574191,
+        "seconds": 0.005906459642574191
+      },
+      "bilqis_mlx.factory.generation_compat.runtime_adapter_for_release": {
+        "calls": 68,
+        "exclusive_seconds": 0.002089549321681261,
+        "seconds": 0.002089549321681261
+      },
+      "bilqis_mlx.learning._atlas_candidate.step.learning_first_candidate_step": {
+        "calls": 36,
+        "exclusive_seconds": 1.0337315830402076,
+        "seconds": 1.0337315830402076
+      },
+      "bilqis_mlx.live_grade_c.provider_implementation_digest": {
+        "calls": 101,
+        "exclusive_seconds": 0.024805700406432152,
+        "seconds": 0.024805700406432152
+      },
+      "bilqis_mlx.runtime._complete_solver.support._factory_gold": {
+        "calls": 66,
+        "exclusive_seconds": 0.0004657530225813389,
+        "seconds": 0.0004657530225813389
+      },
+      "bilqis_mlx.runtime._complete_solver.support.factory_evaluation_case_from_source": {
+        "calls": 18,
+        "exclusive_seconds": 0.0019356650300323963,
+        "seconds": 0.011572373332455754
+      },
+      "bilqis_mlx.runtime.accepted_priority_learning_first.execute_learning_first_priority_candidate": {
+        "calls": 36,
+        "exclusive_seconds": 0.02610829658806324,
+        "seconds": 65.32936625415459
+      },
+      "bilqis_mlx.runtime.atlas_model_microbatch._materialize_gradient": {
+        "calls": 72,
+        "exclusive_seconds": 60.735972167691216,
+        "seconds": 60.735972167691216
+      },
+      "bilqis_mlx.runtime.atlas_model_microbatch.bamf_microbatch_value_and_grad": {
+        "calls": 72,
+        "exclusive_seconds": 0.3981065896805376,
+        "seconds": 61.397565747378394
+      },
+      "bilqis_mlx.runtime.atlas_resources.plan_microbatches": {
+        "calls": 36,
+        "exclusive_seconds": 0.053036169381812215,
+        "seconds": 0.053036169381812215
+      },
+      "bilqis_mlx.runtime.atlas_training_delivery.capture_realized_delivery": {
+        "calls": 36,
+        "exclusive_seconds": 0.0002697482705116272,
+        "seconds": 0.0002697482705116272
+      },
+      "bilqis_mlx.runtime.bamf_operator.session._execute_selected_visit": {
+        "calls": 3,
+        "exclusive_seconds": 1.2792181223630905e-05,
+        "seconds": 71.79178600013256
+      },
+      "bilqis_mlx.runtime.bamf_operator.session._visit": {
+        "calls": 3,
+        "exclusive_seconds": 1.1246802911628038,
+        "seconds": 90.05043091718107
+      },
+      "bilqis_mlx.runtime.bamf_operator.session.prepare_bamf_visit": {
+        "calls": 3,
+        "exclusive_seconds": 3.270898014307022e-05,
+        "seconds": 85.12096054200083
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.candidate_execution._execute_horizon_step": {
+        "calls": 36,
+        "exclusive_seconds": 0.002661788137629628,
+        "seconds": 65.33202804229222
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.candidate_execution.candidate_horizon_execution": {
+        "calls": 3,
+        "exclusive_seconds": 0.00023583206348121166,
+        "seconds": 66.79480999941006
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.candidate_execution.execute_horizon": {
+        "calls": 3,
+        "exclusive_seconds": 0.006491878302767873,
+        "seconds": 66.77157691703178
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.fresh_support.materialize_fresh_support": {
+        "calls": 36,
+        "exclusive_seconds": 0.0019389584194868803,
+        "seconds": 0.06632641912437975
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.candidate_horizon_execution": {
+        "calls": 3,
+        "exclusive_seconds": 0.005415333667770028,
+        "seconds": 66.98983249999583
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.execute_horizon": {
+        "calls": 3,
+        "exclusive_seconds": 5.495874211192131e-05,
+        "seconds": 66.77163187577389
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.native_session.execute_selected_visit": {
+        "calls": 3,
+        "exclusive_seconds": 0.0008994587697088718,
+        "seconds": 71.79177320795134
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.pipeline.host_preparation.CandidateHostPreparationPipeline._prepare": {
+        "calls": 36,
+        "exclusive_seconds": 0.0003800005652010441,
+        "seconds": 15.173008541576564
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.pipeline.host_preparation.CandidateHostPreparationPipeline.take": {
+        "calls": 36,
+        "exclusive_seconds": 1.2992945385631174,
+        "seconds": 1.2992945385631174
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.prepare_visit.prepare_bamf_visit_impl": {
+        "calls": 3,
+        "exclusive_seconds": 8.750036662444472,
+        "seconds": 85.12092783302069
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.rehearsal.compile_rehearsal_plan": {
+        "calls": 3,
+        "exclusive_seconds": 0.1773436670191586,
+        "seconds": 0.18960716691799462
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.rehearsal.materialize_rehearsal_rows": {
+        "calls": 36,
+        "exclusive_seconds": 0.002988044638186693,
+        "seconds": 7.36480437964201
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.retention._accepted_successor": {
+        "calls": 3,
+        "exclusive_seconds": 1.133974957978353,
+        "seconds": 1.1397117080632597
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.retention._evaluate_retention": {
+        "calls": 3,
+        "exclusive_seconds": 1.262731461552903,
+        "seconds": 3.6612694582436234
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.session_support._execution_context": {
+        "calls": 2,
+        "exclusive_seconds": 2.0092470827512443,
+        "seconds": 2.0167392077855766
+      },
+      "bilqis_mlx.runtime.bamf_operator.session_parts.session_visit._publish_accepted": {
+        "calls": 1,
+        "exclusive_seconds": 3.8047900840174407,
+        "seconds": 3.8047900840174407
+      },
+      "bilqis_mlx.runtime.bamf_operator.source_prefetch.CandidateSourceLane._request": {
+        "calls": 36,
+        "exclusive_seconds": 0.000767536461353302,
+        "seconds": 7.441845624707639
+      },
+      "bilqis_mlx.runtime.bamf_operator.source_prefetch.CandidateSourceLane._submit": {
+        "calls": 36,
+        "exclusive_seconds": 0.03686308255419135,
+        "seconds": 7.478708707261831
+      },
+      "bilqis_mlx.runtime.bamf_operator.source_prefetch.CandidateSourceLane.lesson": {
+        "calls": 36,
+        "exclusive_seconds": 0.8494177907705307,
+        "seconds": 8.210928208194673
+      },
+      "bilqis_mlx.runtime.bamf_operator.source_prefetch_contracts.priority_source_request": {
+        "calls": 36,
+        "exclusive_seconds": 0.009947289479896426,
+        "seconds": 0.009947289479896426
+      },
+      "bilqis_mlx.runtime.c08_gradient_accumulation.accumulate_logical_batch_gradients": {
+        "calls": 36,
+        "exclusive_seconds": 0.7830468798056245,
+        "seconds": 62.20786650106311
+      },
+      "bilqis_mlx.runtime.candidate.execution._learning_first_admit": {
+        "calls": 36,
+        "exclusive_seconds": 0.02030766848474741,
+        "seconds": 1.054039251524955
+      },
+      "bilqis_mlx.runtime.candidate.step._candidate_cache_and_generation": {
+        "calls": 36,
+        "exclusive_seconds": 0.006859000539407134,
+        "seconds": 0.006859000539407134
+      },
+      "bilqis_mlx.runtime.factory_candidate_components._resource_plan": {
+        "calls": 36,
+        "exclusive_seconds": 1.0715342541225255,
+        "seconds": 1.1245704235043377
+      },
+      "bilqis_mlx.runtime.factory_candidate_microbatch._learning_first_task_goals": {
+        "calls": 296,
+        "exclusive_seconds": 0.059840228874236345,
+        "seconds": 0.16124174697324634
+      },
+      "bilqis_mlx.runtime.factory_candidate_microbatch._row_execution_inputs": {
+        "calls": 1356,
+        "exclusive_seconds": 0.019540421664714813,
+        "seconds": 0.18078216863796115
+      },
+      "bilqis_mlx.runtime.factory_candidate_microbatch.execute_factory_logical_batch": {
+        "calls": 36,
+        "exclusive_seconds": 0.004204500000923872,
+        "seconds": 62.39285316970199
+      },
+      "bilqis_mlx.runtime.factory_candidate_training.execute_factory_candidate_step": {
+        "calls": 36,
+        "exclusive_seconds": 0.09545319993048906,
+        "seconds": 65.3019850437995
+      },
+      "bilqis_mlx.runtime.factory_complete_solver._factory_evaluation_instrument": {
+        "calls": 48,
+        "exclusive_seconds": 0.0006232070736587048,
+        "seconds": 1.1291410429403186
+      },
+      "bilqis_mlx.runtime.factory_complete_solver.factory_complete_solver": {
+        "calls": 8,
+        "exclusive_seconds": 0.0016982080414891243,
+        "seconds": 0.0016982080414891243
+      },
+      "bilqis_mlx.runtime.factory_complete_solver.factory_evaluation_instruments": {
+        "calls": 8,
+        "exclusive_seconds": 0.00016316608525812626,
+        "seconds": 1.1293042090255767
+      },
+      "bilqis_mlx.runtime.factory_evaluation_compiler.compile_factory_evaluation_case": {
+        "calls": 48,
+        "exclusive_seconds": 0.22639736952260137,
+        "seconds": 1.1220415011048317
+      },
+      "bilqis_mlx.runtime.factory_task_template._factory_task_template_from_validated": {
+        "calls": 48,
+        "exclusive_seconds": 0.020786957582458854,
+        "seconds": 0.026677163550630212
+      },
+      "bilqis_mlx.runtime.factory_training_bridge.prepare_factory_training_batch": {
+        "calls": 36,
+        "exclusive_seconds": 0.5646388705354184,
+        "seconds": 0.6279402503278106
+      },
+      "bilqis_mlx.runtime.factory_training_preparation._learning_first_source_inputs": {
+        "calls": 36,
+        "exclusive_seconds": 0.003646501572802663,
+        "seconds": 0.003646501572802663
+      },
+      "bilqis_mlx.runtime.factory_training_preparation.prepare_learning_first_source_inputs_ahead": {
+        "calls": 36,
+        "exclusive_seconds": 0.00013983366079628468,
+        "seconds": 6.96170033281669
+      },
+      "bilqis_mlx.runtime.factory_training_preparation_cache.prepare_learning_first_source_inputs_ahead": {
+        "calls": 36,
+        "exclusive_seconds": 0.0012679158244282007,
+        "seconds": 6.961560499155894
+      },
+      "bilqis_mlx.runtime.factory_training_source._prepare_learning_first_model_sources": {
+        "calls": 36,
+        "exclusive_seconds": 1.0612174987327307,
+        "seconds": 1.0612174987327307
+      },
+      "bilqis_mlx.runtime.learning_first_compiler.compile_learning_first_training_batch": {
+        "calls": 36,
+        "exclusive_seconds": 0.05965487821958959,
+        "seconds": 0.05965487821958959
+      },
+      "bilqis_mlx.runtime.learning_first_source.prepare_learning_first_source_rows": {
+        "calls": 36,
+        "exclusive_seconds": 5.894897970603779,
+        "seconds": 5.899075084598735
+      },
+      "bilqis_mlx.runtime.microbatch.compiled_batch.microbatch_compatible": {
+        "calls": 144,
+        "exclusive_seconds": 0.046569614904001355,
+        "seconds": 0.046569614904001355
+      },
+      "bilqis_mlx.runtime.microbatch.compiled_route.learning_first_compiled_route": {
+        "calls": 72,
+        "exclusive_seconds": 0.012508920161053538,
+        "seconds": 0.012508920161053538
+      },
+      "bilqis_mlx.runtime.microbatch.route_kernel.prepare_route_microbatch_kernel": {
+        "calls": 82,
+        "exclusive_seconds": 0.24793953564949334,
+        "seconds": 0.24793953564949334
+      },
+      "bilqis_mlx.runtime.priority_rejection_replay._current_projection": {
+        "calls": 19,
+        "exclusive_seconds": 2.0699320018757135,
+        "seconds": 2.0699320018757135
+      },
+      "bilqis_mlx.runtime.retention.local_screen.foundation_local_retention_screen": {
+        "calls": 3,
+        "exclusive_seconds": 0.7021536203101277,
+        "seconds": 2.351230291184038
+      },
+      "bilqis_mlx.runtime.source_batch_authority.bind_authorized_subset_rows": {
+        "calls": 204,
+        "exclusive_seconds": 0.003931499784812331,
+        "seconds": 0.012966346461325884
+      },
+      "bilqis_mlx.runtime.source_batch_authority.draw_bound_rows": {
+        "calls": 207,
+        "exclusive_seconds": 0.005025915801525116,
+        "seconds": 7.9397643292322755
+      },
+      "bilqis_mlx.runtime.source_batch_authority.source_content_digest": {
+        "calls": 711,
+        "exclusive_seconds": 0.01930730207823217,
+        "seconds": 0.01930730207823217
+      },
+      "bilqis_mlx.runtime.source_execution.SourceExecutionContext.bind_authorized_subset_rows": {
+        "calls": 204,
+        "exclusive_seconds": 0.00034023309126496315,
+        "seconds": 0.013306579552590847
+      },
+      "bilqis_mlx.runtime.source_execution.SourceExecutionContext.draw_bound_rows": {
+        "calls": 207,
+        "exclusive_seconds": 0.0005050129257142544,
+        "seconds": 7.94026934215799
+      },
+      "bilqis_mlx.runtime.source_execution.SourceExecutionContext.draw_rows": {
+        "calls": 228,
+        "exclusive_seconds": 7.983144956175238,
+        "seconds": 7.983144956175238
+      },
+      "bilqis_mlx.runtime.source_prefetch.thaw_source_packet": {
+        "calls": 36,
+        "exclusive_seconds": 0.01656416803598404,
+        "seconds": 0.01656416803598404
+      },
+      "bilqis_mlx.semantics._cognitive_dag.execution.execute_dag": {
+        "calls": 144,
+        "exclusive_seconds": 0.006911595817655325,
+        "seconds": 0.035445920657366514
+      },
+      "bilqis_mlx.semantics.cognitive_operators.registry.OperatorRegistry.resolve": {
+        "calls": 802,
+        "exclusive_seconds": 0.004752997774630785,
+        "seconds": 0.03957497491501272
+      },
+      "bilqis_mlx.semantics.cognitive_operators.registry._implementation_digest": {
+        "calls": 124,
+        "exclusive_seconds": 0.10860298643819988,
+        "seconds": 0.10860298643819988
+      },
+      "bilqis_mlx.semantics.cognitive_operators.registry._source_contract": {
+        "calls": 830,
+        "exclusive_seconds": 0.01010869606398046,
+        "seconds": 0.01010869606398046
+      },
+      "bilqis_mlx.semantics.cognitive_operators.registry.default_registry": {
+        "calls": 1,
+        "exclusive_seconds": 0.0004974617622792721,
+        "seconds": 0.08438716712407768
+      },
+      "bilqis_mlx.semantics.cognitive_operators.registry.operator_grant_digest": {
+        "calls": 706,
+        "exclusive_seconds": 0.00982535514049232,
+        "seconds": 0.00982535514049232
+      },
+      "bilqis_mlx.source_adapters.atom_binding.verify_source_row": {
+        "calls": 48,
+        "exclusive_seconds": 0.3249653670936823,
+        "seconds": 0.4186062510125339
+      },
+      "bilqis_mlx.source_adapters.atoms.authority.canonical_graph_for": {
+        "calls": 288,
+        "exclusive_seconds": 0.7380206785164773,
+        "seconds": 0.9950897248927504
+      },
+      "bilqis_mlx.source_adapters.event_authority.provider_implementation_digest": {
+        "calls": 401,
+        "exclusive_seconds": 0.08897321205586195,
+        "seconds": 0.08897321205586195
+      },
+      "bilqis_mlx.source_adapters.grade_a_presentation.constructor_digest": {
+        "calls": 201,
+        "exclusive_seconds": 0.024014575872570276,
+        "seconds": 0.024014575872570276
+      },
+      "bilqis_mlx.source_adapters.school._weakness_classifier_digest": {
+        "calls": 400,
+        "exclusive_seconds": 0.014767087996006012,
+        "seconds": 0.014767087996006012
+      },
+      "bilqis_mlx.source_adapters.school.live_source_registry": {
+        "calls": 100,
+        "exclusive_seconds": 0.0684855931904167,
+        "seconds": 0.26921516470611095
+      },
+      "bilqis_mlx.source_adapters.task_goal_registry.live_task_goal_lowerers": {
+        "calls": 1,
+        "exclusive_seconds": 0.003372667357325554,
+        "seconds": 0.00857670814730227
+      },
+      "bilqis_mlx.source_adapters.task_goal_registry.require_task_goal_lowerer": {
+        "calls": 66,
+        "exclusive_seconds": 0.00029295473359525204,
+        "seconds": 0.008869662880897522
+      }
+    },
+    "optimizer_step": 521,
+    "peak_mlx_bytes": 15904622512,
+    "raw_profile_sha256": "051fac4c3dc6741b335289b4a6928a7046b41404e3a26021c3a08e97c6d947b2",
+    "raw_result_sha256": "607539cfb1ee1b2c4bb3ca1b7b30b4fd29b13af303b9c2c299d786eaee5a59e8",
+    "rejected": 2,
+    "scope_counts": {
+      "lowerers_hit": 65,
+      "lowerers_miss": 1,
+      "operator_digest_hit": 706,
+      "operator_digest_miss": 28,
+      "operator_registry_hit": 657,
+      "operator_registry_miss": 1,
+      "owner_scopes": 1,
+      "source_registry_hit": 335,
+      "source_registry_miss": 1,
+      "source_registry_owner_mismatch": 1
+    },
+    "status": "VISIT_LIMIT",
+    "steps_per_minute": 23.366205595568577,
+    "visits": 3,
+    "wall_seconds": 92.44119637506083
+  },
+  "prepared_launcher": {
+    "command_returncode": 0,
+    "final_snapshot_sha256": "c3b7bdf3c9ac80f05c73ee1fd73d713facca4d0319217aeb5e84fd61d09572d5",
+    "finished_at": "2026-11-24T12:06:28.620271+00:00",
+    "returncode": 0,
+    "snapshot_sha256": "c3b7bdf3c9ac80f05c73ee1fd73d713facca4d0319217aeb5e84fd61d09572d5",
+    "source_mutated": false,
+    "source_sha256": "c3b7bdf3c9ac80f05c73ee1fd73d713facca4d0319217aeb5e84fd61d09572d5",
+    "started_at": "2026-11-24T12:03:17.174966+00:00",
+    "status": "PASS"
+  },
+  "prepared_launcher_receipt_sha256": "9d131bf02feb371b215d312d3aa5d90501689cfa1fdbcf980ee3c77649b5c9cc",
+  "prepared_retained": {
+    "generation": 52,
+    "implementation_sha256": "89e5f55900781f4ea4a15676be26dc90accde0ec0518dc751818d24f75a6d176",
+    "manifest_sha256": "754f2076b0d8512a52a772bcf87fa3870cb525948bf8655c7e2cf186efe41c26",
+    "optimizer": {
+      "hyperparameters": {
+        "betas": [
+          0.88,
+          0.97
+        ],
+        "eps": 1e-07,
+        "learning_rate": 0.0007,
+        "weight_decay": 0.03
+      },
+      "identity_scheme": "bilqis.mlx.candidate-identity/raw-v2",
+      "schema": "bilqis.mlx.adamw-count-state/provisional-v1",
+      "step": 521
+    },
+    "sidecars": {
+      "baseline_evidence": {
+        "filename": "baseline-evidence.json",
+        "object_sha256": "77cc85001b9aaa960fb0904a1f6f55ca7b9d56145cbc8343a6156814d325071b",
+        "sha256": "77cc85001b9aaa960fb0904a1f6f55ca7b9d56145cbc8343a6156814d325071b"
+      },
+      "championship_state": {
+        "filename": "championship-state.json",
+        "object_sha256": "c043fb4e2325c99fcfa5c03cd37b06431e8c2e8ffc80e70b93cdcca98f1a4d02",
+        "sha256": "c043fb4e2325c99fcfa5c03cd37b06431e8c2e8ffc80e70b93cdcca98f1a4d02"
+      },
+      "compiler_features": {
+        "filename": "compiler-features.json",
+        "object_sha256": "aaced241f080a1ff2cb325d657d851d703e8757807c9a66a117971ecb46eefcc",
+        "sha256": "aaced241f080a1ff2cb325d657d851d703e8757807c9a66a117971ecb46eefcc"
+      },
+      "correction_frontier": {
+        "filename": "correction-frontier.json",
+        "object_sha256": "75a01265c52d449c8ab67c0d43b680f99ca199c216d83dbc342f01827820b0c1",
+        "sha256": "75a01265c52d449c8ab67c0d43b680f99ca199c216d83dbc342f01827820b0c1"
+      },
+      "evaluation_contract": {
+        "filename": "evaluation-contract.json",
+        "object_sha256": "c454837d3f69513e6d20b82dabecda5a6904e7b4af76bba157b3e17eda8894c9",
+        "sha256": "c454837d3f69513e6d20b82dabecda5a6904e7b4af76bba157b3e17eda8894c9"
+      },
+      "learning_health_state": {
+        "filename": "learning-health-state.json",
+        "object_sha256": "0e5e033022bd15ede6e06397eb4b0adf046f20944550c89e3e899075c4de56b6",
+        "sha256": "0e5e033022bd15ede6e06397eb4b0adf046f20944550c89e3e899075c4de56b6"
+      },
+      "motif_allocation": {
+        "filename": "motif-allocation.json",
+        "object_sha256": "131768d797392dd30e205ba4e2f37a924bb47ad47438ffb4ae659e4078ae8bc3",
+        "sha256": "131768d797392dd30e205ba4e2f37a924bb47ad47438ffb4ae659e4078ae8bc3"
+      },
+      "outbox": {
+        "filename": "outbox.json",
+        "object_sha256": "45a3f341e3ebd717e2bfea1b305d10f86a59d9b3ef5677312ab2d5258de23b84",
+        "sha256": "45a3f341e3ebd717e2bfea1b305d10f86a59d9b3ef5677312ab2d5258de23b84"
+      },
+      "plasticity_policy": {
+        "filename": "plasticity-policy.json",
+        "object_sha256": "9a72e96a38f1101da7cf020ef7f3f8ef81a9de029b3de2925eae36105c1f6046",
+        "sha256": "9a72e96a38f1101da7cf020ef7f3f8ef81a9de029b3de2925eae36105c1f6046"
+      },
+      "run_identity": {
+        "filename": "run-identity.json",
+        "object_sha256": "d6e133267d4b3d5b8c0baf0f6b1987e7feb0ebf2736e01cc029157e2352e3803",
+        "sha256": "d6e133267d4b3d5b8c0baf0f6b1987e7feb0ebf2736e01cc029157e2352e3803"
+      },
+      "semantic_abi": {
+        "filename": "semantic-abi.json",
+        "object_sha256": "49304b6d1b17e7a9ecaf03112dff561d641193908bda4681ba995a54fa31c197",
+        "sha256": "49304b6d1b17e7a9ecaf03112dff561d641193908bda4681ba995a54fa31c197"
+      },
+      "step_proofs": {
+        "filename": "step-proofs.json",
+        "object_sha256": "d0d65ec5b0876143ca1770dc906907659a562f3c038002c1914a2ebc1527f3f2",
+        "sha256": "d0d65ec5b0876143ca1770dc906907659a562f3c038002c1914a2ebc1527f3f2"
+      },
+      "teacher_state": {
+        "filename": "teacher-state.json",
+        "object_sha256": "6f00b30bb344dbe960ef77bed29595d553cb4dfa876c3909622cc9e2e1d53b21",
+        "sha256": "6f00b30bb344dbe960ef77bed29595d553cb4dfa876c3909622cc9e2e1d53b21"
+      }
+    },
+    "tensors": {
+      "filename": "bamf-state.safetensors",
+      "object_sha256": "ae707574460592fec6622941377281d8eb702f468528be24cea8644f31296297",
+      "optimizer_step": 521,
+      "schema": "bilqis.mlx.bamf-named-state/v2",
+      "sha256": "ae707574460592fec6622941377281d8eb702f468528be24cea8644f31296297",
+      "tensor_count": 856,
+      "uncompressed_bytes": 953848264
+    },
+    "training_objective_digest": "1f5364b16fbff01e48b3d571bdc682bf30f03d57aacb06aa1ff8e49cbe7e20f8"
+  },
+  "prepared_source_commit": "c764784981e1dec4bd44f9d54333f4c0f9465efe",
+  "prepared_visits": [
+    {
+      "attempted_steps": 12,
+      "capability": "A.PARENT",
+      "parent_manifest_sha256": "317f6785f99dfb6cf4ab76ccea420110ef91f9ceaef01cc47d9e2e9ca3f06dfe",
+      "realized_delivery": {
+        "answer_kinds": [],
+        "batch_size": 38,
+        "candidate_steps": 12,
+        "contrast_controls": {},
+        "depth_controls": {
+          "SOURCE_TOKEN_LENGTH_PROXY_FRESH_SUPPORT": 12
+        },
+        "distill_weight_applied": 0.0,
+        "enrichment_examples": 0,
+        "fragile_preservation_delivered": 0,
+        "fresh_support_delivered": 12,
+        "guided_optimizer_steps": 0,
+        "learning_rate": 0.00013,
+        "old_grade_examples_delivered": 0,
+        "optimizer_batches_observed": 12,
+        "priority_weakness_targets_delivered": 0,
+        "retention_support_delivered": 60,
+        "semantic_patterns_delivered": 0,
+        "semantic_patterns_required": 0,
+        "weakness_targets_delivered": 0
+      },
+      "reason": "NO_MEASURABLE_TARGET_GAIN",
+      "retained_steps": 0,
+      "scores": [
+        [
+          "A.PARENT",
+          3,
+          3,
+          6
+        ]
+      ],
+      "selected_policy": {
+        "contrast": 0.0,
+        "depth": 4,
+        "distill": 0.38,
+        "lr": 0.00013,
+        "old": 12,
+        "preview": 4
+      },
+      "selection_seed": 594,
+      "visit_id": "76139d76937e9efa97b549e917a4dfab2d9ea6fb2146f1e6dd82f60c929989e2"
+    },
+    {
+      "attempted_steps": 12,
+      "capability": "A.EDGE",
+      "parent_manifest_sha256": "317f6785f99dfb6cf4ab76ccea420110ef91f9ceaef01cc47d9e2e9ca3f06dfe",
+      "realized_delivery": {
+        "answer_kinds": [],
+        "batch_size": 38,
+        "candidate_steps": 12,
+        "contrast_controls": {},
+        "depth_controls": {
+          "SOURCE_TOKEN_LENGTH_PROXY_FRESH_SUPPORT": 12
+        },
+        "distill_weight_applied": 0.0,
+        "enrichment_examples": 0,
+        "fragile_preservation_delivered": 0,
+        "fresh_support_delivered": 12,
+        "guided_optimizer_steps": 0,
+        "learning_rate": 4e-05,
+        "old_grade_examples_delivered": 0,
+        "optimizer_batches_observed": 12,
+        "priority_weakness_targets_delivered": 0,
+        "retention_support_delivered": 60,
+        "semantic_patterns_delivered": 0,
+        "semantic_patterns_required": 0,
+        "weakness_targets_delivered": 0
+      },
+      "reason": "PAIRED_SCREEN_WITHIN_BUDGET",
+      "retained_steps": 12,
+      "scores": [
+        [
+          "A.EDGE",
+          2,
+          4,
+          6
+        ],
+        [
+          "A.IDENTITY",
+          5,
+          6,
+          6
+        ],
+        [
+          "A.LINK",
+          5,
+          5,
+          6
+        ],
+        [
+          "A.MAPS",
+          4,
+          4,
+          6
+        ],
+        [
+          "A.MEMBER",
+          5,
+          5,
+          6
+        ],
+        [
+          "A.PARENT",
+          3,
+          4,
+          6
+        ]
+      ],
+      "selected_policy": {
+        "contrast": 0.0,
+        "depth": 4,
+        "distill": 0.38,
+        "lr": 4e-05,
+        "old": 12,
+        "preview": 4
+      },
+      "selection_seed": 594,
+      "visit_id": "04874627655f7f3266e22565aff64c44bf2833834b16bec614b7645a7f9d3312"
+    },
+    {
+      "attempted_steps": 12,
+      "capability": "A.MEMBER",
+      "parent_manifest_sha256": "754f2076b0d8512a52a772bcf87fa3870cb525948bf8655c7e2cf186efe41c26",
+      "realized_delivery": {
+        "answer_kinds": [],
+        "batch_size": 37,
+        "candidate_steps": 12,
+        "contrast_controls": {},
+        "depth_controls": {
+          "UNBIASED_FRESH_SUPPORT_SOURCE_GROUPS": 12
+        },
+        "distill_weight_applied": 0.0,
+        "enrichment_examples": 0,
+        "fragile_preservation_delivered": 0,
+        "fresh_support_delivered": 0,
+        "guided_optimizer_steps": 0,
+        "learning_rate": 0.0003,
+        "old_grade_examples_delivered": 0,
+        "optimizer_batches_observed": 12,
+        "priority_weakness_targets_delivered": 0,
+        "retention_support_delivered": 60,
+        "semantic_patterns_delivered": 0,
+        "semantic_patterns_required": 0,
+        "weakness_targets_delivered": 0
+      },
+      "reason": "TARGET_BASELINE_REGRESSION",
+      "retained_steps": 0,
+      "scores": [
+        [
+          "A.MEMBER",
+          4,
+          3,
+          6
+        ]
+      ],
+      "selected_policy": {
+        "contrast": 0.0,
+        "depth": 2,
+        "distill": 0.38,
+        "lr": 0.0003,
+        "old": 8,
+        "preview": 4
+      },
+      "selection_seed": 595,
+      "visit_id": "00bb81fe977bcc2c95a1473b7ff84918e50eb54910c8c4b2402b532868924b4e"
+    }
+  ],
+  "schema": "bilqis.bamf.issue1617-experiment/v1",
+  "source_base": "83671fea5420e13499d83c92b31ca96f44b2a4fc"
+}
