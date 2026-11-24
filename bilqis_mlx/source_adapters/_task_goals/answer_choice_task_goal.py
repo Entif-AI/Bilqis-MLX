@@ -118,9 +118,16 @@ def resolve_answer_choice_task_goal(
     if not isinstance(row, dict) or "gold" not in row:
         _invalid("BAMF_C04_ANSWER_CHOICE_TRAINING_TARGET_INVALID")
     source = dict(row)
-    gold = source.pop("gold")
+    source.pop("gold")
     goal, binding = lower_answer_choice_task_goal(
         source, semantic_release=semantic_release, capability=capability, **kwargs)
+    return _resolve_lowered_answer_choice(row, goal, binding, capability=capability)
+
+
+def _resolve_lowered_answer_choice(row, goal, binding, *, capability, **_):
+    if not isinstance(row, dict) or "gold" not in row:
+        _invalid("BAMF_C04_ANSWER_CHOICE_TRAINING_TARGET_INVALID")
+    gold = row["gold"]
     family = _answer_family(capability, row.get("answer_kind"))
     type_name, _operator_id = _SUPPORTED[family.kind]
     text = str(gold)

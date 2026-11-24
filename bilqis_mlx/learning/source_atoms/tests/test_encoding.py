@@ -43,6 +43,63 @@ from bilqis_mlx.source_adapters.tests.atoms.helpers import REAL_BUNDLE, source_c
 
 
 class SourceEmbeddingBoundaryTests(TestCase):
+    def test_batch_reuse_preserves_repeated_atom_loss_and_parameter_gradients(self):
+        from bilqis_mlx.learning.source_atoms.learning_batch import (
+            learning_first_source_batch_vectors,
+        )
+        from bilqis_mlx.semantics.atlas_features.records import FeatureRow
+
+        sequences = ((0, 1, 0, 3), (3, 1, 3), (0, 3))
+        scopes = ("task:a", "task:a", "task:b")
+        rows = tuple(SimpleNamespace(visible_end=len(items), source_instance_id=f"row-{i}")
+                     for i, items in enumerate(sequences))
+        configs = tuple(SimpleNamespace(task=SimpleNamespace(scope=scope)) for scope in scopes)
+        sources = tuple(SourceAtomRow(object(), {}, {}, Path("."), i, 1,
+                                     learning_abi_indices=items)
+                        for i, items in enumerate(sequences))
+        spec = SimpleNamespace(semantic_bank_rows=2, rms_norm_epsilon=1e-5)
+        snapshot = SimpleNamespace(abi=lambda index: SimpleNamespace(semantic_id=str(index)))
+        parameters = {
+            "identity.bank.0": mx.array([[0.2, 0.3], [0.4, 0.7]]),
+            "identity.bank.1": mx.array([[0.1, 0.8], [0.9, 0.2]]),
+            "features.type": mx.array([[0.3, 0.1], [0.5, 0.2]]),
+            "features.role": mx.array([[0.1, 0.4]]),
+            "features.schema": mx.array([[0.4, 0.2]]),
+            "features.gates": mx.array([0.1, 0.2, 0.3, 0.4]),
+            "features.local_slot": mx.array([[0.1, 0.2]]),
+            "features.norm": mx.array([0.9, 1.1]),
+            **{f"features.project_{key}": mx.array([[0.3, 0.1], [0.2, 0.4]])
+               for key in ("type", "role", "schema", "graph")},
+        }
+
+        def feature(_snapshot, _features, semantic_id, index, scope, **_kwargs):
+            return FeatureRow(semantic_id, index, scope, ("type",), (index % 2,), (),
+                              "NONE", 0, None, "NONE", 0, None,
+                              (0.1, 0.2 if scope == "task:a" else 0.4), "ADMITTED_SOURCE")
+
+        def objective(weights, batched):
+            banks = tuple(SimpleNamespace(weights=weights[f"identity.bank.{i}"])
+                          for i in range(2))
+            prepared = source_embedding._LearningSourceEmbeddingContext(spec, weights, (0, 1, 3))
+            if batched:
+                result = learning_first_source_batch_vectors(
+                    rows, configs, sources, None, banks, snapshot, prepared)
+            else:
+                result = tuple(source_embedding._learning_first_source_vectors(
+                    weights, row, config, source, None, None, banks, snapshot, prepared)
+                    for row, config, source in zip(rows, configs, sources))
+            self.assertEqual(tuple(h.abi_indices for _, h in result), sequences)
+            return sum(mx.sum(v * mx.array([0.3, 0.7])) for v, _ in result)
+
+        with patch.object(source_embedding, "generation_feature_row", side_effect=feature):
+            old_loss, old_grad = mx.value_and_grad(lambda w: objective(w, False))(parameters)
+            new_loss, new_grad = mx.value_and_grad(lambda w: objective(w, True))(parameters)
+            mx.eval(old_loss, old_grad, new_loss, new_grad)
+        np.testing.assert_allclose(np.asarray(new_loss), np.asarray(old_loss), rtol=1e-6)
+        for name in parameters:
+            np.testing.assert_allclose(np.asarray(new_grad[name]), np.asarray(old_grad[name]),
+                                       rtol=1e-5, atol=1e-6, err_msg=name)
+
     def test_learning_first_multirow_encoding_prepares_source_parameters_once(self):
         row_count = 6
         compiled = object.__new__(CompiledEncoderInput)

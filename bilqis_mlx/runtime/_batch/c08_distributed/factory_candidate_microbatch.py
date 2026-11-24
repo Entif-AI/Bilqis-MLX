@@ -59,8 +59,8 @@ def _learning_first_task_goals(source_context, compiled):
         "release": source_context.release,
         "capability": capability,
     }
-    goal, _binding = lower(_source_view(row), **kwargs)
-    return goal, resolve(dict(row), **kwargs)
+    goal, binding = lower(_source_view(row), **kwargs)
+    return goal, resolve(row, goal, binding, **kwargs)
 
 
 def _row_execution_inputs(

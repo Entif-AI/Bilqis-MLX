@@ -174,8 +174,12 @@ def resolve_c13_episode_task_goal(
         _invalid("BAMF_C13_TASK_TARGET_INVALID")
     source = dict(row)
     source.pop("gold", None)
-    goal, _binding = lower_c13_episode_task_goal(
+    goal, binding = lower_c13_episode_task_goal(
         source, semantic_release=semantic_release, capability=capability, **kwargs)
+    return _resolve_lowered_c13(row, goal, binding)
+
+
+def _resolve_lowered_c13(row, goal, _binding, **_):
     try:
         case = case_from_record(row["record"])
     except (KeyError, TypeError, ValueError):

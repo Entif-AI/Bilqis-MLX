@@ -10,6 +10,7 @@ from .embedding import (
     _prepare_learning_source_embedding_context,
     source_atom_vectors,
 )
+from .learning_batch import learning_first_source_batch_vectors
 
 
 def _atomic_source_embeddings(compiled, atom_rows):
@@ -59,19 +60,25 @@ def encode_source_compiled_with_handoffs(
         (None,) * len(sources)
         if source_execution_authorities is None
         else source_execution_authorities)
-    learning_context = None
+    learning_rows = None
     if sources and all(source.learning_abi_indices is not None for source in sources):
         learning_context = _prepare_learning_source_embedding_context(
             parameters, sources[0], compiled.features, compiled.extents, banks, snapshot)
+        learning_rows = learning_first_source_batch_vectors(
+            compiled.compiled.rows, compiled.compiler_configs, sources,
+            compiled.features, banks, snapshot, learning_context)
     atom_rows, member_rows, handoffs = [], [], []
-    for row, config, source, requests, source_authority in zip(
+    for index, (row, config, source, requests, source_authority) in enumerate(zip(
             compiled.compiled.rows, compiled.compiler_configs,
-            sources, compiled.member_requests, authorities):
-        vectors, row_banks, handoff = source_atom_vectors(
-            parameters, row, config, source, compiled.features,
-            feature_schema, compiled.extents, banks, artifact_owner,
-            snapshot=snapshot, source_execution_authority=source_authority,
-            learning_context=learning_context)
+            sources, compiled.member_requests, authorities)):
+        if learning_rows is None:
+            vectors, row_banks, handoff = source_atom_vectors(
+                parameters, row, config, source, compiled.features,
+                feature_schema, compiled.extents, banks, artifact_owner,
+                snapshot=snapshot, source_execution_authority=source_authority)
+        else:
+            vectors, handoff = learning_rows[index]
+            row_banks = banks
         atom_rows.append(vectors)
         handoffs.append(handoff)
         if requests:

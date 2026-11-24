@@ -238,16 +238,21 @@ def resolve_numeric_task_goal(
             release=release, **kwargs)
     source = dict(row)
     source.pop("gold", None)
-    goal, _binding = lower_numeric_task_goal(
+    goal, binding = lower_numeric_task_goal(
         source, semantic_release=semantic_release, capability=capability,
         release=release, **kwargs)
+    return _resolve_lowered_numeric(row, goal, binding, capability=capability)
+
+
+def _resolve_lowered_numeric(row, goal, binding, *, capability, **_):
+    if row.get("answer_kind") == "binary":
+        from .answer_choice_task_goal import _resolve_lowered_answer_choice
+        return _resolve_lowered_answer_choice(row, goal, binding, capability=capability)
     expression = decode(row["record"]["symbols"])
     declared = capability.capability_id.removeprefix("C.")
     if declared == "NUMBER" and isinstance(expression, Literal):
-        from .answer_choice_task_goal import resolve_answer_choice_task_goal
-        return resolve_answer_choice_task_goal(
-            row, semantic_release=semantic_release, capability=capability,
-            release=release, **kwargs)
+        from .answer_choice_task_goal import _resolve_lowered_answer_choice
+        return _resolve_lowered_answer_choice(row, goal, binding, capability=capability)
     if (isinstance(expression, Apply)
             and expression.operator.symbol == "school.op.EQ"
             and declared != "EQ"):
