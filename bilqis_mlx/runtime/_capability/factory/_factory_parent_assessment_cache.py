@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import threading
+from weakref import ReferenceType, ref
 
 from bilqis_mlx.learning._atlas_candidate.identity_binding import (
     candidate_identity_for_canonical_consumer,
@@ -119,7 +120,7 @@ class _CacheEntry:
 class _ParentAssessmentCache:
     def __init__(self):
         self._lock = threading.RLock()
-        self._by_scope: dict[object, tuple[object | None, _CacheEntry]] = {}
+        self._by_scope: dict[object, tuple[ReferenceType | None, _CacheEntry]] = {}
 
     def use(
             self, scope: object, identity: ParentAssessmentCacheIdentity,
@@ -131,7 +132,7 @@ class _ParentAssessmentCache:
             current = None
             if scoped is not None:
                 retained_scope, retained_entry = scoped
-                if retained_scope is None or retained_scope is scope:
+                if retained_scope is None or retained_scope() is scope:
                     current = retained_entry
             if current is not None and current.identity == identity:
                 assessment = _require_assessment(
@@ -145,9 +146,24 @@ class _ParentAssessmentCache:
                 cohort, generation)
             entry = _CacheEntry(
                 identity, assessment, _entry_digest(identity, assessment))
-            retained_scope = None if isinstance(scope, str) else scope
+            if isinstance(scope, str):
+                retained_scope = None
+            else:
+                try:
+                    retained_scope = ref(
+                        scope, lambda reference: self._release_scope(scope_key, reference))
+                except TypeError:
+                    # A scope without weak-reference support can be assessed,
+                    # but must not become a process-lifetime cache owner.
+                    return assessment, _receipt(entry, False)
             self._by_scope[scope_key] = (retained_scope, entry)
             return assessment, _receipt(entry, False)
+
+    def _release_scope(self, key, reference):
+        with self._lock:
+            scoped = self._by_scope.get(key)
+            if scoped is not None and scoped[0] is reference:
+                self._by_scope.pop(key, None)
 
     def lookup(
             self, scope: object, identity: ParentAssessmentCacheIdentity,
@@ -159,7 +175,7 @@ class _ParentAssessmentCache:
             if scoped is None:
                 return None
             retained_scope, entry = scoped
-            if retained_scope is not None and retained_scope is not scope:
+            if retained_scope is not None and retained_scope() is not scope:
                 return None
             if entry.identity != identity:
                 return None
