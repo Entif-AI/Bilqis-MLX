@@ -68,3 +68,30 @@ finished in 0.50 s with 22 hits and one miss.
 
 Workflow restore and publication are optional accelerators; their failure does
 not waive or fail a verification result. Main artifacts expire after 30 days.
+
+## Local pre-push parity
+
+The tracked Husky pre-push hook executes every applicable repository-owned
+pull-request CI predicate before Git sends source updates. Hosted workflows
+and the hook use the same command groups in `scripts/quality/ci_checks.sh`.
+A parity regression checks the workflow inventory against the local gate and
+exercises both branch classifications and all semantic shard selections.
+
+The hook reads the actual Git push ref records, requires the checked-out commit
+and a clean source tree, fetches the integration base, and blocks stale
+candidates. An open GitHub PR supplies its base and title; new branches default
+to main, or set `BILQIS_CI_BASE_BRANCH` for another integration target.
+Missing pinned CI dependencies block execution rather than allowing dependency
+skips. Install the semantic requirements, NumPy 2.4.4, MLX 0.31.1 and the
+project dependencies in the selected local Python environment. A semantic
+DIFF or FULL plan additionally requires the extraction and Falkor requirements.
+
+The pre-push runner preserves the previous local governance checks and applies
+a single-worker 12 GiB MLX limit with caching disabled for test processes.
+Failure, timeout, or a changed candidate blocks the push. Hosted CI retains
+independent runner-specific proof, CodeQL and GitHub-only orchestration.
+Scheduled, manual and publication-only workflows remain hosted.
+
+`npm run prepare` installs Husky and points Git to the tracked `.husky` directory.
+This prevents linked worktrees from silently losing hooks when their generated
+Husky shim directory is absent. Do not bypass the verification hook.
