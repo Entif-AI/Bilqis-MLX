@@ -31,7 +31,7 @@ def foundation_local_retention_screen(
         if authenticated is None:
             _invalid("BAMF_C05_LEARNING_FIRST_FEATURE_CONTEXT_REQUIRED")
     (
-        target, _protected_rows, _target_instruments, target_pair,
+        target, _protected_rows, target_instruments, target_pair,
         target_coverage, comparison, decision,
     ) = target_stage(
         source_context, parent, candidate_bundle, candidate_state, artifact_path,

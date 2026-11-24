@@ -13,7 +13,7 @@ from bilqis_mlx.runtime.priority_competence import (
     CapabilityCompetence, CompetenceScore, current_competence, instructional_members,
 )
 
-from bilqis_mlx.runtime.tests.teacher.priority.test_active_grade_cadence import (
+from bilqis_mlx.runtime.tests.teacher.priority.cadence.test_active_grade_cadence import (
     _capability, _epoch, _frontier, _obligations, _record_terminal,
 )
 
