@@ -85,7 +85,10 @@ def _incremental_attempts(run_dir, events, pointer, student, attempts, seen, anc
             continue
         evidence = event.get("evidence")
         cadence = evidence.get("cadence") if isinstance(evidence, dict) else None
-        if event.get("event") != "BAMF_CANDIDATE_REJECTED" or not isinstance(
+        from bilqis_mlx.runtime.bamf_bundle.publication.preflight import (
+            EVENT, PERFECT_TARGET_SKIPPED, authenticate_perfect_target_skip,
+        )
+        if event.get("event") not in {"BAMF_CANDIDATE_REJECTED", EVENT} or not isinstance(
                 cadence, dict):
             continue
         generation = event.get("generation")
@@ -99,13 +102,18 @@ def _incremental_attempts(run_dir, events, pointer, student, attempts, seen, anc
             owner, manifest = parent, anchor[2]
         else:
             _invalid(_REBUILD_REQUIRED)
-        from .priority_rejection_replay import authenticated_rejection_event
-        if not authenticated_rejection_event(event, owner, manifest):
-            _invalid("BAMF_ACTIVE_GRADE_CADENCE_REJECTION_EVENT_INVALID")
+        if event.get("event") == EVENT:
+            authenticate_perfect_target_skip(event, owner, manifest)
+            outcome = PERFECT_TARGET_SKIPPED
+        else:
+            from .priority_rejection_replay import authenticated_rejection_event
+            if not authenticated_rejection_event(event, owner, manifest):
+                _invalid("BAMF_ACTIVE_GRADE_CADENCE_REJECTION_EVENT_INVALID")
+            outcome = "REJECTED"
         capability = evidence.get("capability")
         if capability not in cadence.get("authorized_capability_ids", ()):
             _invalid("BAMF_ACTIVE_GRADE_CADENCE_REJECTION_EVENT_INVALID")
-        attempts.append((cadence, capability, "REJECTED"))
+        attempts.append((cadence, capability, outcome))
     for key, item in current_accepted.items():
         if key not in seen and key not in observed_accepted:
             seen.add(key)
