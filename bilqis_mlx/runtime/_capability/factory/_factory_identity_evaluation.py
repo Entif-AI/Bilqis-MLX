@@ -32,7 +32,8 @@ def _new_factory_evaluation_owner():
               parent_assessment_cache=None, *, parent_state=None, candidate_state=None,
               parent_binding=None, candidate_binding=None,
               baseline_transition=None, baseline_ledger=None,
-              championship_cohort=None, championship_assessment=None):
+              championship_cohort=None, championship_assessment=None,
+              target_weakness_observation=None):
         item = object.__new__(FactoryRetentionEvaluation)
         for name, value in (
             ("decision", decision),
@@ -49,6 +50,7 @@ def _new_factory_evaluation_owner():
             ("baseline_ledger", baseline_ledger),
             ("championship_cohort", championship_cohort),
             ("championship_assessment", championship_assessment),
+            ("target_weakness_observation", target_weakness_observation),
         ):
             object.__setattr__(item, name, value)
         issued[id(item)] = item
@@ -74,6 +76,7 @@ class FactoryRetentionEvaluation:
     baseline_ledger: BaselineLedger
     championship_cohort: EvaluationCohort | None
     championship_assessment: Assessment | None
+    target_weakness_observation: object | None
 
     def __init__(self, *args, **kwargs):
         _invalid("BAMF_C05_FACTORY_EVALUATION_CALLER_CONSTRUCTION_FORBIDDEN")
@@ -112,6 +115,18 @@ class FactoryRetentionEvaluation:
                 or (self.baseline_transition is not None
                     and type(self.baseline_transition) is not FactoryBaselineTransition)):
             _invalid("BAMF_C05_FACTORY_EVALUATION_INVALID")
+        from bilqis_mlx.runtime.scored_target_weakness import TargetWeaknessObservation
+        from bilqis_mlx.runtime.capability_retention import DecisionStatus
+        observation = self.target_weakness_observation
+        if observation is not None and (
+                type(observation) is not TargetWeaknessObservation
+                or self.decision.status not in (DecisionStatus.REJECT, DecisionStatus.ELIGIBLE)
+                or observation.execution_generation_sha256 != (
+                    self.decision.candidate_generation
+                    if self.decision.status is DecisionStatus.ELIGIBLE
+                    else self.decision.parent_generation)
+                or observation.decision_evidence_sha256 != self.decision.evidence_sha256):
+            _invalid("BAMF_SCORED_TARGET_EVALUATION_DRIFT")
         if cache is not None:
             cache.__post_init__()
         self.baseline_ledger.__post_init__()

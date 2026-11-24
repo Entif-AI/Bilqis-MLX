@@ -200,7 +200,8 @@ def _issue_factory_evaluation(
         is_motif_allocation_transition,
     )
     (decision, parent, candidate, cache, comparison,
-     championship_cohort, championship_assessment) = result
+     championship_cohort, championship_assessment, *observations) = result
+    observation = observations[0] if observations else None
     from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
         strict_mode_enabled,
     )
@@ -263,7 +264,8 @@ def _issue_factory_evaluation(
         parent_binding=parent_binding, candidate_binding=candidate_binding,
         baseline_transition=baseline_transition, baseline_ledger=baseline,
         championship_cohort=championship_cohort,
-        championship_assessment=championship_assessment)
+        championship_assessment=championship_assessment,
+        target_weakness_observation=observation)
 
 
 def bind_factory_evaluation_issuer(raw_issue, evidence_stage):

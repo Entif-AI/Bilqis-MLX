@@ -71,6 +71,11 @@ def _record_candidate_rejection(
     parent, selection = prepared.parent, prepared.selection
     step, decision = prepared.step, prepared.decision
     cadence = _cadence(selection)
+    from bilqis_mlx.runtime.factory_retention_owner import FactoryRetentionEvaluation
+    evaluation = getattr(prepared, "retention_evaluation", None)
+    owner = ({"owner_evaluation": evaluation, "owner_decision": decision,
+              "owner_selection": selection}
+             if type(evaluation) is FactoryRetentionEvaluation else {})
     record_rejection(run_dir, parent, {
         "schema": "bilqis.bamf.c16.3-rejection/v2",
         "rejection_attempt_ordinal": prepared.rejection_attempt_ordinal,
@@ -91,7 +96,7 @@ def _record_candidate_rejection(
         "structural_weaknesses": list(prepared.structural_weaknesses),
         **_teacher_selection_fields(selection),
         **({"cadence": cadence} if cadence is not None else {}),
-    })
+    }, **owner)
     if cadence is not None and record_cadence_attempt is not None:
         record_cadence_attempt(
             run_dir, cadence, prepared.capability, "REJECTED")

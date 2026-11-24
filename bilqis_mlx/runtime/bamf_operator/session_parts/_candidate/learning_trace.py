@@ -17,6 +17,8 @@ _CONTROL_FIELDS = (
     "fresh_support_delivered",
     "weakness_targets_delivered",
     "priority_weakness_targets_delivered",
+    "weakness_class_matches",
+    "weakness_unavailable",
     "current_semantic_patterns_delivered",
     "current_semantic_patterns_required",
     "selected_answer_kinds",
@@ -48,6 +50,11 @@ class CandidateLearningTrace:
         if self._batch_size is None:
             self._batch_size = size
         controls = facts.get("controls") or {}
+        matches = controls.get("weakness_class_matches", {})
+        if matches:
+            delivered_ids = {row["id"] for row in rows}
+            if not {row_id for ids in matches.values() for row_id in ids} <= delivered_ids:
+                _invalid("BAMF_LEARNING_TRACE_WEAKNESS_DELIVERY_DRIFT")
         self._policy_controls.append({
             key: controls[key] for key in _CONTROL_FIELDS if key in controls
         })

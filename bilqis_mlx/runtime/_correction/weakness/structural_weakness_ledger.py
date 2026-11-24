@@ -26,6 +26,9 @@ def _validated_ledger(teacher: dict) -> dict:
                 or not isinstance(item.get("weakness"), dict)):
             _invalid("BAMF_WEAKNESS_LEDGER_INVALID")
         validate_weakness_evidence(item["weakness"])
+        exposure = item.get("exposure_count", 0)
+        if type(exposure) is not int or exposure < 0:
+            _invalid("BAMF_WEAKNESS_EXPOSURE_INVALID")
         if key != _ledger_key(item["weakness"]):
             _invalid("BAMF_WEAKNESS_LEDGER_DRIFT")
         if item["state"] == "RESOLVED":
@@ -53,6 +56,11 @@ def apply_rejection_weaknesses(
         weakness = wrapper["weakness"]
         key = _ledger_key(weakness)
         existing = ledger["classes"].get(key)
+        # Historical exposure may remain readable, but cannot replace scored debt.
+        if (existing is not None
+                and existing["weakness"].get("evidence_kind") == "SCORED_PARENT_MISS"
+                and weakness.get("evidence_kind") != "SCORED_PARENT_MISS"):
+            continue
         if (existing is not None and existing["state"] == "RESOLVED"
                 and existing.get("rejection_receipt_sha256")
                 == rejection_receipt_sha256):
@@ -62,6 +70,8 @@ def apply_rejection_weaknesses(
             "weakness": weakness,
             "candidate_evidence": wrapper["candidate_evidence"],
             "rejection_receipt_sha256": rejection_receipt_sha256,
+            **({"exposure_count": existing["exposure_count"]}
+               if existing is not None and "exposure_count" in existing else {}),
         }
     result["structural_weaknesses"] = ledger
     return result
@@ -157,17 +167,75 @@ def _close_resolution(teacher, weakness_record, assessment, qualifying):
     if (item is None or item.get("state") != "UNRESOLVED"
             or item.get("weakness") != weakness_record):
         _invalid("BAMF_WEAKNESS_RESOLUTION_TARGET_INVALID")
-    item["state"] = "RESOLVED"
-    item["resolution_evidence_sha256"] = _digest({
+    _mark_resolved(item, _digest({
         "schema": "bilqis.bamf.structural-weakness-resolution/v1",
         "weakness_evidence_sha256": weakness_record["weakness_evidence_sha256"],
         "assessment_sha256": assessment.digest(),
         "assessed_source_rows_sha256": _digest(tuple(
             instrument.compiled_case.task_template.source_row_sha256
             for instrument in qualifying)),
-    })
+    }))
     result["structural_weaknesses"] = ledger
     return result
+
+
+def _mark_resolved(item, proof_sha256):
+    item["state"] = "RESOLVED"
+    item["resolution_evidence_sha256"] = proof_sha256
+
+
+def record_scored_resolutions(teacher: dict, observation: dict) -> None:
+    """Fold only authenticated, exact-debt fresh scored closure proofs."""
+    from bilqis_mlx.runtime.capability_evaluation import _sha
+    from .structural_weakness_contracts import _digest, _validate_context
+
+    proofs = observation.get("weakness_resolutions", [])
+    if not proofs:
+        return
+    if not isinstance(proofs, list):
+        _invalid("BAMF_WEAKNESS_RESOLUTION_INVALID")
+    ledger = _validated_ledger(teacher)
+    decision = observation["decision"]
+    seen = set()
+    for proof in proofs:
+        if not isinstance(proof, dict) or set(proof) != {
+                "debt_key", "weakness_evidence_sha256", "cohort_sha256",
+                "decision_evidence_sha256", "retained_candidate_sha256",
+                "fresh_correct_rows", "context"}:
+            _invalid("BAMF_WEAKNESS_RESOLUTION_INVALID")
+        key = proof["debt_key"]
+        item = ledger["classes"].get(key)
+        context = _validate_context(proof["context"])
+        how = observation["context"]
+        rows = proof["fresh_correct_rows"]
+        if (item is None or key in seen or item["state"] != "UNRESOLVED"
+                or item["weakness"].get("evidence_kind") != "SCORED_PARENT_MISS"
+                or item["weakness"]["context"] != context
+                or context["capability_id"] != observation["teacher_visit"]["capability_id"]
+                or any(context[name] != how[name] for name in (
+                    "factory_release_sha256", "source_binding_sha256",
+                    "grade_definition_sha256", "rubric_sha256", "curriculum_scope"))
+                or context["grade_id"] != how["grade"]
+                or proof["weakness_evidence_sha256"] != item["weakness"]["weakness_evidence_sha256"]
+                or proof["decision_evidence_sha256"] != decision["evidence_sha256"]
+                or proof["retained_candidate_sha256"] != decision[
+                    "candidate_generation" if decision["decision"] == "PROVISIONAL"
+                    else "parent_generation"]
+                or not _sha(proof["cohort_sha256"])
+                or not isinstance(rows, list) or not rows):
+            _invalid("BAMF_WEAKNESS_RESOLUTION_INVALID")
+        row_ids = []
+        for row in rows:
+            if (not isinstance(row, list) or len(row) != 2
+                    or not isinstance(row[0], str) or not row[0]
+                    or not _sha(row[1])):
+                _invalid("BAMF_WEAKNESS_RESOLUTION_INVALID")
+            row_ids.append(row[0])
+        if (row_ids != sorted(set(row_ids))
+                or set(row_ids).intersection(item["weakness"]["historical_source_ids"])):
+            _invalid("BAMF_WEAKNESS_RESOLUTION_FRESHNESS_DRIFT")
+        seen.add(key)
+        _mark_resolved(item, _digest(proof))
 
 
 def resolve_structural_weakness(
@@ -184,6 +252,20 @@ def resolve_structural_weakness(
     return _close_resolution(teacher, weakness_record, assessment, qualifying)
 
 
+def record_weakness_exposure(teacher: dict, exposures: dict) -> None:
+    """Credit actual optimizer delivery once, inside the outcome owner's fold."""
+    if not exposures:
+        return
+    ledger = _validated_ledger(teacher)
+    for key, count in exposures.items():
+        item = ledger["classes"].get(key)
+        if (type(count) is not int or count < 1 or item is None
+                or item["state"] != "UNRESOLVED"
+                or item["weakness"].get("evidence_kind") != "SCORED_PARENT_MISS"):
+            _invalid("BAMF_WEAKNESS_EXPOSURE_INVALID")
+        item["exposure_count"] = item.get("exposure_count", 0) + count
+
+
 def carried_structural_weaknesses(teacher: dict) -> tuple[dict, ...]:
     """Project unresolved carried classes; exact evidence stays in its B13 receipt."""
     ledger = _validated_ledger(teacher)
@@ -192,6 +274,8 @@ def carried_structural_weaknesses(teacher: dict) -> tuple[dict, ...]:
             "weakness": item["weakness"],
             "candidate_evidence": item["candidate_evidence"],
             "rejection_receipt_sha256": item["rejection_receipt_sha256"],
+            **({"exposure_count": item["exposure_count"]}
+               if "exposure_count" in item else {}),
         }
         for key, item in sorted(ledger["classes"].items())
         if item["state"] == "UNRESOLVED"

@@ -2,7 +2,7 @@
   "schema": "bilqis.bamf.flow-control-lane/v1",
   "lane": "C",
   "observed_unified": "7e34256381a1d40707284e0be466dcb15092ec26",
-  "updated_at": "2026-11-23T12:03:00+00:00",
+  "updated_at": "2026-11-24T13:10:14Z",
   "exception": null,
   "items": [
     {
@@ -650,6 +650,15 @@
       "summary": "#1578 is turned in as ready PR #1601 after consuming current main bb86a59fb (#1597). The audit proves that >32 distinct row-count work items cannot preserve the fixed 32-row logical optimizer objective/update order without crossing sequential AdamW state; a true fused two-step path would be a new cross-owner architecture. Disposable physical 8/16/32 caps preserve the 32-row objective within C08 FP32 atol=1e-6 while reporting separate analytical and actual MLX peak memory. The explicit equal-96-row 8/16/24/32 logical-policy comparison passed the C05 disposable screen in all arms, with 32 rows giving the highest retained-candidate throughput (3.899/hour); durable useful-retentions/hour remains NOT_MEASURED, so the default stays 32. OOM/resource semantics are unchanged. Final reconciled proof is 12 passed + 2 skipped + 5 subtests, zero new smell findings, green structure/module-size/flow-control/py_compile/diff gates. Hosted portable-core then exposed five raw ValueError validation identities as new opaque operator-contract debt; 613932cd routes all five through SCHOOL.BAMF_RESOURCES.INVALID with explicit C08 reason codes. Failing-before produced 5 failures; post-fix focused proof is 2 passed + 4 subtests and error-control-plane reports new debt 0. No human --human-run or production learner mutation occurred.",
       "resume_trigger": null,
       "preserved_branch": "codex/1578-accelerator-work-units-20261123"
+    },
+    {
+      "issue": 1627,
+      "pr": null,
+      "state": "ACTIVE",
+      "head_sha": "c9b88533d95810e6f16de89249090ab1efd1b509",
+      "summary": "Native policy-shaped lessons and structural weakness delivery; isolated branch; pinned EGM design review in progress. No sovereign learner mutation.",
+      "resume_trigger": null,
+      "preserved_branch": "codex/1627-teacher-lesson-shaping-20261124"
     }
   ]
 }

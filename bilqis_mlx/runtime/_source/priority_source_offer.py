@@ -239,6 +239,15 @@ def prepare_priority_source_offer(source_context, parent, atlas_artifact_path, *
         seed=source_seed, capability=capability, each=source_each)
     if len(rows) != source_each:
         _invalid_source_batch('BAMF_PRIORITY_SOURCE_ROWS_INVALID')
+    return _issue_source_offer(
+        source_context, parent, rows, authority, planning_generation,
+        materialization_cache, cache, authenticated, strict)
+
+
+def _issue_source_offer(source_context, parent, rows, authority, planning_generation,
+                        materialization_cache, cache, authenticated, strict):
+    capability, source_seed, source_each = (
+        authority.capability_id, authority.seed, authority.each)
     if authenticated.receipt.generation_manifest_sha256 != cache.accepted_manifest_sha256:
         _invalid_source_batch('BAMF_PRIORITY_SOURCE_ACCEPTED_GENERATION_DRIFT')
     qualification_owner = None
@@ -276,6 +285,27 @@ def prepare_priority_source_offer(source_context, parent, atlas_artifact_path, *
     else:
         offer._validate()
     return offer
+
+
+def reissue_selected_priority_source_offer(offer, source_context, parent,
+                                           parent_rows, rows, parent_authority):
+    """Bind one selected subset without changing admitted source identity."""
+    offer._validate()
+    for key in ("release_sha256", "capability_id", "provider_id",
+                "provider_implementation_sha256", "seed", "source_family_id"):
+        if getattr(parent_authority, key) != getattr(offer.source_authority, key):
+            _invalid_source_batch("BAMF_PRIORITY_SOURCE_SUBSET_AUTHORITY_DRIFT")
+    authority = source_context.bind_authorized_subset_rows(
+        parent_rows, rows, parent_authority)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import strict_mode_enabled
+    strict = strict_mode_enabled()
+    generation = offer._planning_generation
+    require_generation = (
+        _require_planning_generation if strict else _require_planning_generation_identity)
+    cache, authenticated = require_generation(generation, source_context, parent)
+    return _issue_source_offer(
+        source_context, parent, rows, authority, generation,
+        offer._materialization_cache, cache, authenticated, strict)
 
 
 def expand_selected_priority_source_offer(

@@ -58,7 +58,9 @@ def _lesson_rows(selection, source_context, ordinal, enrichment_rows,
                 source_context.release, registry, capability=offer.capability_id,
                 seed=offer.source_seed, enabled=True))
     if rehearsal is None and rehearsal_plan is not None:
-        rehearsal = materialize_rehearsal_rows(source_context, rehearsal_plan, ordinal)
+        rehearsal = materialize_rehearsal_rows(
+            source_context, rehearsal_plan, ordinal,
+            reserved_rows=(*offer.rows(), *enrichment_rows))
     role_rows = {
         "prior": () if rehearsal is None else tuple(rehearsal.prior),
         "preservation": () if rehearsal is None else tuple(rehearsal.preservation),

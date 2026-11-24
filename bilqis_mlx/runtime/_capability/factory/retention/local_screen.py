@@ -5,6 +5,8 @@ from bilqis_mlx.runtime.bamf_bundle import (
     authenticate_bamf_execution_feature_context,
 )
 
+from bilqis_mlx.runtime.scored_target_weakness import observe_retained_target
+
 from .local_evaluation import (
     finalize_target_first_local_candidate,
 )
@@ -37,7 +39,9 @@ def foundation_local_retention_screen(
         authenticated=authenticated,
         mastery_debt_min_utility=mastery_debt_min_utility)
     if decision is not None:
-        return decision, parent, candidate_bundle, cache, comparison, None, None
+        return (decision, parent, candidate_bundle, cache, comparison, None, None,
+                observe_retained_target(
+                    source_context, target, target_pair, target_instruments, decision))
 
     reference_pair, parent_cache, policy = reference_stage(
         source_context, parent, candidate_bundle, artifact_path,
@@ -54,7 +58,8 @@ def foundation_local_retention_screen(
     elapsed(observer, "retention_decision_finalize_wall_seconds", started)
     return (
         decision, parent, candidate_bundle, parent_cache, comparison,
-        None, None,
+        None, None, observe_retained_target(
+            source_context, target, target_pair, target_instruments, decision),
     )
 
 

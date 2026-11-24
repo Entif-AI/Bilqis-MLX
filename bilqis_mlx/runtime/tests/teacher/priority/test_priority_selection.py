@@ -87,6 +87,10 @@ def test_accepted_selection_calls_policy_once(priority):
                           source_seed=offer.source_seed,
                           source_authority=SimpleNamespace(content_sha256='f' * 64),
                           _planning_generation=offer._planning_generation)) as expand, \
+         patch.object(priority, 'prepare_lesson_pool', return_value='pool') as prepare, \
+         patch.object(priority, 'shape_priority_lesson',
+                      side_effect=lambda _context, _parent, offer, _pool, _policy: (offer, {})) as shape, \
+         patch.object(priority.time, 'monotonic', side_effect=(1.0, 1.125, 2.0, 2.125)), \
          patch.object(priority.time, 'perf_counter', side_effect=(10.0, 10.25)):
         result = priority.select_accepted_priority_visit('/run', SimpleNamespace(release=None), frontier, None, None,
             (('o', qualified.offers[0][1]),), None, school, None, None,
@@ -94,7 +98,10 @@ def test_accepted_selection_calls_policy_once(priority):
             planning_offer_fanout_wall_seconds=0.5)
     assert result.status == 'TEACHER_SELECTED'
     assert result.policy == {'lr': 0.5}
-    assert result.source_materialization_wall_seconds == 0.25
+    assert result.source_materialization_wall_seconds == 0.5
+    prepare.assert_called_once()
+    shape.assert_called_once()
+    assert shape.call_args.args[-1] == {'lr': 0.5}
     assert result.ranking_evidence['dispatch_tier'] == 1
     assert result.ranking_evidence['salience_inputs_digest'] == 's' * 64
     assert result.ranking_evidence['planning_source_receipt_sha256'] == 'p' * 64

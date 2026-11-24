@@ -14,7 +14,7 @@ from bilqis_mlx.runtime.source_execution import source_content_digest
 from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import (
     _cases, _solver,
 )
-from bilqis_mlx.runtime.tests.teacher.priority.test_structural_weakness_replay import (
+from bilqis_mlx.runtime.tests.teacher.priority.weakness.test_structural_weakness_replay import (
     CAPABILITY, _SourceContext, _selection_for_context, _weakness_record,
 )
 
