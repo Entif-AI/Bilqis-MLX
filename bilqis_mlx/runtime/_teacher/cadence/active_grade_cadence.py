@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
+from bilqis_mlx.runtime.priority_competence import instructional_members
 
 from .active_grade_cadence_contracts import (
     ActiveGradeCadenceAuthorization,
@@ -110,7 +111,9 @@ def _restore_state(run_dir, state, lawful_frontier, member_order, census,
                 phase_capability_ids=member_order,
                 deficit_evidence_sha256=deficit_digest,
                 member_census_sha256=census,
-                cadence_epoch=(0 if state is None else state.cadence_epoch + 1),
+                cadence_epoch=max(
+                    0 if state is None else state.cadence_epoch + 1,
+                    _attempt_epoch(attempts) + 1),
                 recovery_attempt_counts=(
                     {} if reset_exposure else dict(state.recovery_attempt_counts)),
                 recovery_retained_counts=(
@@ -150,11 +153,12 @@ def _restore_state(run_dir, state, lawful_frontier, member_order, census,
 
 
 def _issue_phase(run_dir, state, lawful_frontier, member_order, census,
-                 deficit_counts, deficit_digest):
+                 deficit_counts, deficit_digest, competence):
     while True:
         ready_set = set(lawful_frontier.ready_capability_ids)
         ready = tuple(
             capability for capability in member_order if capability in ready_set)
+        deferred = ready_set - set(instructional_members(ready, competence))
         complete = {
             item.capability_id for item in lawful_frontier.capabilities
             if getattr(item.disposition, "value", item.disposition)
@@ -163,7 +167,8 @@ def _issue_phase(run_dir, state, lawful_frontier, member_order, census,
         attempted = set(state.attempted_capability_ids)
         unsatisfied = tuple(
             capability for capability in state.phase_capability_ids
-            if capability not in attempted and capability not in complete)
+            if capability not in attempted and capability not in complete
+            and capability not in deferred)
         authorized = tuple(
             capability for capability in unsatisfied if capability in ready_set)
         if authorized:
@@ -191,7 +196,8 @@ def _issue_phase(run_dir, state, lawful_frontier, member_order, census,
                 state, (), ActiveGradeCadenceDisposition.RECOVERY_EXHAUSTED)
         phase, phase_round = _next_phase(state)
         members = (() if phase is ActiveGradeCadencePhase.BOUNDARY else
-                   recovery_members(state, ready, deficit_counts, member_order))
+                   recovery_members(state, ready, deficit_counts, member_order,
+                                    competence))
         source_state = state
         state = new_state(
             run_dir, state, lawful_frontier,
@@ -206,7 +212,7 @@ def _issue_phase(run_dir, state, lawful_frontier, member_order, census,
                 state, (), ActiveGradeCadenceDisposition.RECOVERY_EXHAUSTED)
 
 
-def issue_active_grade_cadence(run_dir: Path, epoch, lawful_frontier):
+def issue_active_grade_cadence(run_dir: Path, epoch, lawful_frontier, *, competence=None):
     """Issue the current #1333 subset; #1315 remains the legality owner."""
     run_dir = Path(run_dir)
     member_order = member_capabilities(lawful_frontier)
@@ -218,7 +224,7 @@ def issue_active_grade_cadence(run_dir: Path, epoch, lawful_frontier):
         run_dir, state, lawful_frontier, member_order, census, deficit_digest, attempts)
     return _issue_phase(
         run_dir, state, lawful_frontier, member_order, census,
-        deficit_counts, deficit_digest)
+        deficit_counts, deficit_digest, competence or {})
 
 
 def record_active_grade_cadence_attempt(

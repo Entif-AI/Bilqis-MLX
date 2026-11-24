@@ -146,7 +146,8 @@ def select_foundation_priority_visit(
     authority = issue_foundation_priority_authority(
         run_dir, source_context, parent, epoch, atlas_artifact_path,
         teacher_state=teacher_state, progress=progress,
-        planning_cache=planning_cache, logical_batch_size=logical_batch_size)
+        planning_cache=planning_cache, logical_batch_size=logical_batch_size,
+        program=program)
     if authority.cadence.phase.value in {"MAIN", "RECOVERY_1", "RECOVERY_2"}:
         school = replace(school, stage=authority.cadence.phase.value)
     bootstrap = {"legacy_receipt": None, "adaptation": None, "prior_region": None}
