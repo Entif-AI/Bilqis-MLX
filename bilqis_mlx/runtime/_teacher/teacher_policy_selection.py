@@ -128,6 +128,8 @@ def select_visit_policy(engine, teacher, cap, school, rng, learning_settings,
             metadata.update({
                 "legacy_policy_key": legacy_key,
                 "legacy_selection_reason": legacy_reason,
+                "legacy_diagnostic_context_consumed": metadata["diagnostic_context_consumed"],
+                "diagnostic_context_consumed": False,
                 "selection_reason": "VNEXT_CANARY",
                 "selection_policy": _teacher_vnext.SELECTION_POLICY,
             })

@@ -40,6 +40,11 @@ class PreNeuralJourneyIdentityReuseTests(PreNeuralJourneySupport, unittest.TestC
 
         self.assertEqual(selected.status, "TEACHER_SELECTED")
         how = selected.metadata["how_context"]
+        self.assertEqual(how["diagnostics"]["native_previsit_schema"],
+                         "bilqis.bamf.previsit-diagnostics/v1")
+        self.assertIsNone(how["diagnostics"]["warnings"])
+        self.assertIsNone(how["diagnostics"]["champion_candidates"])
+        self.assertIsNone(how["diagnostics"]["unresolved_misses"])
         self.assertEqual(how["diagnostics"]["native_previsit"], {
             "fixed_reference_deficit": None,
             "target_sample_deficit": None,

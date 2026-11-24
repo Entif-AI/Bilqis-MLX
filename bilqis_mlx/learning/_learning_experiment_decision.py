@@ -328,7 +328,11 @@ def _diagnostic_context(channel: dict, capability: str, curriculum_scope: str,
                        for value in previsit.values())
                 or type(previsit["reference_conflict"]) is not bool):
             raise ValueError(LearningExperimentError.DIAGNOSTIC_REASON_DRIFT.value)
-        payload["native_previsit"] = dict(previsit)
+        # Native ordinary visits do not measure the legacy exam/adviser signals.
+        # Preserve their unknown state without reinterpreting historical keys.
+        payload.update(warnings=None, unresolved_misses=None, champion_candidates=None,
+                       native_previsit_schema="bilqis.bamf.previsit-diagnostics/v1",
+                       native_previsit=dict(previsit))
     if (channel.get("selection_contract") == BAMF_SUCCESSOR_SELECTION
             and "salience_evidence" in diagnostics):
         from .atlas_salience import salience_priority_features

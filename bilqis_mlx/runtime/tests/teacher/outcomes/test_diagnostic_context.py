@@ -56,7 +56,8 @@ def test_native_selection_and_feedback_preserve_verified_salience_key():
     assert key == visit['policy_key']
 
 
-def test_compact_selection_reconstructs_diagnostic_context_before_identity_check():
+@pytest.mark.parametrize("native", [False, True])
+def test_compact_selection_reconstructs_diagnostic_context_before_identity_check(native):
     epoch, _, _, school, evidence = _fixture()
     parent = epoch.teacher()
     teacher = deepcopy(parent)
@@ -65,6 +66,11 @@ def test_compact_selection_reconstructs_diagnostic_context_before_identity_check
         'salience_evidence': evidence,
         'teacher_epoch_digest': contract_digest(epoch),
     }
+    if native:
+        diagnostics = {"native_previsit": {
+            "fixed_reference_deficit": True, "target_sample_deficit": None,
+            "reference_conflict": False, "structural_debt": None,
+        }}
     key, policy, metadata = select_visit_policy(
         engine, teacher, capability, school, random.Random(12), Settings(),
         scope, diagnostics, 'any-grade')
@@ -136,6 +142,16 @@ def test_ordinary_previsit_consumes_current_parent_competence():
     assert unknown[3]["native_previsit"]["fixed_reference_deficit"] is None
     assert deficit[3]["native_previsit"]["fixed_reference_deficit"] is True
     assert deficit[3]["native_previsit"]["structural_debt"] is None
+    assert deficit[3]["native_previsit_schema"] == "bilqis.bamf.previsit-diagnostics/v1"
+    assert all(deficit[3][name] is None for name in
+               ("warnings", "unresolved_misses", "champion_candidates"))
+    perfect = select(CapabilityCompetence(reference=CompetenceScore(
+        6, 6, "FIXED_REFERENCE", "b" * 64)))
+    assert perfect[3]["native_previsit"]["fixed_reference_deficit"] is False
+    assert perfect[2] != unknown[2] != deficit[2]
+    # Provenance and raw deficit magnitude are not new statistical dimensions.
+    assert select(CapabilityCompetence(reference=CompetenceScore(
+        1, 6, "FIXED_REFERENCE", "c" * 64))) == deficit
 
 
 def test_ordinary_diagnostic_credit_changes_actual_selection_rationale():
