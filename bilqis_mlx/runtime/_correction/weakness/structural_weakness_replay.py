@@ -10,14 +10,14 @@ from .structural_weakness_contracts import (
 )
 from .structural_weakness_ledger import (
     apply_rejection_weaknesses, carried_structural_weaknesses,
-    resolve_structural_weakness,
+    recorded_weakness_debt, resolve_structural_weakness,
 )
 
 __all__ = (
     "CONTEXT_SCHEMA", "EVIDENCE_SCHEMA", "LEDGER_SCHEMA",
     "apply_rejection_weaknesses", "carried_structural_weaknesses",
     "derive_live_rejected_weaknesses", "derive_rejected_weaknesses",
-    "issue_weakness_context",
+    "issue_weakness_context", "recorded_weakness_debt",
     "resolve_structural_weakness", "validate_rejection_weaknesses",
     "validate_weakness_evidence", "weakness_is_current",
 )

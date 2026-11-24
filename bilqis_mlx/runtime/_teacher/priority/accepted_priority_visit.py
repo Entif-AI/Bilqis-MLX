@@ -64,7 +64,19 @@ def _selected_priority_result(
         strict_mode_enabled,
     )
     strict = strict_mode_enabled()
-    diagnostics = {'teacher_epoch_digest': contract_digest(epoch)} if strict else {}
+    prepared_context = None
+    if strict:
+        diagnostics = {'teacher_epoch_digest': contract_digest(epoch)}
+    else:
+        from bilqis_mlx.runtime.structural_weakness_replay import recorded_weakness_debt
+        from bilqis_mlx.runtime.teacher_policy_selection import ordinary_previsit_diagnostics
+        from bilqis_mlx.runtime.outcomes.issuance import selection_context
+        prepared_context = selection_context(
+            source_context.release, program, grade, school.stage,
+            option.context.scope, {}, capability)
+        debt = recorded_weakness_debt(
+            teacher, prepared_context, lawful_frontier, capability)
+        diagnostics = ordinary_previsit_diagnostics(option, structural_debt=debt)
     if salience_evidence is not None:
         diagnostics['salience_evidence'] = salience_evidence
     key, policy, metadata = select_visit_policy(
@@ -74,7 +86,7 @@ def _selected_priority_result(
         plasticity_escape=plasticity_escape)
     metadata = {**metadata, 'how_context': context_for_selection(
         source_context.release, program, grade, school, option, teacher, metadata,
-        total_capabilities)}
+        total_capabilities, **({} if strict else {"prepared_context": prepared_context}))}
     if cadence_authorization is not None:
         metadata = {**metadata, 'cadence': cadence_authorization.to_record()}
     selected_epoch = replace(

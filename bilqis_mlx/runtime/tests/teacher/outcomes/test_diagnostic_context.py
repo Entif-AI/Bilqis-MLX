@@ -15,11 +15,12 @@ from bilqis_mlx.runtime.teacher_policy_selection import select_visit_policy
 from bilqis_mlx.semantics.domains import contract_digest
 
 
-def selected_outcome():
+def selected_outcome(diagnostics=None):
     epoch, _, _, school, evidence = _fixture()
     teacher = epoch.teacher()
     capability, scope = evidence.scope.capability_id, evidence.scope.scope
-    diagnostics = {'salience_evidence': evidence, 'teacher_epoch_digest': contract_digest(epoch)}
+    if diagnostics is None:
+        diagnostics = {'salience_evidence': evidence, 'teacher_epoch_digest': contract_digest(epoch)}
     key, policy, metadata = select_visit_policy(engine, teacher, capability, school,
         random.Random(12), Settings(), scope, diagnostics, 'any-grade')
     diagnostic_key = metadata['diagnostic_context_key']
@@ -105,3 +106,63 @@ def test_changed_selected_diagnostic_payload_cannot_credit():
     value['outcome_sha256'] = _fingerprint({k:v for k,v in value.items() if k != 'outcome_sha256'})
     with pytest.raises(BilqisError):
         apply_outcome(teacher, value)
+
+
+def test_ordinary_previsit_consumes_current_parent_competence():
+    from types import SimpleNamespace
+    from bilqis_mlx.runtime.teacher_policy_selection import ordinary_previsit_diagnostics
+    from bilqis_mlx.runtime.priority_competence import CapabilityCompetence, CompetenceScore
+
+    epoch, _, _, school, evidence = _fixture()
+    capability, scope = evidence.scope.capability_id, evidence.scope.scope
+
+    def select(competence):
+        teacher = epoch.teacher()
+        option = SimpleNamespace(competence=competence)
+        diagnostics = ordinary_previsit_diagnostics(option, structural_debt=None)
+        key, policy, metadata = select_visit_policy(
+            engine, teacher, capability, school, random.Random(12), Settings(),
+            scope, diagnostics, "any-grade")
+        diagnostic_key = metadata["diagnostic_context_key"]
+        payload = teacher["causal_experiment"]["diagnostic_contexts"][diagnostic_key]
+        return key, policy, diagnostic_key, payload
+
+    unknown = select(CapabilityCompetence())
+    measured = CapabilityCompetence(reference=CompetenceScore(
+        2, 6, "FIXED_REFERENCE", "a" * 64))
+    deficit = select(measured)
+    assert deficit == select(measured)
+    assert unknown[2] != deficit[2]
+    assert unknown[3]["native_previsit"]["fixed_reference_deficit"] is None
+    assert deficit[3]["native_previsit"]["fixed_reference_deficit"] is True
+    assert deficit[3]["native_previsit"]["structural_debt"] is None
+
+
+def test_ordinary_diagnostic_credit_changes_actual_selection_rationale():
+    from types import SimpleNamespace
+    from bilqis_mlx.runtime.teacher_policy_selection import ordinary_previsit_diagnostics
+    from bilqis_mlx.runtime.priority_competence import CapabilityCompetence, CompetenceScore
+
+    measured = CapabilityCompetence(reference=CompetenceScore(
+        2, 6, "FIXED_REFERENCE", "a" * 64))
+    known = ordinary_previsit_diagnostics(
+        SimpleNamespace(competence=measured), structural_debt=True)
+    teacher, value, school, _ = selected_outcome(known)
+    credited = apply_outcome(teacher, value)
+    visit, context = value["teacher_visit"], value["context"]
+
+    def select(diagnostics):
+        return select_visit_policy(
+            engine, deepcopy(credited), visit["capability_id"], school,
+            random.Random(12), Settings(), context["curriculum_scope"],
+            diagnostics, "any-grade")
+
+    key, _, metadata = select(known)
+    assert key == visit["policy_key"]
+    assert metadata["diagnostic_context_consumed"] is True
+    assert metadata["selection_reason"] == "DIAGNOSTIC_OR_PRESSURE_CONTEXT"
+    unknown = ordinary_previsit_diagnostics(
+        SimpleNamespace(competence=CapabilityCompetence()), structural_debt=None)
+    _, _, different = select(unknown)
+    assert different["diagnostic_context_consumed"] is False
+    assert different["diagnostic_context_key"] != metadata["diagnostic_context_key"]
