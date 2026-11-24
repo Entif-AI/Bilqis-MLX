@@ -8,7 +8,8 @@ from pathlib import Path
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.runtime.structural_weakness_ledger import _ledger_key
 from .rehearsal_allocation import (
-    reserve_preservation as _reserve_preservation, scheduled_pairs, valid_allocation,
+    PREDICATE_PAIR_ROWS, reserve_preservation as _reserve_preservation,
+    scheduled_pairs, valid_allocation,
 )
 from .weakness_rehearsal import _draw_size, targeted_groups
 from bilqis_mlx.source_adapters.lesson_geometry import (
@@ -192,7 +193,7 @@ def _draw_rehearsal(source_context, plan, role, capability, ordinal, *, pairs=0)
     geometry = dict(plan.support_geometries).get(capability) if role == "retention_support" else None
     each = _SOURCE_DRAW_EACH if geometry is None else _draw_size(geometry, _SOURCE_DRAW_EACH)
     if pairs:
-        each = max(_SOURCE_DRAW_EACH, 2 * pairs)
+        each = max(_SOURCE_DRAW_EACH, PREDICATE_PAIR_ROWS * pairs)
     rows, parent_authority = source_context.draw_bound_rows(
         seed=seed, capability=capability, each=each)
     rows = tuple(rows)
@@ -207,7 +208,7 @@ def _draw_rehearsal(source_context, plan, role, capability, ordinal, *, pairs=0)
                 _invalid("BAMF_REHEARSAL_BALANCED_DRAW_UNAVAILABLE")
             start = seed % len(bucket)
             selected.extend((bucket[start:] + bucket[:start])[:pairs])
-        if len(selected) != 2 * pairs:
+        if len(selected) != PREDICATE_PAIR_ROWS * pairs:
             _invalid("BAMF_REHEARSAL_BALANCED_DRAW_UNAVAILABLE")
     elif geometry is not None:
         groups = distinct_groups(complete_groups(rows, geometry))
