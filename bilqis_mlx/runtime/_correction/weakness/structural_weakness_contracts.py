@@ -37,11 +37,16 @@ def issue_weakness_context(selection) -> dict:
     how = metadata.get("how_context") if isinstance(metadata, dict) else None
     capability = getattr(getattr(selection, "visit", None), "identity", None)
     capability = getattr(capability, "capability_id", None)
+    if capability != getattr(getattr(selection, "offer", None), "capability_id", None):
+        _invalid("BAMF_WEAKNESS_CONTEXT_INVALID")
+    return weakness_context_for_frontier(how, frontier, capability)
+
+
+def weakness_context_for_frontier(how, frontier, capability):
+    """Same scope for previsit diagnosis and subsequently issued teaching."""
     if (frontier is None or not isinstance(how, dict)
             or not isinstance(capability, str) or not capability
-            or capability != getattr(getattr(selection, "offer", None),
-                                     "capability_id", None)
-            or capability not in set(getattr(frontier, "ready_capability_ids", ()))):
+            or capability not in getattr(frontier, "ready_capability_ids", ())):
         _invalid("BAMF_WEAKNESS_CONTEXT_INVALID")
     required_hashes = (
         "grade_definition_sha256", "source_binding_sha256",

@@ -79,7 +79,7 @@ class TeacherVNextReplayTests(unittest.TestCase):
 
         teacher, strong, weak = teacher_fixture()
         legacy_metadata = {
-            "diagnostic_context_consumed": False,
+            "diagnostic_context_consumed": True,
             "diagnostic_context_key": None,
             "selection_reason": "INHERITED_FALLBACK",
             "selection_policy": "bilqis.mlx.teacher-selection/349-replay-v1",
@@ -101,6 +101,8 @@ class TeacherVNextReplayTests(unittest.TestCase):
         self.assertEqual(policy, teacher["strategies"]["p-strong"])
         self.assertEqual(metadata["selection_reason"], "VNEXT_CANARY")
         self.assertEqual(metadata["legacy_policy_key"], "p-weak")
+        self.assertTrue(metadata["legacy_diagnostic_context_consumed"])
+        self.assertFalse(metadata["diagnostic_context_consumed"])
         self.assertTrue(metadata["vnext_canary"]["actual_authority_changed"])
 
     def test_runtime_selector_does_not_override_portable_retained_challenger(self):

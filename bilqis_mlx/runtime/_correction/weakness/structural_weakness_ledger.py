@@ -282,6 +282,44 @@ def carried_structural_weaknesses(teacher: dict) -> tuple[dict, ...]:
     )
 
 
+def recorded_weakness_debt(teacher, how, frontier, capability):
+    """True/False only for recorded current debt/resolution; None if unmeasured.
+
+    This is a diagnostic, not authorization to deliver or close a weakness.
+    The existing teaching owner still validates source/provider and row identity.
+    """
+    raw = teacher.get("structural_weaknesses")
+    if raw is None:
+        return None
+    if (not isinstance(raw, dict) or raw.get("schema") != LEDGER_SCHEMA
+            or not isinstance(raw.get("classes"), dict)):
+        _invalid("BAMF_WEAKNESS_LEDGER_INVALID")
+    if not raw["classes"]:
+        return None
+    from .structural_weakness_contracts import weakness_context_for_frontier
+
+    context = weakness_context_for_frontier(how, frontier, capability)
+    prefix = context["context_sha256"] + ":"
+    resolved = False
+    for key, item in raw["classes"].items():
+        if not isinstance(key, str) or not key.startswith(prefix):
+            continue
+        if not isinstance(item, dict):
+            _invalid("BAMF_WEAKNESS_LEDGER_INVALID")
+        record = validate_weakness_evidence(item.get("weakness"))
+        if record["context"] != context or key != _ledger_key(record):
+            _invalid("BAMF_WEAKNESS_LEDGER_DRIFT")
+        if item["state"] == "UNRESOLVED":
+            return True
+        proof = item.get("resolution_evidence_sha256")
+        if (item["state"] != "RESOLVED" or not isinstance(proof, str)
+                or len(proof) != SHA256_LENGTH
+                or any(char not in "0123456789abcdef" for char in proof)):
+            _invalid("BAMF_WEAKNESS_RESOLUTION_INVALID")
+        resolved = True
+    return False if resolved else None
+
+
 __all__ = (
     "apply_rejection_weaknesses", "carried_structural_weaknesses",
     "resolve_structural_weakness",
