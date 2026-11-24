@@ -32,7 +32,7 @@ python3 -B -m scripts.experiments.issue1618.run --mode FULL --batch-size 32 --ho
 python3 -B -m scripts.experiments.issue1618.run --mode FAST --batch-size 32 --horizon 4
 ```
 
-Run the two native arms sequentially in a detached, otherwise idle accelerator window. The native measurements remain pending until the run receipt closes. No performance or retention conclusion is inferred from the proof alone.
+Run the two native arms sequentially in a detached, otherwise idle accelerator window. The native measurements are recorded below; no performance or retention conclusion is inferred from the numerical proof alone.
 
 ## First-run failure and correction
 
@@ -43,3 +43,36 @@ The initial detached comparison (`throughput-20261124-1618-selective-region`, PI
 `matched-four-step.json` preserves both successful arm receipts and the immutable detached receipt. Fifteen control fields and the fixed cohort/parent scores match exactly. At 4 updates and the acceptance-witness rate of 1e-6, both candidates pass C05 without score change; FAST reduces attempt time from 13.6535 s to 11.6712 s and peak MLX memory from 6.2244 GB to 3.7480 GB. The ordinary-mode cost map is intentionally empty, so its raw zero gradient-launch count is missing instrumentation rather than a measured zero. The follow-up reads the existing C08 result counter at the issue-local seam without enabling strict evidence.
 
 Predeclared follow-up: 32 rows, 1e-5 learning rate in both treatments (the existing fixture documents this previously tested rate), FULL 10 steps and FAST 10 steps for equal-step comparison, then FAST 12 steps for an approximately equal attempt-time comparison based on the four-step measured rate ratio. This is a bounded experimental rate intervention, not a default optimizer/teacher change. Report measured durations and their mismatch; do not call the 10/12 pair exact wall-time parity. Preserve the same seeded initial state, lesson, assessment and optimizer settings between the new arms. A null or harmful result remains admissible and does not authorize default FAST.
+
+## Longer comparison: results and disposition
+
+The three predeclared arms completed (detached receipt PASS, immutable source snapshot, no source mutation). `matched-longer-trial.json` preserves raw receipts; the matched-field check confirms identical initial learner, admitted source release, topology/extents, protection plan, lesson/visit, optimizer hyperparameters, ordered training rows, fixed assessment cohort and baseline scores. Step seeds have the same prefix. These are disposable candidate attempts with native C05 decisions, not published student generations or sustained operator throughput.
+
+| Metric | FULL 10 | FAST 10 | FAST 12 |
+| --- | ---: | ---: | ---: |
+| Training seconds | 24.036 | 23.212 | 27.251 |
+| Attempt seconds including C05 | 25.202 | 24.051 | 28.145 |
+| Training steps/min | 24.962 | 25.849 | 26.421 |
+| Attempted steps/min | 23.807 | 24.947 | 25.582 |
+| Candidate trials/hour (attempt time extrapolation) | 142.845 | 149.680 | 127.908 |
+| Peak MLX bytes | 11632444612 | 4205113133 | 4357474237 |
+| Actual gradient launches | 10 | 10 | 12 |
+| C05 taught score (parent -> candidate, /6) | 3 -> 4 | 3 -> 3 | 2 -> 2 |
+| C05 disposition | Accepted | Accepted | Accepted |
+| Parameter leaves with advanced counts | 168 | 10 | 10 |
+| Wholly frozen leaves exactly preserved | 0 | 193 | 193 |
+
+Matched ten-step FAST improves attempted steps/min by 4.79% and reduces peak MLX bytes by 63.85%. FAST-12 is 11.68% longer than FULL-10 in measured attempt wall time: an approximate rather than exact wall-time match. All arms launch one C08 gradient per optimizer step. No native activation cache was used, so none of these savings is attributed to activation reuse. The first experiment's larger speed difference is not evidence of a stable effect size; each measurement is a single ordered arm without replicated timing variance or a globally exclusive accelerator lease. The launcher waited for the specifically observed competing processes; exclusive GPU occupancy throughout is not independently proven.
+
+| Fixed independent row-disjoint cohort | Parent | FULL 10 | FAST 10 | FAST 12 |
+| --- | ---: | ---: | ---: | ---: |
+| B.AND taught | 4/6 | 2/6 | 4/6 | 4/6 |
+| B.IFF untaught sibling | 1/6 | 3/6 | 1/6 | 1/6 |
+| A.IDENTITY earlier grade | 3/6 | 4/6 | 3/6 | 3/6 |
+| Total | 8/18 | 9/18 | 8/18 | 8/18 |
+
+Fixed cohort net correct-answer change per attempt-hour: FULL-10 +142.845 (B.AND -285.689, B.IFF +285.689, A.IDENTITY +142.845); both FAST arms zero. These are normalized single-attempt changes, not forecast rates of sustained learning. C05 acceptance is a native paired screen, not proof of improvement on the independent fixed cohort; C05 draws can vary with the candidate. The genesis fixture has no earned protected baseline; earlier-grade scores are diagnostic. Candidate receipts differ across treatments, while both FAST arms preserve every checked frozen weight, first/second moment and update count exactly, including 183 nonzero frozen leaves with no decay drift. Rejection returns the exact parent. Existing AdamW tests independently cover frozen decay and thaw/update-count history; the isolated cache tests cover exact outputs/gradients and stale-state invalidation. No actual human-run state or production owner is modified.
+
+**Disposition:** retain the dependency map and reproducible experimental evidence; do not promote a default FAST/freezing policy or cross-step backbone cache. The memory benefit merits separate investigation on genuinely memory-constrained workloads. The fixed-probe result does not support a useful-learning speedup. A future candidate-policy study needs replicated timing, more representative learner states (including earned protected competence), multiple tasks/seeds, and a genuine matched-time retention instrument. Exact reuse remains valid only for an explicitly proved invariant dependency region; a frozen layer by itself is insufficient. This is a bounded negative learning-acceleration spike, not a production optimization.
+
+Reproduce the longer arms sequentially with `python3 -B -m scripts.experiments.issue1618.run --mode FULL --batch-size 32 --horizon 10 --learning-rate 1e-5`, then the same command with `--mode FAST` at horizons 10 and 12. Run the focused tests with `python3 -B -m pytest -q scripts/experiments/issue1618`.
