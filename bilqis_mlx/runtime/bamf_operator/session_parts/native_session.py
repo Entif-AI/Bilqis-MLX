@@ -201,7 +201,9 @@ def execute_selected_visit(
         invalid("BAMF_LEARNING_FIRST_SESSION_CACHE_REQUIRED")
     adviser_cache = host_cache if host_cache is not None else bind_accepted_execution_cache(run_dir)
     adviser_pool = None
-    if strict:
+    roles = (getattr(parent, "championship_state", None) or {}).get("active_roles", {})
+    policy = getattr(selection, "policy", None)
+    if strict or (roles and isinstance(policy, dict) and policy.get("distill", 0.0) != 0):
         from bilqis_mlx.runtime.championship_advisers import prepare_championship_adviser_pool
         adviser_pool = prepare_championship_adviser_pool(
             run_dir, parent, context, atlas_path, adviser_cache, reserve_gib=reserve_gib)

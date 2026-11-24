@@ -266,8 +266,9 @@ def operate_bamf(
     )
     _run_pending_operator_maintenance(Path(run_dir), progress=progress)
     from .session_parts.evidence_mode import evidence_mode
+    from bilqis_mlx.runtime.championship_advisers import championship_adviser_session
     try:
-        with evidence_mode(strict=strict_mode):
+        with evidence_mode(strict=strict_mode), championship_adviser_session():
             return _operate_impl(
                 Path(run_dir), minutes=minutes, max_visits=max_visits,
                 steps_per_visit=steps_per_visit, batch_size=batch_size,

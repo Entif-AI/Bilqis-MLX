@@ -100,6 +100,22 @@ def championship_boundary_capabilities(selection, target_capability: str) -> tup
     return tuple(phase)
 
 
+def nominated_championship_capabilities(evaluation, selection, target, parent):
+    """Nominate panels using retained candidate scores, not title authority.
+
+    Empty titles may be discovered on any accepted visit. Existing titles are
+    challenged at the existing cadence boundary, never on every optimizer step.
+    """
+    decision = getattr(evaluation, "decision", None)
+    roles = (getattr(parent, "championship_state", None) or {}).get("active_roles", {})
+    boundary = set(championship_boundary_capabilities(selection, target))
+    return tuple(dict.fromkeys(
+        capability for capability, _before, after, total in
+        getattr(decision, "outcome_scores", ())
+        if total > 0 and 10 * after > 9 * total
+        and (capability not in roles or capability in boundary)))
+
+
 def _group_map(cohort: EvaluationCohort) -> dict[str, tuple[str, ...]]:
     groups = {}
     for capability, group in cohort.capability_groups:
@@ -152,7 +168,7 @@ def bind_accepted_championship_successor(
         run_dir, parent, cache, successor, source_context, artifact_path,
         target_capability, evaluation, *, checkpoint_origin_group,
         training=None, evidence_stage=None, observer=None,
-        boundary_capabilities=None):
+        boundary_capabilities=None, local_panels=False):
     """Run the explicit accepted-candidate championship boundary outside C05."""
     _require_factory_evaluation(evaluation)
     started = time.perf_counter()
@@ -161,6 +177,9 @@ def bind_accepted_championship_successor(
     assessment = evaluation.championship_assessment
     if (cohort is None) != (assessment is None):
         _invalid("BAMF_CHAMPIONSHIP_ACCEPTED_EVIDENCE_INVALID")
+    if local_panels:
+        # Retention sentinels nominate an independent championship panel.
+        cohort, assessment = None, None
     if cohort is None:
         if (not isinstance(training, tuple)
                 or len(training) != _TRAINING_EXCLUSION_ARITY
