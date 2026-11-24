@@ -300,7 +300,7 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
         challenger = _teacher_breeding.pressure_challenger(
             engine, teacher, rng, capability=capability, phase=phase,
             curriculum_scope=curriculum_scope, diagnostic_key=diagnostic_key,
-            total_capabilities=total_capabilities or 1)
+            total_capabilities=total_capabilities or 1, inventory=inventory)
         if challenger is not None:
             return result(challenger[0], challenger[1],
                           selection_reason=challenger[2], selection_detail=challenger[3])

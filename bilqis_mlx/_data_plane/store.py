@@ -9,6 +9,7 @@ from pathlib import Path
 from .contracts import (
     SCHEMA_VERSION, SQLITE_BUSY_TIMEOUT_MS, SQLITE_MMAP_BYTES, SQLITE_CACHE_KIB,
     UPGRADABLE_SCHEMA_VERSIONS, DataPlaneError, _error,
+    REBUILDABLE_OBJECT_REFERENCE_PREFIX,
 )
 from .schema import (
     ACCEPTED_AUTHORITY_SQL, CORE_SCHEMA_SQL, C05_FIXED_SCHOOL_TRUST_SQL,
@@ -139,6 +140,15 @@ class DataPlaneStoreMixin:
             return None
         digest = row[0]
         return digest, self.get_object(digest)
+
+    def discard_rebuildable_object_reference(self, reference: str) -> None:
+        """Release only a derived cache root, never its immutable content."""
+        if (not isinstance(reference, str)
+                or not reference.startswith(REBUILDABLE_OBJECT_REFERENCE_PREFIX)):
+            raise ValueError(DataPlaneError.PROTECTED_REFERENCE_FORBIDDEN.value)
+        with self.transaction():
+            self._db.execute("DELETE FROM meta WHERE key=?",
+                             ("object_reference_v1:" + reference,))
 
     def put_node(self, digest: str, raw: bytes, generation: int,
                  parent_sha256: str | None) -> None:

@@ -30,9 +30,9 @@ def population_limits(total_capabilities: int) -> PopulationLimits:
 
 
 def _evidence(teacher: dict, inventory: dict[str, list[str]]) -> dict[str, dict]:
-    from .teacher_strategy_population import effective_policy_key
-
-    strategies = teacher.get("strategies", {})
+    effective_by_policy = {
+        member: effective for effective, members in inventory.items() for member in members
+    }
     evidence = {
         key: {"trials": 0, "retained": 0, "reward_sum": 0.}
         for key in inventory
@@ -41,10 +41,9 @@ def _evidence(teacher: dict, inventory: dict[str, list[str]]) -> dict[str, dict]
         if not isinstance(scope, dict):
             continue
         for policy_key, record in scope.items():
-            policy = strategies.get(policy_key)
-            if policy is None or not isinstance(record, dict):
+            effective = effective_by_policy.get(policy_key)
+            if effective is None or not isinstance(record, dict):
                 continue
-            effective = effective_policy_key(policy)
             target = evidence.setdefault(
                 effective, {"trials": 0, "retained": 0, "reward_sum": 0.})
             target["trials"] += int(record.get("trials", 0))
@@ -96,7 +95,15 @@ def rebalance_live_population(teacher: dict, *, total_capabilities: int,
     """Retire weak/old effective strategies from live selection, preserving history."""
     from .teacher_strategy_population import effective_strategy_inventory
 
-    inventory = effective_strategy_inventory(teacher)
+    return _rebalance_live_population(
+        teacher, effective_strategy_inventory(teacher), total_capabilities=total_capabilities,
+        max_effective_override=max_effective_override)
+
+
+def _rebalance_live_population(teacher: dict, inventory: dict[str, list[str]], *,
+                               total_capabilities: int, max_effective_override: int | None = None
+                               ) -> tuple[str, ...]:
+    """Reuse the current operation's complete nominal-to-effective inventory."""
     limits = population_limits(total_capabilities)
     capacity = limits.max_effective if max_effective_override is None else int(max_effective_override)
     if capacity < 1:

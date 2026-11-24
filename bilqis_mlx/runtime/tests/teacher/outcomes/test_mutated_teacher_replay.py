@@ -84,7 +84,7 @@ def test_compact_fresh_mutation_reconstructs_exact_selected_teacher():
          if name != "outcome_sha256"})
 
     with patch.object(replay, "_factory_capability_count", return_value=21):
-        recovered = replay._selected_teacher_override(
+        recovered = replay._recover_selected_teacher(
             "unused", teacher, compact)
 
     assert recovered == selected
@@ -126,3 +126,28 @@ def test_future_mutated_selection_carries_only_selected_teacher_digest(tmp_path)
     assert "selected_teacher" not in larger.proposal
     assert len(json.dumps(larger.proposal, sort_keys=True)) == len(
         json.dumps(capture.proposal, sort_keys=True))
+
+
+def test_ordinary_bamf_bespoke_selection_matches_strict_state_and_rng():
+    from bilqis_mlx.learning.teacher_strategy_population import BAMF_SUCCESSOR_SELECTION
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
+
+    teacher = teacher_fixture()
+    for ordinal in range(1, 5):
+        teacher = apply_outcome(
+            teacher, outcome(teacher, ordinal, capability="A.TEST", grade="A"))
+    teacher["selection_contract"] = BAMF_SUCCESSOR_SELECTION
+    school = SimpleNamespace(
+        stage="MAIN", current_student=SimpleNamespace(sha256="c" * 64))
+    results = []
+    for strict in (True, False):
+        selected = deepcopy(teacher)
+        rng = random.Random(1)
+        with evidence_mode(strict=strict):
+            result = select_visit_policy(
+                engine, selected, "A.TEST", school, rng, Settings(),
+                "factory/test", {}, "A", total_capabilities=21)
+        assert result[2]["selection_reason"] == "FRESH_MUTATED_CHALLENGER"
+        assert result[2]["vnext_canary"]["status"] == "BYPASSED_BESPOKE_EXPLORATION"
+        results.append((result, selected, rng.getstate()))
+    assert results[0] == results[1]

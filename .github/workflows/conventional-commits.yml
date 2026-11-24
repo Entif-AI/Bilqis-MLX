@@ -26,19 +26,4 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           HEAD_REF: ${{ github.head_ref }}
         shell: bash
-        run: |
-          set -euo pipefail
-          python3 -B scripts/maintenance/release_version.py --validate-subject "$PR_TITLE"
-          if [[ "$BASE_REF" != "main" ]]; then
-            echo "Squash feature PR: the PR title is the preserved commit subject."
-            exit 0
-          fi
-          while IFS=$'\t' read -r commit subject; do
-            echo "Validating commit subject $commit"
-            python3 -B scripts/maintenance/release_version.py --validate-subject "$subject"
-          done < <(
-            python3 -B scripts/quality/pr_scope.py commits \
-              --base-sha "$BASE_SHA" \
-              --head-sha "$HEAD_SHA" \
-              --head-ref "$HEAD_REF"
-          )
+        run: bash scripts/quality/ci_checks.sh commit-subjects

@@ -26,6 +26,52 @@ def _policy_evidence_before(teacher, scope, policy):
     return record
 
 
+def _canary_decision(teacher, cap, school, rng, teacher_curriculum_scope,
+                     lesson_grade, total_capabilities, legacy_reason):
+    """Compute the vNext decision only from the population it can actually use."""
+    context_key = cap + "|" + school.stage + "|" + teacher_curriculum_scope
+    channel = teacher.get("causal_experiment", {})
+    scope = channel.get("contexts", {}).get(context_key, {})
+    bypass_status = {
+        "FRESH_MUTATED_CHALLENGER": "BYPASSED_BESPOKE_EXPLORATION",
+        "PORTABLE_RETAINED_CHALLENGER": "BYPASSED_PORTABLE_RETAINED_CHALLENGER",
+        "PLASTICITY_RETRY": "BYPASSED_PLASTICITY_RETRY",
+    }.get(legacy_reason)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import strict_mode_enabled
+    # Legacy population ranking mutates its live inventory. BAMF's fixed
+    # population pass is read-only and cannot affect a bypassed canary.
+    if (bypass_status is None or strict_mode_enabled()
+            or teacher.get("selection_contract") != _strategy_population.BAMF_SUCCESSOR_SELECTION):
+        active, inventory, _retired = _teacher_breeding.selection_population(
+            teacher, grade=lesson_grade, capability=cap,
+            curriculum_scope=teacher_curriculum_scope, scope=scope, channel=channel,
+            context_key=context_key, student_checkpoint_sha256=school.current_student.sha256,
+            total_capabilities=total_capabilities)
+        sibling_penalties = {
+            effective: penalty for effective in active
+            if (penalty := _strategy_population.sibling_cooldown_penalty(
+                channel, cap, teacher_curriculum_scope, effective)) > 0
+        }
+    ordinal = int(channel.get("events", 0)) + 1
+    if bypass_status is not None:
+        canary = {
+            "schema": _teacher_vnext.SCHEMA,
+            "policy_version": "teacher-vnext-canary/v1",
+            "candidate_ordinal": ordinal, "scheduled": False,
+            "actual_authority_changed": False,
+            "status": bypass_status,
+            "policy_key": None,
+        }
+    else:
+        canary = _teacher_vnext.select_canary(
+            teacher, capability=cap, phase=school.stage,
+            curriculum_scope=teacher_curriculum_scope,
+            candidate_ordinal=ordinal, rng=rng,
+            active_effective_policy_keys=active, inventory=inventory,
+            effective_policy_penalties=sibling_penalties)
+    return canary
+
+
 def select_visit_policy(engine, teacher, cap, school, rng, learning_settings,
                         teacher_curriculum_scope, previsit_diagnostics,
                         lesson_grade, total_capabilities=None,
@@ -52,47 +98,11 @@ def select_visit_policy(engine, teacher, cap, school, rng, learning_settings,
             total_capabilities=total_capabilities, lesson_grade=lesson_grade,
             plasticity_active=bool((plasticity_escape or {}).get("active")))
         legacy_key, legacy_reason = key, metadata.get("selection_reason")
+        canary = _canary_decision(
+            teacher, cap, school, rng, teacher_curriculum_scope,
+            lesson_grade, total_capabilities, legacy_reason)
         context_key = cap + "|" + school.stage + "|" + teacher_curriculum_scope
-        channel = teacher.get("causal_experiment", {})
-        scope = channel.get("contexts", {}).get(context_key, {})
-        active, inventory = _strategy_population.active_effective_strategy_keys(
-            teacher, lesson_grade, scope, total_capabilities=total_capabilities)
-        active = _teacher_breeding.filter_active_effective(
-            teacher, grade=lesson_grade, capability=cap,
-            curriculum_scope=teacher_curriculum_scope,
-            active_effective=active, inventory=inventory)
-        active, _retired = _strategy_population.checkpoint_active_effective_strategy_keys(
-            teacher, lesson_grade, scope, channel, context_key, active, inventory,
-            school.current_student.sha256)
-        sibling_penalties = {
-            effective: penalty for effective in active
-            if (penalty := _strategy_population.sibling_cooldown_penalty(
-                channel, cap, teacher_curriculum_scope, effective)) > 0
-        }
-        ordinal = int(channel.get("events", 0)) + 1
-        if legacy_reason in {
-                "FRESH_MUTATED_CHALLENGER", "PORTABLE_RETAINED_CHALLENGER",
-                "PLASTICITY_RETRY"}:
-            canary = {
-                "schema": _teacher_vnext.SCHEMA,
-                "policy_version": "teacher-vnext-canary/v1",
-                "candidate_ordinal": ordinal, "scheduled": False,
-                "actual_authority_changed": False,
-                "status": (
-                    "BYPASSED_BESPOKE_EXPLORATION"
-                    if legacy_reason == "FRESH_MUTATED_CHALLENGER"
-                    else ("BYPASSED_PORTABLE_RETAINED_CHALLENGER"
-                          if legacy_reason == "PORTABLE_RETAINED_CHALLENGER"
-                          else "BYPASSED_PLASTICITY_RETRY")),
-                "policy_key": None,
-            }
-        else:
-            canary = _teacher_vnext.select_canary(
-                teacher, capability=cap, phase=school.stage,
-                curriculum_scope=teacher_curriculum_scope,
-                candidate_ordinal=ordinal, rng=rng,
-                active_effective_policy_keys=active, inventory=inventory,
-                effective_policy_penalties=sibling_penalties)
+        scope = teacher.get("causal_experiment", {}).get("contexts", {}).get(context_key, {})
         metadata = dict(metadata)
         metadata["vnext_canary"] = canary
         metadata["actual_authority_changed"] = bool(

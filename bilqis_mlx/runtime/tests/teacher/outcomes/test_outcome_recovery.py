@@ -68,8 +68,6 @@ class OutcomeRecoveryTests(NativeSourceFixture, unittest.TestCase):
         record_bamf_rejection(self.run, parent, evidence)
         folded = replay_rejected_outcomes(self.run, parent, cache, teacher)
         initial = selection_teacher()
-        for stat in initial['global_stats'].values():
-            stat.setdefault('latest', None)
         with patch('bilqis_mlx.control_plane.tests.cp07.native_source_support.selection_teacher', return_value=initial):
             visit = self.bound_native_visit(parent)
         epoch = restore_teacher_lineage(visit.projection.teacher_state)

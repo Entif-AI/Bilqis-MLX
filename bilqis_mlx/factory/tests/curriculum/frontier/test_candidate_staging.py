@@ -159,6 +159,21 @@ class CandidateStagingTests(CandidateStagingFixture, unittest.TestCase):
             self.stage(source_registry=registry)
 
 
+    def test_tampered_frontier_rejected_at_both_validation_boundaries(self):
+        staged = self.stage()
+        frontier = replace(self.frontier, senses=(replace(
+            self.frontier.senses[0], source_text_sha256="f" * 64),))
+        with self.assertRaisesRegex(ValueError, "CANDIDATE_FRONTIER_RELEASE_DIGEST_MISMATCH"):
+            candidate_source_anchor(frontier, self.candidate_id)
+        with self.assertRaisesRegex(ValueError, "CANDIDATE_FRONTIER_RELEASE_DIGEST_MISMATCH"):
+            staged.verify(frontier, self.current)
+
+    def test_rehashed_staged_anchor_cannot_authorize_different_source(self):
+        staged = replace(self.stage(), source_anchor="forged")
+        staged = replace(staged, staged_sha256=staged.expected_digest())
+        with self.assertRaisesRegex(ValueError, "CANDIDATE_STAGING_SOURCE_BINDING_MISMATCH"):
+            staged.verify(self.frontier, self.current)
+
     def test_changed_source_sense_invalidates_even_a_rehashed_frontier(self):
         staged = self.stage()
         frontier = replace(self.frontier, senses=(replace(

@@ -130,13 +130,24 @@ def select_foundation_priority_visit(
     parent = (
         load_accepted_generation(run_dir)
         if accepted_parent is None else accepted_parent)
-    projection = current_foundation_teacher_projection(
-        run_dir, accepted_parent=accepted_parent, accepted_cache=accepted_cache)
-    epoch = restore_teacher_lineage(projection.teacher_state)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    if not strict_mode_enabled() and "c03_lineage" in parent.teacher_state:
+        # Metadata ranking consumes only accepted rotation and seed coordinates.
+        # Rejection feedback changes the nested teacher, not those coordinates;
+        # the selected-visit owner replays it before selecting the actual policy.
+        teacher_state, epoch = parent.teacher_state, None
+    else:
+        projection = current_foundation_teacher_projection(
+            run_dir, accepted_parent=accepted_parent, accepted_cache=accepted_cache)
+        teacher_state = projection.teacher_state
+        epoch = restore_teacher_lineage(teacher_state)
     authority = issue_foundation_priority_authority(
         run_dir, source_context, parent, epoch, atlas_artifact_path,
-        teacher_state=projection.teacher_state, progress=progress,
-        planning_cache=planning_cache, logical_batch_size=logical_batch_size)
+        teacher_state=teacher_state, progress=progress,
+        planning_cache=planning_cache, logical_batch_size=logical_batch_size,
+        program=program)
     if authority.cadence.phase.value in {"MAIN", "RECOVERY_1", "RECOVERY_2"}:
         school = replace(school, stage=authority.cadence.phase.value)
     bootstrap = {"legacy_receipt": None, "adaptation": None, "prior_region": None}
