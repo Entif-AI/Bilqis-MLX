@@ -133,7 +133,10 @@ class MissionControlQueryCatalog:
             item for item in candidates
             if type(item) in record_types and matches_identity(item, request)
         ]
-        if request.mode is QueryMode.CURRENT and request.record_id is None:
+        release_lineage = (request.family is QueryFamily.GENERATION
+                           and request.reference is not None)
+        if (request.mode is QueryMode.CURRENT and request.record_id is None
+                and not release_lineage):
             rows = select_current(rows, request.family)
         newest_first = (
             request.mode is QueryMode.CURRENT
@@ -166,7 +169,9 @@ class MissionControlQueryCatalog:
                 and type(self._by_id[item.stale_record_id])
                 in FAMILY_TYPES.get(request.family, ())
             )
-        cumulative = request.family in {QueryFamily.CAPABILITY, QueryFamily.EPISODE}
+        cumulative = (request.family in {QueryFamily.CAPABILITY, QueryFamily.EPISODE}
+                      or (request.family is QueryFamily.GENERATION
+                          and request.reference is not None))
         if (request.mode is QueryMode.CURRENT and request.generation is None
                 and request.as_of is None and not cumulative):
             markers = [

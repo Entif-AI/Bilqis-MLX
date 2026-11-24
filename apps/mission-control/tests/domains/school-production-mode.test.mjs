@@ -9,7 +9,7 @@ import {
   loadSchoolRows,
   schoolRowFromRecord,
 } from "../../renderer/school/school-live.mjs";
-import { factoryQuery, loadFactoryRows } from "../../renderer/school/factory-live.mjs";
+import { factoryQuery, loadFactoryRows, loadFactoryLineagePage } from "../../renderer/school/factory-live.mjs";
 import { renderFactoryCockpitView } from "../../renderer/school/factory-cockpit-view.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -231,4 +231,40 @@ test("package exposes the reviewed explicit fixture launch command", () => {
   const packageJson = JSON.parse(fs.readFileSync(path.resolve(rendererRoot, "../../../package.json"), "utf8"));
   assert.equal(packageJson.scripts.bamf, "electron apps/mission-control/main.cjs");
   assert.equal(packageJson.scripts["bamf:fixtures"], "electron apps/mission-control/main.cjs --mission-control-fixtures");
+});
+
+
+test("Factory lineage loads one release-scoped page at a time", async () => {
+  const record = factoryRecord();
+  const requests = [];
+  const api = { async query(query) {
+    requests.push(query);
+    return { accepted: true, state: "PARTIAL", coverage: "PARTIAL",
+      records: [{ meta: { run: { generation: query.cursor ? 32 : 0 } } }],
+      next_cursor: query.cursor ? null : "next", total_matches: 33 };
+  }};
+  const first = await loadFactoryLineagePage(api, record);
+  assert.equal(first.total, 33);
+  assert.equal(first.nextCursor, "next");
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].family, "generation");
+  assert.equal(requests[0].reference, "factory-release:" + record.factory_release_sha256);
+  assert.equal(requests[0].run_id, "run-7");
+  assert.equal(requests[0].limit, 32);
+  const second = await loadFactoryLineagePage(api, record, first.nextCursor);
+  assert.equal(second.rows[0].meta.run.generation, 32);
+  assert.equal(second.nextCursor, null);
+  assert.equal(requests[1].cursor, "next");
+});
+
+test("Partial Factory summary does not label unprojected facts as none", () => {
+  const record = factoryRecord();
+  record.meta.coverage = "PARTIAL";
+  for (const field of ["grade_frontier", "capability_ids", "dependency_edges", "blockers",
+    "promoted_capability_ids", "debt_capability_ids"]) record[field] = [];
+  const host = { innerHTML: "", querySelectorAll: () => [] };
+  renderFactoryCockpitView(host, { rows: [record], coverage: "PARTIAL", loadLineagePage: () => {} });
+  assert.match(host.innerHTML, /Bounded lineage summary/);
+  assert.match(host.innerHTML, /data-factory-lineage-open/);
+  assert.doesNotMatch(host.innerHTML, />None</);
 });

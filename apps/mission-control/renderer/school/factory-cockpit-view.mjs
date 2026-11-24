@@ -7,8 +7,12 @@ function short(value) {
   return value.length > 18 ? `${value.slice(0, 9)}…${value.slice(-7)}` : value;
 }
 
-function list(values) {
-  return values?.length ? values.map((value) => esc(value)).join(" · ") : esc(t("school.common.none"));
+function empty(record) {
+  return esc(t(record.meta?.coverage === "PARTIAL" ? "school.common.notExposed" : "school.common.none"));
+}
+
+function list(values, record) {
+  return values?.length ? values.map((value) => esc(value)).join(" · ") : empty(record);
 }
 
 function topology(lineage) {
@@ -24,15 +28,15 @@ function frontier(record) {
   const grades = record.grade_frontier?.length
     ? record.grade_frontier.map((grade) =>
       `<span class="factory-grade"><strong>${esc(grade.grade_id)}</strong> ${esc(grade.capability_ids.join(", "))}</span>`).join("")
-    : `<span class="factory-grade">${list(record.capability_ids)}</span>`;
+    : `<span class="factory-grade">${list(record.capability_ids, record)}</span>`;
   const dependencies = record.dependency_edges?.length
     ? record.dependency_edges.map(([capability, prerequisite]) => `${esc(capability)} → ${esc(prerequisite)}`).join(" · ")
-    : esc(t("school.common.none"));
-  return `${grades}<span class="factory-grade"><strong>${esc(t("school.factory.frontier.dependencies"))}</strong> ${dependencies}</span><span class="factory-grade"><strong>${esc(t("school.factory.frontier.promoted"))}</strong> ${list(record.promoted_capability_ids)}</span><span class="factory-grade"><strong>${esc(t("school.factory.frontier.debt"))}</strong> ${list(record.debt_capability_ids)}</span>`;
+    : empty(record);
+  return `${grades}<span class="factory-grade"><strong>${esc(t("school.factory.frontier.dependencies"))}</strong> ${dependencies}</span><span class="factory-grade"><strong>${esc(t("school.factory.frontier.promoted"))}</strong> ${list(record.promoted_capability_ids, record)}</span><span class="factory-grade"><strong>${esc(t("school.factory.frontier.debt"))}</strong> ${list(record.debt_capability_ids, record)}</span>`;
 }
 
 function blockers(record) {
-  if (!record.blockers?.length) return esc(t("school.common.none"));
+  if (!record.blockers?.length) return empty(record);
   return record.blockers.map((item) =>
     `<span class="factory-blocker"><strong>${esc(item.reason)}</strong><br>${esc(item.owner_ref)} · ${esc(item.evidence_ref)}</span>`).join("");
 }
@@ -43,7 +47,16 @@ function lineage(record) {
     `<span class="factory-lineage">${esc(item.run_id)} · ${item.generation === null ? "?" : `g${item.generation}`} · ${esc(item.checkpoint_lineage_id)}<br><small>${esc(short(item.generation_manifest_sha256))} · checkpoint ${esc(short(item.checkpoint_sha256))}</small></span>`).join("");
 }
 
-export function renderFactoryCockpitView(container, { rows = [], state = "EMPTY", coverage = "UNKNOWN", onInspect = null } = {}) {
+function lineagePageMarkup(page, record, canGoBack) {
+  return `<p role="status">${esc(t("school.factory.lineage.page", { state: page.state, count: page.total ?? "?", coverage: page.coverage ?? "UNKNOWN", release: short(record.factory_release_sha256) }))}</p>
+    ${page.rows.map((item) => `<div class="factory-lineage">g${esc(item.meta.run.generation)} · ${esc(item.meta.run.run_id)}
+      <br><small>${esc(item.meta.run.generation_manifest_sha256)} · ${esc(item.checkpoint_sha256)}</small>
+      <br><small>${esc(item.meta.run.topology_sha256)} · ${list(item.meta.receipt_refs, item)}</small></div>`).join("")}
+    ${canGoBack ? `<button type="button" data-factory-lineage-previous>${esc(t("school.factory.lineage.previous"))}</button>` : ""}
+    ${page.nextCursor ? `<button type="button" data-factory-lineage-next>${esc(t("school.factory.lineage.next"))}</button>` : ""}`;
+}
+
+export function renderFactoryCockpitView(container, { rows = [], state = "EMPTY", coverage = "UNKNOWN", onInspect = null, loadLineagePage = null } = {}) {
   const body = rows.length ? rows.map((record) => `
     <tr data-factory-subject="${esc(record.subject_sha256)}" data-currency="${esc(record.currency_state)}">
       <th scope="row"><button type="button" data-factory-inspect="${esc(record.subject_sha256)}">${esc(record.subject_kind)}<br><small>${esc(short(record.subject_sha256))}</small><br><small>${esc(t("school.factory.semantic"))} ${esc(short(record.semantic_release_sha256))}</small></button></th>
@@ -51,7 +64,8 @@ export function renderFactoryCockpitView(container, { rows = [], state = "EMPTY"
       <td><span class="factory-state">${esc(record.currency_state)}</span></td>
       <td>${frontier(record)}</td>
       <td>${blockers(record)}</td>
-      <td>${lineage(record)}</td>
+      <td>${record.meta?.coverage === "PARTIAL" ? `<small>${esc(t("school.factory.lineage.summary"))}</small>` : ""}${lineage(record)}
+      ${loadLineagePage && record.subject_kind === "FACTORY_RELEASE" && record.factory_release_sha256 && record.lineage?.length ? `<button type="button" data-factory-lineage-open="${esc(record.subject_sha256)}">${esc(t("school.factory.lineage.open"))}</button>` : ""}</td>
       <td>${topology(record.lineage)}</td>
       <td>${record.receipt_refs?.length ?? 0}<br><small>${esc(t("school.factory.receipt.qualification"))} ${esc(short(record.qualification_receipt_sha256))}</small><br><small>${esc(t("school.factory.receipt.admission"))} ${esc(short(record.admission_receipt_sha256))}</small></td>
     </tr>`).join("") : `<tr><td colspan="8">${esc(t("school.factory.empty", { state }))}</td></tr>`;
@@ -63,8 +77,36 @@ export function renderFactoryCockpitView(container, { rows = [], state = "EMPTY"
     <div class="matrix-scroll"><table class="school-matrix factory-table"><caption>${esc(t("school.factory.caption"))}</caption><thead><tr>
       <th>${esc(t("school.factory.column.subject"))}</th><th>${esc(t("school.factory.column.status"))}</th><th>${esc(t("school.factory.column.currency"))}</th><th>${esc(t("school.factory.column.frontier"))}</th><th>${esc(t("school.factory.column.blockers"))}</th><th>${esc(t("school.factory.column.lineage"))}</th><th>${esc(t("school.factory.column.topology"))}</th><th>${esc(t("school.factory.column.receipts"))}</th>
     </tr></thead><tbody>${body}</tbody></table></div>
+    <div data-factory-lineage-page></div>
   </section>`;
 
+  let requestEpoch = 0;
+  async function showLineage(record, cursor = null, priorCursors = []) {
+    const epoch = ++requestEpoch;
+    const host = container.querySelector("[data-factory-lineage-page]");
+    if (!host) return;
+    host.textContent = t("school.factory.lineage.loading");
+    let page;
+    try {
+      page = await loadLineagePage(record, cursor);
+    } catch (_error) {
+      page = { state: "UNAVAILABLE", rows: [], nextCursor: null, total: null };
+    }
+    if (epoch !== requestEpoch || !host.isConnected) return;
+    host.innerHTML = lineagePageMarkup(page, record, priorCursors.length > 0);
+    host.querySelector("[data-factory-lineage-previous]")?.addEventListener("click", () => {
+      void showLineage(record, priorCursors.at(-1), priorCursors.slice(0, -1));
+    });
+    host.querySelector("[data-factory-lineage-next]")?.addEventListener("click", () => {
+      void showLineage(record, page.nextCursor, [...priorCursors, cursor]);
+    });
+  }
+  container.querySelectorAll("[data-factory-lineage-open]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const record = rows.find((item) => item.subject_sha256 === button.dataset.factoryLineageOpen);
+      if (record) void showLineage(record);
+    });
+  });
   container.querySelectorAll("[data-factory-inspect]").forEach((button) => {
     button.addEventListener("click", () => {
       const record = rows.find((item) => item.subject_sha256 === button.dataset.factoryInspect);

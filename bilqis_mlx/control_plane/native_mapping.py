@@ -282,6 +282,7 @@ def accepted_records(
     generation_record = GenerationManifestV2(
         record_meta(
             f"generation:{run.run_id}:{run.generation}", run, generation,
+            receipt_refs=(generation.acceptance_sha256,),
             coverage=CoverageState.PARTIAL),
         manifest["tensors"]["sha256"], None, None,
         manifest["parent_manifest_sha256"], "ACCEPTED")

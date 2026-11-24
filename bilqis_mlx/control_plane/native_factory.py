@@ -93,15 +93,21 @@ def accepted_factory_records(
     current_release = run_ref(history[-1]).factory_release_sha256
     records = []
     for release_sha256, generations in sorted(by_release.items()):
-        receipt_refs = set()
+        # Keep a bounded release summary. Complete accepted lineage is exposed
+        # by the release-scoped CP03 generation query, not embedded in one row.
+        first, latest = generations[0], generations[-1]
+        witnesses = {first.manifest_sha256: first, latest.manifest_sha256: latest}
+        receipt_refs = {first.acceptance_sha256, latest.acceptance_sha256}
         admission_receipt = None
-        source_refs = []
         for generation in generations:
-            source_refs.append(f"bamf-manifest:{generation.manifest_sha256}")
-            receipt_refs.add(generation.acceptance_sha256)
             adoption_refs, adoption_receipt = _adoption_evidence(generation, release_sha256)
-            receipt_refs.update(adoption_refs)
-            admission_receipt = admission_receipt or adoption_receipt
+            if adoption_receipt is not None:
+                witnesses[generation.manifest_sha256] = generation
+                receipt_refs.update(adoption_refs)
+                admission_receipt = adoption_receipt
+                break
+        summary = sorted(witnesses.values(), key=lambda item: item.manifest["generation"])
+        source_refs = tuple(f"bamf-manifest:{item.manifest_sha256}" for item in summary)
         meta = RecordMeta(
             record_id=f"factory-release:{release_sha256}",
             run=None,
@@ -110,7 +116,7 @@ def accepted_factory_records(
             as_of=None,
             coverage=CoverageState.PARTIAL,
             authority=AuthorityClass.DERIVED,
-            source_refs=tuple(source_refs),
+            source_refs=source_refs,
             evidence_refs=(),
             receipt_refs=tuple(sorted(receipt_refs)),
         )
@@ -136,7 +142,7 @@ def accepted_factory_records(
             receipt_refs=tuple(sorted(receipt_refs)),
             qualification_receipt_sha256=None,
             admission_receipt_sha256=admission_receipt,
-            lineage=tuple(_lineage(item) for item in generations),
+            lineage=tuple(_lineage(item) for item in summary),
         ))
     return tuple(records)
 

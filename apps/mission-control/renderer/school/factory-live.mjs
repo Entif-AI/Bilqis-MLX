@@ -1,6 +1,7 @@
 const QUERY_SCHEMA = "bilqis.bamf.control-plane.query/v1";
 const FACTORY_SCHEMA = "bilqis.bamf.mission-control.factory-cockpit-snapshot/v1";
 const PAGE_LIMIT = 32;
+const GENERATION_SCHEMA = "bilqis.bamf.mission-control.generation-manifest/v2";
 const MAX_PAGES = 128;
 
 export function factoryQuery(cursor = null) {
@@ -48,6 +49,25 @@ export async function loadFactoryRows(api) {
     }
   }
   throw new RangeError("SCHOOL_FACTORY_QUERY_PAGE_LIMIT");
+}
+
+export async function loadFactoryLineagePage(api, record, cursor = null) {
+  const run = record.lineage?.at(-1)?.run_id;
+  const release = record.factory_release_sha256;
+  if (!api || !run || !release) {
+    return { state: "UNAVAILABLE", rows: [], nextCursor: null, total: null };
+  }
+  const page = await api.query({
+    ...factoryQuery(cursor), family: "generation", schema_version: GENERATION_SCHEMA,
+    run_id: run, reference: "factory-release:" + release,
+  });
+  if (page?.accepted !== true) {
+    return { state: page?.state ?? "UNAVAILABLE", rows: [], nextCursor: null, total: null };
+  }
+  return {
+    state: page.state, coverage: page.coverage, rows: page.records ?? [],
+    nextCursor: page.next_cursor ?? null, total: page.total_matches,
+  };
 }
 
 export { FACTORY_SCHEMA };

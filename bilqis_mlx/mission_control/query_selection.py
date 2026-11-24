@@ -157,6 +157,12 @@ def matches_identity(
     if request.frontier_id is not None:
         if type(item) is not CurriculumFrontier or item.frontier_id != request.frontier_id:
             return False
+    if request.family is QueryFamily.GENERATION and request.reference is not None:
+        # Explicit release lineage includes every accepted generation of that
+        # release, not just the current generation. Other queries keep their lens.
+        run = item.meta.run
+        if run is None or request.reference != f"factory-release:{run.factory_release_sha256}":
+            return False
     if (request.family is QueryFamily.RECORD and request.reference is not None
             and request.reference not in _forensic_refs(item)):
         return False
