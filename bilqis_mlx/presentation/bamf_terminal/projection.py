@@ -3,12 +3,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .bamf_terminal_rows import (
+from .rows import (
     MARKER, candidate_row, grade, mastery_rows, retention_row, system_rows,
     teacher_row,
 )
-from .bamf_terminal_accounting import bamf_command_accounting_active
-from .bamf_terminal_source import (
+from .accounting import bamf_command_accounting_active
+from .reference_growth import ReferenceGrowth
+from .source import (
     logical_visit_identity, read_bamf_terminal_observation,
 )
 
@@ -74,10 +75,17 @@ def refresh_bamf_terminal_projection(board) -> None:
     if loaded is None:
         return
     run_id, visits = loaded
-    if getattr(board, "_bamf_terminal_observed_run_id", None) != run_id:
+    prior_run = getattr(board, "_bamf_terminal_observed_run_id", None)
+    if prior_run != run_id:
+        if prior_run is not None:
+            board._bamf_reference_growth = ReferenceGrowth()
+            board._bamf_terminal_projection_token = None
         board._bamf_terminal_observed_history = {}
         board._bamf_terminal_observed_run_id = run_id
         board._bamf_session_visit_baseline = None
+    growth = getattr(board, "_bamf_reference_growth", None)
+    if growth is None:
+        growth = board._bamf_reference_growth = ReferenceGrowth()
     if not visits:
         if getattr(board, "_bamf_session_visit_baseline", None) is None:
             board._bamf_session_visit_baseline = set()
@@ -105,6 +113,7 @@ def refresh_bamf_terminal_projection(board) -> None:
     if baseline is None:
         baseline = set(identities)
         board._bamf_session_visit_baseline = baseline
+        growth.prime(projected_visits)
     session_visits = tuple(
         visit for visit in projected_visits
         if logical_visit_identity(visit) not in baseline)
@@ -121,6 +130,10 @@ def refresh_bamf_terminal_projection(board) -> None:
     board.rows["SOUP & TEACHER"].extend(
         teacher_row(visit, teacher_history) for visit in projected_visits)
     summaries, families = mastery_rows(projected_visits)
+    for visit in terminal_visits:
+        growth.observe(visit)
+    growth.apply_rows(summaries, families)
+    growth.publish(board)
     board.rows["GRADES & MASTERY"].extend(summaries)
     board.rows["BRIDGE FAMILIES"].extend(families)
     board.rows["SYSTEM & QUALIFICATION"].extend(

@@ -1,4 +1,4 @@
-from bilqis_mlx.presentation.bamf_terminal_rows import (
+from bilqis_mlx.presentation.bamf_terminal.rows import (
     candidate_row,
     retention_row,
     teacher_row,
@@ -43,7 +43,8 @@ def test_learning_first_visit_uses_compact_retention_semantics():
     assert candidate["gradient"] == "N/M"
     assert retention["target"] == "4>5/6"
     assert retention["target_delta"] == "+1"
-    assert retention["protected"] == "3"
+    assert retention["protected"] == "N/M"
+    assert "protected n=3" in retention["evidence"]
     assert retention["worst"] == "N/M"
     assert retention["decision"] == "REJECT"
     assert retention["evidence"].endswith("PROTECTED_CAPABILITY_REGRESSION")
