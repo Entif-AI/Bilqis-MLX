@@ -96,10 +96,12 @@ class _FactoryCompleteSolverBuilder:
         scalar = self.scalar_proposer(
             self.parameters, batch, plan, authority,
             execution_binding=self.execution_binding)
+        strict_evidence = self.strict_evidence
+        telemetry = self.telemetry
 
         def proposer(request):
-            if self.strict_evidence:
-                self.telemetry["scalar_neural_launches"] += 1
+            if strict_evidence:
+                telemetry["scalar_neural_launches"] += 1
             return scalar(request)
 
         return self.register_context(authority, proposer)
@@ -109,14 +111,17 @@ class _FactoryCompleteSolverBuilder:
         if output is None:
             return self.scalar_context(prepared.batch, prepared.plan, authority)
 
+        invalid = self.invalid
+        proposal_from_output = self.proposal_from_output
+
         def proposer(request):
             if (type(request) is not NeuralRequest
                     or request.goal_id != authority.goal.goal_id
                     or request.source_binding_digest != authority.source_binding_sha256
                     or request.generation_digest != authority.generation_binding
                     or request.allowed_operator_ids != authority.goal.allowed_operator_ids):
-                self.invalid("BAMF_C04_B11_TASK_REQUEST_MISMATCH")
-            return self.proposal_from_output(authority.goal, request, output)
+                invalid("BAMF_C04_B11_TASK_REQUEST_MISMATCH")
+            return proposal_from_output(authority.goal, request, output)
 
         return self.register_context(authority, proposer)
 
