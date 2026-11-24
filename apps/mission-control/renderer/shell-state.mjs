@@ -193,6 +193,10 @@ export function normalizeContext(raw = {}) {
 }
 
 export function createShellState(context, route = {}) {
+  // A live deep link is a navigation hint, not a retained-generation pin.
+  const snapshotRoute = route.context?.mode === "LIVE"
+    ? { ...route, context: null }
+    : route;
   return withRoute({
     context: normalizeContext(context),
     view: "mission-control",
@@ -201,7 +205,7 @@ export function createShellState(context, route = {}) {
     inspectorOpen: false,
     defensiveState: "unknown",
     mutationAvailable: false,
-  }, route);
+  }, snapshotRoute);
 }
 
 export function withRoute(state, route = {}) {

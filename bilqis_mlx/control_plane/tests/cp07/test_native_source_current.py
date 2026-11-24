@@ -94,17 +94,20 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
     def test_query_source_historical_request_uses_authenticated_history(self):
             self.parent()
             source_generation, _pointer = self.publish_successor()
-            source = native_query_source(self.run)
             request = QueryRequest(
                 QueryFamily.RUN, mode=QueryMode.HISTORICAL,
                 run_id=source_generation.run_id, generation=0)
             with patch(
                     "bilqis_mlx.control_plane.native_source.authenticated_history",
                     wraps=authenticated_history) as authenticate:
+                source = native_query_source(self.run)
                 catalog = source(request)
-            self.assertGreater(authenticate.call_count, 0)
-            page = catalog.query(request)
+                page = catalog.query(request)
+                self.assertIs(source(), catalog)
+            self.assertEqual(authenticate.call_count, 1)
             self.assertIn(page.state.value, {"PRESENT", "PARTIAL"})
+            self.assertTrue(page.records)
+            self.assertTrue(all(row.meta.run.generation == 0 for row in page.records))
 
     def test_query_source_observation_refresh_does_not_cold_load_accepted_student(self):
             self.parent()

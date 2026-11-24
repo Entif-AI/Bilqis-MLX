@@ -79,11 +79,11 @@ def _rows_digest(rows) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
-def _cursor(request: QueryRequest, rows, offset: int) -> str:
-    return f"cp03:{request.query_id}:{_rows_digest(rows)}:{offset}"
+def _cursor(request: QueryRequest, digest, offset: int) -> str:
+    return f"cp03:{request.query_id}:{digest()}:{offset}"
 
 
-def _offset(request: QueryRequest, rows) -> int:
+def _offset(request: QueryRequest, rows, digest) -> int:
     if request.cursor is None:
         return 0
     prefix = f"cp03:{request.query_id}:"
@@ -94,7 +94,7 @@ def _offset(request: QueryRequest, rows) -> int:
         and all(char in "0123456789abcdef" for char in parts[0]),
         "QUERY_CURSOR_DIGEST",
     )
-    require(parts[0] == _rows_digest(rows), "QUERY_CURSOR_STALE")
+    require(parts[0] == digest(), "QUERY_CURSOR_STALE")
     require(parts[1].isdigit() and len(parts[1]) <= 16, "QUERY_CURSOR_OFFSET")
     offset = int(parts[1])
     require(is_wire_integer(offset) and offset >= 0, "QUERY_CURSOR_OFFSET")
@@ -126,33 +126,19 @@ def _state(records, markers, *, historical_missing: bool) -> QueryState:
     return QueryState.MISSING if historical_missing else QueryState.EMPTY
 
 
-def build_page(*, available: bool, request: QueryRequest, records, markers,
-               links=(), exact_missing=False) -> QueryPage:
-    rows = links if request.family in {QueryFamily.LINKS, QueryFamily.REFERENCE} else records
-    offset = _offset(request, rows)
-    page_rows = []
-    rows_bytes = 2
-    for row in rows[offset:offset + request.limit]:
-        encoded = encode_record(row) if isinstance(row, WireRecord) else row.to_record()
-        encoded_bytes = len(json.dumps(
-            encoded, sort_keys=True, separators=(",", ":")).encode("utf-8"))
-        require(encoded_bytes <= MAX_PAGE_ROWS_BYTES, "QUERY_ROW_TOO_LARGE")
-        if page_rows and rows_bytes + encoded_bytes + 1 > MAX_PAGE_ROWS_BYTES:
-            break
-        rows_bytes += encoded_bytes + (1 if page_rows else 0)
-        page_rows.append(row)
-    page_rows = tuple(page_rows)
-    next_offset = offset + len(page_rows)
-    next_cursor = _cursor(request, rows, next_offset) if next_offset < len(rows) else None
-    page_records = tuple(page_rows) if rows is records else ()
-    page_links = tuple(page_rows) if rows is links else ()
-    page_ids = {item.meta.record_id for item in page_records}
+def _encoded_size(row):
+    encoded = encode_record(row) if isinstance(row, WireRecord) else row.to_record()
+    return len(json.dumps(encoded, sort_keys=True, separators=(",", ":")).encode("utf-8"))
+
+
+def _page_markers(markers, request, records, page_records, page_links):
     page_refs = {item.target_ref for item in page_links}
-    page_sources = {item.source_record_id for item in page_links}
-    relevant_ids = page_ids | page_refs | page_sources
+    relevant_ids = (
+        {item.meta.record_id for item in page_records} | page_refs
+        | {item.source_record_id for item in page_links})
     if request.reference is not None:
         relevant_ids.add(request.reference)
-    page_markers = tuple(
+    return tuple(
         item for item in markers
         if ((type(item) is PartialEnvelope
              and item.partial_record_id in relevant_ids)
@@ -167,6 +153,51 @@ def build_page(*, available: bool, request: QueryRequest, records, markers,
                      or item.resource in page_refs
                      or item.resource == request.reference)))
     )
+
+
+def build_page(*, available: bool, request: QueryRequest, records, markers,
+               links=(), exact_missing=False, rows_digest=None) -> QueryPage:
+    rows = links if request.family in {QueryFamily.LINKS, QueryFamily.REFERENCE} else records
+    digest_value = None
+
+    def digest():
+        nonlocal digest_value
+        if digest_value is None:
+            digest_value = rows_digest() if rows_digest is not None else _rows_digest(rows)
+        return digest_value
+
+    offset = _offset(request, rows, digest)
+    page_rows, sizes = [], []
+    rows_bytes = 2
+    for row in rows[offset:offset + request.limit]:
+        encoded_bytes = _encoded_size(row)
+        require(encoded_bytes <= MAX_PAGE_ROWS_BYTES, "QUERY_ROW_TOO_LARGE")
+        if page_rows and rows_bytes + encoded_bytes + 1 > MAX_PAGE_ROWS_BYTES:
+            break
+        rows_bytes += encoded_bytes + (1 if page_rows else 0)
+        sizes.append(encoded_bytes)
+        page_rows.append(row)
+    marker_sizes = {}
+    while True:
+        page_records = tuple(page_rows) if rows is records else ()
+        page_links = tuple(page_rows) if rows is links else ()
+        page_markers = _page_markers(
+            markers, request, records, page_records, page_links)
+        marker_bytes = 2
+        for marker in page_markers:
+            key = marker.meta.record_id
+            if key not in marker_sizes:
+                marker_sizes[key] = _encoded_size(marker)
+            marker_bytes += marker_sizes[key] + 1
+        if rows_bytes + marker_bytes <= MAX_PAGE_ROWS_BYTES:
+            break
+        # Retain all relevant markers; shorten the page rather than rejecting
+        # an otherwise valid query or silently dropping provenance.
+        require(len(page_rows) > 1, "QUERY_ROW_TOO_LARGE")
+        page_rows.pop()
+        rows_bytes -= sizes.pop() + 1
+    next_offset = offset + len(page_rows)
+    next_cursor = _cursor(request, digest, next_offset) if next_offset < len(rows) else None
     state = (
         QueryState.UNAVAILABLE if not available
         else _state(

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import cached_property
 import hashlib
 import json
 
@@ -43,16 +44,8 @@ def missing_value() -> DataValue:
 
 
 def accepted_student_sha256(generation: "AuthenticatedGeneration") -> str:
-    """Recover C03's accepted student identity without loading numerical state."""
-    if generation.manifest["generation"] == 0:
-        digest = generation.run_identity.get("initial_candidate_identity_sha256")
-    else:
-        from bilqis_mlx.learning.teacher_lineage import restore_teacher_lineage
-
-        digest = restore_teacher_lineage(generation.teacher_state).student_sha256
-    if not is_digest(digest):
-        invalid("CONTROL_PLANE_NATIVE_STUDENT_IDENTITY_INVALID")
-    return digest
+    """Reuse the verified C03 identity within this authenticated generation."""
+    return generation.accepted_student_sha256
 
 
 @dataclass(frozen=True)
@@ -66,6 +59,20 @@ class AuthenticatedGeneration:
     teacher_state: dict
     outbox: tuple[dict, ...]
     learning_health_state: dict | None = None
+
+    @cached_property
+    def accepted_student_sha256(self) -> str:
+        # A generation is reconstructed from content-bound immutable sidecars.
+        # Validate its complete teacher lineage once, not once per projected event.
+        if self.manifest["generation"] == 0:
+            digest = self.run_identity.get("initial_candidate_identity_sha256")
+        else:
+            from bilqis_mlx.learning.teacher_lineage import restore_teacher_lineage
+
+            digest = restore_teacher_lineage(self.teacher_state).student_sha256
+        if not is_digest(digest):
+            invalid("CONTROL_PLANE_NATIVE_STUDENT_IDENTITY_INVALID")
+        return digest
 
 
 @dataclass(frozen=True)

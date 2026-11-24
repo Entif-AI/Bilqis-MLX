@@ -1,11 +1,12 @@
 """Mutable-overlay cache for the native CURRENT Mission Control source."""
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 import threading
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.mission_control import MissionControlQueryCatalog, QueryMode
+from bilqis_mlx.mission_control import MissionControlQueryCatalog
 from bilqis_mlx.mission_control.contracts.trainer import TrainerObservation
 
 
@@ -32,12 +33,11 @@ def _base_source_token(token):
 class _NativeQueryCache:
     def __init__(
             self, run_dir, authenticated_history_fn, materialize_history_fn,
-            materialize_projection_fn, run_refs_fn, observed_records_fn):
+            run_refs_fn, observed_records_fn):
         self.root = Path(run_dir).expanduser().resolve()
         self.lock = threading.Lock()
         self.authenticated_history = authenticated_history_fn
         self.materialize_history = materialize_history_fn
-        self.materialize_projection = materialize_projection_fn
         self.run_refs = run_refs_fn
         self.observed_records = observed_records_fn
         self.token = self.catalog = self.base_token = self.pointer_token = None
@@ -45,14 +45,18 @@ class _NativeQueryCache:
         self.run_ref_values = ()
         self.accepted_health = {}
         self.history = ()
+        self.material = None
 
     def query(self, request=None):
         with self.lock:
-            if request is not None and request.mode is not QueryMode.CURRENT:
-                material = self.materialize_projection(
-                    self.root, include_live_rejections=True)
-                return MissionControlQueryCatalog(material.records)
             return self._current()
+
+    def event_material(self):
+        with self.lock:
+            catalog = self._current()
+            if not catalog.available or self.material is None:
+                return None
+            return replace(self.material, records=catalog.records)
 
     def _current(self):
         before = _source_token(self.root)
@@ -89,10 +93,10 @@ class _NativeQueryCache:
         return self.authenticated_history(self.root)
 
     def _materialize(self, before):
-        history = self._accepted_history(before)
-        if history is None:
-            return MissionControlQueryCatalog.unavailable()
         try:
+            history = self._accepted_history(before)
+            if history is None:
+                return MissionControlQueryCatalog.unavailable()
             material = self.materialize_history(
                 self.root, history, include_live_rejections=True)
         except BilqisError as error:
@@ -112,7 +116,12 @@ class _NativeQueryCache:
         health = material.accepted_learning_health_by_manifest or {}
         catalog = MissionControlQueryCatalog((*base_records, *observed))
         after = _source_token(self.root)
-        self.history, self.pointer_token = history, after[0]
+        if after[0] != before[0]:
+            self.history, self.pointer_token = (), None
+            self._clear_base()
+            return MissionControlQueryCatalog.unavailable()
+        self.history, self.pointer_token = history, before[0]
+        self.material = material
         if _base_source_token(after) != _base_source_token(before):
             self._clear_base()
             return catalog
@@ -132,6 +141,10 @@ class _NativeQueryCache:
             self.root, refs, accepted_health_by_manifest=health)
         catalog = MissionControlQueryCatalog((*base_records, *observed))
         final = _source_token(self.root)
+        if final[0] != before[0]:
+            self.history, self.pointer_token = (), None
+            self._clear_base()
+            return MissionControlQueryCatalog.unavailable()
         if _base_source_token(final) == self.base_token and final == after:
             self.token, self.catalog = final, catalog
         else:
@@ -146,15 +159,16 @@ class _NativeQueryCache:
 
 def build_native_query_source(
         run_dir: Path, *, authenticated_history_fn, materialize_history_fn,
-        materialize_projection_fn, run_refs_fn, observed_records_fn):
+        run_refs_fn, observed_records_fn):
     cache = _NativeQueryCache(
         run_dir, authenticated_history_fn, materialize_history_fn,
-        materialize_projection_fn, run_refs_fn, observed_records_fn)
+        run_refs_fn, observed_records_fn)
 
     def source(query=None):
         return cache.query(query)
 
     source._bilqis_query_aware = True
+    source._native_material = cache.event_material
     return source
 
 
