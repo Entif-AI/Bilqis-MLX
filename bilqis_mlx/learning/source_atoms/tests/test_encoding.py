@@ -73,8 +73,14 @@ class SourceEmbeddingBoundaryTests(TestCase):
         }
 
         def feature(_snapshot, _features, semantic_id, index, scope, **_kwargs):
-            return FeatureRow(semantic_id, index, scope, ("type",), (index % 2,), (),
-                              "NONE", 0, None, "NONE", 0, None,
+            identifiers, indices, overflow = {
+                0: ((), (), ()),
+                1: (("type", "overflow"), (1, 0), (("overflow", (0.1, 0.2)),)),
+                3: (("type",), (1,), ()),
+            }[index]
+            return FeatureRow(semantic_id, index, scope, identifiers, indices, overflow,
+                              "NONE", 0, (0.2, 0.1) if index == 1 else None,
+                              "NONE", 0, (0.1, 0.3) if index == 3 else None,
                               (0.1, 0.2 if scope == "task:a" else 0.4), "ADMITTED_SOURCE")
 
         def objective(weights, batched):
@@ -146,9 +152,8 @@ class SourceEmbeddingBoundaryTests(TestCase):
             patch.object(
                 source_embedding, "generation_feature_row",
                 return_value=feature),
-            patch.object(
-                source_embedding, "_released_factor_terms",
-                return_value=()),
+            patch("bilqis_mlx.learning.source_atoms.learning_batch._batch_factor_terms",
+                  return_value=()),
             patch.object(
                 source_encoding, "_atomic_source_embeddings",
                 return_value=tuple(() for _ in rows)),

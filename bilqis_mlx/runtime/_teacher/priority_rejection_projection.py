@@ -8,7 +8,7 @@ from threading import Lock
 from typing import Callable
 
 from .priority_rejection_journal import (
-    _DIVERGED, _TAINTED, _UNTRACKED, baseline_journal_state,
+    _DIVERGED, _TAINTED, _TRUSTED, _UNTRACKED, baseline_journal_state,
     journal_state_status,
 )
 from .priority_rejection_projection_state import SCHEMA, encode, restore
@@ -72,6 +72,7 @@ class RejectionProjection:
     ledger_identity: tuple[int, int] | None = None
     hydrated: bool = False
     lock: Lock = field(default_factory=Lock, repr=False)
+    _live_plane: object | None = field(default=None, repr=False)
 
     def refresh(
         self,
@@ -86,11 +87,14 @@ class RejectionProjection:
             ] | None,
         ],
         invalid: Callable[[str], None],
+        *, rejection_generation: int | None = None,
     ) -> RejectionRows:
         with self.lock:
-            return self._refresh(run_dir, projection_key, plane, validate, invalid)
+            return self._refresh(run_dir, projection_key, plane, validate, invalid,
+                                 rejection_generation)
 
-    def _refresh(self, run_dir, projection_key, plane, validate, invalid):
+    def _refresh(self, run_dir, projection_key, plane, validate, invalid,
+                 rejection_generation):
         journal = Path(run_dir) / "events.jsonl"
         if not journal.exists():
             if self.offset or self.rows:
@@ -105,18 +109,22 @@ class RejectionProjection:
             invalid("BAMF_PRIORITY_REJECTION_JOURNAL_INVALID")
         if status == _UNTRACKED and not baseline_journal_state(journal, before):
             invalid("BAMF_PRIORITY_REJECTION_JOURNAL_INVALID")
+        if rejection_generation is not None and self._unchanged(plane, before, status):
+            return self.rows_view()
         if not self.hydrated:
             state = plane.event_projection_state(run_dir, projection_key, SCHEMA)
             if state is not None and restore(self, state["payload"]):
                 self.offset = state["indexed_bytes"]
                 self.ledger_identity = state["ledger_identity"]
             self.hydrated = True
-        payload = plane.indexed_event_tail(run_dir, self.offset)
+        tail_options = ({} if rejection_generation is None else
+                        {"rejection_generation": rejection_generation})
+        payload = plane.indexed_event_tail(run_dir, self.offset, **tail_options)
         identity = payload["ledger_identity"]
         if payload["rebuilt"] or (
                 self.ledger_identity is not None and identity != self.ledger_identity):
             self._reset(keep_hydrated=True)
-            payload = plane.indexed_event_tail(run_dir, 0)
+            payload = plane.indexed_event_tail(run_dir, 0, **tail_options)
             identity = payload["ledger_identity"]
         self._ingest(payload["events"], validate, invalid)
         self.offset = payload["indexed_bytes"]
@@ -130,7 +138,13 @@ class RejectionProjection:
             baseline_journal_state(journal, after)
         elif after_status in (_DIVERGED, _TAINTED):
             invalid("BAMF_PRIORITY_REJECTION_JOURNAL_INVALID")
+        self._live_plane = plane
         return self.rows_view()
+
+    def _unchanged(self, plane, observed, status):
+        return (status == _TRUSTED and self.hydrated and self._live_plane is plane
+                and self.ledger_identity == (observed.st_dev, observed.st_ino)
+                and self.offset == observed.st_size)
 
     def _ingest(self, events, validate, invalid):
         for event in events:
@@ -239,6 +253,7 @@ class RejectionProjection:
         self.global_order_start = None
         self.ledger_identity = None
         self.hydrated = keep_hydrated
+        self._live_plane = None
 
 
 __all__ = ("RejectionProjection", "RejectionRows")
