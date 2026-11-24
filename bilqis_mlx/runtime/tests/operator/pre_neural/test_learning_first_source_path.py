@@ -28,8 +28,10 @@ from .pre_neural_journey_support import (
 
 class LearningFirstSourcePathTests(PreNeuralJourneySupport, unittest.TestCase):
     def test_learning_first_row_inputs_work_without_preparation_cache(self):
+        row = {"id": "row:1"}
         compiled = SimpleNamespace(
-            sources=(SimpleNamespace(source_row={"id": "row:1"}),))
+            sources=(SimpleNamespace(source_row=row),),
+            compiled=SimpleNamespace(features=SimpleNamespace(semantic_release="semantic")))
         goal = object()
         resolved = object()
         targets = (object(),)
@@ -41,18 +43,15 @@ class LearningFirstSourcePathTests(PreNeuralJourneySupport, unittest.TestCase):
         with evidence_mode(strict=False), patch.object(
                 c08, "_learning_first_task_goals",
                 return_value=(goal, resolved)) as task_goals, patch.object(
-                    c08, "task_goal_training_targets",
-                    return_value=(targets, mask)) as training_targets, patch.object(
-                        c08, "task_goal_route_plan",
-                        return_value=plan) as route_plan:
+                    c08, "prepare_task_goal_route",
+                    return_value=SimpleNamespace(bind=lambda *_: (targets, mask, plan))) as route:
             result = _row_execution_inputs(
                 source_context, compiled, feature_snapshot, "generation",
                 learning_first_cache=None)
 
         self.assertEqual(result, (compiled, None, targets, mask, plan))
-        task_goals.assert_called_once_with(source_context, compiled)
-        training_targets.assert_called_once_with(goal, resolved)
-        route_plan.assert_called_once_with(goal, compiled, feature_snapshot, "generation")
+        task_goals.assert_called_once_with(source_context, row, "semantic")
+        route.assert_called_once_with(goal, resolved)
 
     def test_learning_first_cache_reuses_invariant_row_preparation_across_steps(self):
         self.current, self.parent_graph = historical_school_release()
@@ -105,34 +104,39 @@ class LearningFirstSourcePathTests(PreNeuralJourneySupport, unittest.TestCase):
         self.assertEqual(
             tuple(row.provenance.optimizer_step_seed for row in second.training_batch.rows),
             (8,) * len(rows))
-        self.assertEqual(
-            second._performance_observation["learning_first_source_cache_hits"],
-            len(rows))
-        self.assertEqual(
-            second._performance_observation["learning_first_source_cache_misses"], 0)
+        self.assertEqual(cache.hits, len(rows))
+        self.assertEqual(cache.misses, len(rows))
         import bilqis_mlx.runtime.factory_candidate_microbatch as c08
         with evidence_mode(strict=False), patch.object(
                 c08, "_learning_first_task_goals",
                 wraps=c08._learning_first_task_goals,
         ) as task_goals, patch.object(
-                c08, "task_goal_route_plan",
-                wraps=c08.task_goal_route_plan,
+                c08, "prepare_task_goal_route",
+                wraps=c08.prepare_task_goal_route,
         ) as route_plan:
             first_inputs = _row_execution_inputs(
                 context, first.compiled_rows[0], first.semantic_context.snapshot,
-                generation, learning_first_cache=cache,
-                row_cache_key=cache.key(
-                    rows[0], first.training_batch.rows[0].model_input.eligibility_digest))
+                generation, learning_first_cache=cache)
             second_generation = "f" * 64
             second_inputs = _row_execution_inputs(
                 context, second.compiled_rows[0], second.semantic_context.snapshot,
-                second_generation, learning_first_cache=cache,
-                row_cache_key=cache.key(
-                    rows[0], second.training_batch.rows[0].model_input.eligibility_digest))
+                second_generation, learning_first_cache=cache)
+            next_visit = LearningFirstPreparationCache()
+            next_visit.bind(context, context._accepted_feature_context)
+            source = first.compiled_rows[0].sources[0].source_row
+            semantic_release = first.compiled_rows[0].compiled.features.semantic_release
+            redrawn = {**source, "source_family_id": "new-family", "source_family_seed": 12346}
+            reused = c08.prepare_learning_first_task_route(
+                context, redrawn, semantic_release, cache=next_visit)
+            fresh_targets, fresh_mask, fresh_plan = reused.bind(
+                first.compiled_rows[0], first.semantic_context.snapshot, second_generation)
+            self.assertEqual((fresh_targets, fresh_mask, fresh_plan), second_inputs[2:])
+            self.assertEqual(next_visit.task_hits, 1)
         self.assertEqual(task_goals.call_count, 1)
         self.assertEqual(route_plan.call_count, 1)
         self.assertEqual(first_inputs[4].generation_binding, generation)
         self.assertEqual(second_inputs[4].generation_binding, second_generation)
+        self.assertEqual(first_inputs[2:4], second_inputs[2:4])
 
     def test_learning_first_cache_misses_when_exact_row_content_changes(self):
         cache = LearningFirstPreparationCache()

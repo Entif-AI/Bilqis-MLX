@@ -31,7 +31,9 @@ def _run_horizon(selection, captured, *, cache=_AUTO_CACHE):
     with patch(
             "bilqis_mlx.runtime.bamf_operator.session_parts.native_session."
             "_candidate_horizon_execution_impl",
-            side_effect=horizon_impl):
+            side_effect=horizon_impl), patch(
+                "bilqis_mlx.runtime.bamf_operator.session_parts.native_session."
+                "bind_current_retention_protection_plan"):
         result = candidate_horizon_execution(
             Path("/run"), object(), object(), "atlas", "features",
             selection, (), "A.TEST", object() if cache is _AUTO_CACHE else cache,

@@ -141,7 +141,7 @@ def _visit_numeric(
 
 
 def lower_numeric_task_goal(
-    row: dict, *, semantic_release: str, capability, release, **_,
+    row: dict, *, semantic_release: str, capability, release, operator_registry=None, **_,
 ):
     """Lower source-visible arithmetic while keeping the root operator neural."""
     if (not isinstance(row, dict) or "gold" in row
@@ -153,14 +153,14 @@ def lower_numeric_task_goal(
         from .answer_choice_task_goal import lower_answer_choice_task_goal
         return lower_answer_choice_task_goal(
             row, semantic_release=semantic_release, capability=capability,
-            release=release)
+            release=release, operator_registry=operator_registry)
     expression = decode(row["record"]["symbols"])
     declared = capability.capability_id.removeprefix("C.")
     if declared == "NUMBER" and isinstance(expression, Literal):
         from .answer_choice_task_goal import lower_answer_choice_task_goal
         return lower_answer_choice_task_goal(
             row, semantic_release=semantic_release, capability=capability,
-            release=release)
+            release=release, operator_registry=operator_registry)
     if (isinstance(expression, Apply)
             and expression.operator.symbol == "school.op.EQ"
             and declared != "EQ"):
@@ -190,7 +190,9 @@ def lower_numeric_task_goal(
         (_PURPOSE,), (PUBLIC_FORMAL,), (_JURISDICTION,),
         (capability.capability_id,), (PUBLIC_FORMAL,), (), (),
     )
-    registry = default_registry(semantic_release)
+    registry = operator_registry if operator_registry is not None else default_registry(semantic_release)
+    if registry.semantic_release != semantic_release:
+        _invalid("BAMF_C04_OPERATOR_REGISTRY_RELEASE_DRIFT")
     grants = [_grant(
         domain_handle, numeric_domain_digest(domain, semantic_release),
         semantic_release, capability.capability_id)]

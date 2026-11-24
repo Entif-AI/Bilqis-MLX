@@ -53,7 +53,7 @@ def _answer_family(capability, answer_kind=None):
 
 
 def lower_answer_choice_task_goal(
-    row: dict, *, semantic_release: str, capability, **_,
+    row: dict, *, semantic_release: str, capability, operator_registry=None, **_,
 ):
     """Expose only the admitted answer domain; evaluator gold stays private."""
     if (not isinstance(row, dict) or "gold" in row
@@ -73,7 +73,9 @@ def lower_answer_choice_task_goal(
         (_PURPOSE,), (PUBLIC_FORMAL,), (_JURISDICTION,),
         (scope,), (PUBLIC_FORMAL,), (), (),
     )
-    registry = default_registry(release)
+    registry = operator_registry if operator_registry is not None else default_registry(release)
+    if registry.semantic_release != semantic_release:
+        _invalid("BAMF_C04_OPERATOR_REGISTRY_RELEASE_DRIFT")
     spec = registry.resolve(operator_id)
     operands = []
     refs = []

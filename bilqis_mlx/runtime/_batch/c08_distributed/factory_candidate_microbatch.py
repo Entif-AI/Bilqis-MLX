@@ -1,7 +1,6 @@
 """C08 execution of source-bound Factory rows as scalar or true MLX microbatches."""
 from __future__ import annotations
 
-from dataclasses import replace
 import time
 
 import mlx.core as mx
@@ -17,8 +16,9 @@ from bilqis_mlx.runtime.factory_task_authority import (
 )
 from bilqis_mlx.runtime.factory_task_template import _source_view
 from bilqis_mlx.runtime.task_goal_readout import (
-    task_goal_route_plan, task_goal_training_targets,
+    prepare_task_goal_route, task_goal_route_plan, task_goal_training_targets,
 )
+from bilqis_mlx.runtime.factory_training_preparation_cache import task_source_row
 from bilqis_mlx.source_adapters.task_goal_registry import (
     learning_first_task_goal_lowerer,
 )
@@ -43,8 +43,8 @@ from bilqis_mlx.runtime.atlas_training_authority import extend_training_dependen
 from bilqis_mlx.runtime.atlas_resources import partition_logical_batch
 
 
-def _learning_first_task_goals(source_context, compiled):
-    row = compiled.sources[0].source_row
+def _learning_first_task_goals(source_context, row, semantic_release):
+    row = task_source_row(row)
     capability = source_context.release.execution_plan.capability_map.get(
         row.get("capability"))
     if capability is None:
@@ -53,43 +53,41 @@ def _learning_first_task_goals(source_context, compiled):
             reason="FACTORY_TRAINING_CAPABILITY_MISMATCH")
     lower, resolve = learning_first_task_goal_lowerer(capability.provider_id)
     kwargs = {
-        "semantic_release": compiled.compiled.features.semantic_release,
+        "semantic_release": semantic_release,
         "source_root": source_context.source_root,
         "graph": source_context.graph,
         "release": source_context.release,
         "capability": capability,
+        "operator_registry": source_context.operator_registry_for(semantic_release),
     }
     goal, binding = lower(_source_view(row), **kwargs)
     return goal, resolve(row, goal, binding, **kwargs)
 
 
+def prepare_learning_first_task_route(source_context, row, semantic_release, *, cache=None):
+    """Compile or retrieve a problem before binding any neural execution geometry."""
+    key = (None if cache is None else cache.task_key(
+        row, semantic_release, source_context.release.release_sha256))
+    prepared = None if cache is None else cache.get_task_inputs(key)
+    if prepared is None:
+        goal, resolved = _learning_first_task_goals(source_context, row, semantic_release)
+        prepared = prepare_task_goal_route(goal, resolved)
+        if cache is not None:
+            cache.put_task_inputs(key, prepared)
+    return prepared
+
+
 def _row_execution_inputs(
         source_context, compiled, feature_snapshot, generation,
-        learning_first_cache=None, row_cache_key=None):
+        learning_first_cache=None):
     from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
         strict_evidence_enabled,
     )
     if not strict_evidence_enabled():
-        row = compiled.sources[0].source_row
-        cache_key = None
-        if learning_first_cache is not None:
-            cache_key = (
-                learning_first_cache.key(row) if row_cache_key is None
-                else row_cache_key)
-        cached = (
-            None if learning_first_cache is None
-            else learning_first_cache.get_task_inputs(cache_key))
-        if cached is None:
-            goal, resolved = _learning_first_task_goals(source_context, compiled)
-            targets, mask = task_goal_training_targets(goal, resolved)
-            plan = task_goal_route_plan(
-                goal, compiled, feature_snapshot, generation)
-            if learning_first_cache is not None:
-                learning_first_cache.put_task_inputs(
-                    cache_key, (goal, resolved, targets, mask, plan))
-        else:
-            goal, resolved, targets, mask, plan = cached
-            plan = replace(plan, generation_binding=generation)
+        prepared = prepare_learning_first_task_route(
+            source_context, compiled.sources[0].source_row,
+            compiled.compiled.features.semantic_release, cache=learning_first_cache)
+        targets, mask, plan = prepared.bind(compiled, feature_snapshot, generation)
         return compiled, None, targets, mask, plan
     authority = factory_task_authority(
         source_context, compiled, generation_binding=generation)
@@ -115,11 +113,11 @@ def _mentor_multiplier(mentor_supervision, compiled):
 def execute_factory_training_row(
         parameters, compiled, source_context, feature_snapshot, generation, cache, *,
         salience_supervision=None, mentor_supervision=None,
-        learning_first_cache=None, row_cache_key=None):
+        learning_first_cache=None):
     """Preserve the scalar B11 path as correctness oracle and fallback."""
     bound, authority, targets, mask, plan = _row_execution_inputs(
         source_context, compiled, feature_snapshot, generation,
-        learning_first_cache=learning_first_cache, row_cache_key=row_cache_key)
+        learning_first_cache=learning_first_cache)
     multiplier = _mentor_multiplier(mentor_supervision, compiled)
     gradient = bamf_value_and_grad(
         parameters, bound, plan, targets, mask, cache,
@@ -142,12 +140,8 @@ def execute_factory_logical_batch(
     row_inputs_started = time.perf_counter() if strict else None
     rows = tuple(_row_execution_inputs(
         source_context, compiled, feature_snapshot, generation,
-        learning_first_cache=learning_first_cache,
-        row_cache_key=(
-            None if learning_first_cache is None else learning_first_cache.key(
-                compiled.sources[0].source_row,
-                prepared.training_batch.rows[index].model_input.eligibility_digest)))
-        for index, compiled in enumerate(prepared.compiled_rows))
+        learning_first_cache=learning_first_cache)
+        for compiled in prepared.compiled_rows)
     row_execution_inputs_wall_seconds = (
         time.perf_counter() - row_inputs_started if strict else 0.0)
     bound = tuple(item[0] for item in rows)
