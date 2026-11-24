@@ -122,6 +122,8 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--worker', choices=('baseline', 'prepared'))
     parser.add_argument('--prepare-only', action='store_true')
+    parser.add_argument('--baseline-result', type=Path,
+                        help='Reuse a completed matched baseline result without rerunning it')
     args = parser.parse_args()
     args.output = args.output.resolve()
     d = donor(args.donor, args.output)
@@ -129,14 +131,29 @@ def main():
         worker(args, d)
         return
     d.h.preflight()
-    for arm in ('baseline', 'prepared'):
+    arms = ('baseline', 'prepared')
+    if args.baseline_result is not None:
+        baseline = d.h.read(args.baseline_result)
+        d.h.require(baseline['initial_manifest'] == d.h.BASE_MANIFEST
+                    and baseline['exam_cohort'] == d.h.COHORT
+                    and baseline['attempted_steps'] == 36
+                    and baseline['visits'] == 3
+                    and len(baseline['attempts']) == 3
+                    and baseline['status'] == 'VISIT_LIMIT'
+                    and baseline['scope_counts'] == {}, 'invalid completed baseline')
+        destination = args.output / 'baseline'
+        destination.mkdir()
+        d.h.write(destination / 'result.json', baseline)
+        print('PRESERVED_COMPLETED_BASELINE', args.baseline_result, flush=True)
+        arms = ('prepared',)
+    for arm in arms:
         if not (args.output / arm).exists():
             d.h.clone(arm)
         d.h.require(d.h.read(args.output / arm / 'run' / 'bamf-state.json')['manifest_sha256'] == d.h.BASE_MANIFEST, 'arm is not pristine')
     if args.prepare_only:
         print('BOTH_ARMS_PRISTINE', flush=True)
         return
-    for arm in ('baseline', 'prepared'):
+    for arm in arms:
         env = dict(os.environ, PYTHONPATH=str(Path.cwd().resolve()),
                    BILQIS_DATA_PLANE=str(args.output / arm / 'plane.sqlite3'))
         subprocess.run([sys.executable, '-B', str(Path(__file__).resolve()),

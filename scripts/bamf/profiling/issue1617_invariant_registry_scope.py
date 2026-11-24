@@ -44,7 +44,7 @@ def install_scope():
     )
     from bilqis_mlx.semantics.cognitive_operators import registry
     from bilqis_mlx.source_adapters import school
-    from bilqis_mlx.source_adapters._task_goals import task_goal_registry
+    from bilqis_mlx.source_adapters import task_goal_registry
 
     active = ContextVar('issue1617_active_owner', default=None)
     counts = Counter()
