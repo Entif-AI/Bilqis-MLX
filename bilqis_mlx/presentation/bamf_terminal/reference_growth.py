@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from .scores import paired_scores
 from ..growth_projection import _grew
+from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 
 
 @dataclass
@@ -33,7 +34,7 @@ class ReferenceGrowth:
         context = visit.get("reference_context") or {}
         release, rubric = (context.get(key) for key in (
             "factory_release_sha256", "rubric_sha256"))
-        if not all(isinstance(key, str) and len(key) == 64 for key in (release, rubric)):
+        if not all(isinstance(key, str) and len(key) == SHA256_HEX_LENGTH for key in (release, rubric)):
             return
         if self.release is not None and self.release != release:
             # A new release is not a comparable command-start baseline.
@@ -57,7 +58,7 @@ class ReferenceGrowth:
         explicit = visit.get("fixed_reference_scores")
         if explicit is not None:
             census = visit.get("fixed_reference_cohort_sha256")
-            if not isinstance(census, str) or len(census) != 64:
+            if not isinstance(census, str) or len(census) != SHA256_HEX_LENGTH:
                 return
             scores = paired_scores({"paired_scores": explicit})
         else:

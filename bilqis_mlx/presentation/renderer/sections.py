@@ -5,6 +5,8 @@ from .scores import _compact_score_line, _compact_summary_outcome, _right_grew, 
 from .system import _compact_system_detail, _system_kind
 from .layout import _section_heading, _step_exam, _table_line, _wide_columns
 
+_GROWTH_COVERAGE_FIELDS = ("count", "expected", "stale")
+
 class SectionsView:
     def _wide_section(self,name,width,shown):
         """Deduplicate conceptual rows, not the underlying receipt history."""
@@ -27,7 +29,7 @@ class SectionsView:
             score=(f': {correct}/{total} ({100*correct/total:.1f}%) TRAINED'
                    if total else '')
             coverage = self.state.get('_bamf_growth_coverage')
-            if isinstance(coverage, tuple) and len(coverage) == 3 and coverage[0]:
+            if isinstance(coverage, tuple) and len(coverage) == len(_GROWTH_COVERAGE_FIELDS) and coverage[0]:
                 count, expected, stale = coverage
                 score += f' | GREW REF {count}/{expected or "?"}'
                 if stale:

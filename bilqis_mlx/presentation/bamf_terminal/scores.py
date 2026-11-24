@@ -1,6 +1,8 @@
 """Paired score evidence used by the terminal, without scoring the model."""
 from __future__ import annotations
 
+_SCORE_FIELDS = ("capability", "before", "after", "total")
+
 
 def _pair(before, after, total):
     if (all(type(value) is int for value in (before, after, total))
@@ -16,7 +18,7 @@ def paired_scores(visit):
         return {}
     result = {}
     for row in raw:
-        if not isinstance(row, (list, tuple)) or len(row) != 4:
+        if not isinstance(row, (list, tuple)) or len(row) != len(_SCORE_FIELDS):
             return {}
         capability, before, after, total = row
         pair = _pair(before, after, total)
