@@ -30,6 +30,26 @@ def _cadence(selection):
     return (getattr(selection, "metadata", None) or {}).get("cadence")
 
 
+def _teacher_selection_fields(selection):
+    metadata = getattr(selection, "metadata", None)
+    if not isinstance(metadata, dict):
+        return {}
+    keys = (
+        "teacher_selection_reason", "teacher_selection_policy",
+        "teacher_policy_evidence_before", "vnext_canary",
+        "actual_authority_changed",
+    )
+    aliases = {
+        "teacher_selection_reason": "selection_reason",
+        "teacher_selection_policy": "selection_policy",
+    }
+    return {
+        key: metadata.get(aliases.get(key, key))
+        for key in keys
+        if metadata.get(aliases.get(key, key)) is not None
+    }
+
+
 def _record_resource_rejection(run_dir, prepared, record_rejection, binding):
     _assert_current(binding)
     identity = prepared.selection.visit.identity
@@ -40,6 +60,7 @@ def _record_resource_rejection(run_dir, prepared, record_rejection, binding):
         "visit_id": identity.visit_id,
         "teacher_visit": identity.to_record(),
         "selected_policy_key": identity.policy_key,
+        **_teacher_selection_fields(prepared.selection),
         **({"cadence": cadence} if cadence is not None else {}),
     })
     return ResourceRejectedVisit(prepared.capability)
@@ -68,6 +89,7 @@ def _record_candidate_rejection(
         "candidate_evidence": prepared.candidate_evidence,
         "how_outcome": prepared.how_outcome,
         "structural_weaknesses": list(prepared.structural_weaknesses),
+        **_teacher_selection_fields(selection),
         **({"cadence": cadence} if cadence is not None else {}),
     })
     if cadence is not None and record_cadence_attempt is not None:

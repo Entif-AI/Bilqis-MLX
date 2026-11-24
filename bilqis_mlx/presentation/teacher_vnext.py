@@ -19,7 +19,19 @@ def _record(history: dict, key) -> dict:
     return history.setdefault(key, {"trials": 0, "retained": 0})
 
 
-def _prediction_before(event: dict, history: dict) -> float:
+def _prediction_before(event: dict, history: dict) -> float | None:
+    evidence = event.get("teacher_policy_evidence_before")
+    if isinstance(evidence, dict):
+        trials = evidence.get("trials")
+        retained = evidence.get("retained")
+        probability = evidence.get("retention_probability")
+        if (type(trials) is int and type(retained) is int
+                and 0 <= retained <= trials):
+            if (trials >= PREDICTION_MINIMUM_SUPPORT
+                    and isinstance(probability, (int, float))
+                    and 0 <= probability <= 1):
+                return float(probability)
+            return None
     explicit = event.get("teacher_outcome_prediction_before")
     if isinstance(explicit, dict):
         probability = explicit.get("retention_probability")
@@ -29,7 +41,7 @@ def _prediction_before(event: dict, history: dict) -> float:
     capability = event.get("capability")
     policy = event.get("teacher_policy")
     if not isinstance(retention, dict):
-        return .5
+        return None
     phase = retention.get("phase")
     grade = event.get("grade") or (
         capability.partition(".")[0] if isinstance(capability, str) else None)
@@ -44,7 +56,27 @@ def _prediction_before(event: dict, history: dict) -> float:
         row = history.get(key)
         if isinstance(row, dict) and row.get("trials", 0) >= PREDICTION_MINIMUM_SUPPORT:
             return row.get("retained", 0) / row["trials"]
-    return .5
+    return None
+
+
+def _authoritative_health_before(event: dict) -> dict | None:
+    evidence = event.get("teacher_policy_evidence_before")
+    if not isinstance(evidence, dict):
+        return None
+    trials = evidence.get("trials")
+    retained = evidence.get("retained")
+    if (type(trials) is not int or type(retained) is not int
+            or trials < 0 or not 0 <= retained <= trials):
+        return None
+    rate = retained / trials if trials else 0.
+    if trials < MINIMUM_SUPPORT:
+        status = "UNCERTAIN_EXPLORING"
+    elif rate < LOW_YIELD_RETENTION_FRACTION:
+        status = "LOW_YIELD"
+    else:
+        status = "PRODUCTIVE"
+    return {"status": status, "retention_rate": rate,
+            "attempted_candidates": trials, "retained_candidates": retained}
 
 
 def _derived_health(event: dict, history: dict) -> dict | None:
@@ -91,7 +123,9 @@ def _derived_health(event: dict, history: dict) -> dict | None:
 def teacher_fields(event: dict, history: dict | None = None) -> dict:
     fields = {}
     if history is not None:
-        fields["p_ret"] = f"{_prediction_before(event, history) * 100:.1f}%"
+        prediction = _prediction_before(event, history)
+        if prediction is not None:
+            fields["p_ret"] = f"{prediction * 100:.1f}%"
     else:
         explicit = event.get("teacher_outcome_prediction_before")
         if isinstance(explicit, dict):
@@ -102,6 +136,8 @@ def teacher_fields(event: dict, history: dict | None = None) -> dict:
     if not isinstance(health, dict):
         # Preserve readback of the original 349 Teacher vNext events.
         health = event.get("teacher_health")
+    if not isinstance(health, dict):
+        health = _authoritative_health_before(event)
     if not isinstance(health, dict) and history is not None:
         health = _derived_health(event, history)
     status = health.get("status") if isinstance(health, dict) else None

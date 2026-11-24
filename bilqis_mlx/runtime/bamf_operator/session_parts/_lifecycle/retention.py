@@ -10,6 +10,26 @@ from .retention_observation import (
 )
 
 
+def _teacher_selection_fields(selection):
+    metadata = getattr(selection, "metadata", None)
+    if not isinstance(metadata, dict):
+        return {}
+    aliases = {
+        "teacher_selection_reason": "selection_reason",
+        "teacher_selection_policy": "selection_policy",
+    }
+    keys = (
+        "teacher_selection_reason", "teacher_selection_policy",
+        "teacher_policy_evidence_before", "vnext_canary",
+        "actual_authority_changed",
+    )
+    return {
+        key: metadata.get(aliases.get(key, key))
+        for key in keys
+        if metadata.get(aliases.get(key, key)) is not None
+    }
+
+
 def _stage_learning_first_retention(observer, capability, evaluation, decision):
     """Project already-computed ordinary retention semantics without diagnostics."""
     if observer is None:
@@ -247,6 +267,7 @@ def _accepted_successor(
         "selected_option_id": selection.option_id,
         "resource": resource, "candidate_evidence": candidate_evidence,
         "how_outcome": how_outcome,
+        **_teacher_selection_fields(selection),
         **({"cadence": getattr(selection, "metadata", {}).get("cadence")}
            if isinstance(getattr(selection, "metadata", None), dict)
            and selection.metadata.get("cadence") is not None else {}),

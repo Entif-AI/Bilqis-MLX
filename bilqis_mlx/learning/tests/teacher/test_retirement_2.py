@@ -8,7 +8,7 @@ from bilqis_mlx.learning.tests.test_learning_experiment import (
 
 
 class Retirement2Tests(CausalTeacherExperimentTests):
-    def test_same_student_no_gain_streak_retires_policy_until_checkpoint_changes(self):
+    def test_same_student_target_failure_retires_but_target_gain_reopens_policy(self):
         import bilqis_mlx.compatibility.historical_teacher_policy as policy_engine
 
         teacher = strategy_population_teacher(count=17)
@@ -31,12 +31,11 @@ class Retirement2Tests(CausalTeacherExperimentTests):
         }, active_capability="C.ADD", phase="MAIN", protected={"B.XOR"},
             settings=Settings(), mature_grades=frozenset({"B"}))
 
-        for _ in range(3):
-            observe_context(
-                teacher, capability="C.ADD", phase="MAIN",
-                policy_key=policy, decision=no_gain, local_gain=-.2,
-                curriculum_scope="scope",
-                student_checkpoint_sha256=checkpoint_a)
+        observe_context(
+            teacher, capability="C.ADD", phase="MAIN",
+            policy_key=policy, decision=no_gain, local_gain=-.2,
+            curriculum_scope="scope",
+            student_checkpoint_sha256=checkpoint_a)
         still_active = contextual_pick(
             policy_engine, teacher, "C.ADD", "MAIN", random.Random(3),
             curriculum_scope="scope", student_checkpoint_sha256=checkpoint_a,
@@ -46,11 +45,9 @@ class Retirement2Tests(CausalTeacherExperimentTests):
 
         observe_context(
             teacher, capability="C.ADD", phase="MAIN",
-            policy_key=policy, decision=interference, local_gain=.2,
-            curriculum_scope="scope", student_checkpoint_sha256=checkpoint_a)
-        self.assertEqual(
-            teacher["causal_experiment"]["stagnation"]["C.ADD|scope"]
-                   [policy]["no_target_gain_streak"], 0)
+            policy_key=policy, decision=no_gain, local_gain=-.2,
+            curriculum_scope="scope",
+            student_checkpoint_sha256=checkpoint_a)
         retired = contextual_pick(
             policy_engine, teacher, "C.ADD", "MAIN", random.Random(3),
             curriculum_scope="scope", student_checkpoint_sha256=checkpoint_a,
@@ -58,6 +55,20 @@ class Retirement2Tests(CausalTeacherExperimentTests):
         self.assertEqual(
             retired[2]["checkpoint_retired_effective_strategy_count"], 1)
         self.assertNotEqual(retired[0], policy)
+
+        observe_context(
+            teacher, capability="C.ADD", phase="MAIN",
+            policy_key=policy, decision=interference, local_gain=.2,
+            curriculum_scope="scope", student_checkpoint_sha256=checkpoint_a)
+        self.assertEqual(
+            teacher["causal_experiment"]["stagnation"]["C.ADD|scope"]
+                   [policy]["no_target_gain_streak"], 0)
+        reopened = contextual_pick(
+            policy_engine, teacher, "C.ADD", "MAIN", random.Random(3),
+            curriculum_scope="scope", student_checkpoint_sha256=checkpoint_a,
+            return_metadata=True)
+        self.assertEqual(
+            reopened[2]["checkpoint_retired_effective_strategy_count"], 0)
 
         new_student = contextual_pick(
             policy_engine, teacher, "C.ADD", "MAIN", random.Random(3),

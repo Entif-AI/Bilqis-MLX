@@ -6,7 +6,10 @@ import weakref
 from bilqis_mlx.learning.teacher_lineage import restore_teacher_lineage
 from bilqis_mlx.learning.teacher_lineage_records import SHA256_HEX_LENGTH, valid_hex
 from bilqis_mlx.learning.teacher_realized_action import describe
-from bilqis_mlx.learning.teacher_strategy_population import effective_policy_key
+from bilqis_mlx.learning.teacher_strategy_population import (
+    TARGET_FAILURE_CHECKPOINT_RETIREMENT_POLICY,
+    effective_policy_key,
+)
 from bilqis_mlx.runtime.state import _fingerprint
 
 from .observations import SCHEMA, apply_outcome, invalid
@@ -244,4 +247,5 @@ def context_for_selection(
         **context,
         'diagnostic_context_key': key,
         'total_capabilities': total_capabilities,
+        'checkpoint_retirement_policy': TARGET_FAILURE_CHECKPOINT_RETIREMENT_POLICY,
     }

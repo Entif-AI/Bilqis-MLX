@@ -25,7 +25,10 @@ from bilqis_mlx.learning.teacher_feedback import (
     LearningExperimentError, WeaknessTargetError, WeaknessTargetRequest,
     select_weakness_targets,
 )
-from bilqis_mlx.learning.teacher_strategy_population import BAMF_SUCCESSOR_SELECTION
+from bilqis_mlx.learning.teacher_strategy_population import (
+    BAMF_SUCCESSOR_SELECTION,
+    TARGET_FAILURE_CHECKPOINT_RETIREMENT_POLICY,
+)
 from bilqis_mlx.learning.teacher_strategy_population import UCB_EXPLORATION_WEIGHT as TEACHER_UCB_EXPLORATION_WEIGHT, SELECTION_POLICY as TEACHER_SELECTION_POLICY, active_effective_strategy_keys as _active_effective_strategy_keys, checkpoint_active_effective_strategy_keys as _checkpoint_active_effective_strategies, effective_context_scope as _effective_context_scope_impl, effective_policy_key as _effective_policy_key_impl, pick_existing_active as _pick_existing_active, record_checkpoint_policy_outcome as _record_checkpoint_policy_outcome, sibling_cooldown_penalty as _sibling_cooldown_penalty
 from bilqis_mlx.learning.teacher_realized_action import bind_record as _bind_realized_action_record, describe as realized_teacher_action, record_outcome as _record_realized_action_outcome
 
@@ -175,7 +178,8 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
                     realized_action: dict | None = None,
                     student_checkpoint_sha256: str | None = None,
                     lesson_grade: str | None = None,
-                    diagnostic_context_key: str | None = None) -> dict:
+                    diagnostic_context_key: str | None = None,
+                    checkpoint_retirement_policy: str | None = None) -> dict:
     """Source-paired trial outcome; never rewrite historical UCB rewards."""
     if (policy_key not in teacher.get("strategies", {}) or
             not math.isfinite(local_gain) or
@@ -184,6 +188,10 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
             decision.get("phase") != phase):
         raise ValueError("LEARNING_EXPERIMENT_INVALID_CAUSAL_OUTCOME")
     no_target_gain = decision.get("reason") == "NO_MEASURABLE_TARGET_GAIN"
+    target_failure = decision.get("reason") in {
+        "NO_MEASURABLE_TARGET_GAIN", "TARGET_BASELINE_REGRESSION"}
+    if checkpoint_retirement_policy is None:
+        checkpoint_retirement_policy = TARGET_FAILURE_CHECKPOINT_RETIREMENT_POLICY
     channel = _channel(teacher)
     diagnostic_key = _feedback_diagnostic_key(
         channel, capability, curriculum_scope, diagnostics, diagnostic_context_key)
@@ -211,11 +219,11 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
     _update_capability_stagnation(capability_stagnation, decision)
     effective_policy = _effective_policy_key(teacher["strategies"][policy_key])
     _record_checkpoint_policy_outcome(
-        channel, context_key,
-        effective_policy,
-        student_checkpoint_sha256,
+        channel, context_key, effective_policy, student_checkpoint_sha256,
         no_target_gain=no_target_gain,
-        retained=decision["decision"] != "REJECT")
+        target_failure=target_failure, target_positive=local_gain > 0,
+        retained=decision["decision"] != "REJECT",
+        checkpoint_retirement_policy=checkpoint_retirement_policy)
     _teacher_breeding.record_policy_outcome_side_effects(
         channel, effective_policy, capability=capability,
         curriculum_scope=curriculum_scope, retained=decision["decision"] != "REJECT",

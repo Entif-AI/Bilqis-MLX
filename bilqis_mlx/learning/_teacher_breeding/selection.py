@@ -1,7 +1,8 @@
 """Selection and filtering of effective teacher policies."""
 from __future__ import annotations
 from ..teacher_strategy_population import (
-    active_effective_strategy_keys, checkpoint_active_effective_strategy_keys,
+    ACTIVE_EFFECTIVE_STRATEGY_LIMIT, active_effective_strategy_keys,
+    checkpoint_active_effective_strategy_keys,
     effective_policy_key, effective_strategy_inventory, BAMF_SUCCESSOR_SELECTION,
 )
 from .mutation import mint_bespoke_effective_strategy
@@ -109,16 +110,19 @@ def pressure_challenger(engine, teacher: dict, rng, *, capability: str, phase: s
 def selection_population(teacher: dict, *, grade: str, capability: str,
                          curriculum_scope: str, scope: dict, channel: dict,
                          context_key: str, student_checkpoint_sha256: str | None,
-                         total_capabilities: int | None):
+                         total_capabilities: int | None,
+                         checkpoint_retirement_policy: str | None = None):
     active, inventory = active_effective_strategy_keys(
         teacher, grade, scope, total_capabilities=total_capabilities)
     active = filter_active_effective(
         teacher, grade=grade, capability=capability,
         curriculum_scope=curriculum_scope, active_effective=active,
         inventory=inventory)
+    checkpoint_kwargs = ({"checkpoint_retirement_policy": checkpoint_retirement_policy}
+                         if checkpoint_retirement_policy is not None else {})
     active, retired = checkpoint_active_effective_strategy_keys(
         teacher, grade, scope, channel, context_key, active, inventory,
-        student_checkpoint_sha256)
+        student_checkpoint_sha256, **checkpoint_kwargs)
     return active, inventory, retired
 
 
@@ -147,8 +151,12 @@ def selection_metadata(teacher: dict, *, channel: dict, inventory: dict,
     if total_capabilities is not None:
         from ..teacher_population_control import population_limits
         limits = population_limits(total_capabilities)
+        active_capacity = (
+            ACTIVE_EFFECTIVE_STRATEGY_LIMIT
+            if teacher.get("selection_contract") == BAMF_SUCCESSOR_SELECTION
+            else limits.active_effective)
         result.update(strategy_population_capacity=limits.max_effective,
-                      active_effective_strategy_capacity=limits.active_effective)
+                      active_effective_strategy_capacity=active_capacity)
     if selection_detail:
         result.update(selection_detail)
     return result

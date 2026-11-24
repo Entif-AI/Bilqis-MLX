@@ -41,6 +41,11 @@ class BamfOperatorNativeSessionBoundaryTests(unittest.TestCase):
         self.assertEqual(resource["evidence_objects"], 4)
         self.assertEqual(resource["evidence_persistence_seconds"], 0.005)
         self.assertEqual(event["candidate_evidence"], evidence)
+        self.assertEqual(event["teacher_selection_reason"], "PROVEN_RETAINED_CONTEXT")
+        self.assertEqual(event["teacher_selection_policy"], "fixture-selection/v1")
+        self.assertEqual(event["teacher_policy_evidence_before"]["retention_probability"], .25)
+        self.assertEqual(event["vnext_canary"]["status"], "NOT_SCHEDULED")
+        self.assertFalse(event["actual_authority_changed"])
 
     def test_execution_context_uses_accepted_release_without_requiring_c07_lease(self):
         parent = object()

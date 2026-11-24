@@ -6,6 +6,7 @@ from pathlib import Path
 import random
 
 from bilqis_mlx.learning.teacher_visit_identity import TeacherVisitIdentity, require_teacher_visit_receipt
+from bilqis_mlx.learning.teacher_strategy_population import LEGACY_CHECKPOINT_RETIREMENT_POLICY
 from bilqis_mlx.runtime.bamf_operator.evidence_parts.validation import read_candidate_horizon_evidence
 from bilqis_mlx.runtime.priority_rejection_replay import current_rejection_outcomes
 from bilqis_mlx.runtime.state import _fingerprint
@@ -76,6 +77,8 @@ def _recover_mutated_selected_teacher(run_dir, teacher, observation):
     channel, diagnostic_key = _recorded_diagnostic_context(
         selected, observation)
     context, visit = observation["context"], observation["teacher_visit"]
+    checkpoint_retirement_policy = context.get(
+        "checkpoint_retirement_policy", LEGACY_CHECKPOINT_RETIREMENT_POLICY)
     capability = visit["capability_id"]
     phase = context["phase"]
     scope_name = context["curriculum_scope"]
@@ -88,7 +91,8 @@ def _recover_mutated_selected_teacher(run_dir, teacher, observation):
         curriculum_scope=scope_name, scope=scope, channel=channel,
         context_key=context_key,
         student_checkpoint_sha256=visit["student_sha256"],
-        total_capabilities=total_capabilities)
+        total_capabilities=total_capabilities,
+        checkpoint_retirement_policy=checkpoint_retirement_policy)
     active_set = set(active)
     effective_scope = {
         key: record
@@ -125,7 +129,8 @@ def _recover_mutated_selected_teacher(run_dir, teacher, observation):
         inventory=inventory)
     population.checkpoint_active_effective_strategy_keys(
         selected, grade, scope, channel, context_key, active, inventory,
-        visit["student_sha256"])
+        visit["student_sha256"],
+        checkpoint_retirement_policy=checkpoint_retirement_policy)
 
     if (key != visit["policy_key"]
             or policy != observation["selected_policy"]
@@ -142,6 +147,8 @@ def _recover_checkpointed_selected_teacher(run_dir, teacher, observation):
 
     selected = deepcopy(teacher)
     context, visit = observation["context"], observation["teacher_visit"]
+    checkpoint_retirement_policy = context.get(
+        "checkpoint_retirement_policy", LEGACY_CHECKPOINT_RETIREMENT_POLICY)
     capability = visit["capability_id"]
     scope_name = context["curriculum_scope"]
     grade = context["grade"]
@@ -157,7 +164,8 @@ def _recover_checkpointed_selected_teacher(run_dir, teacher, observation):
         inventory=inventory)
     population.checkpoint_active_effective_strategy_keys(
         selected, grade, scope, channel, context_key, active, inventory,
-        visit["student_sha256"])
+        visit["student_sha256"],
+        checkpoint_retirement_policy=checkpoint_retirement_policy)
     if (_fingerprint(selected) == observation.get("selected_teacher_sha256")
             and selected.get("strategies", {}).get(visit["policy_key"])
             == observation.get("selected_policy")):

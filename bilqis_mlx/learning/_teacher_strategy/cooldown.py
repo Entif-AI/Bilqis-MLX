@@ -8,11 +8,14 @@ from .population import (
     CONTEXT_PART_COUNT,
     DURABLE_POLICY_COOLDOWN_CAPABILITY_VISITS,
     DURABLE_POLICY_FAILED_STUDENT_LIMIT,
+    LEGACY_CHECKPOINT_RETIREMENT_POLICY,
     MAX_FAILED_STUDENT_EPOCHS,
     SAME_STUDENT_POLICY_NO_TARGET_GAIN_LIMIT,
+    SAME_STUDENT_POLICY_TARGET_FAILURE_LIMIT,
     SAME_STUDENT_POLICY_UNRETAINED_LIMIT,
     SIBLING_COOLDOWN_PENALTY,
     STUDENT_SHA256_HEX_LENGTH,
+    TARGET_FAILURE_CHECKPOINT_RETIREMENT_POLICY,
     effective_context_scope,
     historical_policy_mean,
 )
@@ -128,28 +131,39 @@ def _record_durable_capability_outcome(
             attempts + DURABLE_POLICY_COOLDOWN_CAPABILITY_VISITS)
 
 
-def _checkpoint_policy_no_gain_streaks(channel: dict, context_key: str,
-                                       student_checkpoint_sha256: str | None) -> dict:
+def _checkpoint_policy_failure_streaks(
+        channel: dict, context_key: str, student_checkpoint_sha256: str | None,
+        checkpoint_retirement_policy: str) -> tuple[dict, int]:
+    if checkpoint_retirement_policy == LEGACY_CHECKPOINT_RETIREMENT_POLICY:
+        context_field = "contexts"
+        limit = SAME_STUDENT_POLICY_NO_TARGET_GAIN_LIMIT
+    elif checkpoint_retirement_policy == TARGET_FAILURE_CHECKPOINT_RETIREMENT_POLICY:
+        context_field = "target_failure_contexts"
+        limit = SAME_STUDENT_POLICY_TARGET_FAILURE_LIMIT
+    else:
+        raise ValueError(LearningExperimentError.STUDENT_POLICY_FAILURE_INVALID.value)
     checkpoint = _validated_student_checkpoint(student_checkpoint_sha256)
     if checkpoint is None:
-        return {}
+        return {}, limit
     epoch = channel.get("student_policy_epoch")
     if not isinstance(epoch, dict) or epoch.get("student_sha256") != checkpoint:
-        return {}
-    if not isinstance(epoch.get("contexts"), dict):
+        return {}, limit
+    contexts = epoch.get(context_field, {})
+    if not isinstance(contexts, dict):
         raise ValueError(LearningExperimentError.STUDENT_POLICY_EPOCH_INVALID.value)
-    failures = epoch["contexts"].get(context_key, {})
+    failures = contexts.get(context_key, {})
     if (not isinstance(failures, dict) or any(
             not isinstance(key, str) or type(value) is not int or value < 0
             for key, value in failures.items())):
         raise ValueError(LearningExperimentError.STUDENT_POLICY_FAILURE_INVALID.value)
-    return failures
+    return failures, limit
 
 
 def record_checkpoint_policy_outcome(
         channel: dict, context_key: str, effective_policy_key: str,
         student_checkpoint_sha256: str | None, *, no_target_gain: bool,
-        retained: bool) -> None:
+        target_failure: bool, target_positive: bool, retained: bool,
+        checkpoint_retirement_policy: str = TARGET_FAILURE_CHECKPOINT_RETIREMENT_POLICY) -> None:
     checkpoint = _validated_student_checkpoint(student_checkpoint_sha256)
     if checkpoint is None:
         return
@@ -164,11 +178,23 @@ def record_checkpoint_policy_outcome(
     if (not isinstance(epoch.get("contexts"), dict) or
             not isinstance(epoch.setdefault("unretained_contexts", {}), dict)):
         raise ValueError(LearningExperimentError.STUDENT_POLICY_EPOCH_INVALID.value)
-    streaks = epoch["contexts"].setdefault(context_key, {})
-    if no_target_gain:
-        streaks[effective_policy_key] = streaks.get(effective_policy_key, 0) + 1
+    if checkpoint_retirement_policy == LEGACY_CHECKPOINT_RETIREMENT_POLICY:
+        streaks = epoch["contexts"].setdefault(context_key, {})
+        if no_target_gain:
+            streaks[effective_policy_key] = streaks.get(effective_policy_key, 0) + 1
+        else:
+            streaks.pop(effective_policy_key, None)
+    elif checkpoint_retirement_policy == TARGET_FAILURE_CHECKPOINT_RETIREMENT_POLICY:
+        target_contexts = epoch.setdefault("target_failure_contexts", {})
+        if not isinstance(target_contexts, dict):
+            raise ValueError(LearningExperimentError.STUDENT_POLICY_EPOCH_INVALID.value)
+        streaks = target_contexts.setdefault(context_key, {})
+        if target_failure:
+            streaks[effective_policy_key] = streaks.get(effective_policy_key, 0) + 1
+        elif target_positive:
+            streaks.pop(effective_policy_key, None)
     else:
-        streaks.pop(effective_policy_key, None)
+        raise ValueError(LearningExperimentError.STUDENT_POLICY_FAILURE_INVALID.value)
 
     unretained = epoch["unretained_contexts"].setdefault(context_key, {})
     if retained:
@@ -185,9 +211,11 @@ def checkpoint_active_effective_strategy_keys(
         teacher: dict, grade: str, scope: dict, channel: dict,
         context_key: str, active_effective: tuple[str, ...],
         inventory: dict[str, list[str]],
-        student_checkpoint_sha256: str | None) -> tuple[tuple[str, ...], set[str]]:
-    checkpoint_failures = _checkpoint_policy_no_gain_streaks(
-        channel, context_key, student_checkpoint_sha256)
+        student_checkpoint_sha256: str | None, *,
+        checkpoint_retirement_policy: str = TARGET_FAILURE_CHECKPOINT_RETIREMENT_POLICY
+        ) -> tuple[tuple[str, ...], set[str]]:
+    checkpoint_failures, checkpoint_failure_limit = _checkpoint_policy_failure_streaks(
+        channel, context_key, student_checkpoint_sha256, checkpoint_retirement_policy)
     checkpoint = _validated_student_checkpoint(student_checkpoint_sha256)
     unretained_failures = {}
     if checkpoint is not None:
@@ -206,7 +234,7 @@ def checkpoint_active_effective_strategy_keys(
         channel, capability, curriculum_scope)
     retired = durable_retired | {
         key for key in set(checkpoint_failures) | set(unretained_failures)
-        if (checkpoint_failures.get(key, 0) >= SAME_STUDENT_POLICY_NO_TARGET_GAIN_LIMIT or
+        if (checkpoint_failures.get(key, 0) >= checkpoint_failure_limit or
             unretained_failures.get(key, 0) >= SAME_STUDENT_POLICY_UNRETAINED_LIMIT)
     }
     if not retired:

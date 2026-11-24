@@ -27,37 +27,36 @@ def _evidence_receipt(bytes_written, evidence_objects, seconds):
     }
 
 
-def _prepare_native_resource_visit(temporary):
-    parent = SimpleNamespace(
-        retained_state=SimpleNamespace(optimizer_step=11),
-        optimizer_hyperparameters="hparams")
-    context = SimpleNamespace(release=object())
+def _resource_selection():
     identity = SimpleNamespace(visit_id="visit:resource", policy_key="policy:resource")
-    selection = SimpleNamespace(
+    return SimpleNamespace(
         status="TEACHER_SELECTED", option_id="option:resource",
+        metadata={
+            "selection_reason": "PROVEN_RETAINED_CONTEXT",
+            "selection_policy": "fixture-selection/v1",
+            "teacher_policy_evidence_before": {
+                "schema": "bilqis.bamf.teacher-policy-evidence/v1",
+                "evidence_level": "EXACT_CONTEXT",
+                "effective_policy_key": "effective:resource",
+                "trials": 12, "retained": 3,
+                "retention_probability": .25,
+            },
+            "vnext_canary": {"status": "NOT_SCHEDULED"},
+            "actual_authority_changed": False,
+        },
         visit=SimpleNamespace(
             identity=identity,
             projection=SimpleNamespace(teacher_state=None)),
         offer=SimpleNamespace(
             capability_id="capability:resource", source_seed=17,
             rows=lambda: ({"id": "row:resource"},)))
-    cache = SimpleNamespace(generation=1, accepted_manifest_sha256="a" * 64)
-    transaction = SimpleNamespace(
-        parent=SimpleNamespace(optimizer_step=11), update_steps=1,
-        training_authorities=("authority",))
-    step = SimpleNamespace(
-        transaction=transaction,
-        realized_cost={
-            "wall_seconds": 30.0, "optimizer_steps": 1,
-            "c08_memory_budget_bytes": 64 * 1024 ** 3})
-    decision = SimpleNamespace(
-        accepted=True, to_record=lambda: {"decision": "ACCEPTED"})
-    retained = SimpleNamespace(optimizer_step=12)
-    successor = object()
-    evidence = _evidence_receipt(300, 4, 0.005)
-    capture = SimpleNamespace(finalize=lambda **_kwargs: evidence)
-    patches = (
-        ("_execution_context", {"return_value": (parent, context, "atlas", "feature")}),
+
+
+def _resource_visit_patches(parent, selection, cache, capture, step, retained,
+                            decision, successor):
+    return (
+        ("_execution_context", {"return_value": (parent, SimpleNamespace(
+            release=object()), "atlas", "feature")}),
         ("schedule_program_from_executable_release", {"return_value": "program"}),
         ("accepted_priority_school", {"return_value": "school"}),
         ("select_foundation_priority_visit", {"return_value": selection}),
@@ -74,6 +73,30 @@ def _prepare_native_resource_visit(temporary):
         ("derive_accepted_teacher_successor", {"return_value": successor}),
         ("bind_factory_baseline_successor", {"return_value": successor}),
     )
+
+
+def _prepare_native_resource_visit(temporary):
+    parent = SimpleNamespace(
+        retained_state=SimpleNamespace(optimizer_step=11),
+        optimizer_hyperparameters="hparams")
+    selection = _resource_selection()
+    cache = SimpleNamespace(generation=1, accepted_manifest_sha256="a" * 64)
+    transaction = SimpleNamespace(
+        parent=SimpleNamespace(optimizer_step=11), update_steps=1,
+        training_authorities=("authority",))
+    step = SimpleNamespace(
+        transaction=transaction,
+        realized_cost={
+            "wall_seconds": 30.0, "optimizer_steps": 1,
+            "c08_memory_budget_bytes": 64 * 1024 ** 3})
+    decision = SimpleNamespace(
+        accepted=True, to_record=lambda: {"decision": "ACCEPTED"})
+    retained = SimpleNamespace(optimizer_step=12)
+    successor = object()
+    evidence = _evidence_receipt(300, 4, 0.005)
+    capture = SimpleNamespace(finalize=lambda **_kwargs: evidence)
+    patches = _resource_visit_patches(
+        parent, selection, cache, capture, step, retained, decision, successor)
     session_names = {
         "_execution_context", "schedule_program_from_executable_release",
         "accepted_priority_school", "select_foundation_priority_visit",

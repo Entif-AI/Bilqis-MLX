@@ -178,8 +178,14 @@ def teacher_row(visit, history=None):
     policy_key = policy(visit)
     projected = (
         teacher_fields({
+            "grade": grade(visit),
             "capability": capability,
             "teacher_policy": policy_key,
+            "teacher_selection_reason": visit.get("teacher_selection_reason"),
+            "teacher_selection_policy": visit.get("teacher_selection_policy"),
+            "teacher_policy_evidence_before": visit.get("teacher_policy_evidence_before"),
+            "vnext_canary": visit.get("vnext_canary"),
+            "actual_authority_changed": visit.get("actual_authority_changed"),
             "candidate_retention": {
                 "phase": retention_phase,
                 "decision": retention_decision,

@@ -8,6 +8,24 @@ import bilqis_mlx.learning.teacher_vnext_replay as _teacher_vnext
 import bilqis_mlx.runtime.timing_trace as _timing_trace
 
 
+def _policy_evidence_before(teacher, scope, policy):
+    effective_key = _strategy_population.effective_policy_key(policy)
+    evidence = _strategy_population.effective_context_scope(teacher, scope).get(
+        effective_key, {})
+    trials = int(evidence.get("trials", 0))
+    retained = int(evidence.get("retained", 0))
+    record = {
+        "schema": "bilqis.bamf.teacher-policy-evidence/v1",
+        "evidence_level": "EXACT_CONTEXT",
+        "effective_policy_key": effective_key,
+        "trials": trials,
+        "retained": retained,
+    }
+    if trials >= _teacher_vnext.MINIMUM_EVIDENCE_OBSERVATIONS:
+        record["retention_probability"] = retained / trials
+    return record
+
+
 def select_visit_policy(engine, teacher, cap, school, rng, learning_settings,
                         teacher_curriculum_scope, previsit_diagnostics,
                         lesson_grade, total_capabilities=None,
@@ -88,4 +106,6 @@ def select_visit_policy(engine, teacher, cap, school, rng, learning_settings,
                 "selection_reason": "VNEXT_CANARY",
                 "selection_policy": _teacher_vnext.SELECTION_POLICY,
             })
+        metadata["teacher_policy_evidence_before"] = _policy_evidence_before(
+            teacher, scope, policy)
         return key, policy, metadata

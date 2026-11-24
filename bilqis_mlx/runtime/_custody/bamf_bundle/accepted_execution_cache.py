@@ -186,6 +186,9 @@ class _ExecutionCacheRuntime:
             return None
         with _pointer_read_lock(run_dir):
             pointer = _read_pointer(run_dir / "bamf-state.json")
+            if (pointer is None
+                    or pointer.get("manifest_sha256") != retained.manifest_sha256):
+                return None
             hydration = require_current_hydration(run_dir, pointer, retained)
             return pointer, hydration.student
 

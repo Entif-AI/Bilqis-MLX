@@ -142,7 +142,7 @@ class BamfTerminalProjectionTests(unittest.TestCase):
             self.assertEqual(accepted_teacher["contrast"], "0")
             self.assertEqual(accepted_teacher["old"], "6")
             self.assertEqual(accepted_teacher["distill"], "0.350")
-            self.assertEqual(accepted_teacher["p_ret"], "50.0%")
+            self.assertEqual(accepted_teacher["p_ret"], "N/M")
             self.assertEqual(accepted_teacher["health"], "UNCERTAIN")
             self.assertEqual(accepted_retention["protected"], "0")
             self.assertTrue(accepted_retention["evidence"].startswith("1/1 | "))

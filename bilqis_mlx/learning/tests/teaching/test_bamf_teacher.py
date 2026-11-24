@@ -45,6 +45,29 @@ class BamfTeacherTest(unittest.TestCase):
         self.assertLessEqual(len(active), 16)
         self.assertEqual(epoch.schema, 'bilqis.bamf.teacher-epoch/v1')
 
+    def test_bamf_selection_metadata_reports_actual_fixed_active_capacity(self):
+        from bilqis_mlx.learning.teacher_breeding import selection_metadata
+        from bilqis_mlx.learning.teacher_strategy_population import effective_strategy_inventory
+
+        teacher, _, _ = _teacher()
+        teacher = bind_teacher_successor(
+            teacher,
+            {'schema': 'bilqis.bamf.student-reference/v1',
+             'student_sha256': 'b' * 64, 'region': 'new'},
+            {'schema': 'bilqis.bamf.teacher-binding/v1',
+             'source_head': 'd21797e72365bf93ea7cad3a4ef9020ec9817f23',
+             'prior_region': 'old'}).teacher()
+        inventory = effective_strategy_inventory(teacher)
+        metadata = selection_metadata(
+            teacher, channel=teacher['causal_experiment'], inventory=inventory,
+            active_effective=tuple(inventory)[:3], checkpoint_retired=set(),
+            total_capabilities=21, diagnostic_context_consumed=False,
+            diagnostic_context_key=None, selection_reason='FIXTURE',
+            selection_policy='fixture/v1')
+
+        self.assertEqual(metadata['active_effective_strategy_capacity'], 16)
+        self.assertEqual(metadata['strategy_population_capacity'], 504)
+
     def test_malformed_teacher_records_are_typed_failures(self):
         for mutation in ({'causal_experiment': None}, {'causal_experiment': {'student_policy_epoch': None}},
                          {'strategies': {'bad': None}}):
@@ -204,7 +227,9 @@ class BamfGradeNeutralSelectionTest(unittest.TestCase):
             for _ in range(4):
                 channel['capability_stagnation']['C.ADD|factory/7']['total_rejections'] += 1
                 record_checkpoint_policy_outcome(channel, 'C.ADD|RECOVERY_1|factory/7', key, sha,
-                                                 no_target_gain=True, retained=False)
+                                                 no_target_gain=True, target_failure=True,
+                                                 target_positive=False,
+                                                 retained=False)
         self.assertTrue(durable_policy_cooldown_status(channel, 'C.ADD', 'factory/7', key)['active'])
         for capability in ('A.SUB', 'B.SUB', 'C.SUB', 'Z.SUB'):
             self.assertEqual(sibling_cooldown_penalty(channel, capability, 'factory/7', key), 0.)

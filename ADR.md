@@ -4016,3 +4016,67 @@ artifact to do so.
 retain/reject, update future teacher policy, and carry structural-weakness debt while
 full candidate-evidence construction/persistence is absent. Strict mode must continue
 to exercise and validate the complete evidence path.
+
+## ADR-156 | 2026-11-24 | Repeated target failure suppresses one policy within the current checkpoint
+
+**Status:** Accepted by direct owner ratification on 2026-11-24 after the issue #1566
+retention-efficiency audit.
+
+**Problem:** The current checkpoint-local teacher retirement rule waits for four
+unretained attempts before excluding one effective policy. Live retained-parent
+history showed that this permits a policy which has already failed the target twice
+to consume another full candidate neighborhood.
+
+This is deliberately narrower than the 2026-10-25 two-arbitrary-rejection rule that
+ADR-109 superseded. The October control showed that a policy which **moves the target**
+but fails interference can later retain, so arbitrary rejection is not enough evidence
+for early retirement. The present amendment counts only target inertia/regression:
+`NO_MEASURABLE_TARGET_GAIN` and `TARGET_BASELINE_REGRESSION`.
+
+Before accepting this amendment, the current C05 baseline path was re-audited against
+ADR-099. `TARGET_BASELINE_REGRESSION` compares a fresh candidate assessment directly
+against the exact current accepted parent on the same fresh target cohort; the
+`BaselineLedger` carries only comparable-baseline authority and contains no
+historical/high-water scores. A read-only replay over the current aspirant history
+found 20 checkpoint/context/effective-policy neighborhoods reaching two target
+failures. Suppressing those policies at that point would have removed 26 later trials
+and 174 attempted optimizer updates with **zero observed later retained winners** in
+the blocked class.
+
+**Decision:** For the exact same accepted student checkpoint, teacher context and
+effective policy, two target failures retire that effective policy for the remainder
+of the current checkpoint. The counted target failures are exactly
+`NO_MEASURABLE_TARGET_GAIN` and `TARGET_BASELINE_REGRESSION`. A target-positive
+outcome clears that checkpoint-local target-failure streak for the policy. A changed
+accepted student checkpoint starts a fresh checkpoint-local epoch.
+
+This amendment does not treat `PROTECTED_CAPABILITY_REGRESSION` or any other
+target-positive preservation/interference failure as target-failure evidence, does
+not weaken the protected-capability or measurable-target-gain retention laws, does
+not shorten the configured candidate horizon, and does not activate the unqualified
+multifidelity early-stop policy. The existing generic four-unretained checkpoint
+retirement and ADR-102 durable two-checkpoint cooldown remain independently
+authoritative.
+
+The retirement identity is the existing effective-policy identity, not a nominal
+policy ID, so behaviorally equivalent policy aliases cannot evade the rule. This is
+checkpoint-local search suppression, not a permanent blacklist: historical evidence
+is preserved, later checkpoints may reconsider the policy, and a retained/target-
+positive result clears applicable local debt.
+
+**Activation and replay compatibility:** This amendment is prospective. Durable HOW
+outcomes issued before ADR-156 did not carry the target-failure-v2 policy marker and
+MUST replay under the checkpoint rule in force when they were issued: the legacy
+four-consecutive-`NO_MEASURABLE_TARGET_GAIN` lane. Newly issued visits carry an
+explicit `bilqis.bamf.checkpoint-retirement/target-failure-v2` marker and alone may
+accrue the two-target-failure debt above. Implementations MUST NOT reinterpret old
+signed rejection history under ADR-156 merely because the current runtime knows the
+new rule. The generic four-unretained lane remains shared across both policy versions.
+
+**Acceptance:** Focused tests must prove one target failure does not suppress, two
+target failures do suppress, protected-capability regression does not increment the
+target-failure streak, target-positive outcome clears the streak, a new accepted
+checkpoint resets the local epoch, and the existing four-unretained and durable
+cooldown rules still operate unchanged. Cold replay must also prove that historical
+pre-ADR-156 rejection outcomes retain their original teacher hashes and do not seed
+the new target-failure-v2 debt.
