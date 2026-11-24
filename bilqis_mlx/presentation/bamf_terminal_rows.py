@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from bilqis_mlx.presentation.school50.formatting import _display, _scaled_lr, _whole
 from bilqis_mlx.presentation.teacher_vnext import teacher_fields
+from .bamf_terminal_scores import complete_local_pair, paired_scores, protected_deltas
 
 
 MARKER = "_bamf_terminal_observed"
@@ -151,12 +152,13 @@ def retention_row(visit):
         f"{completed}/{total}" if type(completed) is int and type(total) is int
         else "-")
     protected_capabilities = visit.get("protected_capabilities")
-    protected = (
+    protected_count = (
         str(len(protected_capabilities))
         if isinstance(protected_capabilities, (list, tuple)) else
         str(visit.get("retention_protected_count"))
         if type(visit.get("retention_protected_count")) is int else
         str(evidence.get("protected_scope_state") or "-")[:3].upper())
+    deltas = protected_deltas(visit)
     return {
         MARKER: True, "grade": grade(visit),
         "capability": visit.get("capability_id") or "-",
@@ -164,9 +166,11 @@ def retention_row(visit):
         "target_delta": (
             f"{delta:+d}" if type(delta) is int else
             PENDING if visit.get("retention_decision") is None else NOT_MEASURED),
-        "protected": protected,
-        "worst": NOT_MEASURED, "decision": decision, "result": decision,
-        "evidence": f"{progress} | {reason(visit)}",
+        "protected": f"{deltas[0]:+d}" if deltas is not None and deltas[0] else
+        "0" if deltas is not None else NOT_MEASURED,
+        "worst": str(deltas[1]) if deltas is not None else NOT_MEASURED,
+        "decision": decision, "result": decision,
+        "evidence": f"{progress} | protected n={protected_count} | {reason(visit)}",
     }
 
 
@@ -217,16 +221,22 @@ def teacher_row(visit, history=None):
 
 
 def mastery_rows(visits):
-    latest = {}
+    latest, grades = {}, {}
+    accepted = None
     for visit in visits:
+        if visit.get("outcome") != "ACCEPTED":
+            continue
+        accepted = visit
         capability = visit.get("capability_id")
-        measured = score(visit)
-        if isinstance(capability, str) and capability and measured is not None:
-            latest[capability] = (visit, measured)
-    grades, families = {}, []
-    for capability, (visit, measured) in latest.items():
-        owner = grade(visit)
-        grades[owner] = visit
+        scores = paired_scores(visit)
+        if not scores and isinstance(capability, str) and (measured := score(visit)):
+            scores = {capability: measured}
+        for subject, measured in scores.items():
+            owner = grade(visit) if subject == capability else subject.partition(".")[0]
+            latest[subject] = (visit, owner, measured)
+            grades[owner] = visit
+    families = []
+    for capability, (visit, owner, measured) in latest.items():
         families.append({
             MARKER: True, "grade": owner, "family": capability,
             "start": f"{measured[0]}/{measured[2]}",
@@ -235,15 +245,26 @@ def mastery_rows(visits):
             "gain": f"{measured[1] - measured[0]:+d}",
             "attempt": visit.get("visit_index", "-"),
             "step": visit.get("candidate_optimizer_step", "-"),
+            "outcome": ("STALE PAIR" if visit is not accepted else
+                        "RETAINED PAIR" if visit.get("_durable_terminal_history") else
+                        "OBSERVED PAIR"),
         })
-    summaries = [{
-        MARKER: True, "grade": owner, "visit": visit.get("visit_index", "-"),
-        "step": visit.get("candidate_optimizer_step", "-"),
-        "attempt": visit.get("visit_index", "-"),
-        "start": NOT_MEASURED, "latest": NOT_MEASURED,
-        "best": NOT_MEASURED, "to100": NOT_MEASURED,
-        "right_pct": NOT_MEASURED, "outcome": "OBSERVED BAMF",
-    } for owner, visit in grades.items()]
+    summaries = []
+    for owner, visit in grades.items():
+        scores = {cap: measured for cap, (source, group, measured) in latest.items()
+                  if source is visit and group == owner}
+        complete = complete_local_pair(visit, owner, scores) if visit is accepted else None
+        summaries.append({
+            MARKER: True, "grade": owner, "visit": visit.get("visit_index", "-"),
+            "step": visit.get("candidate_optimizer_step", "-"),
+            "attempt": visit.get("visit_index", "-"),
+            "start": f"{complete[0]}/{complete[2]}" if complete else NOT_MEASURED,
+            "latest": f"{complete[1]}/{complete[2]}" if complete else NOT_MEASURED,
+            "best": NOT_MEASURED, "to100": NOT_MEASURED,
+            "right_pct": NOT_MEASURED,
+            "outcome": ("RETAINED PAIR" if complete and visit.get("_durable_terminal_history")
+                        else "OBSERVED PAIR" if complete else "PARTIAL PAIR"),
+        })
     return summaries, families
 
 

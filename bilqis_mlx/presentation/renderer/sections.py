@@ -93,7 +93,8 @@ class SectionsView:
                 'right_pct':f'{100*parsed[0]/parsed[1]:.1f}%' if parsed is not None else '-',
                 'to100':str(parsed[1]-parsed[0]) if parsed is not None else '-',
                 'outcome':(f'CHAMP @{title.get("title_step","-")} | '
-                           f'br{title.get("breadth","-")}' if title is not None else '-'),
+                           f'br{title.get("breadth","-")}' if title is not None
+                           else observed.get('outcome','-')),
             })
         return families
 

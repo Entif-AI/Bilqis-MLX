@@ -94,6 +94,7 @@ def _durable_visit(event: dict, run_id: str):
         "selected_option_id": event.get("selected_option_id") or envelope.get("selected_option_id"),
         "decision": "ACCEPTED" if accepted else "REJECT",
         "reason": decision.get("reason") or envelope.get("retention_reason") or "-",
+        "baseline_coverage": decision.get("baseline_coverage"),
     }
     target = _measured_target(how, capability)
     if target is not None:
@@ -123,6 +124,7 @@ def _durable_visit(event: dict, run_id: str):
         "vnext_canary": envelope.get("vnext_canary"),
         "actual_authority_changed": envelope.get("actual_authority_changed"),
         "protected_capabilities": protected_capabilities,
+        "paired_scores": how.get("scores"),
         "visit_evidence": evidence,
         "candidate_steps": [],
         "_durable_terminal_history": True,
