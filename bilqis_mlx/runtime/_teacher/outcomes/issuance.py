@@ -191,6 +191,10 @@ def build_outcome(
         'decision': decision.to_record(), 'scores': [list(row) for row in scores],
         'protected_capabilities': list(protected),
     })
+    reference_scores = evaluation.decision.fixed_reference_scores
+    if reference_scores:
+        observation['fixed_reference_scores'] = [list(row) for row in reference_scores]
+        observation['fixed_reference_cohort_sha256'] = evaluation.decision.fixed_reference_cohort_sha256
     observation['outcome_sha256'] = _fingerprint(observation)
     _register_outcome(observation)
     return observation
