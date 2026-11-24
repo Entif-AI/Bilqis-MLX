@@ -67,12 +67,12 @@ def _stagnation_feedback(teacher: dict, capability: str, policy_key: str,
 
 def _retention_reward(channel, *, capability, phase, curriculum_scope,
                       policy_key, decision, local_gain):
-    relative_loss = max(
-        (max(0., -value)
-         for key, value in decision["deltas"].items()
-         if key in decision["protected_capabilities"]),
-        default=0.,
-    )
+    safety_deltas = decision.get("fixed_reference_deltas")
+    if safety_deltas is None:
+        safety_deltas = {
+            key: value for key, value in decision["deltas"].items()
+            if key in decision["protected_capabilities"]}
+    relative_loss = max((max(0., -value) for value in safety_deltas.values()), default=0.)
     reward = local_gain - relative_loss * (1 if phase == "MAIN" else 2)
     if decision["decision"] == "REJECT":
         reward = min(reward, -relative_loss, -0.05)
@@ -88,6 +88,9 @@ def _retention_reward(channel, *, capability, phase, curriculum_scope,
                         if decision["decision"] == "REJECT"
                         else "ACCEPTED_WITH_MEASURED_PROTECTED_LOSS"),
         }
+        if "fixed_reference_deltas" in decision:
+            pattern["fixed_reference_deltas"] = safety_deltas
+            pattern["fixed_reference_cohort_sha256"] = decision["fixed_reference_cohort_sha256"]
         entries = channel["negative_archetypes"]
         if not any(
                 item["paired_scores_sha256"] == pattern["paired_scores_sha256"] and

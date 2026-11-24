@@ -85,7 +85,7 @@ def _structural_weakness_evidence(evidence):
 
 
 class NativeRejectionOutcomeTests(NativeSourceFixture, unittest.TestCase):
-    def fixture(self, *, accepted=False, learning_first=False):
+    def fixture(self, *, accepted=False, learning_first=False, fixed_reference=False):
         parent = self.parent()
         original_teacher = selection_teacher()
         with patch('bilqis_mlx.control_plane.tests.cp07.native_source_support.selection_teacher', return_value=original_teacher):
@@ -112,6 +112,18 @@ class NativeRejectionOutcomeTests(NativeSourceFixture, unittest.TestCase):
         fixture[-1] = replace(fixture[-1], status=DecisionStatus.ELIGIBLE if accepted else DecisionStatus.REJECT,
                               reason='PAIRED_SCREEN_WITHIN_BUDGET' if accepted else 'NO_MEASURABLE_TARGET_GAIN',
                               outcome_scores=((cap, 1, 2 if accepted else 1, 4),))
+        if fixed_reference:
+            from bilqis_mlx.runtime.baseline.currentness import BaselineCoverage
+            fixture[-1] = replace(
+                fixture[-1], reason="PROTECTED_CAPABILITY_REGRESSION",
+                blocking_capability=cap,
+                baseline_coverage=BaselineCoverage(
+                    (cap,), (), (("A", 1, 1),), 1, 1, "a" * 64),
+                evaluated_capability_ids=(cap,),
+                outcome_scores=((cap, 1, 3, 6),),
+                fixed_reference_scores=((cap, 5, 2, 6),),
+                fixed_reference_cohort_sha256="c" * 64)
+
         def fixture_mock(*args, **kwargs):
             if kwargs.get('return_value') == 'd' * 64:
                 kwargs['return_value'] = identity.student_sha256
@@ -167,6 +179,28 @@ class NativeRejectionOutcomeTests(NativeSourceFixture, unittest.TestCase):
         record_bamf_rejection(self.run, parent, evidence)
         hot = replay.replay_rejected_outcomes(self.run, parent, cache, teacher)
         self.assertEqual(hot['causal_experiment']['events'], 1)
+        import bilqis_mlx.runtime.priority_rejection_replay as projection
+        projection._projection.cache_clear()
+        cold = importlib.reload(replay).replay_rejected_outcomes(
+            self.run, parent, cache, teacher)
+        self.assertEqual(hot, cold)
+
+    def test_fixed_reference_safety_credit_survives_native_cold_replay(self):
+        from bilqis_mlx.runtime.outcomes import replay
+
+        parent, teacher, cache, evidence = self.fixture(
+            learning_first=True, fixed_reference=True)
+        outcome = evidence["how_outcome"]
+        self.assertEqual(outcome["schema"], "bilqis.bamf.teacher-outcome/v3")
+        self.assertEqual(outcome["scores"][0][1:], [1, 3, 6])
+        self.assertEqual(outcome["fixed_reference_scores"][0][1:], [5, 2, 6])
+        record_bamf_rejection(self.run, parent, evidence)
+        hot = replay.replay_rejected_outcomes(self.run, parent, cache, teacher)
+        context = next(iter(hot["causal_experiment"]["contexts"].values()))
+        credit = next(iter(context.values()))
+        self.assertAlmostEqual(credit["target_delta_sum"], 1/3)
+        self.assertAlmostEqual(credit["worst_protected_loss_sum"], .5)
+        self.assertEqual(replay.replay_rejected_outcomes(self.run, parent, cache, hot), hot)
         import bilqis_mlx.runtime.priority_rejection_replay as projection
         projection._projection.cache_clear()
         cold = importlib.reload(replay).replay_rejected_outcomes(

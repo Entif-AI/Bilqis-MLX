@@ -12,6 +12,7 @@ from bilqis_mlx.runtime.state import _fingerprint
 
 LEGACY_SCHEMA = 'bilqis.bamf.teacher-outcome/v1'
 SCHEMA = 'bilqis.bamf.teacher-outcome/v2'
+FIXED_REFERENCE_SCHEMA = 'bilqis.bamf.teacher-outcome/v3'
 SCORE_FIELDS = ('capability', 'before', 'after', 'total')
 
 
@@ -68,6 +69,37 @@ def _deltas(observation):
             invalid()
         deltas[cap] = (after - before) / total
     return deltas
+
+
+def _fixed_reference_credit(observation, cap, protected, deltas):
+    """Bind prospective safety credit to the exact measured C05 reference."""
+    from bilqis_mlx.learning.teacher_lineage_records import SHA256_HEX_LENGTH, valid_hex
+    from bilqis_mlx.runtime.baseline.currentness import BaselineCoverage
+
+    decision = observation['decision']
+    cohort = observation.get('fixed_reference_cohort_sha256')
+    if (not valid_hex(cohort, SHA256_HEX_LENGTH)
+            or not valid_hex(decision.get('retention_protection_plan_sha256'), SHA256_HEX_LENGTH)):
+        invalid()
+    coverage = BaselineCoverage.from_record(decision['baseline_coverage'])
+    rows = observation['fixed_reference_scores']
+    reference = _deltas({'scores': rows})
+    measured = set(coverage.measured_capabilities)
+    fresh_rows = {row[0]: tuple(row[1:]) for row in observation['scores']}
+    if (reference.keys() != deltas.keys()
+            or set(reference) != measured | set(coverage.unmeasured_capabilities)
+            or set(protected) != measured - {cap}
+            or any(tuple(row[1:]) != fresh_rows[row[0]]
+                   for row in rows if row[0] != cap)):
+        invalid()
+    return {
+        'fixed_reference_deltas': {name: delta for name, delta in reference.items()
+                                   if name in measured},
+        'fixed_reference_cohort_sha256': cohort,
+        'worst_protected_loss': max(
+            (max(0, before - after) for name, before, after, _ in rows
+             if name in measured), default=0),
+    }
 
 
 def _selected_teacher(teacher, observation, selected_teacher_override,
@@ -130,7 +162,7 @@ def _credit_weakness_delivery(selected, observation):
 def _apply_outcome(teacher, observation, *, selected_teacher_override=None,
                    recover_selected_teacher=None):
     """Credit a selection, reusing only a privately owned replay tree."""
-    if (not isinstance(observation, dict) or observation.get('schema') not in (LEGACY_SCHEMA, SCHEMA)
+    if (not isinstance(observation, dict) or observation.get('schema') not in (LEGACY_SCHEMA, SCHEMA, FIXED_REFERENCE_SCHEMA)
             or observation.get('outcome_sha256') != outcome_digest(observation)):
         invalid()
     visit, context = observation['teacher_visit'], observation['context']
@@ -175,6 +207,10 @@ def _apply_outcome(teacher, observation, *, selected_teacher_override=None,
         causal['worst_protected_loss'] = max(
             (max(0, before - after) for name, before, after, _ in observation['scores']
              if name in protected), default=0)
+    elif observation['schema'] == FIXED_REFERENCE_SCHEMA:
+        causal.update(_fixed_reference_credit(observation, cap, protected, deltas))
+    protection_deltas = causal.get(
+        'fixed_reference_deltas', {name: deltas[name] for name in protected})
     feedback = learning_experiment.observe_context(
         selected, capability=cap, phase=context['phase'], policy_key=key,
         decision=causal, local_gain=deltas[cap],
@@ -191,8 +227,8 @@ def _apply_outcome(teacher, observation, *, selected_teacher_override=None,
         cap + '|' + context['phase'] + '|' + context['curriculum_scope']][key]
     for name, value in (
             ('target_delta_sum', deltas[cap]),
-            ('protected_net_delta_sum', sum(deltas[name] for name in protected)),
-            ('worst_protected_loss_sum', max((max(0., -deltas[name]) for name in protected), default=0.)),
+            ('protected_net_delta_sum', sum(protection_deltas.values())),
+            ('worst_protected_loss_sum', max((max(0., -delta) for delta in protection_deltas.values()), default=0.)),
             ('attempted_steps_sum', observation['attempted_steps'])):
         record[name] = record.get(name, 0) + value
     _credit_weakness_delivery(selected, observation)

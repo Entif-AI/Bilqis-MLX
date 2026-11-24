@@ -1,13 +1,16 @@
 """Authority-bounded R14 rehearsal planning for native BAMF lessons."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 import hashlib
 from pathlib import Path
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.runtime.structural_weakness_ledger import _ledger_key
-from .weakness_rehearsal import targeted_groups
+from .weakness_rehearsal import _draw_size, targeted_groups
+from bilqis_mlx.source_adapters.lesson_geometry import (
+    LessonGeometry, complete_groups, distinct_groups, geometry_for_adapter,
+)
 from bilqis_mlx.runtime.factory_retention_owner import require_current_retention_plan
 from bilqis_mlx.runtime.priority_rejection_replay import current_structural_weaknesses
 from bilqis_mlx.semantic_sampling import DEFAULT_BINARY_BALANCE
@@ -34,6 +37,7 @@ class RehearsalPlan:
     identity: str
     weakness_exposures: tuple[tuple[str, int], ...] = ()
     weakness_capacity: int = 0
+    support_geometries: tuple[tuple[str, LessonGeometry | None], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -68,6 +72,13 @@ def _seed(plan: RehearsalPlan, role: str, capability: str, ordinal: int) -> int:
     return int(digest[:16], 16)
 
 
+def _support_geometry(source_context, capability):
+    from bilqis_mlx.runtime.structural_weakness_capture import _provider_for_context
+
+    _, adapter, _ = _provider_for_context(source_context, capability)
+    return geometry_for_adapter(adapter)
+
+
 def compile_rehearsal_plan(run_dir, parent, cache, source_context, selection) -> RehearsalPlan:
     """Compile WHAT to rehearse from R05/R13 authority without choosing curriculum."""
     capability = selection.offer.capability_id
@@ -89,6 +100,7 @@ def compile_rehearsal_plan(run_dir, parent, cache, source_context, selection) ->
     }))
     support = tuple(
         item for item in target.protected_capability_ids if item not in set(prior))
+    geometries = tuple((cap, _support_geometry(source_context, cap)) for cap in support)
     weaknesses = current_structural_weaknesses(
         run_dir, parent, cache, source_context, selection, capability)
     scored = tuple(item for item in weaknesses
@@ -98,11 +110,16 @@ def compile_rehearsal_plan(run_dir, parent, cache, source_context, selection) ->
                              for item in scored))
     capacity = selection.offer.source_each if scored else 0
     payload = {
-        "schema": "bilqis.bamf.rehearsal-plan/v1",
+        "schema": "bilqis.bamf.rehearsal-plan/v2",
+        # A rejected candidate leaves generation and protection identity
+        # unchanged. Bind fresh rehearsal to the actual issued visit as well.
+        "teacher_visit_id": selection.visit.identity.visit_id,
         "target_capability_id": capability,
         "target_grade_id": target.target_grade_id,
         "prior_capability_ids": prior,
         "retention_support_capability_ids": support,
+        "support_geometries": tuple((cap, asdict(geometry) if geometry else None)
+                                    for cap, geometry in geometries),
         "weakness_evidence_sha256": tuple(
             item["weakness_evidence_sha256"] for item in weakness_records),
         **({"weakness_exposures": exposures, "weakness_capacity": capacity}
@@ -114,7 +131,7 @@ def compile_rehearsal_plan(run_dir, parent, cache, source_context, selection) ->
     return RehearsalPlan(
         capability, target.target_grade_id, prior, support, weakness_records,
         protection.digest, active.definition.definition_sha256,
-        active.activation_sha256, contract_digest(payload), exposures, capacity)
+        active.activation_sha256, contract_digest(payload), exposures, capacity, geometries)
 
 
 def _binding(source_context, row, authority, *, role, capability, seed, each):
@@ -140,29 +157,42 @@ def _binding(source_context, row, authority, *, role, capability, seed, each):
     }
 
 
-def _draw_one(source_context, plan, role, capability, ordinal):
+def _draw_rehearsal(source_context, plan, role, capability, ordinal):
     seed = _seed(plan, role, capability, ordinal)
+    geometry = dict(plan.support_geometries).get(capability) if role == "retention_support" else None
+    each = _SOURCE_DRAW_EACH if geometry is None else _draw_size(geometry, _SOURCE_DRAW_EACH)
     rows, parent_authority = source_context.draw_bound_rows(
-        seed=seed, capability=capability, each=_SOURCE_DRAW_EACH)
+        seed=seed, capability=capability, each=each)
     rows = tuple(rows)
-    if (len(rows) != _SOURCE_DRAW_EACH
+    if (len(rows) != each
             or any(row.get("capability") != capability for row in rows)):
         _invalid("BAMF_REHEARSAL_SOURCE_DRAW_INVALID")
-    row = rows[seed % len(rows)]
-    authority = source_context.bind_authorized_subset_rows(
-        rows, (row,), parent_authority)
-    return row, _binding(
-        source_context, row, authority, role=role, capability=capability,
-        seed=seed, each=1), authority
+    if geometry is not None:
+        groups = distinct_groups(complete_groups(rows, geometry))
+        if not groups:
+            _invalid("BAMF_REHEARSAL_SOURCE_DRAW_INVALID")
+        selected = groups[seed % len(groups)].rows
+    else:
+        selected = (rows[seed % len(rows)],)
+    result = []
+    for row in selected:
+        authority = source_context.bind_authorized_subset_rows(
+            rows, (row,), parent_authority)
+        result.append((row, _binding(
+            source_context, row, authority, role=role, capability=capability,
+            seed=seed, each=1), authority))
+    return tuple(result)
 
 
 def materialize_rehearsal_rows(source_context, plan: RehearsalPlan, ordinal: int, *,
                                reserved_rows=(), exposure_counts=None) -> RehearsalRows:
     """Materialize fresh rows for an already-compiled plan; never expand its scope."""
-    prior_pairs = tuple(_draw_one(source_context, plan, "prior", cap, ordinal)
-                        for cap in plan.prior_capability_ids)
-    support_pairs = tuple(_draw_one(source_context, plan, "retention_support", cap, ordinal)
-                          for cap in plan.retention_support_capability_ids)
+    prior_pairs = tuple(item for cap in plan.prior_capability_ids
+                        for item in _draw_rehearsal(
+                            source_context, plan, "prior", cap, ordinal))
+    support_pairs = tuple(item for cap in plan.retention_support_capability_ids
+                          for item in _draw_rehearsal(
+                              source_context, plan, "retention_support", cap, ordinal))
     prior = tuple(row for row, _binding_record, _authority in prior_pairs)
     support = tuple(row for row, _binding_record, _authority in support_pairs)
     bindings = [record for _row, record, _authority in (*prior_pairs, *support_pairs)]

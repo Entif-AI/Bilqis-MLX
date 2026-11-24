@@ -63,10 +63,18 @@ def test_plan_is_grade_neutral_and_partitions_authorized_relationships():
             "bilqis_mlx.runtime.bamf_operator.session_parts.rehearsal.current_structural_weaknesses",
             return_value=({"weakness": weakness},)), patch(
             "bilqis_mlx.runtime.active_generated_grade.read_active_generated_grade",
-            return_value=active):
+            return_value=active), patch(
+            "bilqis_mlx.runtime.bamf_operator.session_parts.rehearsal._support_geometry",
+            return_value=None):
+        selection = NS(offer=NS(capability_id="Z.C2", source_each=4),
+                       visit=NS(identity=NS(visit_id="7" * 64)))
         plan = compile_rehearsal_plan(
-            "/run", object(), object(), NS(release=release),
-            NS(offer=NS(capability_id="Z.C2", source_each=4)))
+            "/run", object(), object(), NS(release=release), selection)
+        assert compile_rehearsal_plan(
+            "/run", object(), object(), NS(release=release), selection) == plan
+        selection.visit.identity.visit_id = "8" * 64
+        next_visit = compile_rehearsal_plan(
+            "/run", object(), object(), NS(release=release), selection)
 
     assert plan.target_capability_id == "Z.C2"
     assert plan.target_grade_id == "GENERATED-ZETA"
@@ -75,6 +83,13 @@ def test_plan_is_grade_neutral_and_partitions_authorized_relationships():
     assert plan.weakness_records == (weakness,)
     assert plan.active_grade_definition_sha256 == "1" * 64
     assert plan.active_grade_activation_sha256 == "f" * 64
+    assert next_visit.protection_plan_sha256 == plan.protection_plan_sha256
+    assert next_visit.prior_capability_ids == plan.prior_capability_ids
+    assert next_visit.retention_support_capability_ids == plan.retention_support_capability_ids
+    assert next_visit.identity != plan.identity
+    assert _seed(next_visit, "retention_support", "Z.C1", 1) != _seed(
+        plan, "retention_support", "Z.C1", 1)
+    assert _seed(next_visit, "prior", "Z.C0", 1) != _seed(plan, "prior", "Z.C0", 1)
 
 
 class _BoundSourceContext:
@@ -244,7 +259,8 @@ def test_worker_packet_transports_roles_but_not_process_live_authority():
         release_sha256="c" * 64, capability_id="Z.C2", source_seed=17,
         source_each=1, source_family_id="family:Z.C2",
         source_binding_digest=contract_digest(source_binding),
-        source_authority=NS(content_sha256=source_content_digest(direct)),
+        source_authority=NS(content_sha256=source_content_digest(direct),
+                            source_family_id="family:Z.C2"),
         rows=lambda: direct,
     )
     selection = NS(offer=offer, visit=NS(identity=NS(visit_id="visit:z")))

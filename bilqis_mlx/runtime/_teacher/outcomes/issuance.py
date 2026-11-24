@@ -12,7 +12,7 @@ from bilqis_mlx.learning.teacher_strategy_population import (
 )
 from bilqis_mlx.runtime.state import _fingerprint
 
-from .observations import SCHEMA, apply_outcome, invalid
+from .observations import FIXED_REFERENCE_SCHEMA, SCHEMA, apply_outcome, invalid
 
 
 class _IssuedOutcome(dict):
@@ -199,6 +199,7 @@ def build_outcome(
     })
     reference_scores = evaluation.decision.fixed_reference_scores
     if reference_scores:
+        observation['schema'] = FIXED_REFERENCE_SCHEMA
         observation['fixed_reference_scores'] = [list(row) for row in reference_scores]
         observation['fixed_reference_cohort_sha256'] = evaluation.decision.fixed_reference_cohort_sha256
     observation['outcome_sha256'] = _fingerprint(observation)

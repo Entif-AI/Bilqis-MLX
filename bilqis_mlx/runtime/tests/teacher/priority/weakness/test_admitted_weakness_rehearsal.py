@@ -85,3 +85,22 @@ def test_shared_draw_budget_preserves_least_exposed_order(admitted):
     # must be present even though the higher-exposed debt was listed first.
     assert any(key == keys[1] for offer in offers for _, key in offer.matches)
     assert keys[1] not in dict(unavailable)
+
+
+
+def test_retention_support_keeps_actual_numeric_source_family_whole(admitted):
+    from bilqis_mlx.source_adapters.lesson_geometry import geometry_for_adapter
+
+    _, adapter, _ = _provider_for_context(admitted, "C.ADD")
+    plan = RehearsalPlan("C.MUL", "C", (), ("C.ADD",), (),
+                         "a" * 64, "b" * 64, "c" * 64, "d" * 64,
+                         support_geometries=(("C.ADD", geometry_for_adapter(adapter)),))
+    result = materialize_rehearsal_rows(admitted, plan, 1)
+    assert len(result.retention_support) == 3
+    assert len({row["source_id"] for row in result.retention_support}) == 1
+    assert [row["answer_kind"] for row in result.retention_support] == [
+        "numeric_active", "binary", "binary"]
+    assert [row["gold"] for row in result.retention_support[1:]] == ["TRUE", "FALSE"]
+    for row in result.retention_support:
+        authority = result.authorities_by_id[row["id"]]
+        assert admitted.require_bound_rows((row,), authority) is authority
