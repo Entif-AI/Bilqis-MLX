@@ -29,6 +29,46 @@ from scripts.experiments.issue1618.participation import selected_inputs, verify_
 ARTIFACT = "5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7"
 
 
+def _arm_receipt(*, mode, batch_size, horizon, learning_rate, parent, context,
+                 initial_digest, transaction, protection, bound, rows, training_wall,
+                 attempt_wall, peak, launch_counts, issued, evaluation, optimizer, proof):
+    profile, c16 = fixture.profile, fixture.c16
+    accepted = bool(issued.accepted)
+    before, after = proof["parent_scores"], proof["candidate_scores"]
+    retained = after if accepted else before
+    proof["retention_selected_scores"] = retained
+    proof["candidate_change_per_hour"] = {cap: (after[cap][0] - score[0]) * 3600 / attempt_wall
+                                           for cap, score in before.items()}
+    proof["retention_selected_change_per_hour"] = {
+        cap: (retained[cap][0] - score[0]) * 3600 / attempt_wall for cap, score in before.items()}
+    return {"mode": mode, "scope": "disposable genesis mask intervention; no publication",
+            "actual_parent_policy": parent.retained_state.policy.mode,
+            "initial_state_sha256": initial_digest,
+            "candidate_state_sha256": retained_digest(transaction),
+            "source_release_sha256": context.release.release_sha256,
+            "atlas_artifact": ARTIFACT, "topology_sha256": parent.topology.digest,
+            "extents_sha256": parent.extents.digest,
+            "protection_plan_sha256": protection.digest,
+            "source_seed": c16.SOURCE_SEED, "optimizer_step_seeds": list(range(17, 17 + horizon)),
+            "optimizer": {**asdict(profile.HP), "learning_rate": learning_rate}, "learning_rate": learning_rate,
+            "selected_visit": bound.identity.to_record(),
+            "training_row_ids": [row["id"] for row in rows],
+            "training_source_coordinates": transaction.training_source_coordinates,
+            "logical_batch_size": batch_size, "attempted_steps": transaction.update_steps,
+            "training_seconds": training_wall, "attempt_seconds": attempt_wall,
+            "attempted_steps_per_minute": horizon * 60 / attempt_wall,
+            "training_steps_per_minute": horizon * 60 / training_wall,
+            "completed_candidate_trials_per_hour": 3600 / attempt_wall,
+            "peak_mlx_bytes": peak,
+            "gradient_launches": sum(launch_counts),
+            "gradient_launches_per_step": launch_counts,
+            "retention_accepted": accepted, "retention_reason": evaluation.decision.reason,
+            "retention_outcome_scores": evaluation.decision.outcome_scores,
+            "retention_evidence_sha256": evaluation.decision.evidence_sha256,
+            "optimizer_proof": optimizer, "fixed_probe": proof,
+            "activation_cache": "not used in native arm"}
+
+
 def run(mode, batch_size, horizon, learning_rate):
     root = Path.cwd()
     artifact = root / "bilqis_mlx/bootstrap_assets/atlas" / ARTIFACT
@@ -102,40 +142,12 @@ def run(mode, batch_size, horizon, learning_rate):
             assert retained_digest(parent.retained_state) == initial_digest
             assert tuple(row["id"] for row in rows) == tuple(row["id"] for row in expected_rows)
             proof = fixed_probe(context, parent, transaction, artifact, cache, rows, prepared)
-        accepted = bool(issued.accepted)
-        before, after = proof["parent_scores"], proof["candidate_scores"]
-        retained = after if accepted else before
-        proof["retention_selected_scores"] = retained
-        proof["candidate_change_per_hour"] = {cap: (after[cap][0] - score[0]) * 3600 / attempt_wall
-                                               for cap, score in before.items()}
-        proof["retention_selected_change_per_hour"] = {
-            cap: (retained[cap][0] - score[0]) * 3600 / attempt_wall for cap, score in before.items()}
-        return {"mode": mode, "scope": "disposable genesis mask intervention; no publication",
-                "actual_parent_policy": parent.retained_state.policy.mode,
-                "initial_state_sha256": initial_digest,
-                "candidate_state_sha256": retained_digest(transaction),
-                "source_release_sha256": context.release.release_sha256,
-                "atlas_artifact": ARTIFACT, "topology_sha256": parent.topology.digest,
-                "extents_sha256": parent.extents.digest,
-                "protection_plan_sha256": protection.digest,
-                "source_seed": c16.SOURCE_SEED, "optimizer_step_seeds": list(range(17, 17 + horizon)),
-                "optimizer": {**asdict(profile.HP), "learning_rate": learning_rate}, "learning_rate": learning_rate,
-                "selected_visit": bound.identity.to_record(),
-                "training_row_ids": [row["id"] for row in rows],
-                "training_source_coordinates": transaction.training_source_coordinates,
-                "logical_batch_size": batch_size, "attempted_steps": transaction.update_steps,
-                "training_seconds": training_wall, "attempt_seconds": attempt_wall,
-                "attempted_steps_per_minute": horizon * 60 / attempt_wall,
-                "training_steps_per_minute": horizon * 60 / training_wall,
-                "completed_candidate_trials_per_hour": 3600 / attempt_wall,
-                "peak_mlx_bytes": peak,
-                "gradient_launches": sum(launch_counts),
-                "gradient_launches_per_step": launch_counts,
-                "retention_accepted": accepted, "retention_reason": evaluation.decision.reason,
-                "retention_outcome_scores": evaluation.decision.outcome_scores,
-                "retention_evidence_sha256": evaluation.decision.evidence_sha256,
-                "optimizer_proof": optimizer, "fixed_probe": proof,
-                "activation_cache": "not used in native arm"}
+        return _arm_receipt(
+            mode=mode, batch_size=batch_size, horizon=horizon, learning_rate=learning_rate,
+            parent=parent, context=context, initial_digest=initial_digest, transaction=transaction,
+            protection=protection, bound=bound, rows=rows, training_wall=training_wall,
+            attempt_wall=attempt_wall, peak=peak, launch_counts=launch_counts, issued=issued,
+            evaluation=evaluation, optimizer=optimizer, proof=proof)
 
 
 def main():
