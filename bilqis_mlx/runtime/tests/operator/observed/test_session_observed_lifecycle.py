@@ -26,6 +26,51 @@ def _complete_observed_step(observer):
     )
 
 
+def _operator_witness_fixture():
+    parent = NS(generation=0, retained_state=NS(optimizer_step=7))
+    prepared = NS(status='ACCEPTED', parent=parent, selection=object(),
+                  step=NS(transaction=NS(training_authorities=())),
+                  decision=NS(accepted=True), retained=object(), capability='A.IDENTITY',
+                  successor=NS(extents=NS(factor_map_digest='x')))
+    snapshots = []
+
+    def capture(run_dir):
+        snapshots.append(json.loads(
+            (Path(run_dir) / 'trainer-observed.json').read_text())['visits'][-1])
+
+    def prepare(_run_dir, *, observer=None, **_kwargs):
+        observer.bind_parent(parent)
+        observer.update(
+            phase='SELECTING',
+            activity='planner: compiling semantic curriculum')
+        capture(_run_dir)
+        observer.update(
+            phase='TRAINING', capability_id='A.IDENTITY',
+            candidate_step=0, candidate_horizon=1,
+            candidate_optimizer_step=7)
+        observer.begin_step(1, 8)
+        _complete_observed_step(observer)
+        capture(_run_dir)
+        observer.update(
+            phase='RETENTION', retention_completed=0, retention_total=2,
+            retention_subject='A.IDENTITY', retention_role='parent')
+        observer.update(
+            retention_completed=1, retention_total=2,
+            retention_subject='A.IDENTITY', retention_role='candidate')
+        capture(_run_dir)
+        return prepared
+
+    def publish(run_dir, *_args, publication_observer=None, **_kwargs):
+        from bilqis_mlx.runtime.bamf_bundle.publication.instrumentation import (
+            PublicationMetrics,
+        )
+        capture(run_dir)
+        if publication_observer is not None:
+            publication_observer(PublicationMetrics(1, 2, 3, 4, 5))
+
+    return snapshots, prepare, publish
+
+
 @patch("bilqis_mlx.runtime.bamf_operator.session._training_memory_context", nullcontext)
 class SessionObservationTests(unittest.TestCase):
     def setUp(self):
@@ -34,49 +79,9 @@ class SessionObservationTests(unittest.TestCase):
         self.addCleanup(patched.stop)
 
     def test_disposable_operator_witness_spans_planning_training_retention_and_publication(self):
-        from bilqis_mlx.runtime.bamf_bundle.publication.instrumentation import (
-            PublicationMetrics,
-        )
         from bilqis_mlx.runtime.bamf_operator.session import operate_bamf
 
-        parent = NS(generation=0, retained_state=NS(optimizer_step=7))
-        prepared = NS(status='ACCEPTED', parent=parent, selection=object(),
-                      step=NS(transaction=NS(training_authorities=())),
-                      decision=NS(accepted=True), retained=object(), capability='A.IDENTITY',
-                      successor=NS(extents=NS(factor_map_digest='x')))
-        snapshots = []
-
-        def capture(run_dir):
-            snapshots.append(json.loads(
-                (Path(run_dir) / 'trainer-observed.json').read_text())['visits'][-1])
-
-        def prepare(_run_dir, *, observer=None, **_kwargs):
-            observer.bind_parent(parent)
-            observer.update(
-                phase='SELECTING',
-                activity='planner: compiling semantic curriculum')
-            capture(_run_dir)
-            observer.update(
-                phase='TRAINING', capability_id='A.IDENTITY',
-                candidate_step=0, candidate_horizon=1,
-                candidate_optimizer_step=7)
-            observer.begin_step(1, 8)
-            _complete_observed_step(observer)
-            capture(_run_dir)
-            observer.update(
-                phase='RETENTION', retention_completed=0, retention_total=2,
-                retention_subject='A.IDENTITY', retention_role='parent')
-            observer.update(
-                retention_completed=1, retention_total=2,
-                retention_subject='A.IDENTITY', retention_role='candidate')
-            capture(_run_dir)
-            return prepared
-
-        def publish(run_dir, *_args, publication_observer=None, **_kwargs):
-            capture(run_dir)
-            if publication_observer is not None:
-                publication_observer(PublicationMetrics(1, 2, 3, 4, 5))
-
+        snapshots, prepare, publish = _operator_witness_fixture()
         prefix = 'bilqis_mlx.runtime.bamf_operator.session.'
         with TemporaryDirectory() as tmp:
             run_dir = Path(tmp)

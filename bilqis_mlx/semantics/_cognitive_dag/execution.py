@@ -115,6 +115,22 @@ def _consulted_dependencies(
     return ()
 
 
+def _compute_limit(goal: TaskGoal, operation_limit: int | None) -> int:
+    if operation_limit is not None and (
+            type(operation_limit) is not int
+            or not 0 <= operation_limit <= goal.budget.max_operations):
+        _invalid("BAMF_DAG_OPERATION_LIMIT_INVALID")
+    return goal.budget.max_operations if operation_limit is None else operation_limit
+
+
+def _numeric_domain_for(spec, binding, *, prevalidated_source_authority: bool):
+    if spec.applicability != "FINITE_NUMBER":
+        return None
+    return (
+        _validated_number_domain(binding)
+        if prevalidated_source_authority else _number_domain(binding))
+
+
 def execute_dag(
     goal: TaskGoal,
     binding: OperatorBinding,
@@ -131,13 +147,8 @@ def execute_dag(
     order, prepared, visible, selected, unresolved = _prepare(
         goal, binding,
         prevalidated_source_authority=prevalidated_source_authority)
-    if operation_limit is not None and (
-            type(operation_limit) is not int
-            or not 0 <= operation_limit <= goal.budget.max_operations):
-        _invalid("BAMF_DAG_OPERATION_LIMIT_INVALID")
     program = goal.expression_or_holes
-    compute_limit = (goal.budget.max_operations if operation_limit is None
-                     else operation_limit)
+    compute_limit = _compute_limit(goal, operation_limit)
     release = binding.task.semantic_release
     source_digest = source_binding_digest or contract_digest(binding)
     output_type = next(
@@ -171,10 +182,9 @@ def execute_dag(
             _check_grant(
                 "source:operator:" + spec.operator_id,
                 operator_grant_digest(spec), binding)
-        numeric = (
-            (_validated_number_domain(binding)
-             if prevalidated_source_authority else _number_domain(binding))
-            if spec.applicability == "FINITE_NUMBER" else None)
+        numeric = _numeric_domain_for(
+            spec, binding,
+            prevalidated_source_authority=prevalidated_source_authority)
         inputs = tuple(
             results[ref.result_node_id] if ref.kind is RefKind.RESULT
             else visible[ref.identity]

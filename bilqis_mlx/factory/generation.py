@@ -13,6 +13,60 @@ from .curriculum_definition import (
 from .generation_compat import draw_release_rows, runtime_adapter_for_release
 
 
+def _draw_execution_batch(
+        source_root, graph, adapter_context, execution, adapter, *,
+        seed: int, count: int, strict: bool):
+    if adapter.descriptor.adapter_id != execution.provider_id:
+        raise ValueError(
+            "FACTORY_EXECUTION_GENERATION_ADAPTER_DRIFT:"
+            + execution.capability_id)
+    if strict:
+        adapter.descriptor.validate_profile_parameters(
+            execution.provider_parameters)
+    arguments = {
+        "source_root": source_root,
+        "graph": graph,
+        "course": adapter_context,
+        "capability": execution.capability_id,
+        "seed": seed,
+        "each": count,
+    }
+    if execution.provider_parameters:
+        arguments["profile_parameters"] = dict(execution.provider_parameters)
+    batch = adapter.draw(**arguments)
+    if (len(batch) != count or
+            any(row.get("capability") != execution.capability_id for row in batch)):
+        raise ValueError(
+            "FACTORY_EXECUTION_GENERATION_SCOPE_DRIFT:"
+            + execution.capability_id)
+    return batch
+
+
+def _validate_execution_batch(
+        source_root, graph, adapter_context, curriculum, plan, execution,
+        adapter, batch, *, strict: bool):
+    answers = {
+        family.kind: family.values for family in execution.answer_families}
+    for row in batch:
+        kind = row.get("answer_kind", "binary")
+        if (not isinstance(row.get("id"), str) or not row["id"] or
+                row.get("gold") not in answers.get(kind, ())):
+            raise ValueError(
+                "FACTORY_EXECUTION_GENERATION_ANSWER_DRIFT:"
+                + execution.capability_id)
+        if strict:
+            note_provider_check()
+            if adapter.check(
+                    row, source_root=source_root, graph=graph,
+                    course=adapter_context) is not True:
+                raise ValueError(
+                    "FACTORY_EXECUTION_GENERATION_SOURCE_ORACLE_DISAGREEMENT:"
+                    + execution.capability_id)
+            validate_instructional_constituents(
+                row, curriculum=curriculum, plan=plan,
+                capability=execution.capability_id, adapter=adapter)
+
+
 def execute_release_family_program(
         release: FactoryRelease, registry: SourceAdapterRegistry,
         family_registry, atlas, learned_frontier, capability_id: str, *,
@@ -126,51 +180,12 @@ def draw_execution_rows(
         binding = bindings[execution.capability_id]
         adapter = registry.require(
             binding.generator_id, binding.oracle_id)
-        if adapter.descriptor.adapter_id != execution.provider_id:
-            raise ValueError(
-                "FACTORY_EXECUTION_GENERATION_ADAPTER_DRIFT:"
-                + execution.capability_id)
-        if strict:
-            adapter.descriptor.validate_profile_parameters(
-                execution.provider_parameters)
-        arguments = {
-            "source_root": source_root,
-            "graph": graph,
-            "course": adapter_context,
-            "capability": execution.capability_id,
-            "seed": seed,
-            "each": count,
-        }
-        if execution.provider_parameters:
-            arguments["profile_parameters"] = dict(
-                execution.provider_parameters)
-        batch = adapter.draw(**arguments)
-        if (len(batch) != count or
-                any(row.get("capability") != execution.capability_id
-                    for row in batch)):
-            raise ValueError(
-                "FACTORY_EXECUTION_GENERATION_SCOPE_DRIFT:"
-                + execution.capability_id)
-        answers = {
-            family.kind: family.values for family in execution.answer_families}
-        for row in batch:
-            kind = row.get("answer_kind", "binary")
-            if (not isinstance(row.get("id"), str) or not row["id"] or
-                    row.get("gold") not in answers.get(kind, ())):
-                raise ValueError(
-                    "FACTORY_EXECUTION_GENERATION_ANSWER_DRIFT:"
-                    + execution.capability_id)
-            if strict:
-                note_provider_check()
-                if adapter.check(
-                        row, source_root=source_root, graph=graph,
-                        course=adapter_context) is not True:
-                    raise ValueError(
-                        "FACTORY_EXECUTION_GENERATION_SOURCE_ORACLE_DISAGREEMENT:"
-                        + execution.capability_id)
-                validate_instructional_constituents(
-                    row, curriculum=curriculum, plan=plan,
-                    capability=execution.capability_id, adapter=adapter)
+        batch = _draw_execution_batch(
+            source_root, graph, adapter_context, execution, adapter,
+            seed=seed, count=count, strict=strict)
+        _validate_execution_batch(
+            source_root, graph, adapter_context, curriculum, plan, execution,
+            adapter, batch, strict=strict)
         rows.extend(batch)
     return rows
 
