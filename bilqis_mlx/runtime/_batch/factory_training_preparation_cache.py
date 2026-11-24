@@ -142,15 +142,8 @@ class LearningFirstPreparationCache:
     task_misses: int = 0
 
     def bind(self, source_context, authenticated) -> None:
-        binding = (
-            str(source_context.run_dir),
-            source_context.release.release_sha256,
-            authenticated.snapshot.release_sha256,
-            authenticated.snapshot.bundle_id,
-            authenticated.snapshot.source_bundle_id,
-            authenticated.features.semantic_release,
-            authenticated.features.digest,
-        )
+        binding = (str(source_context.run_dir),
+                   *_learning_first_preparation_binding(source_context, authenticated))
         if self._binding == binding:
             return
         self._binding = binding

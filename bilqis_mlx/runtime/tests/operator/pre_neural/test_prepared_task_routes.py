@@ -2,9 +2,13 @@
 
 import pytest
 
+from bilqis_mlx.data_plane import DataPlane
 from bilqis_mlx.factory.live_answers import live_answer_registry
 from bilqis_mlx.learning.atlas_readout import DecisionKind
 from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
+from bilqis_mlx.runtime.bamf_operator.session_parts.prepared_task_catalog import (
+    PreparedTaskCatalog, _compiler_identity,
+)
 from bilqis_mlx.runtime.factory_candidate_microbatch import prepare_learning_first_task_route
 from bilqis_mlx.runtime.factory_task_template import _source_view
 from bilqis_mlx.runtime.factory_training_bridge import LearningFirstPreparationCache
@@ -40,7 +44,7 @@ def contexts():
     ("C.ADD", DecisionKind.OPERATOR),
     (EPISODE, DecisionKind.OPERAND),
 ])
-def test_precompiled_routes_match_full_provider_lowering(contexts, capability, kind):
+def test_precompiled_routes_match_full_provider_lowering(contexts, capability, kind, tmp_path):
     context = contexts[capability == EPISODE]
     execution = context.execution_for(capability)
     adapter = context.source_registry.resolve_owner(
@@ -68,6 +72,29 @@ def test_precompiled_routes_match_full_provider_lowering(contexts, capability, k
     assert kind in witnessed
     assert cache.task_hits == len(rows)
     assert cache.task_misses == len(rows)
+    # Restore the same real provider outputs from a newly opened data plane.
+    path = tmp_path / "plane.sqlite3"
+    binding = (str(tmp_path), context.release.release_sha256,
+               "snapshot", "bundle", "source", SEMANTIC, "features")
+    compiler = _compiler_identity()
+    plane = DataPlane(path)
+    catalog = PreparedTaskCatalog(plane, tmp_path, binding, compiler)
+    catalog.routes.update(cache._task_inputs)
+    catalog.persist()
+    assert plane.get_object_reference(catalog.reference) is not None
+    plane.close()
+    plane = DataPlane(path)
+    try:
+        restored = PreparedTaskCatalog(plane, tmp_path, binding, compiler)
+        assert dict(restored.routes) == dict(cache._task_inputs)
+        assert not PreparedTaskCatalog(plane, tmp_path, binding, "c" * 64).routes
+        changed = (*binding[:5], "d" * 64, binding[6])
+        assert not PreparedTaskCatalog(plane, tmp_path, changed, compiler).routes
+        # A valid CAS object with an invalid catalog payload is not authority.
+        plane.put_object_reference(catalog.reference, b'{"schema":"invalid"}')
+        assert not PreparedTaskCatalog(plane, tmp_path, binding, compiler).routes
+    finally:
+        plane.close()
 
 
 def test_task_cache_distinguishes_semantics_and_releases(contexts):
@@ -86,3 +113,38 @@ def test_task_cache_distinguishes_semantics_and_releases(contexts):
     assert cache.get_task_inputs(cache.task_key(row, SEMANTIC, "d" * 64)) is None
     assert cache.get_task_inputs(cache.task_key({**row, "tokens": [0]}, SEMANTIC,
                                                context.release.release_sha256)) is None
+
+
+def test_corrupt_compiled_catalog_does_not_pin_unreadable_object(contexts, tmp_path):
+    context = contexts[0]
+    binding = (str(tmp_path), context.release.release_sha256,
+               "snapshot", "bundle", "source", SEMANTIC, "features")
+    compiler = _compiler_identity()
+    plane = DataPlane(tmp_path / "plane.sqlite3")
+    try:
+        catalog = PreparedTaskCatalog(plane, tmp_path, binding, compiler)
+        cache = LearningFirstPreparationCache()
+        rows = context.draw_rows(seed=7, capability="B.AND", each=4)
+        with evidence_mode(strict=False):
+            for row in rows:
+                prepare_learning_first_task_route(context, row, SEMANTIC, cache=cache)
+        catalog.routes.update(cache._task_inputs)
+        catalog.persist()
+        digest, _ = plane.get_object_reference(catalog.reference)
+        # Simulate an unreadable archived object in the disposable data plane.
+        plane._db.execute(
+            "UPDATE archived_objects SET raw_bytes=raw_bytes+1 WHERE sha256=?", (digest,))
+        with pytest.raises(ValueError, match="ARCHIVE_HEADER_DRIFT"):
+            plane.get_object_reference(catalog.reference)
+        restored = PreparedTaskCatalog(plane, tmp_path, binding, compiler)
+        assert not restored.routes
+        assert plane.get_object_reference(catalog.reference) is None
+        # The same recompiled content has the same digest. Deduplication must not
+        # accidentally republish a pointer to the still-unreadable old object.
+        restored.routes.update(cache._task_inputs)
+        restored.persist()
+        assert plane.get_object_reference(catalog.reference) is None
+        with pytest.raises(ValueError, match="ARCHIVE_HEADER_DRIFT"):
+            plane.get_object(digest)
+    finally:
+        plane.close()

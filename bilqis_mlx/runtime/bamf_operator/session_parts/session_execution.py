@@ -188,7 +188,8 @@ def operate(
         operator_lock, visit_fn, observer_type, emit_progress,
         monotonic, load_generation, result_type,
         bind_run_authority=None, before_visits=None, resource_snapshot=None,
-        record_stop=None, elapsed_clock=None, training_memory_context=None):
+        record_stop=None, elapsed_clock=None, training_memory_context=None,
+        before_stop=None):
     _validate_bounds(
         minutes=minutes, max_visits=max_visits, steps_per_visit=steps_per_visit,
         batch_size=batch_size, reserve_gib=reserve_gib,
@@ -217,6 +218,8 @@ def operate(
             resource_snapshot=resource_snapshot, monotonic=monotonic,
             visit_fn=visit_fn, observer_type=observer_type,
             emit_progress=emit_progress)
+        if before_stop is not None and status != "DISK_RESERVE_REACHED":
+            before_stop()
         current, elapsed_seconds, stop_receipt_sha256 = _finalize_stop(
             run_dir, status=status, minutes=minutes, max_visits=max_visits,
             steps_per_visit=steps_per_visit, batch_size=batch_size,
