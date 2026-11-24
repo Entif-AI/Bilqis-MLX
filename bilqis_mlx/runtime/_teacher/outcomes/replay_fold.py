@@ -1,14 +1,20 @@
 """Apply authenticated rejected HOW observations in journal order."""
+from copy import deepcopy
+from functools import partial
+
 from bilqis_mlx.learning.teacher_visit_identity import TeacherVisitIdentity, require_teacher_visit_receipt
 from bilqis_mlx.runtime.bamf_operator.evidence_parts.validation import read_candidate_horizon_evidence
 
-from .observations import apply_outcome, invalid
+from .observations import apply_replayed_outcome, invalid
 
 
 PORTABLE_TEACHER_AUTHORITY = "_portable_teacher_authority_verified"
 
 
-def fold_rejections(run_dir, cache, teacher, rows, selected_teacher_override):
+def fold_rejections(run_dir, cache, teacher, rows, recover_selected_teacher):
+    # One private working tree for the fold, not a full copy for every row.
+    teacher = deepcopy(teacher) if rows else teacher
+    recover = partial(recover_selected_teacher, run_dir)
     for capability, visit_id, reason, receipt_sha, evidence in rows:
         observation = evidence.get('how_outcome')
         if observation is None:
@@ -54,13 +60,12 @@ def fold_rejections(run_dir, cache, teacher, rows, selected_teacher_override):
                 or decision['decision'] != 'REJECT' or decision['reason'] != reason
                 or observation['retained_steps'] != 0):
             invalid()
-        teacher = apply_outcome(
-            teacher, observation,
-            selected_teacher_override=selected_teacher_override(
-                run_dir, teacher, observation))
-        from bilqis_mlx.runtime.structural_weakness_replay import (
-            apply_rejection_weaknesses,
-        )
-        teacher = apply_rejection_weaknesses(
-            teacher, evidence, receipt_sha)
+        teacher = apply_replayed_outcome(teacher, observation, recover)
+        weaknesses = evidence.get('structural_weaknesses', ())
+        if weaknesses or not isinstance(weaknesses, (list, tuple)):
+            from bilqis_mlx.runtime.structural_weakness_replay import (
+                apply_rejection_weaknesses,
+            )
+            teacher = apply_rejection_weaknesses(
+                teacher, evidence, receipt_sha)
     return teacher

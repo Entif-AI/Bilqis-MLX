@@ -162,12 +162,15 @@ def context_matches(state, frontier, member_census_sha256) -> bool:
 
 def recovery_members(state, ready, deficit_counts, member_order, competence=None):
     exposure = dict(state.recovery_retained_counts)
+    attempts = dict(state.recovery_attempt_counts)
     order = {capability: index for index, capability in enumerate(member_order)}
     competence = competence or {}
     return tuple(sorted(
         instructional_members(ready, competence),
         key=lambda capability: (
             competence.get(capability, UNKNOWN_COMPETENCE).priority,
+            (attempts.get(capability, 0)
+             if competence.get(capability, UNKNOWN_COMPETENCE).deficit is not None else 0),
             -deficit_counts.get(capability, 0),
             exposure.get(capability, 0),
             order.get(capability, len(order)),
