@@ -125,12 +125,7 @@ def _execute_training_and_admission(
             feature_context.snapshot, generation, neural_cache,
             salience_supervision=salience_supervision,
             mentor_supervision=mentor_supervision,
-            learning_first_cache=getattr(prepared, "learning_first_cache", None),
-            row_cache_key=(
-                None if getattr(prepared, "learning_first_cache", None) is None else
-                prepared.learning_first_cache.key(
-                    prepared.compiled_rows[0].sources[0].source_row,
-                    prepared.training_batch.rows[0].model_input.eligibility_digest)))
+            learning_first_cache=getattr(prepared, "learning_first_cache", None))
         authorities, target_rows = (authority,), (targets,)
         optimizer_started = time.perf_counter() if strict else None
         transaction = (

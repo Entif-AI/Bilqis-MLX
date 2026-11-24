@@ -1,7 +1,9 @@
 import os
 from unittest.mock import patch
 from .base import DataPlaneCase
-from bilqis_mlx.data_plane import data_plane, verify_file_digest
+from bilqis_mlx.data_plane import (
+    REBUILDABLE_OBJECT_REFERENCE_PREFIX, data_plane, verify_file_digest,
+)
 
 class DataPlaneStoreTests(DataPlaneCase):
     def test_public_symbols_keep_historical_module_identity(self):
@@ -64,3 +66,17 @@ class DataPlaneStoreTests(DataPlaneCase):
             plane.get_object_reference("accepted-history:fixture"),
             (second_digest, second),
         )
+
+    def test_discard_rebuildable_reference_preserves_immutable_content_and_authority(self):
+        plane = data_plane()
+        cache = REBUILDABLE_OBJECT_REFERENCE_PREFIX + "fixture"
+        history = "accepted-history:fixture"
+        raw = b'{"history":["a"]}'
+        digest = plane.put_object_reference(cache, raw)
+        plane.put_object_reference(history, raw)
+        with self.assertRaisesRegex(ValueError, "PROTECTED_REFERENCE_FORBIDDEN"):
+            plane.discard_rebuildable_object_reference(history)
+        plane.discard_rebuildable_object_reference(cache)
+        self.assertIsNone(plane.get_object_reference(cache))
+        self.assertEqual(plane.get_object_reference(history), (digest, raw))
+        self.assertEqual(plane.get_object(digest), raw)

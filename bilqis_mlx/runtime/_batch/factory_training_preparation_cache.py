@@ -1,5 +1,7 @@
 """Learning-first ahead-preparation identities and candidate-local caches."""
-from dataclasses import dataclass, field
+from collections import OrderedDict
+from copy import deepcopy
+from dataclasses import dataclass, field, replace
 from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.factory.teaching import content_digest
 from bilqis_mlx.runtime.bamf_bundle import is_authenticated_generation_feature_context
@@ -8,6 +10,9 @@ from bilqis_mlx.semantics.domains import contract_digest
 from .atlas_training_contracts import _invalid
 from .factory_training_source import _prepare_learning_first_model_sources
 from .learning_first_source import prepare_learning_first_source_rows
+
+_MAX_PREPARED_SOURCE_ROWS = 1024
+
 
 @dataclass(frozen=True)
 class LearningFirstPreparedSourceInputs:
@@ -34,6 +39,49 @@ def _learning_first_preparation_binding(source_context, authenticated) -> tuple:
     )
 
 
+@dataclass
+class LearningFirstSourceRowCache:
+    """Single-writer, visit-local cache of complete invariant row preparation."""
+
+    _binding: tuple | None = None
+    _rows: OrderedDict = field(default_factory=OrderedDict)
+    hits: int = 0
+    misses: int = 0
+
+    def prepare(self, context, authenticated, rows, *, source_seed, source_each,
+                prepare_rows=prepare_learning_first_source_rows,
+                prepare_models=_prepare_learning_first_model_sources):
+        binding = (str(context.run_dir),
+                   *_learning_first_preparation_binding(context, authenticated))
+        if self._binding != binding:
+            self._binding = binding
+            self._rows.clear()
+        sources, models = [], []
+        for row in rows:
+            key = (source_seed, source_each, content_digest(row))
+            cached = self._rows.get(key)
+            if cached is None or cached[0].row != row:
+                source = prepare_rows(
+                    context, authenticated, (deepcopy(row),),
+                    source_seed=source_seed, source_each=source_each)[0]
+                model = prepare_models(authenticated, (source,))[0]
+                if model.eligibility_digest != source.projection.digest:
+                    _invalid("LEARNING_FIRST_PREPARATION_ELIGIBILITY_DRIFT")
+                cached = (source, model)
+                self._rows[key] = cached
+                self.misses += 1
+            else:
+                self.hits += 1
+            self._rows.move_to_end(key)
+            if len(self._rows) > _MAX_PREPARED_SOURCE_ROWS:
+                self._rows.popitem(last=False)
+            # Keep the cache's comparison row private. The prepared structures
+            # are independent of optimizer state; the delivered row is current.
+            sources.append(replace(cached[0], row=row))
+            models.append(cached[1])
+        return tuple(sources), tuple(models)
+
+
 def _learning_first_preparation_identity(
         binding, rows_sha256: str, source_seed: int, source_each: int) -> str:
     return contract_digest({
@@ -45,7 +93,8 @@ def _learning_first_preparation_identity(
 
 def prepare_learning_first_source_inputs_ahead(
         source_context, authenticated, rows, *, source_seed: int, source_each: int,
-        source_identity: str | None = None, content_digest_fn=content_digest):
+        source_identity: str | None = None, content_digest_fn=content_digest,
+        row_cache=None):
     """Prepare only source/model inputs that do not depend on optimizer state."""
     rows = tuple(rows)
     if (type(source_context) is not SourceExecutionContext
@@ -65,10 +114,15 @@ def prepare_learning_first_source_inputs_ahead(
     # retain the content digest as the conservative fallback.
     rows_sha256 = (
         source_identity if source_identity is not None else content_digest_fn(rows))
-    source_rows = prepare_learning_first_source_rows(
-        source_context, authenticated, rows,
-        source_seed=source_seed, source_each=source_each)
-    model_sources = _prepare_learning_first_model_sources(authenticated, source_rows)
+    if row_cache is None:
+        source_rows = prepare_learning_first_source_rows(
+            source_context, authenticated, rows,
+            source_seed=source_seed, source_each=source_each)
+        model_sources = _prepare_learning_first_model_sources(authenticated, source_rows)
+    else:
+        source_rows, model_sources = row_cache.prepare(
+            source_context, authenticated, rows,
+            source_seed=source_seed, source_each=source_each)
     identity = _learning_first_preparation_identity(
         binding, rows_sha256, source_seed, source_each)
     return LearningFirstPreparedSourceInputs(
@@ -114,52 +168,56 @@ def _prepared_ahead_matches(
     return True
 
 
+# Bounded even when a later grade has effectively unlimited distinct problems.
+_MAX_PREPARED_TASK_ROUTES = 4096
+
+
+def task_source_row(row: dict) -> dict:
+    """Separate specimen semantics from delivery-family identity.
+
+    Lowerers and resolvers consume this same projection. Semantic seed values
+    (for example C13 episode seeds) remain in the specimen record.
+    """
+    return {key: value for key, value in row.items()
+            if key not in ("source_family_id", "source_family_seed")}
+
+
 @dataclass
 class LearningFirstPreparationCache:
-    """Candidate-local reuse of exact row preparation for ordinary learning."""
+    """Candidate-local source inputs and release-bound reusable task routes."""
 
     _binding: tuple | None = None
-    _rows: dict = field(default_factory=dict)
-    _task_inputs: dict = field(default_factory=dict)
-    hits: int = 0
-    misses: int = 0
+    source_rows: LearningFirstSourceRowCache = field(default_factory=LearningFirstSourceRowCache)
+    _task_inputs: OrderedDict = field(default_factory=OrderedDict)
     task_hits: int = 0
     task_misses: int = 0
 
     def bind(self, source_context, authenticated) -> None:
-        binding = (
-            str(source_context.run_dir),
-            source_context.release.release_sha256,
-            authenticated.snapshot.release_sha256,
-            authenticated.snapshot.bundle_id,
-            authenticated.snapshot.source_bundle_id,
-            authenticated.features.semantic_release,
-            authenticated.features.digest,
-        )
-        if self._binding is None:
-            self._binding = binding
-        elif self._binding != binding:
-            self._binding = binding
-            self._rows.clear()
-            self._task_inputs.clear()
+        binding = (str(source_context.run_dir),
+                   *_learning_first_preparation_binding(source_context, authenticated))
+        if self._binding == binding:
+            return
+        self._binding = binding
+        self._task_inputs = OrderedDict()
+        if (type(source_context) is SourceExecutionContext
+                and is_authenticated_generation_feature_context(authenticated)):
+            shared = source_context._prepared_task_binding
+            if shared is None or shared[0] != binding:
+                shared = (binding, self._task_inputs)
+                object.__setattr__(source_context, "_prepared_task_binding", shared)
+            self._task_inputs = shared[1]
+
+    @property
+    def hits(self):
+        return self.source_rows.hits
+
+    @property
+    def misses(self):
+        return self.source_rows.misses
 
     @staticmethod
-    def key(row, eligibility_digest=None):
-        row_id = row.get("id") if isinstance(row, dict) else None
-        if not isinstance(row_id, str) or not row_id:
-            _invalid("LEARNING_FIRST_PREPARATION_ROW_ID_REQUIRED")
-        return row_id, eligibility_digest
-
-    def get(self, row, eligibility_digest):
-        value = self._rows.get(self.key(row, eligibility_digest))
-        if value is None:
-            self.misses += 1
-        else:
-            self.hits += 1
-        return value
-
-    def put(self, row, eligibility_digest, model_source) -> None:
-        self._rows[self.key(row, eligibility_digest)] = model_source
+    def task_key(row, semantic_release, release_sha256):
+        return release_sha256, semantic_release, content_digest(task_source_row(row))
 
     def get_task_inputs(self, key):
         value = self._task_inputs.get(key)
@@ -167,7 +225,11 @@ class LearningFirstPreparationCache:
             self.task_misses += 1
         else:
             self.task_hits += 1
+            self._task_inputs.move_to_end(key)
         return value
 
     def put_task_inputs(self, key, value) -> None:
         self._task_inputs[key] = value
+        self._task_inputs.move_to_end(key)
+        if len(self._task_inputs) > _MAX_PREPARED_TASK_ROUTES:
+            self._task_inputs.popitem(last=False)

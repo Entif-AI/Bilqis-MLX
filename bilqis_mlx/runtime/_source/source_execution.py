@@ -54,6 +54,10 @@ class SourceExecutionContext:
         default=None, init=False, repr=False, compare=False)
     _verification_by_capability: object | None = field(
         default=None, init=False, repr=False, compare=False)
+    _operator_registry_binding: tuple | None = field(
+        default=None, init=False, repr=False, compare=False)
+    _prepared_task_binding: tuple | None = field(
+        default=None, init=False, repr=False, compare=False)
 
     @classmethod
     def from_admitted_release(
@@ -114,6 +118,28 @@ class SourceExecutionContext:
             binding = bindings[capability.capability_id]
             self.source_registry.require(binding.generator_id, binding.oracle_id)
         self.answer_registry.validate_plan(self.release.execution_plan)
+
+    def operator_registry_for(self, semantic_release: str):
+        """Reuse released declarations for one authenticated ordinary generation.
+
+        Operator resolution still verifies its live declaration and implementation.
+        This is not a memo of successful source or execution authority.
+        """
+        from bilqis_mlx.semantics.cognitive_operators import default_registry
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import strict_mode_enabled
+        from bilqis_mlx.runtime.bamf_bundle import is_authenticated_generation_feature_context
+
+        authenticated = self._accepted_feature_context
+        if (strict_mode_enabled()
+                or not is_authenticated_generation_feature_context(authenticated)
+                or authenticated.features.semantic_release != semantic_release):
+            return default_registry(semantic_release)
+        cached = self._operator_registry_binding
+        if cached is not None and cached[0] is authenticated:
+            return cached[1]
+        registry = default_registry(semantic_release)
+        object.__setattr__(self, "_operator_registry_binding", (authenticated, registry))
+        return registry
 
     def execution_for(self, capability_id: str):
         """Return one prevalidated execution contract without rebuilding plan maps."""
