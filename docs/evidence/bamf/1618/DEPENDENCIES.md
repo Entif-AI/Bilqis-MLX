@@ -33,3 +33,7 @@ python3 -B -m scripts.experiments.issue1618.run --mode FAST --batch-size 32 --ho
 ```
 
 Run the two native arms sequentially in a detached, otherwise idle accelerator window. The native measurements remain pending until the run receipt closes. No performance or retention conclusion is inferred from the proof alone.
+
+## First-run failure and correction
+
+The initial detached comparison (`throughput-20261124-1618-selective-region`, PID 61262, immutable source digest `ed524a4e0ff2f5d23c6a6ce71abd9d159d9571312645f2b406c95cf45b6d5984`) completed the FULL training arm and C05 screen (`PAIRED_SCREEN_WITHIN_BUDGET`) but failed before emitting the complete arm receipt because the supplementary probe named `B.OR`, absent from the reduced-Boolean executable release. No FAST arm ran; no comparative measurement is claimed. The replacement derives the sibling from the admitted capability roster (`B.IFF`), selects a common row-disjoint seed before outcomes are measured (98318 for the 32-row fixture; 98317 collided with one training row), and compiles and evaluates the baseline probe before training. The actual-release regression test verifies deterministic row disjointness and the three selected capabilities. Both arms must still finish and match their control coordinates before interpretation.

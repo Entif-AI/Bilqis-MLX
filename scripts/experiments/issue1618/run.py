@@ -23,7 +23,7 @@ from bilqis_mlx.runtime.mlx_memory import training_memory_policy
 from bilqis_mlx.learning.atlas_retention_decision import issue_factory_retention_decision
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.cold_resume_probe import retained_digest
 from scripts.bamf.profiling import issue1578_logical_arm as fixture
-from scripts.experiments.issue1618.fixed_probe import fixed_probe
+from scripts.experiments.issue1618.fixed_probe import fixed_probe, prepare_probe
 from scripts.experiments.issue1618.participation import selected_inputs, verify_optimizer
 
 ARTIFACT = "5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7"
@@ -62,6 +62,10 @@ def run(mode, batch_size, horizon):
             return original_train(*args, **kwargs)
 
         print("ISSUE1618_SETUP", mode, initial_digest, flush=True)
+        with evidence_mode(strict=False):
+            expected_rows = context.draw_rows(seed=c16.SOURCE_SEED, capability="B.AND", each=batch_size)
+            prepared = prepare_probe(context, parent, artifact, cache, expected_rows)
+        print("ISSUE1618_PROBE_PREFLIGHT", mode, prepared.capabilities, prepared.parent_scores, flush=True)
         observed = []
         mx.clear_cache()
         mx.reset_peak_memory()
@@ -87,7 +91,8 @@ def run(mode, batch_size, horizon):
             assert all(item == calls[0] for item in calls)
             optimizer = verify_optimizer(parent, transaction, calls[0])
             assert retained_digest(parent.retained_state) == initial_digest
-            proof = fixed_probe(context, parent, transaction, artifact, cache, rows)
+            assert tuple(row["id"] for row in rows) == tuple(row["id"] for row in expected_rows)
+            proof = fixed_probe(context, parent, transaction, artifact, cache, rows, prepared)
         accepted = bool(issued.accepted)
         before, after = proof["parent_scores"], proof["candidate_scores"]
         retained = after if accepted else before
