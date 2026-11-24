@@ -9,6 +9,22 @@ from ..growth_projection import _grew
 from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 
 
+def _reference_pairs(visit, target):
+    """Use fixed panels, or only stable protected peers from older outcomes."""
+    explicit = visit.get("fixed_reference_scores")
+    if explicit is not None:
+        census = visit.get("fixed_reference_cohort_sha256")
+        if not isinstance(census, str) or len(census) != SHA256_HEX_LENGTH:
+            return {}
+        return paired_scores({"paired_scores": explicit})
+    protected = visit.get("protected_capabilities")
+    if not isinstance(protected, list):
+        return {}
+    # Historical ordinary C05 redraws the target but keeps peer rows stable.
+    return {cap: pair for cap, pair in paired_scores(visit).items()
+            if cap != target and cap in protected}
+
+
 @dataclass
 class ReferenceScore:
     grade: str
@@ -30,6 +46,19 @@ class ReferenceGrowth:
         self.release = None
         self.blocked = set()
 
+    def _record_coverage(self, visit, context):
+        total = context.get("total_capabilities")
+        if type(total) is int and total > 0:
+            self.expected = total
+        coverage = (visit.get("visit_evidence") or {}).get("baseline_coverage") or {}
+        groups = coverage.get("group_denominators") if isinstance(coverage, dict) else None
+        for item in groups if isinstance(groups, (list, tuple)) else ():
+            if isinstance(item, dict) and isinstance(item.get("group"), str):
+                count = item.get("total")
+                if type(count) is int and count > 0:
+                    owner = item["group"]
+                    self.grade_totals[owner] = max(count, self.grade_totals.get(owner, 0))
+
     def _measure(self, visit, *, initial=False):
         context = visit.get("reference_context") or {}
         release, rubric = (context.get(key) for key in (
@@ -42,32 +71,10 @@ class ReferenceGrowth:
             self.scores.clear()
             self.grade_totals.clear()
         self.release = release
-        total = context.get("total_capabilities")
-        if type(total) is int and total > 0:
-            self.expected = total
-        coverage = (visit.get("visit_evidence") or {}).get("baseline_coverage") or {}
-        groups = coverage.get("group_denominators") if isinstance(coverage, dict) else None
-        for item in groups if isinstance(groups, (list, tuple)) else ():
-            if isinstance(item, dict) and isinstance(item.get("group"), str):
-                count = item.get("total")
-                if type(count) is int and count > 0:
-                    owner = item["group"]
-                    self.grade_totals[owner] = max(count, self.grade_totals.get(owner, 0))
+        self._record_coverage(visit, context)
         accepted = visit.get("outcome") == "ACCEPTED"
         target = visit.get("capability_id")
-        explicit = visit.get("fixed_reference_scores")
-        if explicit is not None:
-            census = visit.get("fixed_reference_cohort_sha256")
-            if not isinstance(census, str) or len(census) != SHA256_HEX_LENGTH:
-                return
-            scores = paired_scores({"paired_scores": explicit})
-        else:
-            protected = visit.get("protected_capabilities")
-            if not isinstance(protected, list):
-                return
-            # Historical ordinary C05 redraws the target but keeps peer rows stable.
-            scores = {cap: pair for cap, pair in paired_scores(visit).items()
-                      if cap != target and cap in protected}
+        scores = _reference_pairs(visit, target)
         for cap, (before, after, denominator) in scores.items():
             if cap in self.blocked:
                 continue
