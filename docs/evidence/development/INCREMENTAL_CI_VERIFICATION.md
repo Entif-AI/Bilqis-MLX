@@ -15,8 +15,9 @@ Local worktrees share the database in the common Git directory. Set
 `BILQIS_VERIFICATION_LEDGER` to choose a different database.
 Use `--full` on either scanner or `BILQIS_VERIFICATION_FULL=1` for a cold run.
 
-Hosted quality jobs restore a separate read-only ledger from a successful
-completed push or scheduled run of the main quality workflow. The artifact is
+Hosted quality jobs restore a separate read-only ledger only when the latest
+completed main push or scheduled quality workflow succeeded. A newer failed run
+forces fresh verification rather than resurrecting older success. The artifact is
 bound to its workflow run and attempt; its restored bytes are checked before
 use. Fresh writes go to a different database. Only main push/scheduled jobs
 publish the result. Missing, expired, corrupted or mismatched evidence falls
@@ -26,8 +27,8 @@ fresh verification. The portable aggregate still requires every applicable job.
 The BAMF readiness, portable custody, architecture and legacy semantic boundary
 commands have individual passing receipts. These initially bind the complete
 tracked Git tree, exact command, installed dependency metadata, runner image,
-tool resolution and execution configuration. A clean tree and known hosted
-runner are required. The original required-tests command remains the readiness
+tool resolution, editable-install metadata and execution configuration. A clean
+checkout matching the hosted event SHA and a known hosted runner are required. The original required-tests command remains the readiness
 authority, including its failure on any skipped case. Narrower test-specific
 frontiers must be qualified before excluding source inputs.
 

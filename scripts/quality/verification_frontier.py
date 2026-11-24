@@ -37,6 +37,10 @@ def clean_tracked_tree(root: Path, *, command: list[str]) -> bool:
     if subprocess.run(["git", "--no-replace-objects", "diff", "--quiet", "HEAD", "--"],
                       cwd=root).returncode:
         return False
+    # A sparse or assume-unchanged index is not a clean source checkout.
+    index = _git(root, "ls-files", "-v", "-z")
+    if any(not entry.startswith(b"H ") for entry in index.split(b"\0") if entry):
+        return False
     untracked = _git(root, "ls-files", "--others", "--exclude-standard", "--directory", "-z")
     if any(not os.fsdecode(path).startswith("bilqis_mlx_private.egg-info/")
            for path in untracked.split(b"\0") if path):
@@ -61,12 +65,24 @@ def _configuration() -> dict[str, str]:
         "GITHUB_HEAD_REF", "GITHUB_BASE_REF", "GITHUB_SHA", "GITHUB_WORKFLOW_SHA",
         "GITHUB_EVENT_NAME", "GITHUB_WORKFLOW_REF", "GITHUB_REF_PROTECTED",
         "GITHUB_ACTOR", "GITHUB_ACTOR_ID", "GITHUB_TRIGGERING_ACTOR",
-        "RUNNER_TEMP", "RUNNER_TRACKING_ID", "RUNNER_NAME",
+        "RUNNER_TEMP", "RUNNER_TRACKING_ID", "RUNNER_NAME", "RUNNER_PERFLOG",
+        "ACTIONS_RUNTIME_TOKEN", "ACTIONS_RUNTIME_URL", "ACTIONS_RESULTS_URL",
+        "ACTIONS_CACHE_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN", "ACTIONS_ID_TOKEN_REQUEST_URL",
         "BILQIS_VERIFICATION_LEDGER", "BILQIS_VERIFICATION_FULL",
         "BILQIS_VERIFICATION_TRUSTED_LEDGER", "BILQIS_VERIFICATION_TRUSTED_SHA256",
         "BILQIS_VERIFICATION_TRUSTED_DESTINATION",
     }
     return {key: value for key, value in os.environ.items() if key not in volatile}
+
+
+def _editable_metadata(root: Path) -> tuple[tuple[str, str], ...]:
+    directory = root / "bilqis_mlx_private.egg-info"
+    if not directory.exists():
+        return ()
+    return tuple(
+        (str(path.relative_to(root)), hashlib.sha256(path.read_bytes()).hexdigest())
+        for path in sorted(directory.rglob("*")) if path.is_file()
+    )
 
 
 def execution_identity(root: Path, check: str, command: list[str]) -> tuple[str, str] | None:
@@ -93,10 +109,12 @@ def execution_identity(root: Path, check: str, command: list[str]) -> tuple[str,
         config = subprocess.check_output(["npm", "config", "list", "--json"], cwd=root)
         tools.append(hashlib.sha256(config).hexdigest())
     head = _git(root, "rev-parse", "HEAD").decode().strip()
+    if os.environ.get("GITHUB_SHA") != head:
+        return None
     environment = fingerprint(
         sys.implementation.name, sys.version, platform.platform(), platform.machine(),
         os.environ["ImageOS"], os.environ["ImageVersion"],
         os.environ.get("RUNNER_OS"), os.environ.get("RUNNER_ARCH"),
-        packages, tools, _configuration(),
+        packages, tools, _configuration(), _editable_metadata(root),
     )
     return head, fingerprint("ci-command/v1", check, command, frontier_digest(root, check), environment)

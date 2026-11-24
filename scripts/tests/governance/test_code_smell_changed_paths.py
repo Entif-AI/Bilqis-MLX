@@ -3,10 +3,12 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
+import os
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 SCRIPT = Path(__file__).parents[2] / "code_smell_audit.py"
 spec = importlib.util.spec_from_file_location("code_smell_audit", SCRIPT)
@@ -17,6 +19,9 @@ spec.loader.exec_module(audit)
 
 class ChangedPathSmellTests(unittest.TestCase):
     def setUp(self):
+        self.enterContext(patch.dict(os.environ, {
+            key: value for key, value in os.environ.items() if not key.startswith("GIT_")
+        }, clear=True))
         self.temp = tempfile.TemporaryDirectory(prefix="bilqis-smell-rename-")
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()

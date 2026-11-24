@@ -17,11 +17,11 @@ from .verification_ledger import full_requested
 WORKFLOW = ".github/workflows/quality.yml"
 
 
-def trusted_run(run: dict, repository: str) -> bool:
+def _eligible_run(run: dict, repository: str) -> bool:
     return (isinstance(run, dict) and isinstance(run.get("head_repository"), dict)
             and run.get("path") == WORKFLOW and run.get("head_branch") == "main"
             and run.get("event") in ("push", "schedule")
-            and run.get("status") == "completed" and run.get("conclusion") == "success"
+            and run.get("status") == "completed"
             and (run.get("head_repository") or {}).get("full_name") == repository
             and isinstance(run.get("head_sha"), str)
             and re.fullmatch(r"[0-9a-f]{40}", run["head_sha"]) is not None
@@ -30,10 +30,24 @@ def trusted_run(run: dict, repository: str) -> bool:
             and str(run["id"]) != os.environ.get("GITHUB_RUN_ID"))
 
 
+def trusted_run(run: dict, repository: str) -> bool:
+    return _eligible_run(run, repository) and run.get("conclusion") == "success"
+
+
+def _latest_run(runs: list[dict], repository: str) -> dict | None:
+    # A newer failed cold verification supersedes an earlier passing run.
+    # Never search backwards for a success after an eligible failure.
+    eligible = [run for run in runs if _eligible_run(run, repository)]
+    if not eligible:
+        return None
+    latest = max(eligible, key=lambda run: run["id"])
+    return latest if trusted_run(latest, repository) else None
+
+
 def _runs(repository: str) -> list[dict]:
     result = subprocess.check_output([
         "gh", "api", "--method", "GET", f"repos/{repository}/actions/workflows/quality.yml/runs",
-        "-f", "branch=main", "-f", "status=success", "-f", "per_page=8",
+        "-f", "branch=main", "-f", "status=completed", "-f", "per_page=20",
     ], timeout=12)
     return json.loads(result)["workflow_runs"]
 
@@ -45,23 +59,24 @@ def restore(destination: Path, scope: str) -> bool:
     if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository):
         return False
     try:
-        candidates = [run for run in _runs(repository) if trusted_run(run, repository)]
+        run = _latest_run(_runs(repository), repository)
+        if run is None:
+            print(f"VERIFICATION_LEDGER_COLD scope={scope} no-latest-passing-main")
+            return False
         destination.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=destination.parent) as temporary:
-            for run in candidates[:4]:
-                name = f"verification-ledger-{scope}-{run['run_attempt']}"
-                result = subprocess.run([
-                    "gh", "run", "download", str(run["id"]), "--repo", repository,
-                    "--name", name, "--dir", temporary,
-                ], capture_output=True, timeout=15)
-                candidate = Path(temporary) / "ledger.sqlite3"
-                if result.returncode == 0 and candidate.is_file() and not candidate.is_symlink():
-                    if 0 < candidate.stat().st_size <= 64 * 1024 * 1024:
-                        candidate.replace(destination)
-                        print(f"VERIFICATION_LEDGER_RESTORED scope={scope} "
-                              f"main_run={run['id']} head={run['head_sha']}")
-                        return True
-                candidate.unlink(missing_ok=True)
+            name = f"verification-ledger-{scope}-{run['run_attempt']}"
+            result = subprocess.run([
+                "gh", "run", "download", str(run["id"]), "--repo", repository,
+                "--name", name, "--dir", temporary,
+            ], capture_output=True, timeout=15)
+            candidate = Path(temporary) / "ledger.sqlite3"
+            if result.returncode == 0 and candidate.is_file() and not candidate.is_symlink():
+                if 0 < candidate.stat().st_size <= 64 * 1024 * 1024:
+                    candidate.replace(destination)
+                    print(f"VERIFICATION_LEDGER_RESTORED scope={scope} "
+                          f"main_run={run['id']} head={run['head_sha']}")
+                    return True
     except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError):
         pass
     print(f"VERIFICATION_LEDGER_COLD scope={scope}")

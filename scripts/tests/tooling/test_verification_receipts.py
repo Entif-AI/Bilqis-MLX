@@ -10,7 +10,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts.quality.restore_verification_ledger import main as restore_main, restore, trusted_run
+from scripts.quality.restore_verification_ledger import _latest_run, main as restore_main, restore, trusted_run
 from scripts.quality.run_verified import execute
 from scripts.quality.verification_frontier import frontier_digest
 from scripts.quality.verification_ledger import ledger_path
@@ -18,6 +18,11 @@ from scripts.quality.verification_ledger import ledger_path
 
 class VerificationReceiptTests(unittest.TestCase):
     def setUp(self):
+        # Git hooks and other launchers may export repository-local variables.
+        # A fixture repository must never inherit those selectors.
+        self.enterContext(patch.dict(os.environ, {
+            key: value for key, value in os.environ.items() if not key.startswith("GIT_")
+        }, clear=True))
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.base = Path(self.temp.name).resolve()
@@ -39,6 +44,7 @@ class VerificationReceiptTests(unittest.TestCase):
             "GITHUB_REF": "refs/heads/main",
             "GITHUB_EVENT_NAME": "push",
             "GITHUB_RUN_ID": "101",
+            "GITHUB_SHA": self.git("rev-parse", "HEAD"),
             "GITHUB_RUN_ATTEMPT": "1",
             "GITHUB_REPOSITORY": "Entif-AI/Bilqis-MLX",
             "BILQIS_VERIFICATION_LEDGER": str(self.database),
@@ -125,7 +131,8 @@ class VerificationReceiptTests(unittest.TestCase):
                 self.assertIn("identity-unavailable", self.run_check()[1])
                 self.git("add", ".")
                 self.git("commit", "-qm", "change")
-                self.assertNotIn("TEST_EVIDENCE_REUSED", self.run_check()[1])
+                with patch.dict(os.environ, {"GITHUB_SHA": self.git("rev-parse", "HEAD")}):
+                    self.assertNotIn("TEST_EVIDENCE_REUSED", self.run_check()[1])
         self.assertEqual(self.marker.read_text(), "xxxx")
 
     def test_complete_frontier_changes_for_application_and_runtime_source(self):
@@ -147,6 +154,7 @@ class VerificationReceiptTests(unittest.TestCase):
 
     def test_ignored_source_and_npm_configuration_invalidate(self):
         self.commit(".gitignore", "*.pyc\n")
+        os.environ["GITHUB_SHA"] = self.git("rev-parse", "HEAD")
         self.assertEqual(self.run_check()[0], 0)
         with self.pr_context():
             trusted = self.restore_producer()
@@ -185,6 +193,14 @@ class TrustedArtifactTests(unittest.TestCase):
             ):
                 with self.subTest(change=change):
                     self.assertFalse(trusted_run(self.run_metadata(**change), repo))
+
+    def test_failed_latest_main_cannot_inherit_older_success(self):
+        repo = "Entif-AI/Bilqis-MLX"
+        old = self.run_metadata(id=123)
+        failed = self.run_metadata(id=124, conclusion="failure")
+        pr = self.run_metadata(id=125, event="pull_request")
+        self.assertIsNone(_latest_run([pr, old, failed], repo))
+        self.assertEqual(_latest_run([pr, old], repo), old)
 
     def test_restore_uses_exact_successful_main_attempt(self):
         repo = "Entif-AI/Bilqis-MLX"

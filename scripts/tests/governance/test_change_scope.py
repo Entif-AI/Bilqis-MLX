@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 from pathlib import Path
+import os
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from scripts.quality import change_scope
 
@@ -15,6 +17,9 @@ def git(root: Path, *args: str) -> str:
 
 class ChangeScopeTests(unittest.TestCase):
     def setUp(self):
+        self.enterContext(patch.dict(os.environ, {
+            key: value for key, value in os.environ.items() if not key.startswith("GIT_")
+        }, clear=True))
         self.temp = tempfile.TemporaryDirectory(prefix="bilqis-change-scope-")
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()
