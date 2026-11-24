@@ -254,3 +254,52 @@ test("transport loss never discards an already-rendered route or last-good snaps
   assert.equal(defenses.at(-1).snapshotSource, "previous");
   assert.equal(scheduled.length, 1);
 });
+
+test("live route ignores old generation and follows accepted tip without losing navigation", async () => {
+  let state = null;
+  let verified = null;
+  let generation = OPERATOR_VIEW.meta.run.generation;
+  const runId = OPERATOR_VIEW.meta.run.run_id;
+  const scheduled = [];
+  const status = () => ({
+    state: "healthy", serviceLive: true, serviceReady: true,
+    learnerReady: true, runId, generation,
+  });
+  const controller = createBootstrapController({
+    api: {
+      connect: async () => status(),
+      status: async () => status(),
+      querySnapshot: async () => {
+        const snapshot = structuredClone(OPERATOR_VIEW);
+        snapshot.meta.run.generation = generation;
+        if (generation !== OPERATOR_VIEW.meta.run.generation) {
+          snapshot.meta.run.generation_manifest_sha256 = "8".repeat(64);
+        }
+        return snapshot;
+      },
+    },
+    storage: storageFixture(),
+    getState: () => state,
+    setState: next => { state = next; },
+    setDefense() {},
+    setBootstrap() {},
+    setVerifiedLiveContext: next => { verified = next; },
+    resetFrameShell() {},
+    render() {},
+    announce() {},
+    currentHash: () => "#/view/school?run=fixture-run&generation=2&mode=LIVE",
+    scheduleReconnect: callback => { scheduled.push(callback); return scheduled.length; },
+    cancelReconnect() {},
+  });
+  await controller.establishSnapshot();
+  assert.equal(state.view, "school");
+  assert.equal(state.context.generation, generation);
+  assert.equal(state.context.freshness, "FRESH");
+  state = { ...state, view: "learning" };
+  generation += 1;
+  await scheduled.shift()();
+  assert.equal(state.view, "learning");
+  assert.equal(state.context.generation, generation);
+  assert.equal(verified.generation, generation);
+  assert.equal(state.context.freshness, "FRESH");
+});

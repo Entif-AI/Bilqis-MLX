@@ -175,7 +175,7 @@ test("fixture provenance is launch-owned and cannot be promoted by a deep-link f
   assert.equal(constrainRouteToLaunchMode(route, "production").context.fixture, false);
   assert.equal(constrainRouteToLaunchMode({ ...route, context: { ...route.context, fixture: false } }, "fixtures").context.fixture, true);
   const bootstrap = source("foundation/bootstrap-controller.mjs");
-  assert.match(bootstrap, /if \(!fixtureMode\) cacheOperatorView/);
+  assert.match(bootstrap, /if \(!fixtureMode && operatorView\) cacheOperatorView/);
   assert.match(bootstrap, /!fixtureMode && operatorView === null/);
   assert.match(bootstrap, /mutationAvailable: fixtureMode \? false/);
 });

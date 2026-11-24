@@ -23,13 +23,13 @@ function runQuery() {
     mode: "current",
     run_id: null,
     record_id: null,
-    schema_version: null,
+    schema_version: OPERATOR_VIEW_SCHEMA,
     generation: null,
     frontier_id: null,
     as_of: null,
     reference: null,
     cursor: null,
-    limit: 32,
+    limit: 1,
   };
 }
 

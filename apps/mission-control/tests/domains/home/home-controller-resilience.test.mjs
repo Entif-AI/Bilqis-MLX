@@ -55,12 +55,6 @@ test("one unavailable family cannot blind paginated live run evidence", async ()
         };
       }
       if (request.family === "episode") {
-        if (request.limit !== 8) {
-          return {
-            accepted: false, family: "episode", mode: "current",
-            reason: "CONTROL_PLANE_QUERY_RESPONSE_TOO_LARGE",
-          };
-        }
         return {
           accepted: true, family: "episode", mode: "current", state: "PARTIAL",
           coverage: "PARTIAL", records: [], markers: [], links: [],

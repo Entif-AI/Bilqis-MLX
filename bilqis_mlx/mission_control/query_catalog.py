@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from dataclasses import replace
+from functools import lru_cache
 
 from .contracts.envelopes import (
     PartialEnvelope, StaleEnvelope, UnavailableEnvelope,
@@ -21,7 +23,7 @@ from .semantic import (
     SemanticSimilaritySnapshot,
 )
 from .query_support import (
-    FAMILY_TYPES, build_page, encode_query_page, matches_identity,
+    FAMILY_TYPES, _rows_digest, build_page, encode_query_page, matches_identity,
     record_sort_key, select_current,
 )
 
@@ -38,6 +40,8 @@ class MissionControlQueryCatalog:
         self._records = tuple(sorted(copied, key=record_sort_key))
         self.available = available
         self._by_id = {item.meta.record_id: item for item in self._records}
+        self._selection = lru_cache(maxsize=32)(self._select)
+        self._selection_digest = lru_cache(maxsize=32)(self._digest)
 
     @classmethod
     def unavailable(cls) -> "MissionControlQueryCatalog":
@@ -242,10 +246,19 @@ class MissionControlQueryCatalog:
         return self._page(
             request, (), markers, links, exact_missing=not links and not markers)
 
-    def _page(self, request, records, markers, links=(), *, exact_missing=False):
+    def _select(self, request):
+        records = self._base_records(request)
+        return records, self._markers(records, request)
+
+    def _digest(self, request):
+        return _rows_digest(self._selection(request)[0])
+
+    def _page(self, request, records, markers, links=(), *, exact_missing=False,
+              rows_digest=None):
         return build_page(
             available=self.available, request=request, records=records,
             markers=markers, links=links, exact_missing=exact_missing,
+            rows_digest=rows_digest,
         )
 
     def query(self, request: QueryRequest) -> QueryPage:
@@ -255,8 +268,8 @@ class MissionControlQueryCatalog:
             return self._query_reference(request)
         if not self.available:
             return self._page(request, (), (), exact_missing=False)
-        records = self._base_records(request)
-        markers = self._markers(records, request)
+        identity = replace(request, cursor=None)
+        records, markers = self._selection(identity)
         exact_missing = bool(
             request.record_id is not None
             or request.generation is not None
@@ -264,7 +277,8 @@ class MissionControlQueryCatalog:
             or request.as_of is not None
         ) and not records and not markers
         return self._page(
-            request, records, markers, exact_missing=exact_missing)
+            request, records, markers, exact_missing=exact_missing,
+            rows_digest=lambda: self._selection_digest(identity))
 
     @staticmethod
     def encode_page(page: QueryPage) -> dict:

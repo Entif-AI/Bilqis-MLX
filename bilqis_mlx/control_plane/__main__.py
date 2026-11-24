@@ -52,6 +52,7 @@ def _composed_query_source(run_dir: Path, projection: MissionControlProjection):
         return MissionControlQueryCatalog((*catalog.records, *projection.notifications()))
 
     source._bilqis_query_aware = True
+    source._native_material = getattr(native, "_native_material", None)
     return source
 
 

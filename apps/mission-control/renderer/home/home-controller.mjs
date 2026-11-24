@@ -84,18 +84,24 @@ export function createHomeController(api, {
   }
   async function queryFamily(family, source) {
     const paginated = new Set(["run", "episode", "notification"]);
-    if (!paginated.has(family)) return api.query(queryRequest(family, source));
+    if (!paginated.has(family)) return api.query(queryRequest(family, source,
+      family === "semantic" ? { schema_version: "bilqis.bamf.mission-control.semantic-atlas-snapshot/v1" } : {}));
     let cursor = null;
     let first = null;
     const records = [], markers = [], links = [];
-    const seen = new Set();
+    const seen = new Set(), markerIds = new Set();
     do {
       const page = await api.query(queryRequest(
-        family, source, { cursor, ...(family === "episode" ? { limit: 8 } : {}) }));
+        family, source, { cursor }));
       if (page?.accepted !== true) return page;
       first ??= page;
       records.push(...(page.records ?? []));
-      markers.push(...(page.markers ?? []));
+      for (const marker of page.markers ?? []) {
+        const id = marker.meta?.record_id;
+        if (id && markerIds.has(id)) continue;
+        if (id) markerIds.add(id);
+        markers.push(marker);
+      }
       links.push(...(page.links ?? []));
       const next = page.next_cursor ?? null;
       if (next === null) break;
