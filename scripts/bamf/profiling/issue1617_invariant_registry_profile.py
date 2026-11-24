@@ -116,17 +116,73 @@ def worker(args, d):
     print('ARM_COMPLETE', args.worker, json.dumps(report['exam']), flush=True)
 
 
+
+def scope_smoke(run, d):
+    """Exercise actual training lowering and C05 compilation before a long run."""
+    from types import SimpleNamespace
+    from bilqis_mlx.runtime import factory_candidate_microbatch as training
+    from bilqis_mlx.runtime import factory_complete_solver as evaluation
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
+    from bilqis_mlx.runtime.bamf_operator.session_parts.session_support import _execution_context
+    from scripts.bamf.profiling.issue1617_invariant_registry_scope import install_scope
+
+    d.h.require(run.resolve() != (d.h.ROOT.parent / 'aspirant').resolve(), 'sovereign run prohibited')
+    d.h.require(Path(os.environ['BILQIS_DATA_PLANE']).resolve() == (run.parent / 'plane.sqlite3').resolve(), 'wrong smoke plane')
+    with evidence_mode(strict=False):
+        parent, context, artifact, _ = _execution_context(run)
+        feature = context._accepted_feature_context
+        rows = tuple(context.draw_rows(seed=17, capability='A.PARENT', each=2))
+        d.h.require(len(rows) == 2, 'smoke source rows missing')
+        compiled = SimpleNamespace(
+            sources=(SimpleNamespace(source_row=rows[0]),),
+            compiled=SimpleNamespace(features=feature.features))
+        recorder = d.Recorder()
+        recorder.install()
+
+        def train():
+            return training._learning_first_task_goals(context, compiled)
+
+        def assess():
+            instruments = evaluation.factory_evaluation_instruments(
+                source_context=context, candidate=parent, artifact_path=str(artifact),
+                rows=rows, seed=17, each=2, release_prevalidated=True,
+                authenticated=feature)
+            return tuple((item.case, item.compiled_case.task_template,
+                          item.source_row, item.prevalidated_exact_result)
+                         for item in instruments)
+
+        reference, reference_exam = train(), assess()
+        d.h.require(reference[0].goal_id == rows[0]['id']
+                    and len(reference_exam) == 2, 'reference lowering mismatch')
+        counts = install_scope()
+        for _ in range(2):
+            d.h.require(train() == reference, 'prepared training goals drift')
+            d.h.require(assess() == reference_exam, 'prepared evaluation instruments drift')
+        for key in ('operator_registry_hit', 'operator_digest_hit',
+                    'source_registry_hit', 'lowerers_hit'):
+            d.h.require(counts[key] > 0, 'unexercised reuse: ' + key)
+        saved = dict(counts)
+    with evidence_mode(strict=True):
+        d.h.require(train() == reference, 'strict lowering drift')
+        d.h.require(dict(counts) == saved, 'strict path consumed prepared state')
+    print('SCOPE_SMOKE_PASS', json.dumps(saved, sort_keys=True), flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--donor', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--worker', choices=('baseline', 'prepared'))
     parser.add_argument('--prepare-only', action='store_true')
+    parser.add_argument('--scope-smoke-run', type=Path)
     parser.add_argument('--baseline-result', type=Path,
                         help='Reuse a completed matched baseline result without rerunning it')
     args = parser.parse_args()
     args.output = args.output.resolve()
     d = donor(args.donor, args.output)
+    if args.scope_smoke_run is not None:
+        scope_smoke(args.scope_smoke_run, d)
+        return
     if args.worker:
         worker(args, d)
         return

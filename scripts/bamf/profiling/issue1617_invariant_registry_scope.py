@@ -55,7 +55,8 @@ def install_scope():
 
     def around(fn):
         @wraps(fn)
-        def call(context, *args, **kwargs):
+        def call(source_context, *args, **kwargs):
+            context = source_context
             nonlocal latest
             if (strict_evidence_enabled()
                     or getattr(context, '_accepted_feature_context', None) is None):
@@ -70,13 +71,13 @@ def install_scope():
                 active.reset(token)
         return call
 
-    def memoized(fn, attribute, label):
+    def memoized(fn, table_for, label):
         @wraps(fn)
         def call(key):
             owner = owned()
             if owner is None:
                 return fn(key)
-            table = getattr(owner, attribute)
+            table = table_for(owner)
             if key not in table:
                 counts[label + '_miss'] += 1
                 table[key] = fn(key)
@@ -122,8 +123,8 @@ def install_scope():
         return call
 
     targets = {
-        id(registry.default_registry): memoized(registry.default_registry, 'registries', 'operator_registry'),
-        id(registry._implementation_digest): memoized(registry._implementation_digest, 'implementation_digest', 'operator_digest'),
+        id(registry.default_registry): memoized(registry.default_registry, lambda owner: owner.registries, 'operator_registry'),
+        id(registry._implementation_digest): memoized(registry._implementation_digest, lambda owner: owner.implementation_digests, 'operator_digest'),
         id(school.live_source_registry): source_registry(school.live_source_registry),
         id(task_goal_registry.live_task_goal_lowerers): lowerers(task_goal_registry.live_task_goal_lowerers),
     }
