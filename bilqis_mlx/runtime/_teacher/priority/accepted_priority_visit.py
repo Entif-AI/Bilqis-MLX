@@ -58,7 +58,7 @@ def _selected_priority_result(
         program, grade, salience_evidence, holds, lawful_frontier, total_capabilities,
         plasticity_escape, priority_features, cadence_authorization,
         planning_offer, source_materialization_wall_seconds,
-        planning_offer_fanout_wall_seconds):
+        planning_offer_fanout_wall_seconds, salience_history=None):
     capability = option.context.capability_id
     from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
         strict_mode_enabled,
@@ -93,7 +93,11 @@ def _selected_priority_result(
     if strict:
         planning_authority = getattr(planning_offer, 'source_authority', None)
         planning_receipt = getattr(planning_authority, 'content_sha256', None)
+        from bilqis_mlx.runtime.bamf_operator.evidence_parts.salience import (
+            issued_salience_observations,
+        )
         ranking_evidence = {
+            'salience_events': issued_salience_observations(salience_history),
             **priority_features,
             'dispatch_tier': int(dispatch_tier),
             'eligible_since': option.eligible_since,
@@ -279,7 +283,7 @@ def _select_strict_priority_visit(
             evidence[option.stable_id], holds, lawful_frontier, total_capabilities,
             plasticity_escape, priority_features, cadence_authorization,
             planning_offer, materialization_wall,
-            planning_offer_fanout_wall_seconds)
+            planning_offer_fanout_wall_seconds, salience_history=history)
     if action_required_option_id is not None:
         return _issue_result(
             'ACTION_REQUIRED', action_required_option_id, None, None, None,

@@ -18,7 +18,10 @@ from .native_factory import accepted_factory_records
 from .native_rejections import rejection_material
 from .native_contracts import run_ref
 from .observed import observed_records, publish_observed_events
+from .observed.school import ObservedSchoolProjection
+from .observed.salience import unavailable_salience
 from .projection.memory import accepted_memory_records
+from .projection.school import admitted_school_records, read_admitted_release
 from .projection.correction_frontier import accepted_correction_frontier
 from .projection.learning_history import LearningHistoryProjection, learning_history_summary
 from .projection.capability_dossier import (
@@ -80,12 +83,16 @@ def _project_accepted_base(run_dir, history, *,
         events.extend(emitted)
         parent = generation
     records.extend(accepted_factory_records(history))
+    release = None
     if history:
         records.extend(semantic_projection(run_dir, history[-1]))
+        release = read_admitted_release(run_dir, history[-1])
+        records.extend(admitted_school_records(history[-1], release, records))
+        records.append(unavailable_salience(history[-1]))
     return NativeProjectionMaterial(
         tuple(records), tuple(events),
         tuple(generation.manifest_sha256 for generation in history),
-        _accepted_learning_health(history))
+        _accepted_learning_health(history), release)
 
 
 class _AcceptedBaseCache:
@@ -118,7 +125,8 @@ def _materialize_authenticated_history(
         (rejection_source or rejection_material)(run_dir, history)
         if include_live_rejections
         else rejection_material(run_dir, history, portable_only=True))
-    records.extend(_accepted_capability_dossiers(history, rejected_records))
+    records.extend(_accepted_capability_dossiers(
+        history, rejected_records, release=base.admitted_release))
     after = accepted_pointer(run_dir)
     if (not history
             or after["manifest_sha256"] != history[-1].manifest_sha256
@@ -129,7 +137,8 @@ def _materialize_authenticated_history(
     if include_live_rejections:
         records.extend(observed_records(
             run_dir, tuple(run_ref(item) for item in history),
-            accepted_health_by_manifest=accepted_health))
+            accepted_health_by_manifest=accepted_health,
+            school_projection=ObservedSchoolProjection(records)))
     records.extend(rejected_records)
     if include_live_rejections:
         summary = learning_summary(history[-1], records)
@@ -137,7 +146,8 @@ def _materialize_authenticated_history(
             records.append(summary)
     events.extend(rejected_events)
     return NativeProjectionMaterial(
-        tuple(records), tuple(events), base.generation_manifests, accepted_health)
+        tuple(records), tuple(events), base.generation_manifests, accepted_health,
+        base.admitted_release)
 
 
 def materialize_native_projection(

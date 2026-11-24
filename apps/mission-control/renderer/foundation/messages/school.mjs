@@ -1,5 +1,6 @@
 export const SCHOOL_MESSAGES = Object.freeze({
   "school.common.none": "None",
+  "school.sourceFamilies.observedPartial": " (observed; partial)",
   "school.common.unavailable": "Unavailable",
   "school.common.notMeasured": "Not measured",
   "school.common.notExposed": "Not exposed",

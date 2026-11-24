@@ -259,8 +259,8 @@ export function projectionFromPages(pages, context) {
       qualifiedCapabilities: qualified || (completePage(pages, "capability") && capabilityRows.every((row) => ["QUALIFIED", "NOT_QUALIFIED"].includes(row.status)) ? 0 : null),
       observedDebt: pages.capability?.truncated ? null : debt,
       activeConcepts: value(semantic, "active_concepts"),
-      ready: frontier?.ready_capability_ids?.length ?? null,
-      held: frontier?.held_capability_ids?.length ?? null,
+      ready: frontier?.meta?.coverage === "COMPLETE" ? frontier.ready_capability_ids.length : null,
+      held: frontier?.meta?.coverage === "COMPLETE" ? frontier.held_capability_ids.length : null,
       uncovered: null,
     }),
     runtime: Object.freeze({

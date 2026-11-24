@@ -81,6 +81,7 @@ class NativeProjectionMaterial:
     events: tuple[tuple[EventFamily, object, str], ...]
     generation_manifests: tuple[str, ...]
     accepted_learning_health_by_manifest: dict | None = None
+    admitted_release: object | None = None
 
 
 def run_ref(generation: AuthenticatedGeneration) -> RunRef:

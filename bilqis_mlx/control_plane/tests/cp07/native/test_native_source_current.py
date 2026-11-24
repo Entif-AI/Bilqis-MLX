@@ -16,15 +16,17 @@ from bilqis_mlx.mission_control import (
     NeuralRuntimeSample, OperatorView, ResourceSample, TeacherSnapshot,
 )
 from bilqis_mlx.mission_control.contracts.dossier import CapabilityDossier
+from bilqis_mlx.mission_control.contracts.snapshots import CurriculumFrontier
+from bilqis_mlx.control_plane.projection.school import read_admitted_release
 from bilqis_mlx.mission_control.electron_bridge import ElectronBridge
 from bilqis_mlx.mission_control.projection import MissionControlProjection
 from bilqis_mlx.mission_control.query_contracts import QueryFamily, QueryMode, QueryRequest
 from bilqis_mlx.runtime.bamf_bundle import record_bamf_rejection
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import retention_decision
-from ..observed import test_source as observed_support
+from ...observed import test_source as observed_support
 
 
-from .native_source_support import NativeSourceFixture
+from ..native_source_support import NativeSourceFixture
 
 
 class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
@@ -156,7 +158,8 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
             source_generation, _pointer = self.publish_successor()
             catalog = native_query_source(self.run)()
             capability = catalog.query(QueryRequest(
-                QueryFamily.CAPABILITY, run_id=source_generation.run_id))
+                QueryFamily.CAPABILITY, run_id=source_generation.run_id,
+                schema_version=CapabilitySnapshot.SCHEMA, limit=32))
             episode = catalog.query(QueryRequest(
                 QueryFamily.EPISODE, run_id=source_generation.run_id))
             self.assertTrue(any(
@@ -175,7 +178,11 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
 
             catalog = native_query_source(self.run)()
             capability = catalog.query(QueryRequest(
-                QueryFamily.CAPABILITY, run_id=source_generation.run_id))
+                QueryFamily.CAPABILITY, run_id=source_generation.run_id,
+                schema_version=CapabilitySnapshot.SCHEMA, limit=32))
+            dossier = catalog.query(QueryRequest(
+                QueryFamily.CAPABILITY, run_id=source_generation.run_id,
+                schema_version=CapabilityDossier.SCHEMA, limit=32))
             episode = catalog.query(QueryRequest(
                 QueryFamily.EPISODE, run_id=source_generation.run_id))
             neural = catalog.query(QueryRequest(
@@ -185,15 +192,19 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
                 if isinstance(record, CapabilitySnapshot)
             }
             dossiers = {
-                record.capability_id for record in capability.records
+                record.capability_id for record in dossier.records
                 if isinstance(record, CapabilityDossier)
             }
             episodes = {
                 record.capability_id for record in episode.records
                 if isinstance(record, LearningEpisode)
             }
-            self.assertEqual(snapshots, {"A.NATIVE", "A.EDGE"})
-            self.assertEqual(dossiers, {"A.NATIVE", "A.EDGE"})
+            release = read_admitted_release(self.run, authenticated_history(self.run)[-1])
+            admitted = {item.capability_id for item in release.execution_plan.capabilities}
+            self.assertEqual(snapshots, admitted | {"A.NATIVE", "A.EDGE"})
+            self.assertEqual(dossiers, admitted | {"A.NATIVE", "A.EDGE"})
+            self.assertIsNone(capability.next_cursor)
+            self.assertIsNone(dossier.next_cursor)
             self.assertEqual(episodes, {"A.NATIVE", "A.EDGE"})
             runtime = next(
                 record for record in neural.records
@@ -221,6 +232,7 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
                 capability = bridge.query(QueryRequest(
                     QueryFamily.CAPABILITY,
                     run_id=source_generation.run_id,
+                    schema_version=CapabilitySnapshot.SCHEMA, limit=32,
                 ).to_record())
                 episode = bridge.query(QueryRequest(
                     QueryFamily.EPISODE,
@@ -232,8 +244,11 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
                         if record["schema_version"]
                         == "bilqis.bamf.mission-control.capability-snapshot/v1"
                     },
-                    {"A.NATIVE", "A.EDGE"},
+                    {item.capability_id for item in read_admitted_release(
+                        self.run, authenticated_history(self.run)[-1]
+                    ).execution_plan.capabilities} | {"A.NATIVE", "A.EDGE"},
                 )
+                self.assertIsNone(capability["next_cursor"])
                 self.assertEqual(
                     {
                         record["capability_id"] for record in episode["records"]
@@ -285,14 +300,29 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
             self.assertEqual(semantic.state.value, "PARTIAL")
             self.assertGreater(len(semantic.records), 0)
 
+            school = catalog.query(QueryRequest(QueryFamily.SCHOOL, run_id=source.run_id))
+            self.assertEqual(school.state.value, "PARTIAL")
+            frontier = next(row for row in school.records if isinstance(row, CurriculumFrontier))
+            self.assertEqual(frontier.meta.coverage.value, "PARTIAL")
+            self.assertEqual(frontier.ready_capability_ids, ())
+            self.assertEqual(frontier.held_capability_ids, ())
+            release = read_admitted_release(self.run, authenticated_history(self.run)[-1])
+            self.assertEqual(set(frontier.admitted_capability_ids),
+                             {item.capability_id for item in release.execution_plan.capabilities})
             for family in (
-                    QueryFamily.SCHOOL, QueryFamily.FRAME,
-                    QueryFamily.SALIENCE, QueryFamily.CORRECTION):
+                    QueryFamily.FRAME, QueryFamily.CORRECTION):
                 page = catalog.query(QueryRequest(family, run_id=source.run_id))
                 self.assertEqual(page.state.value, "EMPTY", family.value)
                 self.assertEqual(page.coverage.value, "COMPLETE", family.value)
                 self.assertEqual(page.records, (), family.value)
                 self.assertEqual(page.markers, (), family.value)
+
+            salience = catalog.query(QueryRequest(
+                QueryFamily.SALIENCE, run_id=source.run_id,
+                schema_version="bilqis.bamf.mission-control.salience-event/v1"))
+            self.assertEqual(salience.state.value, "UNAVAILABLE")
+            self.assertEqual(salience.records, ())
+            self.assertEqual(len(salience.markers), 1)
 
             generation = catalog.query(QueryRequest(
                 QueryFamily.GENERATION, run_id=source.run_id))

@@ -3,7 +3,8 @@ from __future__ import annotations
 
 from .contracts.model import WireRecord
 from .contracts.dossier import CapabilityDossier
-from .contracts.events import CorrectionFrontierSnapshot, LearningHistorySummary
+from .contracts.events import CorrectionFrontierSnapshot, LearningHistorySummary, SalienceEvent
+from .contracts.envelopes import UnavailableEnvelope
 from .contracts.observability import (
     GenerationManifest, GenerationManifestV2, MemorySnapshot, MemorySnapshotV2, NeuralRuntimeSample, ResourceSample,
     SemanticAtlasSnapshot, SemanticProjectionSnapshot, SemanticReleaseSnapshot,
@@ -130,13 +131,20 @@ def _current_identity(record: WireRecord):
     return None
 
 
+def is_live_overlay(record):
+    return (isinstance(record, TrainerObservation)
+            or isinstance(record, (CurriculumFrontier, CapabilityDossier, SalienceEvent))
+            and record.meta.record_id.startswith("trainer-observed:"))
+
+
 def matches_identity(
         item: WireRecord, request: QueryRequest, *, match_record_id: bool = True) -> bool:
-    if isinstance(item, (TrainerObservation, LearningHistorySummary)) and (
+    if (is_live_overlay(item) or isinstance(item, LearningHistorySummary)) and (
             request.mode is not QueryMode.CURRENT or request.generation is not None
             or request.as_of is not None or request.frontier_id is not None):
         return False
-    if request.schema_version is not None and item.schema_version != request.schema_version:
+    if (request.schema_version is not None and item.schema_version != request.schema_version
+            and (match_record_id or not isinstance(item, UnavailableEnvelope))):
         return False
     if request.run_id is not None:
         global_notification = (

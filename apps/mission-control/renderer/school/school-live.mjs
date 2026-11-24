@@ -44,11 +44,16 @@ export function schoolRowFromRecord(record, dossier = null, dossierState = "UNAV
   const visits = dossierValue(dossier, "visits");
   const retainedSteps = dossierValue(dossier, "retained_steps");
   const strategy = dossierValue(dossier, "strategy");
+  const prerequisiteCount = dossierValue(dossier, "prerequisite_count");
+  const prerequisites = (dossier?.entries ?? [])
+    .filter((entry) => entry.kind === "prerequisite" && entry.related_kind === "capability")
+    .map((entry) => entry.related_id);
+  const prerequisitesKnown = Number.isInteger(prerequisiteCount) && prerequisiteCount === prerequisites.length;
   return Object.freeze({
     id: record.capability_id,
     grade: record.grade_id,
     family: null,
-    prerequisites: Object.freeze([]),
+    prerequisites: Object.freeze(prerequisitesKnown ? prerequisites : []),
     was,
     top,
     now: value(record.score_correct),
@@ -61,7 +66,9 @@ export function schoolRowFromRecord(record, dossier = null, dossierState = "UNAV
     lastGain: null,
     lastRegression: null,
     strategy,
-    sourceFamilies: Object.freeze([]),
+    sourceFamilies: Object.freeze((dossier?.entries ?? [])
+      .filter((entry) => entry.kind === 'observed-source-family')
+      .map((entry) => entry.related_id)),
     sourceState: value(dossier?.source_state),
     implementationState: null,
     lifecycleState: record.status,
@@ -77,7 +84,7 @@ export function schoolRowFromRecord(record, dossier = null, dossierState = "UNAV
     evidenceRefs: Object.freeze([...(record.meta?.evidence_refs ?? [])]),
     receiptRefs: Object.freeze([...(record.meta?.receipt_refs ?? [])]),
     absenceReasons: Object.freeze({
-      prerequisites: "PREREQUISITE_PROJECTION_UNAVAILABLE",
+      prerequisites: prerequisitesKnown ? null : "PREREQUISITE_PROJECTION_UNAVAILABLE",
       was: was === null ? gap : null,
       top: top === null ? gap : null,
       growth: "GROWTH_NOT_MEASURED",
@@ -88,7 +95,7 @@ export function schoolRowFromRecord(record, dossier = null, dossierState = "UNAV
       lastRegression: "HISTORY_EVENT_SUMMARY_NOT_PROJECTED",
       strategy: strategy === null ? gap : null,
       sourceFamilies: "SOURCE_FAMILY_PROJECTION_UNAVAILABLE",
-      sourceState: "SOURCE_STATE_PROJECTION_UNAVAILABLE",
+      sourceState: value(dossier?.source_state) === null ? "SOURCE_STATE_PROJECTION_UNAVAILABLE" : null,
       implementationState: "IMPLEMENTATION_STATE_PROJECTION_UNAVAILABLE",
     }),
   });

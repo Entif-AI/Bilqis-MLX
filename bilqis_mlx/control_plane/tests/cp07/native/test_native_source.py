@@ -15,10 +15,10 @@ from bilqis_mlx.mission_control.projection import MissionControlProjection
 from bilqis_mlx.mission_control.query_contracts import QueryFamily, QueryMode, QueryRequest
 from bilqis_mlx.runtime.bamf_bundle import record_bamf_rejection
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import retention_decision
-from ..observed import test_source as observed_support
+from ...observed import test_source as observed_support
 
 
-from .native_source_support import NativeSourceFixture
+from ..native_source_support import NativeSourceFixture
 
 
 class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
@@ -92,11 +92,19 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
         self.assertEqual(episodes[0].meta.coverage.value, "PARTIAL")
         self.assertEqual(len(candidates), 1)
         self.assertEqual(candidates[0].outcome.value, "ACCEPTED")
-        self.assertEqual(len(capabilities), 1)
-        self.assertEqual(capabilities[0].grade_id, "UNKNOWN")
-        self.assertEqual(capabilities[0].score_correct.state.value, "MISSING")
-        self.assertEqual(capabilities[0].score_total.state.value, "MISSING")
-        self.assertEqual(capabilities[0].debt.state.value, "MISSING")
+        from bilqis_mlx.control_plane.projection.school import read_admitted_release
+        release = read_admitted_release(self.run, history[-1])
+        admitted = {item.capability_id for item in release.execution_plan.capabilities}
+        self.assertEqual({row.capability_id for row in capabilities}, admitted | {"A.NATIVE"})
+        native = next(row for row in capabilities if row.capability_id == "A.NATIVE")
+        self.assertEqual(native.grade_id, "UNKNOWN")
+        self.assertEqual(native.score_correct.state.value, "MISSING")
+        self.assertEqual(native.score_total.state.value, "MISSING")
+        self.assertEqual(native.debt.state.value, "MISSING")
+        for row in capabilities:
+            if row.capability_id in admitted:
+                self.assertEqual(row.status, "ADMITTED")
+                self.assertEqual(row.score_correct.state.value, "MISSING")
         self.assertEqual(len(resources), 1)
         self.assertEqual(resources[0].memory_used_bytes.state.value, "UNKNOWN")
         self.assertEqual(resources[0].memory_budget_bytes.value, 64 * 1024 ** 3)
