@@ -59,6 +59,7 @@ class CandidateLessonRows:
     fresh_support_unavailable_reason: str | None = None
     fresh_support_depth_control: str | None = None
     prefetch_identity: str | None = None
+    weakness_unavailable: tuple[tuple[str, str], ...] = ()
 
     @property
     def delivered(self) -> tuple:
@@ -109,6 +110,11 @@ class CandidateSourceLane:
         self.policy_support_enabled = policy_support_enabled
         self.pending = {}
         self.rehearsal_custody = {}
+        self.weakness_unavailable = {}
+        # The ordered preparation prefix projects exposure for subsequent
+        # packets. Only executed steps enter the durable outcome.
+        self.weakness_exposures = dict(
+            getattr(rehearsal_plan, "weakness_exposures", ()))
         self.fresh_support_custody = {}
         source_registry = getattr(source_context, "source_registry", None)
         graph = getattr(source_context, "graph", None)
@@ -127,7 +133,15 @@ class CandidateSourceLane:
         rehearsal = (
             None if self.rehearsal_plan is None else
             materialize_rehearsal_rows(
-                self.source_context, self.rehearsal_plan, ordinal))
+                self.source_context, self.rehearsal_plan, ordinal,
+                reserved_rows=(*self.selection.offer.rows(), *self.enrichment_rows),
+                exposure_counts=self.weakness_exposures))
+        if rehearsal is not None:
+            self.weakness_unavailable[ordinal] = rehearsal.weakness_unavailable
+            for binding in rehearsal.bindings:
+                key = binding.get("weakness_debt_key")
+                if key is not None:
+                    self.weakness_exposures[key] = self.weakness_exposures.get(key, 0) + 1
         self.rehearsal_custody[ordinal] = (
             () if rehearsal is None else rehearsal.authorities)
         fresh_support = None
@@ -204,7 +218,8 @@ class CandidateSourceLane:
             tuple(request.get("rehearsal_bindings", ())),
             tuple(self.rehearsal_custody.pop(ordinal, ())),
             tuple(fresh_support), fresh_binding, fresh_authority,
-            fresh_reason, fresh_control, request["identity"])
+            fresh_reason, fresh_control, request["identity"],
+            self.weakness_unavailable.pop(ordinal, ()))
 
     def rows(self, ordinal: int):
         return self.lesson(ordinal).direct

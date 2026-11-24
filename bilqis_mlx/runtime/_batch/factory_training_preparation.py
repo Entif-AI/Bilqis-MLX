@@ -113,18 +113,46 @@ def _learning_first_source_inputs(
     return source_rows, tuple(prepared_model_sources), False, ahead_discarded
 
 
+def _selected_delivery_authority(source_context, rows, authority, delivery,
+                                 capability, source_seed):
+    """Preserve the actual direct subset; revalidate only released enrichment."""
+    if (authority.capability_id != capability or authority.seed != source_seed
+            or authority.each > len(rows)
+            or (delivery is not None and tuple(delivery.specimen_ids)
+                != tuple(row["id"] for row in rows[:authority.each]))):
+        _invalid("FACTORY_SELECTED_SOURCE_AUTHORITY_DRIFT")
+    direct = rows[:authority.each]
+    if len(direct) == len(rows):
+        return source_context.require_bound_rows(direct, authority)
+    if delivery is None:
+        _invalid("FACTORY_SELECTED_SOURCE_AUTHORITY_DRIFT")
+    from bilqis_mlx.factory.teaching import optional_teaching_rows
+    enrichment = optional_teaching_rows(
+        source_context.source_root, source_context.graph, source_context.release,
+        source_context.source_registry, capability=capability, seed=source_seed,
+        enabled=True)
+    if rows[authority.each:] != enrichment:
+        _invalid("FACTORY_SELECTED_SOURCE_ENRICHMENT_DRIFT")
+    return source_context.bind_prequalified_delivery_rows(direct, rows, authority)
+
+
 def _strict_source_inputs(
         source_context, authenticated, rows, *, capability, source_seed,
         source_each, delivery, rehearsal_by_id, rehearsal_bindings,
-        rehearsal_authorities):
+        rehearsal_authorities, selected_source_authority=None):
     target_rows = tuple(row for row in rows if row.get("id") not in rehearsal_by_id)
-    source_authority = (
-        source_context.bind_rows(
-            target_rows, seed=source_seed, capability=capability, each=source_each)
-        if delivery is None or len(delivery.specimen_ids) == len(target_rows) else
-        source_context.bind_delivery_rows(
-            target_rows, seed=source_seed, capability=capability,
-            direct_each=len(delivery.specimen_ids)))
+    if selected_source_authority is not None:
+        source_authority = _selected_delivery_authority(
+            source_context, target_rows, selected_source_authority, delivery,
+            capability, source_seed)
+    else:
+        source_authority = (
+            source_context.bind_rows(
+                target_rows, seed=source_seed, capability=capability, each=source_each)
+            if delivery is None or len(delivery.specimen_ids) == len(target_rows) else
+            source_context.bind_delivery_rows(
+                target_rows, seed=source_seed, capability=capability,
+                direct_each=len(delivery.specimen_ids)))
     for identity, authority in rehearsal_authorities.items():
         row = next((item for item in rows if item.get("id") == identity), None)
         binding = rehearsal_bindings.get(identity)
@@ -184,7 +212,8 @@ def _prepared_source_inputs(
             source_seed=source_seed, source_each=source_each, delivery=delivery,
             rehearsal_by_id=rehearsal_by_id,
             rehearsal_bindings=rehearsal_bindings,
-            rehearsal_authorities=rehearsal_authorities)
+            rehearsal_authorities=rehearsal_authorities,
+            selected_source_authority=selected_source_authority)
     from bilqis_mlx.runtime.priority_source_materialization import (
         PreparedPrioritySourceMaterialization,
     )

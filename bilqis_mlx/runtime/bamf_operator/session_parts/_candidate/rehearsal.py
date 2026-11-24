@@ -6,7 +6,8 @@ import hashlib
 from pathlib import Path
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
-from bilqis_mlx.factory._model.weakness import WeaknessClassId, classify_weakness
+from bilqis_mlx.runtime.structural_weakness_ledger import _ledger_key
+from .weakness_rehearsal import targeted_groups
 from bilqis_mlx.runtime.factory_retention_owner import require_current_retention_plan
 from bilqis_mlx.runtime.priority_rejection_replay import current_structural_weaknesses
 from bilqis_mlx.semantic_sampling import DEFAULT_BINARY_BALANCE
@@ -31,6 +32,8 @@ class RehearsalPlan:
     active_grade_definition_sha256: str
     active_grade_activation_sha256: str
     identity: str
+    weakness_exposures: tuple[tuple[str, int], ...] = ()
+    weakness_capacity: int = 0
 
 
 @dataclass(frozen=True)
@@ -40,6 +43,7 @@ class RehearsalRows:
     retention_support: tuple[dict, ...] = ()
     bindings: tuple[dict, ...] = ()
     authorities: tuple[tuple[str, object], ...] = ()
+    weakness_unavailable: tuple[tuple[str, str], ...] = ()
 
     @property
     def by_id(self) -> dict[str, str]:
@@ -87,7 +91,12 @@ def compile_rehearsal_plan(run_dir, parent, cache, source_context, selection) ->
         item for item in target.protected_capability_ids if item not in set(prior))
     weaknesses = current_structural_weaknesses(
         run_dir, parent, cache, source_context, selection, capability)
-    weakness_records = tuple(item["weakness"] for item in weaknesses)
+    scored = tuple(item for item in weaknesses
+                   if item["weakness"].get("evidence_kind") == "SCORED_PARENT_MISS")
+    weakness_records = tuple(item["weakness"] for item in scored)
+    exposures = tuple(sorted((_ledger_key(item["weakness"]), item.get("exposure_count", 0))
+                             for item in scored))
+    capacity = selection.offer.source_each if scored else 0
     payload = {
         "schema": "bilqis.bamf.rehearsal-plan/v1",
         "target_capability_id": capability,
@@ -96,6 +105,8 @@ def compile_rehearsal_plan(run_dir, parent, cache, source_context, selection) ->
         "retention_support_capability_ids": support,
         "weakness_evidence_sha256": tuple(
             item["weakness_evidence_sha256"] for item in weakness_records),
+        **({"weakness_exposures": exposures, "weakness_capacity": capacity}
+           if scored else {}),
         "protection_plan_sha256": protection.digest,
         "active_grade_definition_sha256": active.definition.definition_sha256,
         "active_grade_activation_sha256": active.activation_sha256,
@@ -103,7 +114,7 @@ def compile_rehearsal_plan(run_dir, parent, cache, source_context, selection) ->
     return RehearsalPlan(
         capability, target.target_grade_id, prior, support, weakness_records,
         protection.digest, active.definition.definition_sha256,
-        active.activation_sha256, contract_digest(payload))
+        active.activation_sha256, contract_digest(payload), exposures, capacity)
 
 
 def _binding(source_context, row, authority, *, role, capability, seed, each):
@@ -145,7 +156,8 @@ def _draw_one(source_context, plan, role, capability, ordinal):
         seed=seed, each=1), authority
 
 
-def materialize_rehearsal_rows(source_context, plan: RehearsalPlan, ordinal: int) -> RehearsalRows:
+def materialize_rehearsal_rows(source_context, plan: RehearsalPlan, ordinal: int, *,
+                               reserved_rows=(), exposure_counts=None) -> RehearsalRows:
     """Materialize fresh rows for an already-compiled plan; never expand its scope."""
     prior_pairs = tuple(_draw_one(source_context, plan, "prior", cap, ordinal)
                         for cap in plan.prior_capability_ids)
@@ -157,46 +169,24 @@ def materialize_rehearsal_rows(source_context, plan: RehearsalPlan, ordinal: int
     authorities = [(row["id"], authority)
                    for row, _record, authority in (*prior_pairs, *support_pairs)]
     preservation = []
-    if plan.weakness_records:
-        from bilqis_mlx.runtime.structural_weakness_capture import _provider_for_context
-        execution, adapter, admitted = _provider_for_context(
-            source_context, plan.target_capability_id)
-        for record in plan.weakness_records:
-            weakness = WeaknessClassId.from_record(record["weakness_class"])
-            match = match_authority = match_seed = None
-            for attempt in range(16):
-                seed = _seed(
-                    plan, "preservation", weakness.class_sha256,
-                    ordinal * 16 + attempt)
-                candidates, parent_authority = source_context.draw_bound_rows(
-                    seed=seed, capability=plan.target_capability_id,
-                    each=_SOURCE_DRAW_EACH)
-                candidates = tuple(candidates)
-                if (len(candidates) != _SOURCE_DRAW_EACH
-                        or any(row.get("capability") != plan.target_capability_id
-                               for row in candidates)):
-                    _invalid("BAMF_REHEARSAL_SOURCE_DRAW_INVALID")
-                for row in candidates:
-                    classified = classify_weakness(
-                        adapter, execution, row, provider_descriptor=admitted)
-                    if (classified is not None
-                            and classified.class_sha256 == weakness.class_sha256):
-                        match = row
-                        match_authority = source_context.bind_authorized_subset_rows(
-                            candidates, (row,), parent_authority)
-                        match_seed = seed
-                        break
-                if match is not None:
-                    break
-            if match is None or match_authority is None or match_seed is None:
-                _invalid("BAMF_REHEARSAL_WEAKNESS_SPECIMEN_UNAVAILABLE")
-            preservation.append(match)
-            bindings.append(_binding(
-                source_context, match, match_authority, role="preservation",
-                capability=plan.target_capability_id, seed=match_seed, each=1))
-            authorities.append((match["id"], match_authority))
+    groups, unavailable = targeted_groups(
+        source_context, plan, ordinal, _seed, _SOURCE_DRAW_EACH,
+        reserved_rows=(*reserved_rows, *prior, *support), exposure_counts=exposure_counts)
+    for group in groups:
+        matches = dict(group.matches)
+        for row in group.rows:
+            authority = source_context.bind_authorized_subset_rows(
+                group.parent_rows, (row,), group.authority)
+            binding = _binding(
+                source_context, row, authority, role="preservation",
+                capability=plan.target_capability_id, seed=group.seed, each=1)
+            if row["id"] in matches:
+                binding["weakness_debt_key"] = matches[row["id"]]
+            preservation.append(row)
+            bindings.append(binding)
+            authorities.append((row["id"], authority))
     rows = RehearsalRows(
-        prior, tuple(preservation), support, tuple(bindings), tuple(authorities))
+        prior, tuple(preservation), support, tuple(bindings), tuple(authorities), unavailable)
     ids = [row["id"] for row in (*rows.prior, *rows.preservation, *rows.retention_support)]
     if len(ids) != len(set(ids)):
         _invalid("BAMF_REHEARSAL_ROW_ID_COLLISION")

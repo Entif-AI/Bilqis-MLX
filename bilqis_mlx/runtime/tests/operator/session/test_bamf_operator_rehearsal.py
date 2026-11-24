@@ -49,6 +49,8 @@ def test_plan_is_grade_neutral_and_partitions_authorized_relationships():
     }))
     weakness = {
         "weakness_evidence_sha256": "b" * 64,
+        "evidence_kind": "SCORED_PARENT_MISS",
+        "context": {"context_sha256": "1" * 64},
         "weakness_class": {
             "provider_id": "provider:z", "provider_implementation_sha256": "c" * 64,
             "classifier_id": "classifier:z", "classifier_sha256": "d" * 64,
@@ -64,7 +66,7 @@ def test_plan_is_grade_neutral_and_partitions_authorized_relationships():
             return_value=active):
         plan = compile_rehearsal_plan(
             "/run", object(), object(), NS(release=release),
-            NS(offer=NS(capability_id="Z.C2")))
+            NS(offer=NS(capability_id="Z.C2", source_each=4)))
 
     assert plan.target_capability_id == "Z.C2"
     assert plan.target_grade_id == "GENERATED-ZETA"
@@ -90,6 +92,7 @@ class _BoundSourceContext:
             "id": f"{capability}:{seed}:{index}", "capability": capability,
             "source_family_id": f"family:{capability}",
             "episode_id": f"episode:{seed}:{index}",
+            "tokens": [seed, index], "gold": "TRUE" if index % 2 else "FALSE",
         } for index in range(each))
         authority = NS(
             capability_id=capability, seed=seed, each=each,
@@ -143,10 +146,13 @@ def test_rehearsal_specimen_selection_uses_seed_not_provider_row_zero():
 
 
 def test_preservation_selects_one_matching_row_from_balanced_source_draw():
-    weakness_record = {"weakness_class": {"fixture": "weakness"}}
+    from bilqis_mlx.source_adapters.lesson_geometry import LessonGeometry
+    weakness_record = {"weakness_class": {"class_sha256": "wanted"},
+                       "context": {"context_sha256": "context"},
+                       "historical_source_ids": []}
     plan = RehearsalPlan(
         "Z.C2", "GENERATED-ZETA", (), (), (weakness_record,),
-        "a" * 64, "c" * 64, "d" * 64, "b" * 64)
+        "a" * 64, "c" * 64, "d" * 64, "b" * 64, weakness_capacity=1)
     context = _BoundSourceContext()
 
     def classify(_adapter, _execution, row, *, provider_descriptor):
@@ -157,10 +163,9 @@ def test_preservation_selects_one_matching_row_from_balanced_source_draw():
     with patch(
             "bilqis_mlx.runtime.structural_weakness_capture._provider_for_context",
             return_value=(object(), object(), object())), patch(
-            "bilqis_mlx.runtime.bamf_operator.session_parts.rehearsal."
-            "WeaknessClassId.from_record",
-            return_value=NS(class_sha256="wanted")), patch(
-            "bilqis_mlx.runtime.bamf_operator.session_parts.rehearsal.classify_weakness",
+            "bilqis_mlx.runtime.bamf_operator.session_parts.weakness_rehearsal."
+            "geometry_for_adapter", return_value=LessonGeometry("singleton")), patch(
+            "bilqis_mlx.runtime.bamf_operator.session_parts.weakness_rehearsal.classify_weakness",
             side_effect=classify):
         rows = materialize_rehearsal_rows(context, plan, 3)
 
@@ -170,6 +175,8 @@ def test_preservation_selects_one_matching_row_from_balanced_source_draw():
     binding = rows.bindings_by_id[row["id"]]
     authority = rows.authorities_by_id[row["id"]]
     assert binding["role"] == "preservation"
+    assert binding["weakness_debt_key"] == "context:wanted"
+    assert rows.weakness_unavailable == ()
     assert binding["each"] == authority.each == 1
     assert binding["seed"] == authority.seed
 

@@ -25,6 +25,9 @@ from bilqis_mlx.runtime.priority_source_offer import (
     materialize_priority_source_intent,
 )
 from bilqis_mlx.runtime.teacher_policy_selection import select_visit_policy
+from bilqis_mlx.runtime.priority_lesson import (
+    LessonShapeUnavailable, prepare_lesson_pool, shape_priority_lesson,
+)
 from bilqis_mlx.semantics.domains import contract_digest
 from .accepted_teacher_custody import (
     _accepted_parent, _c03_projection, _issue_bound_visit, _require_current_visit,
@@ -64,6 +67,9 @@ def _selected_priority_result(
         strict_mode_enabled,
     )
     strict = strict_mode_enabled()
+    pool_started = time.monotonic() if strict else None
+    lesson_pool = prepare_lesson_pool(source_context, offer)
+    pool_wall = time.monotonic() - pool_started if strict else 0.0
     diagnostics = {'teacher_epoch_digest': contract_digest(epoch)} if strict else {}
     if salience_evidence is not None:
         diagnostics['salience_evidence'] = salience_evidence
@@ -72,6 +78,12 @@ def _selected_priority_result(
         option.context.scope, diagnostics,
         grade, total_capabilities=total_capabilities,
         plasticity_escape=plasticity_escape)
+    shape_started = time.monotonic() if strict else None
+    offer, primary_lesson = shape_priority_lesson(
+        source_context, parent, offer, lesson_pool, policy)
+    if strict and source_materialization_wall_seconds is not None:
+        source_materialization_wall_seconds += pool_wall + time.monotonic() - shape_started
+    metadata = {**metadata, 'primary_lesson': primary_lesson}
     metadata = {**metadata, 'how_context': context_for_selection(
         source_context.release, program, grade, school, option, teacher, metadata,
         total_capabilities)}
@@ -272,14 +284,18 @@ def _select_strict_priority_visit(
                 continue
         materialization_wall = max(
             0.0, time.perf_counter() - materialization_started)
-        return _selected_priority_result(
-            run_dir, source_context, parent, cache, projection, epoch, teacher,
-            dict(qualified.ranked.tiers)[option.stable_id], option, offer, school,
-            engine, rng, learning_settings, program, grade,
-            evidence[option.stable_id], holds, lawful_frontier, total_capabilities,
-            plasticity_escape, priority_features, cadence_authorization,
-            planning_offer, materialization_wall,
-            planning_offer_fanout_wall_seconds)
+        try:
+            return _selected_priority_result(
+                run_dir, source_context, parent, cache, projection, epoch, teacher,
+                dict(qualified.ranked.tiers)[option.stable_id], option, offer, school,
+                engine, rng, learning_settings, program, grade,
+                evidence[option.stable_id], holds, lawful_frontier, total_capabilities,
+                plasticity_escape, priority_features, cadence_authorization,
+                planning_offer, materialization_wall,
+                planning_offer_fanout_wall_seconds)
+        except LessonShapeUnavailable:
+            holds.append((option.stable_id, 'SOURCE_LESSON_HELD'))
+            continue
     if action_required_option_id is not None:
         return _issue_result(
             'ACTION_REQUIRED', action_required_option_id, None, None, None,

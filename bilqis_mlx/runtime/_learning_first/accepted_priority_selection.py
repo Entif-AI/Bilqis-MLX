@@ -5,6 +5,7 @@ from bilqis_mlx.runtime.priority_source_offer import materialize_priority_source
 from bilqis_mlx.runtime.priority_qualification import _grade, _planning_hold
 
 from .accepted_priority_context import learning_first_priority_context
+from bilqis_mlx.runtime.priority_lesson import LessonShapeUnavailable
 
 
 def select_learning_first_priority_visit(
@@ -43,12 +44,16 @@ def select_learning_first_priority_visit(
             'schema': 'bilqis.bamf.learning-first-priority-features/v1',
             'known': [False, False, False],
         }
-        return selected_result(
-            run_dir, source_context, parent, cache, projection, epoch, teacher,
-            option.dispatch_tier, option, offer, school, engine, rng,
-            learning_settings, program, grade, None, holds, lawful_frontier,
-            total_capabilities, plasticity_escape, priority_features,
-            cadence_authorization, planning_offer, None, None)
+        try:
+            return selected_result(
+                run_dir, source_context, parent, cache, projection, epoch, teacher,
+                option.dispatch_tier, option, offer, school, engine, rng,
+                learning_settings, program, grade, None, holds, lawful_frontier,
+                total_capabilities, plasticity_escape, priority_features,
+                cadence_authorization, planning_offer, None, None)
+        except LessonShapeUnavailable:
+            holds.append((option.stable_id, 'SOURCE_LESSON_HELD'))
+            continue
     return issue_result(
         'NO_ADMISSIBLE_TEACHING', None, None, None, None, cadence_metadata,
         None, sorted(holds), run_dir, lawful_frontier,

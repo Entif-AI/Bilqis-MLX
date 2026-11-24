@@ -12,6 +12,47 @@ from bilqis_mlx.learning.teacher_strategy_population import effective_policy_key
 SCHEMA = "bilqis.teacher-realized-action/v1"
 
 
+def weakness_delivery_facts(controls):
+    """Compact ordered facts from executed optimizer steps, not prepared packets."""
+    facts = []
+    for ordinal, control in enumerate(controls or (), 1):
+        matches = control.get("weakness_class_matches", {})
+        unavailable = control.get("weakness_unavailable", {})
+        if not isinstance(matches, dict) or not isinstance(unavailable, dict):
+            raise ValueError(LearningExperimentError.POLICY_INVALID.value)
+        if not matches and not unavailable:
+            continue
+        ids = set()
+        for key, rows in matches.items():
+            if (not isinstance(key, str) or not key
+                    or not isinstance(rows, (tuple, list)) or not rows
+                    or any(not isinstance(row, str) or not row for row in rows)
+                    or len(set(rows)) != len(rows) or ids.intersection(rows)):
+                raise ValueError(LearningExperimentError.POLICY_INVALID.value)
+            ids.update(rows)
+        if (set(matches) & set(unavailable)
+                or any(not isinstance(key, str) or not key
+                       or reason not in {"UNSUPPORTED_GEOMETRY", "CAPACITY_OR_COLLISION",
+                                         "NO_MATCH_IN_BUDGET"}
+                       for key, reason in unavailable.items())):
+            raise ValueError(LearningExperimentError.POLICY_INVALID.value)
+        facts.append({"step": ordinal, "matches": {key: list(rows)
+                                                  for key, rows in sorted(matches.items())},
+                      "unavailable": dict(sorted(unavailable.items()))})
+    return facts
+
+
+def weakness_delivery_totals(facts):
+    counts, unavailable = {}, {}
+    for step in facts:
+        for key, rows in step["matches"].items():
+            counts[key] = counts.get(key, 0) + len(rows)
+        for key, reason in step["unavailable"].items():
+            key_reason = key + ":" + reason
+            unavailable[key_reason] = unavailable.get(key_reason, 0) + 1
+    return dict(sorted(counts.items())), dict(sorted(unavailable.items()))
+
+
 def describe(policy: dict, *, candidate_steps: int, batch_size: int,
              policy_controls, guidance_applied_steps: int,
              enrichment_examples: int) -> dict:
@@ -80,6 +121,11 @@ def describe(policy: dict, *, candidate_steps: int, batch_size: int,
         "enrichment_examples": enrichment_examples,
         "answer_kinds": answer_kinds,
     }
+    exposure, unavailable = weakness_delivery_totals(weakness_delivery_facts(controls))
+    if exposure:
+        features["weakness_class_exposures"] = exposure
+    if unavailable:
+        features["weakness_unavailable_steps"] = unavailable
     key = hashlib.sha256(
         json.dumps(features, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()[:16]

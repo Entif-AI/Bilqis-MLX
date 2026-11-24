@@ -13,6 +13,9 @@ def _mentor_observation(
         "support": tuple(getattr(lesson, "retention_support", ())),
         "fresh_support": tuple(getattr(lesson, "fresh_support", ())),
     }
+    unavailable = getattr(lesson, "weakness_unavailable", ())
+    if unavailable:
+        role_kwargs["controls"] = {"weakness_unavailable": dict(unavailable)}
     if adviser_pool is None:
         observation = delivery_observation_cls(
             capture, optimizer_step, source_rows, selection.offer.source_seed,

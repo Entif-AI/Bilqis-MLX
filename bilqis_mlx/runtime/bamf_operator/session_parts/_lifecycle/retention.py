@@ -202,6 +202,7 @@ def retention_result(
         identity_metrics=identity_metrics, resource=resource,
         candidate_evidence=candidate_evidence, how_outcome=how_outcome,
         structural_weaknesses=structural_weaknesses,
+        retention_evaluation=(evaluation if not decision.accepted else None),
         learning_health=learning_health,
         rejection_journal_ordinal=rejection_journal_ordinal,
         rejection_attempt_ordinal=rejection_attempt_ordinal)

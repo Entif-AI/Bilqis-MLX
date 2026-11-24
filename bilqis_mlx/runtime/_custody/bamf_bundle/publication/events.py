@@ -62,7 +62,9 @@ def reconcile_bamf_outbox(
         publish_missing=publish_missing)
 
 
-def record_bamf_rejection(run_dir: Path, student: CompleteStudent, evidence: dict) -> str:
+def record_bamf_rejection(run_dir: Path, student: CompleteStudent, evidence: dict, *,
+                          owner_evaluation=None, owner_decision=None,
+                          owner_selection=None) -> str:
     """Publish idempotent failure evidence without minting or mutating a generation."""
     if type(student) is not CompleteStudent or not isinstance(evidence, dict) or not evidence:
         invalid("BAMF_REJECTION_EVIDENCE_INVALID")
@@ -79,6 +81,12 @@ def record_bamf_rejection(run_dir: Path, student: CompleteStudent, evidence: dic
         if type(optimizer_step) is not int or optimizer_step != manifest.get("tensors", {}).get("optimizer_step"):
             invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
         evidence = _validated_c03_rejection_evidence(student, pointer, evidence)
+        from bilqis_mlx.runtime.scored_target_weakness import bind_live_target_observation
+        original_evidence = evidence
+        if owner_evaluation is not None and owner_selection is None:
+            invalid("BAMF_SCORED_TARGET_SELECTION_REQUIRED")
+        evidence = bind_live_target_observation(
+            evidence, owner_evaluation, owner_decision, owner_selection)
         registry = rejection_registry(dict(student.correction_frontier))
         portable_authority = (
             None if registry is None else try_issue_portable_rejection_authority(
@@ -86,6 +94,7 @@ def record_bamf_rejection(run_dir: Path, student: CompleteStudent, evidence: dic
                 student_manifest_sha256=pointer["manifest_sha256"],
                 optimizer_step=optimizer_step, evidence=dict(evidence)))
         if portable_authority is None:
+            evidence = original_evidence
             authority = {
                 "schema": "bilqis.mlx.bamf-rejection-authority/v1",
                 "run_id": student.run_id,

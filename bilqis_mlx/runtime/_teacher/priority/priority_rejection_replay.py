@@ -146,6 +146,11 @@ def _validated_rejection(event, parent, cache):
         validate_rejection_weaknesses,
     )
     weaknesses = validate_rejection_weaknesses(evidence, receipt_sha256)
+    if "target_weakness_observation" in evidence:
+        if not portable:
+            _invalid("BAMF_SCORED_TARGET_OBSERVATION_UNSIGNED")
+        from bilqis_mlx.runtime.scored_target_weakness import validate_target_weakness_observation
+        validate_target_weakness_observation(evidence["target_weakness_observation"], evidence)
     replay_evidence = {
         **evidence,
         _PORTABLE_TEACHER_AUTHORITY: portable,
@@ -228,19 +233,18 @@ def current_structural_weaknesses(
         carried_structural_weaknesses, weakness_is_current,
     )
 
-    projection = _current_projection(run_dir, parent, cache)
     selected = capability or selection.visit.identity.capability_id
     current = {}
     # Generation-zero parent custody intentionally precedes C03 bootstrap.
     # The issued visit already owns the authenticated current teacher projection.
     teacher = restore_teacher_lineage(selection.visit.projection.teacher_state).teacher()
-    candidates = (
-        *carried_structural_weaknesses(teacher),
-        *projection.weaknesses_view(),
-    )
-    for item in candidates:
+    # C03 selection has already folded authenticated rejection outcomes.
+    # Overlaying raw rejection history here would reopen resolved classes
+    # and discard the ledger's realized-exposure counts.
+    for item in carried_structural_weaknesses(teacher):
         weakness = item["weakness"]
-        if (weakness["capability_id"] == selected
+        if (weakness.get("evidence_kind") == "SCORED_PARENT_MISS"
+                and weakness["capability_id"] == selected
                 and weakness_is_current(item, source_context, selection)):
             current[weakness["weakness_class"]["class_sha256"]] = item
     return tuple(current[key] for key in sorted(current))

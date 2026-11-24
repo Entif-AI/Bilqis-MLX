@@ -84,7 +84,19 @@ def _candidate_delivery_inputs(
         source_context, prepared_fresh_support_rows, fresh_support_by_id,
         fresh_support_binding, fresh_support_authority,
         fresh_support_unavailable_reason, fresh_support_depth_control)
+    primary_lesson = (getattr(selection, "metadata", None) or {}).get("primary_lesson")
+    if primary_lesson is not None:
+        if rows != offer.rows() or len(rows) != primary_lesson["delivered_rows"]:
+            _invalid("BAMF_PRIORITY_PRIMARY_LESSON_DRIFT")
+        fresh_controls.pop("depth_control", None)
+        fresh_controls.pop("depth_control_unavailable_reason", None)
+        fresh_controls.update(primary_lesson["controls"])
     capability = offer.capability_id
+    from bilqis_mlx.runtime.bamf_operator.session_parts.weakness_rehearsal import (
+        delivered_weakness_controls,
+    )
+    weakness_controls = delivered_weakness_controls(
+        source_context, capability, preservation, binding_records)
     execution = source_context.release.execution_plan.capability_map[capability]
     delivery = describe_delivered_teaching(
         source_context.release, capability, execution.teaching_option_ids[0], rows)
@@ -95,6 +107,7 @@ def _candidate_delivery_inputs(
             **observation.controls,
             "fragile_preservation_delivered": len(preservation),
             "retention_support_delivered": len(support), **fresh_controls,
+            **weakness_controls,
         },
         **({"enrichment": enrichment} if enrichment else {}),
         **({"fresh_support": fresh_support} if fresh_support else {}))
@@ -178,6 +191,9 @@ def _strict_candidate_result(
         semantic_context=semantic_context,
         prepared_source=(prepared_source if not enrichment and not rehearsal else None),
         accepted_cache=accepted_cache,
+        selected_source_authority=(
+            offer.source_authority if (getattr(selection, "metadata", None) or {}).get(
+                "primary_lesson") is not None else None),
         distributed_profile=distributed_profile, distributed_executor=distributed_executor)
     if not hasattr(result, "realized_cost"):
         return result

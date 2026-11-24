@@ -41,6 +41,7 @@ class BamfPreparedVisit:
     candidate_evidence: dict | None = None
     how_outcome: dict | None = None
     structural_weaknesses: tuple = ()
+    retention_evaluation: object | None = None
     learning_health: dict | None = None
     rejection_journal_ordinal: int | None = None
     rejection_attempt_ordinal: int | None = None

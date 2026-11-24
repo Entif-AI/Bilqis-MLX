@@ -146,6 +146,34 @@ def _apply_outcome(teacher, observation, *, selected_teacher_override=None):
             ('worst_protected_loss_sum', max((max(0., -deltas[name]) for name in protected), default=0.)),
             ('attempted_steps_sum', observation['attempted_steps'])):
         record[name] = record.get(name, 0) + value
+    from bilqis_mlx.learning.teacher_realized_action import (
+        weakness_delivery_facts, weakness_delivery_totals,
+    )
+    from bilqis_mlx.runtime.structural_weakness_ledger import (
+        record_scored_resolutions, record_weakness_exposure,
+    )
+    facts = observation.get('weakness_delivery', [])
+    controls = [{} for _ in range(observation['attempted_steps'])]
+    for fact in facts:
+        ordinal = fact['step']
+        if type(ordinal) is not int or not 1 <= ordinal <= len(controls) or controls[ordinal - 1]:
+            invalid()
+        controls[ordinal - 1] = {
+            'weakness_class_matches': fact['matches'],
+            'weakness_unavailable': fact['unavailable'],
+        }
+    if weakness_delivery_facts(controls) != facts:
+        invalid()
+    exposure, unavailable = weakness_delivery_totals(facts)
+    features = (observation.get('realized_action') or {}).get('features', {})
+    if (features.get('weakness_class_exposures', {}) != exposure
+            or features.get('weakness_unavailable_steps', {}) != unavailable
+            or (facts and (
+                features.get('weakness_targets_delivered') != sum(exposure.values())
+                or features.get('priority_weakness_targets_delivered') != sum(exposure.values())))):
+        invalid()
+    record_weakness_exposure(selected, exposure)
+    record_scored_resolutions(selected, observation)
     prior['applied'][attempt] = digest
     prior['head'] = digest
     selected['how_outcomes'] = prior

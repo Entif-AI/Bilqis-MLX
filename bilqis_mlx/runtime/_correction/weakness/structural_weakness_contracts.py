@@ -96,7 +96,7 @@ def validate_weakness_evidence(record: dict) -> dict:
         "context", "candidate_evidence_sha256", "outcome_sha256",
         "retention_reason", "weakness_evidence_sha256",
     }
-    allowed = required | {"historical_source_ids"}
+    allowed = required | {"historical_source_ids", "evidence_kind"}
     if (not isinstance(record, dict) or not required <= set(record)
             or not set(record) <= allowed or record.get("schema") != EVIDENCE_SCHEMA):
         _invalid("BAMF_WEAKNESS_EVIDENCE_INVALID")
@@ -113,6 +113,10 @@ def validate_weakness_evidence(record: dict) -> dict:
     if historical_ids is not None and (
             not isinstance(historical_ids, list)
             or any(not isinstance(item, str) or not item for item in historical_ids)):
+        _invalid("BAMF_WEAKNESS_EVIDENCE_INVALID")
+    if "evidence_kind" in record and (
+            record["evidence_kind"] != "SCORED_PARENT_MISS"
+            or not historical_ids or historical_ids != sorted(set(historical_ids))):
         _invalid("BAMF_WEAKNESS_EVIDENCE_INVALID")
     candidate_sha = record.get("candidate_evidence_sha256")
     if candidate_sha is not None and (
@@ -155,6 +159,18 @@ def validate_rejection_weaknesses(
             **({"rejection_receipt_sha256": rejection_receipt_sha256}
                if rejection_receipt_sha256 is not None else {}),
         })
+    scored = [item for item in records
+              if item.get("evidence_kind") == "SCORED_PARENT_MISS"]
+    observation = evidence.get("target_weakness_observation")
+    if scored or observation is not None:
+        from .scored_target_weakness import validate_target_weakness_observation
+        validate_target_weakness_observation(observation, evidence)
+        expected = {item["weakness_class"]["class_sha256"]: item["source_ids"]
+                    for item in observation["classes"]}
+        actual = {item["weakness_class"]["class_sha256"]: item["historical_source_ids"]
+                  for item in scored}
+        if len(scored) != len(records) or len(scored) != len(actual) or actual != expected:
+            _invalid("BAMF_SCORED_TARGET_WEAKNESS_CENSUS_DRIFT")
     return tuple(result)
 
 
