@@ -3,7 +3,7 @@ from pathlib import Path
 
 from bilqis_mlx.mission_control import CoverageState, MemorySnapshotV2
 from bilqis_mlx.learning.atlas_engram import INITIAL_MOTIF_CAPACITY
-from bilqis_mlx.runtime.bamf_bundle.motif.codec import snapshot_from_record
+from bilqis_mlx.learning.atlas_engram_codec import snapshot_from_record
 
 from ..native_contracts import invalid, missing_value, record_meta, run_ref
 from ..native_custody import _read_bound_json

@@ -7,7 +7,7 @@ from typing import Mapping
 
 from bilqis_mlx.data_plane import DataPlaneError
 
-from .motif.codec import snapshot_from_record, snapshot_to_record
+from bilqis_mlx.learning.atlas_engram_codec import snapshot_from_record, snapshot_to_record
 from .sidecar_contracts import validate_identity_sidecars
 from .generation_manifest import (
     ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA, BAMF_BUNDLE_SCHEMA,

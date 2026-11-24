@@ -2,6 +2,8 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+import subprocess
+import sys
 from unittest.mock import patch
 
 from bilqis_mlx.control_plane.native_contracts import NativeProjectionMaterial
@@ -9,6 +11,14 @@ from bilqis_mlx.control_plane.native_source import native_query_source
 
 
 class NativeQueryCacheTests(unittest.TestCase):
+    def test_observer_import_has_no_neural_dependencies(self):
+        result = subprocess.run(
+            [sys.executable, "-B", "-c",
+             "import sys; sys.modules['numpy'] = None; sys.modules['mlx'] = None; "
+             "from bilqis_mlx.control_plane.native_source import native_query_source"],
+            capture_output=True, text=True, timeout=15)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_heartbeat_does_not_prevent_base_cache_warmup(self):
         with TemporaryDirectory() as temporary:
             root = Path(temporary)
