@@ -55,6 +55,7 @@ def test_ineffective_controls_return_identical_rows_and_no_credit():
     pool = (group("a", 2), group("b", 2), group("c", 2))
     baseline = pool[:2]
     low = select(baseline, pool)
+    assert low.groups == baseline
     assert select(baseline, pool, deep=True, contrast=True) == low
     assert low.depth_control is low.contrast_control is None
     assert select(baseline, pool) == low
@@ -135,3 +136,14 @@ def test_both_high_preserves_interaction_contrast_gain_on_token_tie():
     assert both.signature_count == 3
     assert both.depth_control is None
     assert both.contrast_control == "SOURCE_GROUP_DIVERSITY"
+
+def test_unsupported_contrast_cannot_substitute_uncredited_source_rows():
+    a, b, c, d = (group(name, 2, gold=gold, stratum=gold)
+                  for name, gold in (("a", "TRUE"), ("b", "FALSE"),
+                                     ("c", "TRUE"), ("d", "FALSE")))
+    baseline = (a, b)
+    # Some constructors change earlier specimens when asked for a wider draw.
+    # The no-effect alternative must preserve the original owner's draw.
+    result = select(baseline, (c, d), contrast=True)
+    assert result.groups == baseline
+    assert result.depth_control is result.contrast_control is None

@@ -70,7 +70,8 @@ def _candidate_capture(
         horizon, rehearsal_plan, policy_support_enabled, source_lane_cls, source_metrics_cls,
         prepare_evidence_root, capture_cls):
     source_lane = None
-    if source_prefetch_metrics is not None or source_prefetch_workers:
+    if (source_prefetch_metrics is not None or source_prefetch_workers
+            or rehearsal_plan is not None or policy_support_enabled):
         metrics = source_prefetch_metrics or source_metrics_cls()
         source_lane = source_lane_cls(
             selection, context, parent, horizon, workers=source_prefetch_workers,

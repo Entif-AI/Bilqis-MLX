@@ -76,9 +76,10 @@ class _Option:
     depth: int
     signature: tuple[tuple[str, str], ...]
 
-    def rank(self, deep, contrast, counts):
+    def rank(self, deep, contrast, counts, baseline):
         return (-self.depth if deep else 0,
-                counts[self.signature] if contrast else 0, self.index)
+                counts[self.signature] if contrast else 0,
+                self.group != baseline, self.index)
 
 
 @dataclass(frozen=True)
@@ -98,14 +99,14 @@ def _options(pool, seed):
     return strata
 
 
-def _variant(slots, strata, *, deep, contrast):
+def _variant(baseline, strata, *, deep, contrast):
     remaining = {key: list(options) for key, options in strata.items()}
     counts = Counter()
     selected = []
     tokens = 0
-    for slot in slots:
-        options = remaining[slot]
-        choice = min(options, key=lambda item: item.rank(deep, contrast, counts))
+    for group in baseline:
+        options = remaining[_key(group)]
+        choice = min(options, key=lambda item: item.rank(deep, contrast, counts, group))
         options.remove(choice)
         counts[choice.signature] += 1
         selected.append(choice.group)
@@ -126,15 +127,19 @@ def select_group_lesson(baseline, pool, *, seed, deep, contrast):
     if any(len(strata.get(key, ())) < count
            for key, count in Counter(slots).items()):
         raise LessonCapacityError("insufficient complete-group stratum capacity")
-    a = _variant(slots, strata, deep=False, contrast=False)
-    b = _variant(slots, strata, deep=True, contrast=False)
-    c = _variant(slots, strata, deep=False, contrast=True)
-    d = _variant(slots, strata, deep=True, contrast=True)
+    # The unchanged owner draw is the control. A neutral HOW policy must
+    # not replace instruction merely because a larger candidate pool exists.
+    a = _Variant(tuple(baseline), sum(map(_depth, baseline)),
+                 len({_signature(group) for group in baseline}))
+    b = _variant(baseline, strata, deep=True, contrast=False)
+    c = _variant(baseline, strata, deep=False, contrast=True)
+    d = _variant(baseline, strata, deep=True, contrast=True)
     if c.signature_count <= a.signature_count:
         c = a
     if b.token_count <= a.token_count:
         b = a
-    candidates = (b, c, d) if c.token_count == b.token_count else (b, d)
+    candidates = tuple(variant for variant in (b, c, d)
+                       if variant.token_count >= b.token_count)
     d = max(candidates, key=lambda variant: variant.signature_count)
     chosen = (d if contrast else b) if deep else (c if contrast else a)
     low, high = (c, d) if contrast else (a, b)

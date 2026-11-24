@@ -46,13 +46,13 @@ def offer_factory(admitted):
 
 
 @pytest.mark.parametrize("capability,rows,low_tokens,high_tokens,low_signatures,high_signatures", [
-    ("A.IDENTITY", 32, 527, 544, 2, 2),
-    ("A.MAPS", 32, 911, 928, 2, 2),
-    ("B.AND", 32, 578, 700, 2, 2),
-    ("B.COMPOSITE", 32, 363, 367, 2, 2),
+    ("A.IDENTITY", 32, 528, 544, 2, 2),
+    ("A.MAPS", 32, 912, 928, 2, 2),
+    ("B.AND", 32, 570, 700, 2, 2),
+    ("B.COMPOSITE", 32, 365, 367, 2, 2),
     ("B.IDBOOLOPS", 32, 928, 928, 6, 6),
-    ("C.ADD", 30, 538, 583, 5, 9),
-    ("C.COUNT", 30, 349, 415, 8, 10),
+    ("C.ADD", 30, 526, 583, 6, 9),
+    ("C.COUNT", 30, 325, 415, 10, 10),
 ])
 def test_real_offers_realize_supported_controls(
     admitted, offer_factory, capability, rows, low_tokens, high_tokens,
@@ -70,6 +70,10 @@ def test_real_offers_realize_supported_controls(
     diverse, diverse_metadata = shape_priority_lesson(
         admitted, parent, original, pool, {"depth": 1, "contrast": 1})
     assert admitted._source_preparation_metrics.provider_draws == before + 1
+    if rows == original.source_each:
+        assert low is original
+    else:
+        assert low.rows() == original.rows()[:rows]
     assert (low_metadata["token_count"], deep_metadata["token_count"]) == (low_tokens, high_tokens)
     assert (low_metadata["signature_count"], diverse_metadata["signature_count"]) == (
         low_signatures, high_signatures)
@@ -112,6 +116,7 @@ def test_finite_boolean_pool_retains_baseline_without_false_credit(admitted, off
     assert pool.reason == "baseline_only"
     selected, metadata = shape_priority_lesson(
         admitted, parent, offer, pool, {"depth": 3, "contrast": 1})
+    assert selected is offer
     assert len(selected.rows()) == 32
     assert metadata["controls"]["depth_control"] is None
     assert metadata["controls"]["contrast_control"] is None

@@ -129,8 +129,15 @@ def shape_priority_lesson(source_context, parent, offer, pool, policy):
         "reason": pool.reason,
         "controls": _controls(rows, selected, pool.baseline),
     }
-    if rows == offer.rows() and pool.authority is offer.source_authority:
+    original = offer.rows()
+    baseline_rows = tuple(row for group in pool.baseline for row in group.rows)
+    if rows == original:
         return offer, metadata
+    # Baseline and expanded variants are complete, independently issued
+    # draws. Never combine grants or rebind an unchanged baseline to a
+    # different draw just because that draw happens to include its rows.
+    parent_rows, authority = ((original, offer.source_authority)
+                              if rows == baseline_rows else (pool.rows, pool.authority))
     shaped = reissue_selected_priority_source_offer(
-        offer, source_context, parent, pool.rows, rows, pool.authority)
+        offer, source_context, parent, parent_rows, rows, authority)
     return shaped, metadata
