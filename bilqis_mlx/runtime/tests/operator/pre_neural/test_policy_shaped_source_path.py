@@ -1,5 +1,7 @@
 """Native policy-shaped source subsets reach actual Factory batch preparation."""
 import unittest
+from concurrent.futures import ThreadPoolExecutor
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from bilqis_mlx.factory.teaching import describe_delivered_teaching
@@ -8,7 +10,15 @@ from bilqis_mlx.runtime.bamf_operator.session import _execution_context
 from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
 from bilqis_mlx.runtime.factory_candidate_components import _resource_plan
 from bilqis_mlx.runtime.factory_training_bridge import prepare_factory_training_batch
-from bilqis_mlx.runtime.priority_lesson import prepare_lesson_pool, shape_priority_lesson
+from bilqis_mlx.runtime.priority_lesson import (
+    prepare_lesson_pool, require_step_primary_lesson, shape_priority_lesson,
+)
+from bilqis_mlx.runtime.bamf_operator.source_prefetch import (
+    CandidateSourceLane, SourcePrefetchMetrics,
+)
+from bilqis_mlx.runtime.accepted_priority_candidate_execution import _candidate_delivery_inputs
+from bilqis_mlx.runtime.factory_candidate_training import FactoryDeliveryObservation
+from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.priority_source_offer import prepare_priority_source_offer
 from bilqis_mlx.runtime.tests.batch.training.visit_provenance_support import visit_provenance
 
@@ -19,6 +29,56 @@ from .pre_neural_journey_support import (
 
 
 class PolicyShapedSourcePathTests(PreNeuralJourneySupport, unittest.TestCase):
+    def test_fresh_primary_lessons_preserve_policy_and_seed_across_prefetch(self):
+        self.current, self.parent_graph = historical_school_release()
+        snapshot = portable_atlas_snapshot()
+        schema, features, atlas_selection = journey_source(snapshot)
+        with wide_shape_patch(len(snapshot.abi_entries)):
+            self.publish_matching_genesis(snapshot, schema, features)
+            with self.journey_mounts(snapshot, schema, features, atlas_selection), evidence_mode(strict=False):
+                parent, context, atlas_path, _ = _execution_context(self.run)
+                offer = prepare_priority_source_offer(
+                    context, parent, atlas_path, capability="B.AND",
+                    source_seed=17, source_each=32)
+                policy = {"depth": 3, "contrast": 0.5, "lr": 0.001}
+                shaped, metadata = shape_priority_lesson(
+                    context, parent, offer, prepare_lesson_pool(context, offer), policy)
+                selection = SimpleNamespace(
+                    offer=shaped, policy=policy, metadata={"primary_lesson": metadata},
+                    visit=SimpleNamespace(identity=SimpleNamespace(visit_id="fixture:visit")))
+
+                def lessons(workers, executor):
+                    lane = CandidateSourceLane(
+                        selection, context, parent, 3, workers=workers, executor=executor,
+                        metrics=SourcePrefetchMetrics(), policy_support_enabled=True)
+                    return tuple(lane.lesson(i) for i in (1, 2, 3))
+
+                serial = lessons(0, None)
+                with ThreadPoolExecutor(max_workers=2) as executor:
+                    parallel = lessons(2, executor)
+                self.assertEqual([x.direct for x in serial], [x.direct for x in parallel])
+                self.assertEqual([x.source_seed for x in serial], [x.source_seed for x in parallel])
+                self.assertEqual(len({x.source_seed for x in serial}), 3)
+                self.assertEqual(len({tuple(row["id"] for row in x.direct) for x in serial}), 3)
+                self.assertEqual(serial[0].direct, shaped.rows())
+                capture = SimpleNamespace(attempt_id="fixture", selected_option="B.AND",
+                                          delivery=lambda **_: None)
+                for ordinal, lesson in enumerate(serial[1:], 2):
+                    step = parent.retained_state.optimizer_step + ordinal
+                    bound, controls = require_step_primary_lesson(
+                        lesson.primary_lesson, context, selection, lesson.direct, step)
+                    observation = FactoryDeliveryObservation(capture, step, lesson.direct, lesson.source_seed)
+                    result = _candidate_delivery_inputs(
+                        selection, context, lesson.direct, (), (), {}, {}, {}, observation,
+                        prepared_primary_lesson=lesson.primary_lesson)
+                    self.assertIs(result[0], bound)
+                    self.assertEqual(result[-1].seed, lesson.source_seed)
+                    self.assertEqual(result[-1].option_rows, lesson.direct)
+                    self.assertEqual(result[-1].controls["depth_control"], controls["controls"]["depth_control"])
+                    with self.assertRaises(BilqisError):
+                        require_step_primary_lesson(
+                            lesson.primary_lesson, context, selection, serial[0].direct, step)
+
     def test_policy_shaped_subset_reaches_compiled_batch_without_redraw(self):
         self.current, self.parent_graph = historical_school_release()
         snapshot = portable_atlas_snapshot()

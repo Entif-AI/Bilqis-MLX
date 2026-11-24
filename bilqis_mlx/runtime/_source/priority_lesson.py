@@ -2,15 +2,20 @@
 
 from collections import Counter
 from dataclasses import dataclass
+import hashlib
+import json
 
 from bilqis_mlx.errors import BilqisError, SOURCE
 from bilqis_mlx.factory.generation import runtime_adapter_for_release
 from bilqis_mlx.learning.native_lesson_selection import select_group_lesson
 from bilqis_mlx.learning.source_selection import COMPOSITION_DEPTH_POLICY_THRESHOLD
+from bilqis_mlx.runtime.source_execution import _invalid_source_batch
 from bilqis_mlx.source_adapters.lesson_geometry import (
     complete_groups, distinct_groups, geometry_for_adapter,
 )
-from .priority_source_offer import reissue_selected_priority_source_offer
+from .priority_source_offer import (
+    prepare_priority_source_offer, reissue_selected_priority_source_offer,
+)
 
 
 class LessonShapeUnavailable(ValueError):
@@ -141,3 +146,58 @@ def shape_priority_lesson(source_context, parent, offer, pool, policy):
     shaped = reissue_selected_priority_source_offer(
         offer, source_context, parent, parent_rows, rows, authority)
     return shaped, metadata
+
+
+_STEP_LESSON_ISSUER = object()
+
+
+@dataclass(frozen=True)
+class StepPrimaryLesson:
+    """One process-live, source-owned primary lesson for a later optimizer step."""
+    offer: object
+    visit_id: str
+    ordinal: int
+    metadata_json: str
+    _issuer: object
+
+
+def step_primary_seed(selection, ordinal):
+    identity = selection.visit.identity.visit_id
+    return int(hashlib.sha256(
+        f"{identity}|{selection.offer.source_seed}|target|{ordinal}".encode()
+    ).hexdigest()[:16], 16)
+
+
+def prepare_step_primary_lesson(source_context, parent, selection, ordinal, seed):
+    if type(ordinal) is not int or ordinal < 2 or seed != step_primary_seed(selection, ordinal):
+        _invalid_source_batch("BAMF_PRIORITY_STEP_LESSON_COORDINATES_INVALID")
+    original = selection.offer
+    offer = prepare_priority_source_offer(
+        source_context, parent, None, capability=original.capability_id,
+        source_seed=seed, source_each=original.source_each,
+        planning_generation=original._planning_generation)
+    shaped, metadata = shape_priority_lesson(
+        source_context, parent, offer, prepare_lesson_pool(source_context, offer),
+        selection.policy)
+    return StepPrimaryLesson(
+        shaped, selection.visit.identity.visit_id, ordinal,
+        json.dumps(metadata, sort_keys=True, allow_nan=False), _STEP_LESSON_ISSUER)
+
+
+def require_step_primary_lesson(lesson, source_context, selection, rows, step):
+    original = selection.offer
+    if (type(lesson) is not StepPrimaryLesson
+            or lesson._issuer is not _STEP_LESSON_ISSUER
+            or lesson.visit_id != selection.visit.identity.visit_id
+            or lesson.ordinal != step - original._planning_generation._parent.retained_state.optimizer_step):
+        _invalid_source_batch("BAMF_PRIORITY_STEP_LESSON_COORDINATES_INVALID")
+    offer = lesson.offer
+    if (offer._planning_generation is not original._planning_generation
+            or offer.source_seed != step_primary_seed(selection, lesson.ordinal)
+            or offer.capability_id != original.capability_id
+            or offer.source_each != original.source_each
+            or offer.release_sha256 != original.release_sha256
+            or tuple(rows) != offer.rows()):
+        _invalid_source_batch("BAMF_PRIORITY_STEP_LESSON_AUTHORITY_DRIFT")
+    offer.require_current_parent(source_context)
+    return offer, json.loads(lesson.metadata_json)

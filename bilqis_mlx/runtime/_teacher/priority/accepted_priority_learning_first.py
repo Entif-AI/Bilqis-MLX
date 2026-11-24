@@ -1,4 +1,5 @@
 """Training-first execution for one accepted C03 priority visit."""
+from dataclasses import replace
 from pathlib import Path
 
 from bilqis_mlx.runtime.atlas_training_contracts import BamfVisitProvenance
@@ -15,7 +16,7 @@ def _learning_first_delivery(
         rehearsal_authorities, observation, teacher_hparams,
         prepared_fresh_support_rows, fresh_support_by_id, fresh_support_binding,
         fresh_support_authority, fresh_support_unavailable_reason,
-        fresh_support_depth_control):
+        fresh_support_depth_control, prepared_primary_lesson):
     planning_generation = selection.offer._planning_generation
     parent = planning_generation._parent
     semantic_context = planning_generation._authenticated_features
@@ -28,7 +29,8 @@ def _learning_first_delivery(
         fresh_support_binding=fresh_support_binding,
         fresh_support_authority=fresh_support_authority,
         fresh_support_unavailable_reason=fresh_support_unavailable_reason,
-        fresh_support_depth_control=fresh_support_depth_control)
+        fresh_support_depth_control=fresh_support_depth_control,
+        prepared_primary_lesson=prepared_primary_lesson)
     return parent, semantic_context, policy, hparams, delivery_inputs, setup_seconds
 
 
@@ -40,11 +42,23 @@ def _learning_first_step_start(candidate_step_started_at, candidate_visit):
     return candidate_step_started_at
 
 
+def _source_coordinates(selection, offer, observation, prepared_source_seed):
+    shaped = (getattr(selection, "metadata", None) or {}).get("primary_lesson") is not None
+    seed = offer.source_seed if prepared_source_seed is None else prepared_source_seed
+    if shaped and seed != offer.source_seed:
+        _invalid("BAMF_PRIORITY_STEP_LESSON_SEED_DRIFT")
+    if observation.seed != seed:
+        observation = replace(observation, seed=seed)
+    provenance = BamfVisitProvenance.from_c03_record(selection.visit.identity.to_record())
+    return seed, observation, offer.source_authority if shaped else None, provenance
+
+
 def execute_learning_first_priority_candidate(
         selection, source_context, atlas_artifact_path, feature_artifact_path, *,
         teacher_hparams, observation, optimizer_step_seed, max_norm,
         memory_budget=None, salience_provider=None, capture_diagnostics=False,
         candidate=None, finalize_candidate=True, prepared_source_rows=None,
+        prepared_source_seed=None, prepared_primary_lesson=None,
         prepared_enrichment_rows=(), prepared_rehearsal_rows=(),
         rehearsal_by_id=None, rehearsal_bindings=None, rehearsal_authorities=None,
         prepared_fresh_support_rows=(), fresh_support_by_id=None,
@@ -78,22 +92,22 @@ def execute_learning_first_priority_candidate(
         rehearsal_authorities, observation, teacher_hparams,
         prepared_fresh_support_rows, fresh_support_by_id, fresh_support_binding,
         fresh_support_authority, fresh_support_unavailable_reason,
-        fresh_support_depth_control)
+        fresh_support_depth_control, prepared_primary_lesson)
     (offer, rows, enrichment, rehearsal, rehearsal_by_id, rehearsal_bindings,
      rehearsal_authorities, fresh_support, fresh_support_by_id, capability, delivery,
      observation) = delivery_inputs
+    source_seed, observation, authority, provenance = _source_coordinates(
+        selection, offer, observation, prepared_source_seed)
     delivered_rows = (*rows, *rehearsal, *enrichment, *fresh_support)
-    provenance = BamfVisitProvenance.from_c03_record(selection.visit.identity.to_record())
     return execute_factory_candidate_step(
         Path(selection._run_dir), source_context, parent,
         atlas_artifact_path, feature_artifact_path, delivered_rows,
         capability=capability, delivery=delivery, requested_count=len(delivered_rows),
-        source_seed=offer.source_seed, source_each=len(rows) + len(enrichment),
+        source_seed=source_seed, source_each=len(rows) + len(enrichment),
         optimizer_step_seed=optimizer_step_seed, visit_provenance=provenance,
         teacher_strategy=policy, teacher_hparams=hparams, max_norm=max_norm,
         observation=observation, memory_budget=memory_budget,
-        rehearsal_by_id=rehearsal_by_id,
-        rehearsal_bindings=rehearsal_bindings,
+        rehearsal_by_id=rehearsal_by_id, rehearsal_bindings=rehearsal_bindings,
         rehearsal_authorities=rehearsal_authorities,
         fresh_support_by_id=fresh_support_by_id,
         salience_provider=salience_provider, capture_diagnostics=capture_diagnostics,
@@ -112,7 +126,7 @@ def execute_learning_first_priority_candidate(
         observer_begin_step_wall_seconds=observer_begin_step_wall_seconds,
         candidate_delivery_setup_wall_seconds=candidate_delivery_setup_wall_seconds,
         semantic_context=semantic_context, prepared_source=None,
-        accepted_cache=accepted_cache, selected_source_authority=None,
+        accepted_cache=accepted_cache, selected_source_authority=authority,
         learning_first_cache=learning_first_cache,
         prepared_learning_first_source_inputs=prepared_learning_first_source_inputs,
         prepared_learning_first_source_identity=(
