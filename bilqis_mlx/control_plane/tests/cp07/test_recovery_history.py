@@ -111,6 +111,46 @@ class MissionControlRecoveryHistoryTests(NativeSourceFixture, unittest.TestCase)
         )
         successor_state = next_accepted_step(
             generation_one.retained_state, generation_one.extents)
+        historical_parent, manifest, accepted_one, pointer = self._stage_historical_parent(
+            generation_one, parent, downgrade_to_v2)
+        acceptance_dir = self.run / "bamf-acceptance"
+        generation_two = replace(
+            candidate(
+                successor_state, 2, manifest["manifest_sha256"]),
+            run_identity=historical_parent.run_identity,
+            implementation_sha256=historical_parent.implementation_sha256,
+            topology=historical_parent.topology,
+            extents=historical_parent.extents,
+            provenance=historical_parent.provenance,
+            semantic_abi=dict(historical_parent.semantic_abi),
+            compiler_features=dict(historical_parent.compiler_features),
+            correction_frontier=dict(historical_parent.correction_frontier),
+            teacher_state=dict(historical_parent.teacher_state),
+            evaluation_contract=dict(historical_parent.evaluation_contract),
+        )
+        child_stage = self.run / "historical-child-stage"
+        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
+            child_manifest = save_bamf_bundle(
+                generation_two, child_stage, reserve_gib=0.,
+                parent_acceptance_sha256=accepted_one.digest)
+        child_sha = child_manifest["manifest_sha256"]
+        child_stage.rename(self.run / "bamf-bundles" / child_sha)
+        accepted_two = acceptance(generation_two, parent=historical_parent.retained_state)
+        (acceptance_dir / f"{child_sha}.json").write_bytes(
+            canonical(accepted_two.to_record()))
+        child = {
+            **pointer, "generation": 2,
+            "parent_manifest_sha256": manifest["manifest_sha256"],
+            "bundle": f"bamf-bundles/{child_sha}",
+            "manifest_sha256": child_sha,
+            "acceptance_sha256": accepted_two.digest,
+        }
+        (self.run / "bamf-state.json").write_bytes(canonical(child))
+        self.assertEqual(
+            child_manifest["schema"], OBJECTIVE_ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA)
+        return authenticated_history(self.run)
+
+    def _stage_historical_parent(self, generation_one, parent, downgrade_to_v2):
         stage = self.run / "historical-parent-stage"
         with shape_patch(), patch.object(
                 mlx_checkpoint, "assert_headroom"), patch(
@@ -153,41 +193,7 @@ class MissionControlRecoveryHistoryTests(NativeSourceFixture, unittest.TestCase)
         with shape_patch():
             historical_parent = load_bamf_bundle(
                 target, expected_manifest_sha256=manifest["manifest_sha256"])
-        generation_two = replace(
-            candidate(
-                successor_state, 2, manifest["manifest_sha256"]),
-            run_identity=historical_parent.run_identity,
-            implementation_sha256=historical_parent.implementation_sha256,
-            topology=historical_parent.topology,
-            extents=historical_parent.extents,
-            provenance=historical_parent.provenance,
-            semantic_abi=dict(historical_parent.semantic_abi),
-            compiler_features=dict(historical_parent.compiler_features),
-            correction_frontier=dict(historical_parent.correction_frontier),
-            teacher_state=dict(historical_parent.teacher_state),
-            evaluation_contract=dict(historical_parent.evaluation_contract),
-        )
-        child_stage = self.run / "historical-child-stage"
-        with shape_patch(), patch.object(mlx_checkpoint, "assert_headroom"):
-            child_manifest = save_bamf_bundle(
-                generation_two, child_stage, reserve_gib=0.,
-                parent_acceptance_sha256=accepted_one.digest)
-        child_sha = child_manifest["manifest_sha256"]
-        child_stage.rename(self.run / "bamf-bundles" / child_sha)
-        accepted_two = acceptance(generation_two, parent=historical_parent.retained_state)
-        (acceptance_dir / f"{child_sha}.json").write_bytes(
-            canonical(accepted_two.to_record()))
-        child = {
-            **pointer, "generation": 2,
-            "parent_manifest_sha256": manifest["manifest_sha256"],
-            "bundle": f"bamf-bundles/{child_sha}",
-            "manifest_sha256": child_sha,
-            "acceptance_sha256": accepted_two.digest,
-        }
-        (self.run / "bamf-state.json").write_bytes(canonical(child))
-        self.assertEqual(
-            child_manifest["schema"], OBJECTIVE_ACCEPTANCE_BOUND_BAMF_BUNDLE_SCHEMA)
-        return authenticated_history(self.run)
+        return historical_parent, manifest, accepted_one, pointer
 
     def test_migrated_v2_parent_reconstructs_complete_history(self):
         history = self._migrated_parent_history(downgrade_to_v2=True)
