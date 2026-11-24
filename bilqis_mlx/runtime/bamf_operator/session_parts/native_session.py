@@ -165,6 +165,9 @@ def execute_selected_visit(
         from .evidence_mode import strict_mode_enabled
         strict = strict_mode_enabled()
         selected_policy = getattr(selection, "policy", None)
+        selected_policy_key = getattr(
+            getattr(getattr(selection, "visit", None), "identity", None),
+            "policy_key", None)
         stage = getattr(observer, "stage", None)
         if strict:
             from ..evidence_parts.projection import (
@@ -178,11 +181,17 @@ def execute_selected_visit(
                 generated_grade_evidence=unknown_generated_grade_evidence(
                     visit_evidence.get("grade_id")))
         elif callable(stage):
-            stage(selected_policy=(
-                dict(selected_policy) if isinstance(selected_policy, dict) else None))
+            stage(
+                selected_policy=(
+                    dict(selected_policy) if isinstance(selected_policy, dict) else None),
+                selected_policy_key=selected_policy_key,
+            )
         else:
-            observer.update(selected_policy=(
-                dict(selected_policy) if isinstance(selected_policy, dict) else None))
+            observer.update(
+                selected_policy=(
+                    dict(selected_policy) if isinstance(selected_policy, dict) else None),
+                selected_policy_key=selected_policy_key,
+            )
     emit_progress(
         progress, f"selected {selection.offer.capability_id} with {len(rows)} source rows")
     capability = selection.offer.capability_id

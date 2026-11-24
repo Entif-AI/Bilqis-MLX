@@ -10,6 +10,34 @@ from .retention_observation import (
 )
 
 
+def _stage_learning_first_retention(observer, capability, evaluation, decision):
+    """Project already-computed ordinary retention semantics without diagnostics."""
+    if observer is None:
+        return
+    stage = getattr(observer, "stage", None)
+    if not callable(stage):
+        return
+    owner_decision = getattr(evaluation, "decision", None)
+    scores = getattr(owner_decision, "outcome_scores", ())
+    target = next((
+        {
+            "state": "MEASURED",
+            "before": before,
+            "after": after,
+            "total": total,
+        }
+        for scored_capability, before, after, total in scores
+        if scored_capability == capability
+        and all(type(value) is int for value in (before, after, total))
+    ), None)
+    evaluated = getattr(decision, "evaluated_capability_ids", ())
+    stage(
+        retention_target=target,
+        retention_protected_count=(
+            max(0, len(evaluated) - 1) if isinstance(evaluated, tuple) else None),
+    )
+
+
 def _rejected_structural_weaknesses(
         run_dir, context, selection, candidate_evidence, decision, how_outcome):
     from .evidence_mode import strict_evidence_enabled
@@ -66,10 +94,14 @@ def retention_result(
             accepted_parent=parent, execution_cache=cache,
             **({"plasticity_escape": plasticity_escape}
                if plasticity_escape is not None else {}),
-            **({"observer": retention_observer} if observer is not None else {}))
+            **({"observer": retention_observer}
+               if strict and observer is not None else {}))
         decision = issue_decision(evaluation)
         if strict:
             _observe_retention_scope(observer, decision)
+        else:
+            _stage_learning_first_retention(
+                observer, capability, evaluation, decision)
         if not decision.accepted:
             from bilqis_mlx.errors.authority import authority_label
             emit_progress(progress, "retention decision: " + authority_label(
@@ -96,6 +128,19 @@ def retention_result(
     how_outcome = build_outcome(
         run_dir, selection, evaluation, decision, candidate_evidence,
         learning_summary=learning_summary)
+    if not strict and observer is not None:
+        stage = getattr(observer, "stage", None)
+        if callable(stage):
+            outcome_context = (
+                how_outcome.get("context")
+                if isinstance(how_outcome, dict) else None)
+            stage(
+                retention_phase=(
+                    outcome_context.get("phase")
+                    if isinstance(outcome_context, dict) else None),
+                retention_decision=getattr(decision, "decision", None),
+                retention_reason=getattr(decision, "reason", None),
+            )
     structural_weaknesses = (() if decision.accepted else _rejected_structural_weaknesses(
         run_dir, context, selection, candidate_evidence, decision, how_outcome))
     successor, learning_health = _accepted_successor(

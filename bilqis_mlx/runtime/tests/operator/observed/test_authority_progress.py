@@ -120,3 +120,74 @@ def test_learning_first_retention_skips_candidate_evidence_finalization():
     assert result.candidate_evidence is None
     assert result.how_outcome is outcome
     assert build.call_args.kwargs['learning_summary']['candidate_steps'] == 1
+
+
+def test_learning_first_retention_does_not_enable_diagnostic_observer():
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
+
+    staged = []
+    observer = N(stage=lambda **fields: staged.append(fields))
+    owner_decision = N(
+        blocking_capability=None,
+        outcome_scores=(('new.target', 2, 3, 6), ('A.EDGE', 5, 5, 6)),
+    )
+    evaluation = N(
+        parent_state=object(),
+        candidate_state=object(),
+        decision=owner_decision,
+    )
+    decision = N(
+        accepted=False,
+        decision='REJECT',
+        reason='NO_MEASURABLE_TARGET_GAIN',
+        evaluated_capability_ids=('new.target', 'A.EDGE'),
+        to_record=lambda: {
+            'decision': 'REJECT',
+            'reason': 'NO_MEASURABLE_TARGET_GAIN',
+        },
+    )
+    capture = N(summary=lambda: {
+        'attempt_id': 'attempt:learning-first',
+        'candidate_steps': 1,
+        'batch_size': 1,
+        'policy_controls': ({},),
+        'guidance_applied_steps': 0,
+        'enrichment_examples': 0,
+    })
+    step = N(transaction=object(), realized_cost={})
+    selection = N()
+    seen_kwargs = {}
+
+    def evaluate(*_args, **kwargs):
+        seen_kwargs.update(kwargs)
+        return evaluation
+
+    with evidence_mode(strict=False), patch(
+            'bilqis_mlx.runtime.outcomes.issuance.build_outcome',
+            return_value={
+                'outcome_sha256': 'f' * 64,
+                'context': {'phase': 'RECOVERY_1'},
+            }):
+        retention_result(
+            Path('/unused'), object(), N(), None, selection, 'new.target', object(),
+            (step,), capture, 1, 1, None, None, observer,
+            evaluate_candidate=evaluate,
+            issue_decision=lambda _evaluation: decision,
+            identity_delta=lambda _old: {},
+            resource_observation=lambda *_a, **_kw: {},
+            derive_successor=lambda *_a, **_kw: None,
+            bind_baseline_successor=lambda _evaluation, successor: successor,
+            finalize_generation_authority=lambda *_a, **_kw: None,
+            prepared_visit_type=lambda *args, **kw: N(status=args[0], **kw),
+            emit_progress=lambda *_args: None,
+            measure_observed_phase_fn=lambda *_a: nullcontext(),
+        )
+
+    assert 'observer' not in seen_kwargs
+    merged = {key: value for item in staged for key, value in item.items()}
+    assert merged['retention_target'] == {
+        'state': 'MEASURED', 'before': 2, 'after': 3, 'total': 6}
+    assert merged['retention_protected_count'] == 1
+    assert merged['retention_phase'] == 'RECOVERY_1'
+    assert merged['retention_decision'] == 'REJECT'
+    assert merged['retention_reason'] == 'NO_MEASURABLE_TARGET_GAIN'

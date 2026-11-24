@@ -11,10 +11,13 @@ def _run_observed_preparation_fixture(parent, selection, steps, events):
     from bilqis_mlx.runtime.bamf_operator.session import prepare_bamf_visit
     from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
 
-    def assess(*args, observer, **kwargs):
-        observer({'retention_completed': 1, 'retention_total': 2,
-                  'retention_subject': 'cap', 'retention_role': 'parent'})
-        return NS(candidate_state=object(), parent_state=parent.retained_state)
+    def assess(*args, **kwargs):
+        assert 'observer' not in kwargs
+        return NS(
+            candidate_state=object(),
+            parent_state=parent.retained_state,
+            decision=NS(outcome_scores=(('cap', 2, 3, 6),)),
+        )
 
     prefix = 'bilqis_mlx.runtime.bamf_operator.session.'
     native_prefix = 'bilqis_mlx.runtime.bamf_operator.session_parts.native_session.'
@@ -39,7 +42,8 @@ def _run_observed_preparation_fixture(parent, selection, steps, events):
         'rejection_attempt_ordinals': (1, 1),
         'prepare_candidate_evidence_root': Path('/tmp/teacher-observations/objects'),
         'issue_factory_retention_decision': NS(
-            accepted=False, reason='PROTECTED_CAPABILITY_REGRESSION',
+            accepted=False, decision='REJECT',
+            reason='PROTECTED_CAPABILITY_REGRESSION',
             evaluated_capability_ids=('cap', 'protected-cap'),
             retention_protection_plan_sha256='f' * 64,
             broad_certification_trigger=None,
@@ -81,6 +85,7 @@ def _run_observed_preparation_fixture(parent, selection, steps, events):
         observer = NS(
             bind_parent=lambda value: events.append({'bound': value}),
             update=lambda **fields: events.append(fields),
+            stage=lambda **fields: events.append(fields),
             begin_step=lambda step, optimizer_step: events.append({
                 'candidate_step': step,
                 'candidate_optimizer_step': optimizer_step,
@@ -136,7 +141,11 @@ class SessionObservationTests(unittest.TestCase):
         }, events)
         for i in (1, 2, 3):
             self.assertIn({'candidate_step': i, 'candidate_optimizer_step': 4 + i}, events)
-        self.assertIn({'retention_completed': 1, 'retention_total': 2,
-                       'retention_subject': 'cap', 'retention_role': 'parent'}, events)
+        self.assertIn({
+            'retention_target': {
+                'state': 'MEASURED', 'before': 2, 'after': 3, 'total': 6,
+            },
+            'retention_protected_count': 1,
+        }, events)
         self.assertFalse(any(
             'retention_protection_plan_sha256' in event for event in events))
