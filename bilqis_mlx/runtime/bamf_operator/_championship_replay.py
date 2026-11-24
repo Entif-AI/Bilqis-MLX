@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 from dataclasses import fields
+import json
 from pathlib import Path
 
+from bilqis_mlx.data_plane import data_plane
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning._atlas_candidate.identity_binding import (
     candidate_identity_for_canonical_consumer,
@@ -53,19 +55,30 @@ def _accepted_ancestor(run_dir, parent, cache, checkpoint):
         _invalid("BAMF_CHAMPIONSHIP_CHECKPOINT_NOT_ACCEPTED_ANCESTOR")
     current = parent
     manifest_sha256 = cache.accepted_manifest_sha256
-    while current.generation > target_generation:
-        parent_sha256 = current.parent_manifest_sha256
-        if parent_sha256 is None:
-            _invalid("BAMF_CHAMPIONSHIP_ACCEPTED_ANCESTRY_INCOMPLETE")
-        prior = load_bamf_bundle(
-            Path(run_dir) / "bamf-bundles" / parent_sha256,
-            expected_manifest_sha256=parent_sha256,
-        )
-        if (prior.run_id != current.run_id
-                or prior.generation + 1 != current.generation
-                or current.parent_manifest_sha256 != parent_sha256):
+    if target_generation < parent.generation:
+        # The authenticated current parent anchors immutable CAS manifest links.
+        # Intermediate checkpoints need not retain executable tensor custody.
+        generation = parent.generation
+        manifest_sha256 = parent.parent_manifest_sha256
+        plane = data_plane()
+        while generation > target_generation:
+            if manifest_sha256 is None:
+                _invalid("BAMF_CHAMPIONSHIP_ACCEPTED_ANCESTRY_INCOMPLETE")
+            try:
+                prior = json.loads(plane.get_node(manifest_sha256))
+            except (ValueError, TypeError):
+                _invalid("BAMF_CHAMPIONSHIP_ACCEPTED_ANCESTRY_DRIFT")
+            generation -= 1
+            if (not isinstance(prior, dict) or prior.get("run_id") != parent.run_id
+                    or prior.get("generation") != generation):
+                _invalid("BAMF_CHAMPIONSHIP_ACCEPTED_ANCESTRY_DRIFT")
+            if generation > target_generation:
+                manifest_sha256 = prior.get("parent_manifest_sha256")
+        current = load_bamf_bundle(
+            Path(run_dir) / "bamf-bundles" / manifest_sha256,
+            expected_manifest_sha256=manifest_sha256)
+        if current.run_id != parent.run_id:
             _invalid("BAMF_CHAMPIONSHIP_ACCEPTED_ANCESTRY_DRIFT")
-        current, manifest_sha256 = prior, parent_sha256
     if (current.generation != target_generation
             or candidate_identity_for_canonical_consumer(current.retained_state)
             != checkpoint.sha256

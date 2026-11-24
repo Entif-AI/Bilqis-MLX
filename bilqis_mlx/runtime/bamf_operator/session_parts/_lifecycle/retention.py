@@ -283,22 +283,24 @@ def _accepted_successor(
     successor = bind_baseline_successor(evaluation, successor)
     from ..championship import (
         bind_accepted_championship_successor,
-        championship_boundary_capabilities,
+        championship_boundary_capabilities, nominated_championship_capabilities,
     )
+    strict = strict_evidence_enabled()
     championship_scope = (
-        championship_boundary_capabilities(selection, capability)
-        if strict_evidence_enabled() else ())
+        championship_boundary_capabilities(selection, capability) if strict else
+        nominated_championship_capabilities(evaluation, selection, capability, parent))
     if championship_scope:
         from bilqis_mlx.runtime._factory_retention_support import _training_exclusions
         from bilqis_mlx.runtime.factory_retention_owner import CURRENT_EVIDENCE_STAGE
         successor = bind_accepted_championship_successor(
             run_dir, parent, cache, successor, context, atlas_path,
-            capability, evaluation,
+            championship_scope[0] if not strict else capability, evaluation,
             checkpoint_origin_group=getattr(selection, "lesson_grade", None),
             training=_training_exclusions(candidate_transaction),
             evidence_stage=CURRENT_EVIDENCE_STAGE,
             observer=(lambda fields: observer.update(**fields)) if observer is not None else None,
-            boundary_capabilities=championship_scope)
+            boundary_capabilities=championship_scope,
+            **({"local_panels": True} if not strict else {}))
     if (getattr(evaluation, "candidate_generation_authority_sha256", None) is not None
             and getattr(candidate_transaction, "motif_transition", None) is not None):
         finalize_generation_authority(

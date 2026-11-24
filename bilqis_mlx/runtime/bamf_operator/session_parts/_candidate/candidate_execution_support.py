@@ -7,6 +7,9 @@ def _mentor_observation(
         adviser_pool, source_rows, lesson, selection, capture, optimizer_step,
         delivery_observation_cls, observer=None):
     enrichment_rows = lesson.enrichment
+    source_seed = getattr(lesson, "source_seed", None)
+    if source_seed is None:
+        source_seed = selection.offer.source_seed
     role_kwargs = {
         "prior": tuple(getattr(lesson, "prior", ())),
         "preservation": tuple(getattr(lesson, "preservation", ())),
@@ -18,7 +21,7 @@ def _mentor_observation(
         role_kwargs["controls"] = {"weakness_unavailable": dict(unavailable)}
     if adviser_pool is None:
         observation = delivery_observation_cls(
-            capture, optimizer_step, source_rows, selection.offer.source_seed,
+            capture, optimizer_step, source_rows, source_seed,
             enrichment=enrichment_rows, **role_kwargs)
         return observation, None
     from bilqis_mlx.runtime.championship_advisers import (
@@ -26,7 +29,7 @@ def _mentor_observation(
     )
     started = time.perf_counter()
     supervision = championship_mentor_supervision(
-        adviser_pool, source_rows, source_seed=selection.offer.source_seed,
+        adviser_pool, source_rows, source_seed=source_seed,
         teacher_strategy=selection.policy)
     if observer is not None:
         try:
@@ -41,11 +44,11 @@ def _mentor_observation(
             pass
     if supervision is None:
         observation = delivery_observation_cls(
-            capture, optimizer_step, source_rows, selection.offer.source_seed,
+            capture, optimizer_step, source_rows, source_seed,
             enrichment=enrichment_rows, **role_kwargs)
         return observation, None
     observation = delivery_observation_cls(
-        capture, optimizer_step, source_rows, selection.offer.source_seed,
+        capture, optimizer_step, source_rows, source_seed,
         enrichment=enrichment_rows, guidance=supervision.guidance_record(),
         mentors=supervision.to_record(), _mentor_supervision=supervision, **role_kwargs)
     return observation, supervision

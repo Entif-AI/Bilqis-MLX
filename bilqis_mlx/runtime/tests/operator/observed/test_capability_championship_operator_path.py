@@ -1,5 +1,6 @@
 """Accepted C16.3 operator path runs championship at the B13 successor boundary."""
 from contextlib import ExitStack, nullcontext
+from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace as NS
@@ -80,6 +81,7 @@ def _first_title_operator_fixture():
     parent, _retained, successor, binding = _accepted_championship_successor(
         evaluation, solver, assessment, group)
     selection = _boundary_selection(target, group)
+    selection.visit.projection = NS(teacher_state=parent.teacher_state)
     step = NS(transaction=NS(training_authorities=()))
     capture = NS(finalize=lambda **_kwargs: {
         "schema": "bilqis.bamf.c16.3-candidate-evidence-reference/v1",
@@ -96,10 +98,14 @@ def _first_title_operator_fixture():
     )
 
 
-def _run_first_title_operator():
+def _run_first_title_operator(*, strict=True):
     (fixture, target, group, assessment, evaluation, parent, successor,
      binding, selection, step, capture, cache) = _first_title_operator_fixture()
     published = []
+    if not strict:
+        capture.summary = lambda: {}
+        object.__setattr__(evaluation, "decision", replace(
+            evaluation.decision, outcome_scores=((target, 5, 6, 6),)))
 
     def prepare(run_dir, *, observer=None, **_kwargs):
         from bilqis_mlx.runtime.bamf_operator.session_parts.native_session import (
@@ -129,10 +135,10 @@ def _run_first_title_operator():
          {"side_effect": lambda _visit, value, _parent: value}),
         (native + "_resource_observation", {"return_value": {}}),
         (native + "candidate_identity_metrics_delta", {"return_value": {}}),
-        ("bilqis_mlx.learning.teacher_lineage.instruction_history",
-         {"return_value": ("COMPLETE", ())}),
+        ("bilqis_mlx.runtime.bamf_operator.session_parts.retention._instruction_event",
+         {"return_value": {"event": "BAMF_INSTRUCTION_HISTORY", "state": "COMPLETE", "capability_ids": [target]}}),
         ("bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode."
-         "strict_evidence_enabled", {"return_value": True}),
+         "strict_evidence_enabled", {"return_value": strict}),
         (prefix + "accept_and_publish",
          {"side_effect": lambda _root, value, *_args, **_kwargs: published.append(value)}),
         (prefix + "load_accepted_generation", {"return_value": successor}),
@@ -151,7 +157,7 @@ def _run_first_title_operator():
         from bilqis_mlx.runtime.bamf_operator.session import operate_bamf
         result = operate_bamf(
             Path(tmp), minutes=1, max_visits=1, reserve_gib=0,
-            source_prefetch_workers=0)
+            source_prefetch_workers=0, strict_mode=strict)
     return fixture, group, result, published
 
 
@@ -215,6 +221,24 @@ class CapabilityChampionshipOperatorPathTests(unittest.TestCase):
         role = published[0].championship_state["active_roles"][fixture[2]]
         self.assertEqual((role["correct"], role["total"]), (19, 20))
         self.assertEqual(role["capability_group"], group)
+
+
+    def test_ordinary_training_publishes_first_title_from_independent_panel(self):
+        fixture, group, result, published = _run_first_title_operator(strict=False)
+        self.assertEqual((result.accepted, result.rejected), (1, 0))
+        role = published[0].championship_state["active_roles"][fixture[2]]
+        self.assertEqual((role["correct"], role["total"]), (19, 20))
+        self.assertEqual(role["capability_group"], group)
+
+    def test_nomination_does_not_exam_subthreshold_or_occupied_midphase_titles(self):
+        from bilqis_mlx.runtime.bamf_operator.championship import nominated_championship_capabilities
+        selection = _boundary_selection("cap:a", "A")
+        selection.metadata["cadence"]["phase_capability_ids"] = ["cap:a", "cap:b"]
+        selection.metadata["cadence"]["authorized_capability_ids"] = ["cap:a", "cap:b"]
+        evaluation = NS(decision=NS(outcome_scores=(
+            ("cap:a", 5, 6, 6), ("cap:b", 5, 5, 6), ("cap:c", 6, 6, 6))))
+        parent = NS(championship_state={"active_roles": {"cap:c": {}}})
+        self.assertEqual(nominated_championship_capabilities(evaluation, selection, "cap:a", parent), ("cap:a",))
 
 
 if __name__ == "__main__":

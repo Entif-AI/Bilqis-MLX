@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass
+from contextlib import contextmanager
+from contextvars import ContextVar
+from dataclasses import dataclass, field
 from pathlib import Path
 import math
 
@@ -27,6 +29,7 @@ from bilqis_mlx.runtime.factory_complete_solver import (
 from bilqis_mlx.semantics.domains import contract_digest
 
 from bilqis_mlx.runtime.bamf_operator._championship_replay import _accepted_ancestor
+from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import strict_mode_enabled
 
 
 def _invalid(reason):
@@ -59,6 +62,19 @@ class ChampionshipAdviserPool:
     soups: tuple[_Adviser, ...]
     eligible_roles: int
     cohort_count: int
+    lesson_cache: dict = field(default_factory=dict, repr=False, compare=False)
+
+
+_SESSION_ADVISERS = ContextVar("bamf_session_advisers", default=None)
+
+
+@contextmanager
+def championship_adviser_session():
+    token = _SESSION_ADVISERS.set({})
+    try:
+        yield
+    finally:
+        _SESSION_ADVISERS.reset(token)
 
 
 def _cohort_definition(release, cohort_id, capabilities):
@@ -112,19 +128,15 @@ def _frozen_soups(run_dir, parent, release, state, weights_by_sha, custody_by_sh
             ingredients = tuple(
                 (member["votes"], weights_by_sha[member["checkpoint"]["sha256"]])
                 for member in shard["members"])
-            trusted_frozen = weighted_average(mx, ingredients)
+            trusted_frozen = (ingredients[0][1]
+                              if not strict_mode_enabled() and len(ingredients) == 1
+                              and ingredients[0][0] == 1 else weighted_average(mx, ingredients))
             snapshot = read_frozen_cohort_soup(
                 run_dir, shard, expected_weights=trusted_frozen)
             if snapshot is None:
                 snapshot = save_frozen_cohort_soup(
                     run_dir, shard, trusted_frozen, reserve_gib=reserve_gib)
                 seal_frozen_cohort_soup(run_dir, snapshot)
-            else:
-                from bilqis_mlx.learning._championship.cohort_soup import (
-                    verify_frozen_cohort_soup,
-                )
-                verify_frozen_cohort_soup(
-                    run_dir, snapshot, expected_weights=trusted_frozen)
             soups.append(_Adviser(
                 "SOUP", snapshot["recipe_sha256"], trusted_frozen,
                 snapshot["vote_count"], tuple(snapshot["covered_capabilities"]),
@@ -136,9 +148,17 @@ def prepare_championship_adviser_pool(
         run_dir: Path, parent, source_context, atlas_artifact_path: str, cache, *,
         reserve_gib: float) -> ChampionshipAdviserPool | None:
     """Load each native champion once and materialize immutable cohort soups."""
+    session = None if strict_mode_enabled() else _SESSION_ADVISERS.get()
+    previous = None if session is None else session.get("pool")
     state = getattr(parent, "championship_state", None)
-    if state is None:
+    if not state or not state.get("active_roles"):
+        if session is not None:
+            session.clear()
         return None
+    if (previous is not None and previous.parent is parent
+            and previous.source_context is source_context
+            and previous.accepted_manifest_sha256 == cache.accepted_manifest_sha256):
+        return previous
     state = dict(state)
     validate_championship_state(state)
     roles = state["active_roles"]
@@ -152,6 +172,22 @@ def prepare_championship_adviser_pool(
            or role["capability_group"] != capability_map[capability].grade_id
            for capability, role in roles.items()):
         _invalid("BAMF_ADVISER_COHORT_IDENTITY_DRIFT")
+    if session is not None:
+        from bilqis_mlx.runtime.bamf_operator.championship import _epoch_identity
+        if state["identity"] != _epoch_identity(source_context, parent, None):
+            _invalid("BAMF_ADVISER_SCHOOL_IDENTITY_DRIFT")
+        if (previous is not None and previous.parent.run_id == parent.run_id
+                and (previous.accepted_manifest_sha256 == parent.parent_manifest_sha256
+                     or previous.accepted_manifest_sha256 == cache.accepted_manifest_sha256)
+                and previous.parent.championship_state["active_roles"] == roles
+                and previous.epoch_sha256 == contract_digest(state["identity"])
+                and previous.atlas_artifact_path == str(atlas_artifact_path)):
+            from dataclasses import replace
+            pool = replace(previous, parent=parent, source_context=source_context,
+                           accepted_manifest_sha256=cache.accepted_manifest_sha256,
+                           lesson_cache={})
+            session["pool"] = pool
+            return pool
     weights_by_sha, custody_by_sha = _accepted_weights(
         Path(run_dir), parent, cache, roles)
     role_counts = Counter(role["checkpoint"]["sha256"] for role in roles.values())
@@ -164,11 +200,14 @@ def prepare_championship_adviser_pool(
     soups = _frozen_soups(
         Path(run_dir), parent, release, state, weights_by_sha, custody_by_sha,
         reserve_gib=reserve_gib)
-    return ChampionshipAdviserPool(
+    pool = ChampionshipAdviserPool(
         cache.accepted_manifest_sha256, contract_digest(state["identity"]),
         parent, source_context,
         str(atlas_artifact_path), direct, soups, len(roles),
         len(release.execution_plan.grades))
+    if session is not None:
+        session["pool"] = pool
+    return pool
 
 
 def _evaluate(adviser, pool, instruments):
@@ -184,6 +223,37 @@ def _evaluate(adviser, pool, instruments):
                  for item, (result, _tools) in zip(instruments, measured, strict=True)), launches
 
 
+def _lesson_advice(pool, rows, source_seed):
+    strict = strict_mode_enabled()
+    if not strict:
+        from bilqis_mlx.runtime.source_execution import source_content_digest
+        key = (source_seed, source_content_digest(rows))
+        if pool.lesson_cache.get("key") == key:
+            instruments, direct, soups = pool.lesson_cache["result"]
+            return instruments, direct, soups, 0
+    instruments = factory_evaluation_instruments(
+        pool.source_context, pool.parent, pool.atlas_artifact_path, rows,
+        seed=source_seed, release_prevalidated=True)
+    results = {}
+    launches = 0
+    direct, soups = [], []
+    capabilities = {item.case.capability_id for item in instruments}
+    for adviser in (*pool.direct, *pool.soups):
+        identity = id(adviser.weights)
+        if not strict and adviser.kind == "DIRECT" and not capabilities.intersection(adviser.capabilities):
+            accepted = (False,) * len(instruments)
+        elif not strict and identity in results:
+            accepted = results[identity]
+        else:
+            accepted, count = _evaluate(adviser, pool, instruments)
+            launches += count
+            results[identity] = accepted
+        (direct if adviser.kind == "DIRECT" else soups).append((adviser, accepted))
+    if not strict:
+        pool.lesson_cache.update(key=key, result=(instruments, direct, soups))
+    return instruments, direct, soups, launches
+
+
 def championship_mentor_supervision(
         pool: ChampionshipAdviserPool | None, rows, *, source_seed: int,
         teacher_strategy: dict) -> object | None:
@@ -196,18 +266,8 @@ def championship_mentor_supervision(
     if distill == 0:
         return None
     rows = tuple(rows)
-    instruments = factory_evaluation_instruments(
-        pool.source_context, pool.parent, pool.atlas_artifact_path, rows,
-        seed=source_seed, release_prevalidated=True)
-    direct_results, soup_results, launches = [], [], 0
-    for adviser in pool.direct:
-        accepted, count = _evaluate(adviser, pool, instruments)
-        launches += count
-        direct_results.append((adviser, accepted))
-    for adviser in pool.soups:
-        accepted, count = _evaluate(adviser, pool, instruments)
-        launches += count
-        soup_results.append((adviser, accepted))
+    instruments, direct_results, soup_results, launches = _lesson_advice(
+        pool, rows, source_seed)
     capability_map = pool.source_context.release.execution_plan.capability_map
     influence_rows = []
     soup_total = 0.0
@@ -261,5 +321,5 @@ def championship_mentor_supervision(
 
 __all__ = (
     "ChampionshipAdviserPool", "championship_mentor_supervision",
-    "prepare_championship_adviser_pool",
+    "prepare_championship_adviser_pool", "championship_adviser_session",
 )
