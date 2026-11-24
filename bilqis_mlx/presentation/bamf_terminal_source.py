@@ -125,6 +125,10 @@ def _durable_visit(event: dict, run_id: str):
         "actual_authority_changed": envelope.get("actual_authority_changed"),
         "protected_capabilities": protected_capabilities,
         "paired_scores": how.get("scores"),
+        "fixed_reference_scores": how.get("fixed_reference_scores"),
+        "fixed_reference_cohort_sha256": how.get("fixed_reference_cohort_sha256"),
+        "reference_context": {key: context.get(key) for key in (
+            "factory_release_sha256", "rubric_sha256", "grade", "total_capabilities")},
         "visit_evidence": evidence,
         "candidate_steps": [],
         "_durable_terminal_history": True,
