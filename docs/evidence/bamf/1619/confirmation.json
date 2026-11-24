@@ -1,0 +1,413 @@
+{
+  "assessment": {
+    "assessment_sha256": "74e2eca425a1b75c722e700e315826963964f39732e6a5082f3e2e1a7cbd9e48",
+    "branch_miss": true,
+    "cases": 16,
+    "cold": {
+      "open_ns": 749083,
+      "payload_sha256": "f2867932a51aee3a85904400e64d9a2778ea6600c3c64cc71503e70b3c3be6a1",
+      "read_ns": 334500
+    },
+    "cold_process_wall_ns": 759239208,
+    "durable_hits": 8,
+    "durable_ns": [
+      419208,
+      263375,
+      230958,
+      211750,
+      214084,
+      208333,
+      205666,
+      199625
+    ],
+    "durable_saved_ns_after_population": 711623669,
+    "encode_ns": 130250,
+    "identity": {
+      "binding": {
+        "accepted_generation": 7,
+        "accepted_generation_binding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "accepted_manifest_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "compiler_features_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "correction_frontier_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "evaluation_contract_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "evaluator_contract_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "extents_sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+        "factory_release_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "fixed_cohort_sha256": "45119470c47b3fdcfe02f1978ec47f14d3be6f1b242f5242e6501fc1e8b71025",
+        "implementation_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+        "parent_candidate_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+        "parent_generation_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "policy_sha256": "6db699fb790c5d1d467b1cf11691fe4682b6536892372972191a75d104c46945",
+        "rubric_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "run_id": "timing-witness",
+        "schema_version": "bilqis.mlx.c05-parent-assessment-cache-identity/v1",
+        "semantic_abi_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "semantic_catalog_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "source_authority_registry_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+        "source_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "topology_sha256": "8888888888888888888888888888888888888888888888888888888888888888"
+      },
+      "branch_revision": "83671fea5420e13499d83c92b31ca96f44b2a4fc",
+      "kind": "c05-audit"
+    },
+    "invalidations_ns": {
+      "accepted_generation": 12125,
+      "accepted_generation_binding": 11708,
+      "accepted_manifest_sha256": 11541,
+      "compiler_features_sha256": 11667,
+      "correction_frontier_sha256": 10500,
+      "evaluation_contract_sha256": 10875,
+      "evaluator_contract_sha256": 10459,
+      "extents_sha256": 10959,
+      "factory_release_sha256": 10917,
+      "fixed_cohort_sha256": 10542,
+      "implementation_sha256": 10834,
+      "parent_candidate_sha256": 10916,
+      "parent_generation_sha256": 11375,
+      "policy_sha256": 10542,
+      "rubric_sha256": 10958,
+      "run_id": 14000,
+      "schema_version": 10708,
+      "semantic_abi_sha256": 10750,
+      "semantic_catalog_sha256": 10834,
+      "source_authority_registry_sha256": 11209,
+      "source_sha256": 10666,
+      "topology_sha256": 11000
+    },
+    "median_durable_ns": 212917.0,
+    "median_memory_ns": 5155416.5,
+    "median_recompute_ns": 102229958.5,
+    "memory_hits": 7,
+    "memory_ns": [
+      104441458,
+      5043625,
+      5346000,
+      5041292,
+      5547000,
+      5101625,
+      5170542,
+      5140291
+    ],
+    "memory_saved_ns": 713822044,
+    "memory_solver_calls": 16,
+    "mismatched_envelope_rejected": true,
+    "payload_bytes": 26849,
+    "payload_sha256": "f2867932a51aee3a85904400e64d9a2778ea6600c3c64cc71503e70b3c3be6a1",
+    "plane_stats": {
+      "archived_node_bytes": 0,
+      "archived_nodes": 0,
+      "archived_objects": 1,
+      "compressed_object_bytes": 2921,
+      "event_ledgers": 0,
+      "indexed_events": 0,
+      "legacy_nodes": 0,
+      "legacy_objects": 0,
+      "nodes": 0,
+      "objects": 1,
+      "raw_object_bytes": 28819,
+      "verified_files": 0
+    },
+    "recompute_ns": [
+      139660375,
+      98606542,
+      99051292,
+      100943250,
+      108429084,
+      101758792,
+      103503417,
+      102701125
+    ],
+    "recompute_solver_calls": 128,
+    "scope": "C05 deterministic fixed-school audit record; not restorable assessment authority",
+    "trials": 8,
+    "write_ns": 1416834
+  },
+  "authorizing": false,
+  "native_artifact": {
+    "binding_ns": 148375,
+    "changed_parent_miss": true,
+    "cold_parent": {
+      "binding_ns": 155333,
+      "hit": true,
+      "open_ns": 404375,
+      "payload_sha256": "baea0973aebe2fd6e09f3ff6fc07ea98e35a81dee52dd190fa5429d71ae3000c",
+      "process_wall_ns": 1151887417,
+      "read_ns": 501333
+    },
+    "cold_successor": {
+      "binding_ns": 188041,
+      "hit": false,
+      "open_ns": 493209,
+      "process_wall_ns": 1437371958,
+      "read_ns": 45667
+    },
+    "device": "Device(gpu, 0)",
+    "durable_hits": 8,
+    "durable_ns": [
+      596709,
+      516667,
+      331167,
+      302542,
+      309041,
+      307666,
+      307041,
+      278500
+    ],
+    "durable_saved_ns_after_population": -424623,
+    "fixed_independent_competence_change_per_hour": null,
+    "invalidations_ns": {
+      "branch_revision": 65792,
+      "compiler": 14958,
+      "geometry": 16167,
+      "indices": 15625,
+      "manifest": 28916,
+      "parameter_revision": 16708,
+      "scope": 15833,
+      "semantic_abi": 16708,
+      "source": 13292,
+      "state_revision": 18292
+    },
+    "memory_hits": 8,
+    "memory_limit_bytes": 2147483648,
+    "memory_ns": [
+      24208,
+      28666,
+      30875,
+      29500,
+      30458,
+      21000,
+      16708,
+      15875
+    ],
+    "memory_saved_ns_after_population": 3462628,
+    "native_teacher_trials_per_hour": null,
+    "optimizer_step_after": 1,
+    "optimizer_step_before": 0,
+    "parent_identity": {
+      "branch_revision": "83671fea5420e13499d83c92b31ca96f44b2a4fc",
+      "compiler": {
+        "compiler_sha256": "a7e9478c6891a8d035e706fea597f6a569ebbb4c2230412a458fdc3d3e607ff2",
+        "correction_generation": 0,
+        "factor_map_sha256": "cb36085c045a7fab392c124faa1bae0ba108f4bb6e4a16cf43924740044f4fac",
+        "factory_grade_ids": [
+          "Z"
+        ],
+        "factory_release_sha256": "6052f4f49a8680dbc41db37766f22301dcd5863f7aaad4296d6ecbbb1ebbf778",
+        "factory_semantic_catalog": {
+          "tokens": [
+            "fixture.padding",
+            "cogal.value.false",
+            "cogal.value.true"
+          ]
+        },
+        "factory_semantic_catalog_sha256": "6bc1f1924dc57a06c2983c7dc12f10ad81f25e1d3d042e642eea2b0e67e3219d",
+        "factory_semantic_graph_sha256": "f2b44f12fb25e155f7221c8a958f98493047da9da5c7a1177fb61df85bf8fbc5",
+        "feature_schema": {
+          "role_ids": [],
+          "schema_ids": [],
+          "source_bindings": []
+        },
+        "feature_source": {
+          "atlas_bundle_id": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "release_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "source_bundle_id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        },
+        "rights_epoch": 0,
+        "schema": "bilqis.mlx.bamf-compiler-features/v1"
+      },
+      "generation": 0,
+      "geometry": {
+        "dtype": "float32",
+        "output_shape": [
+          4096,
+          2
+        ],
+        "parameter_shape": [
+          2,
+          2
+        ]
+      },
+      "indices": "0c67569b7bd0bdb7a202c5c65f456753e7c4f24016a0a8476b6cfc51eea21c40",
+      "kind": "detached-identity-gather/fp32/v1",
+      "manifest": "b6fcbf31168489e75d9ead456abc580f465417bc1b789d034308fef2c271f67a",
+      "parameter": "identity.bank.0",
+      "parameter_revision": "fbc102a2ab484bc5594fe23c7c421b716666e55a556f173e1aa63025db73d574",
+      "scope": "disposable-fixed-panel",
+      "semantic_abi": {
+        "active_set_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "bank_identities": [
+          "bank:0"
+        ],
+        "schema": "bilqis.mlx.bamf-semantic-abi/v1",
+        "semantic_bank_count": 1
+      },
+      "source": {
+        "correction_generation": 0,
+        "frontier": [],
+        "release_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "rights_epoch": 0,
+        "schema": "bilqis.mlx.bamf-correction-frontier/v1",
+        "source_authority_registry": {
+          "keys": [
+            {
+              "allowed_scopes": [
+                {
+                  "key_prefix": "a12-export:",
+                  "kind": "ARTIFACT",
+                  "schema_version": "bilqis.c09.source-authority-scope/v1"
+                }
+              ],
+              "owner_id": "fixture:a12-source-owner",
+              "public_key_hex": "fa4834147f6e690c3693eff61336046403cd8ae2a14f31b3c407358569239565",
+              "schema_version": "bilqis.c09.source-authority-key/v2"
+            }
+          ],
+          "schema_version": "bilqis.c09.source-authority-registry/v2"
+        },
+        "source_authority_registry_origin": "HOST_SYSTEM_V1",
+        "source_authority_registry_sha256": "d25a1200edb6db8e6546b9f716de6acc71a197a946f069e98dd9b63c0f103d02",
+        "source_identity": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "state_revision": "67ddc6e34faee0aad3b55ea0f9b5d6d6c56d432cb1cadf0a7917ffcd47178da3"
+    },
+    "peak_mlx_bytes": 114760,
+    "plane_stats": {
+      "archived_node_bytes": 0,
+      "archived_nodes": 0,
+      "archived_objects": 1,
+      "compressed_object_bytes": 1475,
+      "event_ledgers": 0,
+      "indexed_events": 0,
+      "legacy_nodes": 0,
+      "legacy_objects": 0,
+      "nodes": 0,
+      "objects": 1,
+      "raw_object_bytes": 46389,
+      "verified_files": 0
+    },
+    "probe_loss_after": 0.24900193512439728,
+    "probe_loss_before": 0.25,
+    "raw_tensor_bytes": 32768,
+    "recompute_ns": [
+      728958,
+      652167,
+      745833,
+      723667,
+      868625,
+      238792,
+      208417,
+      222417
+    ],
+    "rollback_ns": 9328750,
+    "rollback_retained_parent": true,
+    "rows": 4096,
+    "scope": "native MLX gather of disposable B13 identity tensor; not a training graph",
+    "successor_binding_ns": 156583,
+    "successor_identity": {
+      "branch_revision": "83671fea5420e13499d83c92b31ca96f44b2a4fc",
+      "compiler": {
+        "compiler_sha256": "a7e9478c6891a8d035e706fea597f6a569ebbb4c2230412a458fdc3d3e607ff2",
+        "correction_generation": 0,
+        "factor_map_sha256": "cb36085c045a7fab392c124faa1bae0ba108f4bb6e4a16cf43924740044f4fac",
+        "factory_grade_ids": [
+          "Z"
+        ],
+        "factory_release_sha256": "6052f4f49a8680dbc41db37766f22301dcd5863f7aaad4296d6ecbbb1ebbf778",
+        "factory_semantic_catalog": {
+          "tokens": [
+            "fixture.padding",
+            "cogal.value.false",
+            "cogal.value.true"
+          ]
+        },
+        "factory_semantic_catalog_sha256": "6bc1f1924dc57a06c2983c7dc12f10ad81f25e1d3d042e642eea2b0e67e3219d",
+        "factory_semantic_graph_sha256": "f2b44f12fb25e155f7221c8a958f98493047da9da5c7a1177fb61df85bf8fbc5",
+        "feature_schema": {
+          "role_ids": [],
+          "schema_ids": [],
+          "source_bindings": []
+        },
+        "feature_source": {
+          "atlas_bundle_id": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "release_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "source_bundle_id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        },
+        "rights_epoch": 0,
+        "schema": "bilqis.mlx.bamf-compiler-features/v1"
+      },
+      "generation": 1,
+      "geometry": {
+        "dtype": "float32",
+        "output_shape": [
+          4096,
+          2
+        ],
+        "parameter_shape": [
+          2,
+          2
+        ]
+      },
+      "indices": "0c67569b7bd0bdb7a202c5c65f456753e7c4f24016a0a8476b6cfc51eea21c40",
+      "kind": "detached-identity-gather/fp32/v1",
+      "manifest": "e016395f96c6a64bdc0bd295bdf56160ce515f525ab8c412690d8da808b9a699",
+      "parameter": "identity.bank.0",
+      "parameter_revision": "ec3f78336d9f1820df206156dc4cd87438e37f2d5925077822703ee723619c8c",
+      "scope": "disposable-fixed-panel",
+      "semantic_abi": {
+        "active_set_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "bank_identities": [
+          "bank:0"
+        ],
+        "schema": "bilqis.mlx.bamf-semantic-abi/v1",
+        "semantic_bank_count": 1
+      },
+      "source": {
+        "correction_generation": 0,
+        "frontier": [],
+        "release_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "rights_epoch": 0,
+        "schema": "bilqis.mlx.bamf-correction-frontier/v1",
+        "source_authority_registry": {
+          "keys": [
+            {
+              "allowed_scopes": [
+                {
+                  "key_prefix": "a12-export:",
+                  "kind": "ARTIFACT",
+                  "schema_version": "bilqis.c09.source-authority-scope/v1"
+                }
+              ],
+              "owner_id": "fixture:a12-source-owner",
+              "public_key_hex": "fa4834147f6e690c3693eff61336046403cd8ae2a14f31b3c407358569239565",
+              "schema_version": "bilqis.c09.source-authority-key/v2"
+            }
+          ],
+          "schema_version": "bilqis.c09.source-authority-registry/v2"
+        },
+        "source_authority_registry_origin": "HOST_SYSTEM_V1",
+        "source_authority_registry_sha256": "d25a1200edb6db8e6546b9f716de6acc71a197a946f069e98dd9b63c0f103d02",
+        "source_identity": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "state_revision": "be271b59ce1416f14c1608e11bc5b51a36ba18dd441bef5a5f26f98d40365086"
+    },
+    "training_graph_reuse": "not measured or authorized by detached artifact evidence",
+    "transfer_and_encode_ns": 77375,
+    "trials": 8,
+    "write_ns": 1057833
+  },
+  "revision": "83671fea5420e13499d83c92b31ca96f44b2a4fc",
+  "schema": "bilqis.spike.1619/v1",
+  "verification": {
+    "log_sha256": "cdb2e546d996f1b733c7d01f43e0b9fdaf24313fdadd49abddebd65bc52ae1a4",
+    "matched_first_assessment_digest": true,
+    "matched_first_fp32_digest": true,
+    "returncode": 0,
+    "source_files_unchanged": true,
+    "status": "PASS",
+    "wall_seconds": 6.867013931274414,
+    "witness_files": {
+      "scripts/bamf/profiling/issue1619_cache_economics.py": "a2056bfbdc708c4b294b00f9c4a792900487000d635e1f10778c226d13590b70",
+      "scripts/bamf/profiling/issue1619_native_artifact.py": "ecd18b2e28d84c1449e59a590cd18b252f3c62505186a45969b99d0db7402ae6"
+    }
+  }
+}
