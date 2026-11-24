@@ -8,7 +8,7 @@ import subprocess
 import tempfile
 import unittest
 
-from scripts.quality.pre_push import CI_GROUPS, LocalChecks, PrePushError, source_updates
+from scripts.quality.pre_push import CI_GROUPS, LocalChecks, PrePushError, is_github_remote, source_updates
 
 ROOT = Path(__file__).resolve().parents[3]
 HOSTED_STEPS = frozenset({
@@ -48,6 +48,27 @@ class RecordingChecks(LocalChecks):
 
 
 class PrePushTests(unittest.TestCase):
+    def test_github_remote_requires_exact_hostname(self):
+        for remote in (
+            "https://github.com/Entif-AI/Bilqis-MLX.git",
+            "ssh://git@github.com/Entif-AI/Bilqis-MLX.git",
+            "git@github.com:Entif-AI/Bilqis-MLX.git",
+            "https://GITHUB.COM/owner/repo",
+        ):
+            with self.subTest(remote=remote):
+                self.assertTrue(is_github_remote(remote))
+        for remote in (
+            "https://github.com.example.org/owner/repo",
+            "https://example.org/github.com/owner/repo",
+            "https://github.com@example.org/owner/repo",
+            "https://example.org/?host=github.com",
+            "git@example.org:github.com/owner/repo",
+            "/tmp/github.com/repo",
+            "https://[github.com",
+        ):
+            with self.subTest(remote=remote):
+                self.assertFalse(is_github_remote(remote))
+
     def test_every_pr_workflow_command_is_shared_or_hosted_setup(self):
         shared = set()
         for path in sorted((ROOT / ".github/workflows").glob("*.yml")):

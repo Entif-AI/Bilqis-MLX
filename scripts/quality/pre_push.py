@@ -11,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from urllib.parse import urlsplit
 
 CORE_BEFORE_BRANCH = (
     "release", "structure", "flow-control", "invariant-transfer",
@@ -66,11 +67,22 @@ def require_clean(root: Path, env: dict[str, str], head: str) -> None:
         raise PrePushError("Sparse/assume-unchanged index cannot certify a push")
 
 
+def is_github_remote(remote_url: str) -> bool:
+    """Recognize GitHub HTTPS/SSH remotes by exact parsed authority."""
+    if remote_url.startswith("git@github.com:"):
+        remote_url = "ssh://git@github.com/" + remote_url.removeprefix("git@github.com:")
+    try:
+        parsed = urlsplit(remote_url)
+        return parsed.scheme in ("https", "ssh") and parsed.hostname == "github.com"
+    except ValueError:
+        return False
+
+
 def branch_context(root: Path, env: dict[str, str], remote_url: str,
                    head_ref: str) -> tuple[str, str]:
     base = env.get("BILQIS_CI_BASE_BRANCH", "")
     title = env.get("BILQIS_CI_PR_TITLE", "")
-    if "github.com" in remote_url and shutil.which("gh"):
+    if is_github_remote(remote_url) and shutil.which("gh"):
         try:
             result = subprocess.run(
                 ["gh", "pr", "view", head_ref, "--json", "baseRefName,title,state"],
