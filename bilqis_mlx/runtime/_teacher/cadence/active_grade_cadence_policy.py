@@ -7,6 +7,9 @@ from pathlib import Path
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.factory.autonomy import obligations_for_capability
+from bilqis_mlx.runtime.priority_competence import (
+    UNKNOWN_COMPETENCE, instructional_members,
+)
 
 from .active_grade_cadence_contracts import (
     ActiveGradeCadencePhase,
@@ -157,12 +160,14 @@ def context_matches(state, frontier, member_census_sha256) -> bool:
     )
 
 
-def recovery_members(state, ready, deficit_counts, member_order):
+def recovery_members(state, ready, deficit_counts, member_order, competence=None):
     exposure = dict(state.recovery_retained_counts)
     order = {capability: index for index, capability in enumerate(member_order)}
+    competence = competence or {}
     return tuple(sorted(
-        ready,
+        instructional_members(ready, competence),
         key=lambda capability: (
+            competence.get(capability, UNKNOWN_COMPETENCE).priority,
             -deficit_counts.get(capability, 0),
             exposure.get(capability, 0),
             order.get(capability, len(order)),

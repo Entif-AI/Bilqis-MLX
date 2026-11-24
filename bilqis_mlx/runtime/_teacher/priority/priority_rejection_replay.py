@@ -220,6 +220,12 @@ def rejection_recency(run_dir, parent, cache):
     return _current_projection(run_dir, parent, cache).recency()
 
 
+def rejection_priority_snapshot(run_dir, parent, cache):
+    """Read recency and score evidence from one authenticated journal tail."""
+    projection = _current_projection(run_dir, parent, cache)
+    return (*projection.recency(), projection.outcomes_view())
+
+
 def current_structural_weaknesses(
         run_dir, parent, cache, source_context, selection, capability=None):
     """Return deduplicated unresolved debt; downstream repair owns closure evidence."""
