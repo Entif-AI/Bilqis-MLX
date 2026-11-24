@@ -199,7 +199,6 @@ def test_protected_parent_cache_hit_skips_parent_solver_construction():
             local_stages,
             cached_instruments=Mock(return_value=(instrument,)),
             local_coverage=Mock(return_value=N()),
-            coverage_for_groups=Mock(return_value=N()),
             foundation_policy=Mock(return_value=object()),
             _cohort=Mock(return_value=object()),
             factory_parent_assessment_identity=Mock(return_value=object()),
@@ -211,7 +210,7 @@ def test_protected_parent_cache_hit_skips_parent_solver_construction():
             AssessmentPair=Mock(side_effect=lambda parent, candidate: N(
                 parent=parent, candidate=candidate)),
             solver_profile=Mock()):
-        pair, receipt, _, _ = local_stages.protected_stage(
+        pair, receipt, _ = local_stages.reference_stage(
             object(), parent, candidate, "artifact", object(), plan,
             target_plan, (), ((protected, 7, ({"id": "p"},)),), cache, N())
 

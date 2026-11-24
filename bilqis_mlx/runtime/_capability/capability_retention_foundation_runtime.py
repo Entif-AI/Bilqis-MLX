@@ -59,7 +59,7 @@ def _fixed_school_score_context(
         target_capability, references, policy, fixed,
         parent_generation, candidate_generation,
         parent_results, parent_contracts, candidate_results, candidate_contracts,
-        observer):
+        observer, *, learning_pair=None):
     parent_assessment = Assessment(
         fixed, parent_generation,
         tuple(parent_results[case.case_id] for case in fixed.cases),
@@ -82,6 +82,9 @@ def _fixed_school_score_context(
             _invalid("BAMF_FOUNDATION_FIXED_SCHOOL_SCORE_TOTAL_DRIFT")
         scores[capability] = {"before": before, "after": after, "total": total}
     target_delta = fixed_pair.delta(target_capability)
+    learning = fixed_pair if learning_pair is None else learning_pair
+    learning_before, learning_total = learning.parent.score(target_capability)
+    learning_after, _ = learning.candidate.score(target_capability)
     from bilqis_mlx.diagnostics.assessment_signals import optional_prediction_signals
     scorecard = {
         "schema": "bilqis.bamf.retention-scorecard/v1",
@@ -91,12 +94,12 @@ def _fixed_school_score_context(
         "evidence_stage": fixed.evidence_stage.value,
         "target_capability": target_capability,
         "learning_signals": optional_prediction_signals(
-            observer, fixed_pair.candidate, target_capability),
+            observer, learning.candidate, target_capability),
         "learning_target": {
             "capability_id": target_capability, "state": "MEASURED",
-            "before": scores[target_capability]["before"],
-            "after": scores[target_capability]["after"],
-            "total": scores[target_capability]["total"],
+            "before": learning_before,
+            "after": learning_after,
+            "total": learning_total,
         },
         "target": {
             "capability_id": target_capability,
@@ -145,14 +148,16 @@ def final_fixed_school_decision(
         evidence_digest, pair_digests, parent_results, parent_contracts,
         candidate_results, candidate_contracts, observer=None, *, ordinary=False,
         evaluated_capability_ids=(), retention_protection_plan_sha256=None,
-        broad_certification_trigger=None):
+        broad_certification_trigger=None, learning_pair=None):
     (fixed_pair, census, coverage, measured, measured_set, scores,
      target_delta) = _fixed_school_score_context(
         target_capability, references, policy, fixed,
         parent_generation, candidate_generation,
         parent_results, parent_contracts, candidate_results, candidate_contracts,
-        observer)
+        observer, learning_pair=learning_pair)
 
+    if learning_pair is not None:
+        target_delta = learning_pair.delta(target_capability)
     target_measured = target_capability in measured_set
     metadata = _decision_metadata(
         coverage, evaluated_capability_ids,
@@ -168,9 +173,11 @@ def final_fixed_school_decision(
         reason = "NO_MEASURABLE_TARGET_GAIN"
     else:
         protected = tuple(references)
-        losses = tuple(capability for capability in protected
-                       if fixed_pair.delta(capability) < 0)
         authoritative = (target_capability, *protected)
+        loss_scope = ((target_capability, *protected)
+                      if learning_pair is not None and target_measured else protected)
+        losses = tuple(capability for capability in loss_scope
+                       if fixed_pair.delta(capability) < 0)
         reason = "PAIRED_SCREEN_WITHIN_BUDGET"
         if (losses and not _mastery_debt_utility_exceeds_margin(
                 policy,

@@ -173,6 +173,7 @@ VISIT_PERFORMANCE_FIELDS = (
 RETENTION_PROFILE_FIELDS = (
     "retention_target_case_count",
     "retention_protected_case_count",
+    "retention_reference_case_count",
     "retention_parent_cache_reused",
     "retention_target_shared_backbone_launches",
     "retention_target_scalar_neural_launches",

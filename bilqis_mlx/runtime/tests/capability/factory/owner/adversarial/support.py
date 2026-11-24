@@ -143,12 +143,11 @@ def _evaluate_foundation_owner(source, candidate, target, fixed, fresh,
                 evaluate_target_gate=Mock(return_value=target_gate_decision),
             ), patch.multiple(
                 local_screen,
-                _cohort=Mock(return_value=SimpleNamespace(
-                    rubric_sha256="1" * 64, scope_sha256="2" * 64,
-                    policy_sha256="3" * 64, source_sha256="4" * 64,
-                    evidence_stage=owner.CURRENT_EVIDENCE_STAGE)),
                 authenticate_bamf_execution_feature_context=Mock(
                     return_value=object()),
+                reference_stage=Mock(return_value=(
+                    SimpleNamespace(parent=SimpleNamespace(cohort=object())),
+                    None, object())),
                 finalize_target_first_local_candidate=Mock(return_value=decision),
             ), patch.multiple(
                 owner_screen,

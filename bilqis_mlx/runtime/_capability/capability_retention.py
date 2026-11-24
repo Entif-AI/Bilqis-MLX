@@ -157,6 +157,8 @@ class Decision:
     retention_protection_plan_sha256: str | None = None
     broad_certification_trigger: str | None = None
     blocking_score_budget: tuple[str, int, int, int, int] | None = None
+    fixed_reference_scores: tuple[tuple[str, int, int, int], ...] = ()
+    fixed_reference_cohort_sha256: str | None = None
     schema_version: str = "bilqis.c05.retention-decision/v3"
 
     def __post_init__(self):
@@ -183,6 +185,8 @@ class Decision:
                 or (self.broad_certification_trigger is not None
                     and (not isinstance(self.broad_certification_trigger, str)
                          or not self.broad_certification_trigger))
+                or (self.fixed_reference_cohort_sha256 is not None
+                    and not _sha(self.fixed_reference_cohort_sha256))
                 or not valid_blocking_score_budget(self.blocking_score_budget)
                 or self.schema_version != "bilqis.c05.retention-decision/v3"):
             _invalid("BAMF_RETENTION_DECISION_INVALID")
