@@ -84,10 +84,15 @@ def _one(root, parent, context, atlas_path, cache):
     }
 
 
-def profile(run_dir: Path, repeats: int, max_warm_seconds: float, *, run_label: str) -> dict:
+def _disposable_root(run_dir: Path) -> Path:
     root = run_dir.expanduser().resolve()
     if not (root / ".issue1536-disposable-profile").is_file():
         raise ValueError("ISSUE1536_DISPOSABLE_PROFILE_MARKER_REQUIRED")
+    return root
+
+
+def profile(run_dir: Path, repeats: int, max_warm_seconds: float, *, run_label: str) -> dict:
+    root = _disposable_root(run_dir)
     parent, context, atlas_path, _feature_path = _execution_context(root)
     cache = PriorityPlanningCache(root)
     samples = [_one(root, parent, context, atlas_path, cache)
@@ -119,28 +124,36 @@ def profile(run_dir: Path, repeats: int, max_warm_seconds: float, *, run_label: 
     }
 
 
-def main() -> int:
+def prepare(argv, probes):
+    """Shared checked-launch and direct CLI preparation; no planning work yet."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("run_dir", type=Path)
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--max-warm-seconds", type=float, default=10.0)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--run-label", default="disposable-production-shaped-run")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.repeats < 2 or args.max_warm_seconds <= 0:
         parser.error("--repeats must be >=2 and --max-warm-seconds must be positive")
     try:
-        result = profile(
-            args.run_dir, args.repeats, args.max_warm_seconds,
-            run_label=args.run_label)
+        root = _disposable_root(args.run_dir)
     except (OSError, ValueError) as error:
         parser.error(str(error))
+    return lambda: _run_profile(args, root)
+
+
+def _run_profile(args, root):
+    result = profile(root, args.repeats, args.max_warm_seconds, run_label=args.run_label)
     payload = json.dumps(result, sort_keys=True, indent=2) + "\n"
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(payload, encoding="utf-8")
     print(payload, end="")
     return 0 if result["gate_passed"] else 1
+
+
+def main() -> int:
+    return prepare(sys.argv[1:], None)()
 
 
 if __name__ == "__main__":
