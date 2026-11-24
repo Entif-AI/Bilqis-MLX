@@ -146,6 +146,7 @@ VISIT_PERFORMANCE_FIELDS = (
     "selected_source_owner_build_wall_seconds",
     "selected_source_registration_currentness_wall_seconds",
     "selected_source_qualification_wall_seconds",
+    "target_preflight_wall_seconds",
     "target_evaluation_wall_seconds",
     "protected_retention_wall_seconds",
     "broad_certification_wall_seconds",

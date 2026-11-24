@@ -226,3 +226,33 @@ def test_instruction_event_uses_selected_teacher_projection(monkeypatch):
 
     history.assert_called_once_with(selected_teacher)
     assert event["capability_ids"] == ["A.EDGE", "A.IDENTITY"]
+
+
+def test_neutral_skip_is_a_visit_but_not_candidate_credit(tmp_path, monkeypatch):
+    from bilqis_mlx.runtime.bamf_bundle.publication import preflight
+    parent = SimpleNamespace(retained_state=SimpleNamespace(optimizer_step=11))
+    authorization = {'phase_sha256': 'phase'}
+    prepared = BamfPreparedVisit(
+        'PERFECT_TARGET_SKIPPED', parent,
+        selection=SimpleNamespace(metadata={'cadence': authorization}),
+        capability='target', preflight=SimpleNamespace(
+            assessment=SimpleNamespace(score=lambda _: (6, 6))))
+    journal, rejection, publish, cadence = Mock(), Mock(), Mock(), Mock()
+    monkeypatch.setattr(preflight, 'record_perfect_target_skip', journal)
+    observer = SimpleNamespace(finish=Mock(), update=Mock())
+    outcome = _run_visits(
+        tmp_path, deadline=100, max_visits=1, steps_per_visit=1, batch_size=1,
+        reserve_gib=100, source_prefetch_workers=0, progress=None,
+        source_prefetch_executor=None, metrics=None, run_authority_binding=None,
+        resource_snapshot=None, monotonic=lambda: 0,
+        observer_type=lambda *_: nullcontext(observer), emit_progress=lambda *_: None,
+        visit_fn=partial(visit, prepare_visit=Mock(return_value=prepared),
+                         record_rejection=rejection, accept_publish=publish,
+                         load_generation=None, measure_phase=lambda *_: nullcontext(),
+                         emit_progress=lambda *_: None, record_cadence_attempt=cadence))
+    assert outcome[:4] == ('VISIT_LIMIT', 1, 0, 0)
+    assert outcome[-1] == 1
+    journal.assert_called_once_with(tmp_path, parent, prepared.preflight)
+    cadence.assert_called_once_with(tmp_path, authorization, 'target', 'PERFECT_TARGET_SKIPPED')
+    rejection.assert_not_called()
+    publish.assert_not_called()

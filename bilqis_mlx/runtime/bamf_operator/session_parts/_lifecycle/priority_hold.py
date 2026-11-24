@@ -54,6 +54,12 @@ def priority_hold_result(
         payload, sort_keys=True, ensure_ascii=True))
     boundary_disposition = cadence.get("disposition") if isinstance(cadence, dict) else None
     if boundary_disposition == "RECOVERY_EXHAUSTED":
+        from bilqis_mlx.runtime.bamf_bundle.publication.preflight import (
+            PREFLIGHT_EXHAUSTED, skip_only_exhaustion,
+        )
+        if skip_only_exhaustion(run_dir, parent, context.release, cadence):
+            emit_progress(progress, "current target preflights exhausted without a training trial")
+            return BamfPreparedVisit(PREFLIGHT_EXHAUSTED, parent, selection=selection)
         _rearm_current_grade(run_dir, selection)
         emit_progress(
             progress,

@@ -18,6 +18,7 @@ _TERMINAL_PREPARED_STATUSES = frozenset({
     "CERTIFICATION_FAILED",
     "CERTIFICATION_SUPERSEDED",
     "CERTIFICATION_POLICY_REQUIRED",
+    "PREFLIGHT_EXHAUSTED",
 })
 
 
@@ -174,6 +175,25 @@ def visit(
         **({"resource_holds": resource_holds} if resource_holds else {}))
     if prepared.status in _TERMINAL_PREPARED_STATUSES:
         return prepared.status
+    from bilqis_mlx.runtime.bamf_bundle.publication.preflight import (
+        PERFECT_TARGET_SKIPPED, record_perfect_target_skip,
+    )
+    if prepared.status == PERFECT_TARGET_SKIPPED:
+        _assert_current(run_authority_binding)
+        record_perfect_target_skip(run_dir, prepared.parent, prepared.preflight)
+        cadence = _cadence(prepared.selection)
+        if cadence is not None and record_cadence_attempt is not None:
+            record_cadence_attempt(run_dir, cadence, prepared.capability,
+                                   PERFECT_TARGET_SKIPPED)
+        if observer is not None:
+            correct, total = prepared.preflight.assessment.score(prepared.capability)
+            observer.update(
+                capability_id=prepared.capability, candidate_step=0,
+                candidate_optimizer_step=prepared.parent.retained_state.optimizer_step,
+                retention_target={"state": "MEASURED", "before": correct,
+                                  "after": None, "total": total},
+                retention_reason=PERFECT_TARGET_SKIPPED)
+        return PERFECT_TARGET_SKIPPED
     if prepared.status == "RESOURCE_REJECTED":
         if observer is not None:
             stage = getattr(observer, "stage", None)
