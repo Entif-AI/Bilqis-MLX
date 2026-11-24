@@ -2,7 +2,6 @@
 from pathlib import Path
 from threading import Lock
 
-from bilqis_mlx.mission_control import MissionControlQueryCatalog
 from bilqis_mlx.mission_control.projection import MissionControlProjection
 
 from ..native_cache.source import _source_token
@@ -55,7 +54,7 @@ def composed_query_source(run_dir: Path, projection: MissionControlProjection):
             # of the learner. Read them even when both source frontiers are stable.
             notices = projection.notifications()
             if catalog is not previous_catalog or notices != previous_notices:
-                composed = MissionControlQueryCatalog((*catalog.records, *notices))
+                composed = catalog.with_records(notices)
                 previous_catalog, previous_notices = catalog, notices
             return composed
 

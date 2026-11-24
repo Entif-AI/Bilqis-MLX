@@ -1,10 +1,12 @@
 """Ephemeral CP03 bounded query catalog over authoritative CP02 records."""
 from __future__ import annotations
 
+from bisect import bisect_right
 from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import replace
 from functools import lru_cache
+from itertools import chain
 
 from .contracts.envelopes import (
     PartialEnvelope, StaleEnvelope, UnavailableEnvelope,
@@ -27,6 +29,29 @@ from .query_support import (
     FAMILY_TYPES, _rows_digest, build_page, encode_query_page, matches_identity,
     record_sort_key, select_current,
 )
+
+
+def _merge_sorted_records(base, additions):
+    """Merge a small sorted overlay without rescanning the immutable base."""
+    if not additions:
+        return base
+    if not base:
+        return additions
+    chunks = []
+    start = 0
+    for item in additions:
+        end = bisect_right(base, record_sort_key(item), lo=start, key=record_sort_key)
+        chunks.extend((base[start:end], (item,)))
+        start = end
+    chunks.append(base[start:])
+    return tuple(chain.from_iterable(chunks))
+
+
+def _merge_record_indexes(base, additions):
+    merged = base.copy()
+    for key, records in additions.items():
+        merged[key] = _merge_sorted_records(merged.get(key, ()), records)
+    return merged
 
 
 class MissionControlQueryCatalog:
@@ -60,6 +85,27 @@ class MissionControlQueryCatalog:
                 self._episodes_by_capability[run, item.capability_id].append(item)
         self._selection = lru_cache(maxsize=32)(self._select)
         self._selection_digest = lru_cache(maxsize=32)(self._digest)
+
+    def with_records(self, records: Iterable[WireRecord]) -> "MissionControlQueryCatalog":
+        """Add independently validated records while retaining base indexes."""
+        overlay = MissionControlQueryCatalog(records, available=self.available)
+        if not overlay.records:
+            return self
+        require(not any(key in self._by_id for key in overlay._by_id),
+                "QUERY_RECORD_ID_DUPLICATE")
+        overlay._records = _merge_sorted_records(self._records, overlay._records)
+        overlay._by_id = self._by_id | overlay._by_id
+        overlay._by_type = _merge_record_indexes(self._by_type, overlay._by_type)
+        overlay._by_schema = _merge_record_indexes(self._by_schema, overlay._by_schema)
+        overlay._marker_records = _merge_sorted_records(
+            self._marker_records, overlay._marker_records)
+        overlay._episodes_by_capability = _merge_record_indexes(
+            self._episodes_by_capability, overlay._episodes_by_capability)
+        generations = self._current_generation.copy()
+        for run_id, generation in overlay._current_generation.items():
+            generations[run_id] = max(generation, generations.get(run_id, -1))
+        overlay._current_generation = generations
+        return overlay
 
     @classmethod
     def unavailable(cls) -> "MissionControlQueryCatalog":

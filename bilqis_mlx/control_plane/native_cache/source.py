@@ -44,6 +44,7 @@ class _NativeQueryCache:
         self.observed_records = observed_records_fn
         self.token = self.catalog = self.base_token = self.pointer_token = None
         self.base_records = ()
+        self.base_catalog = None
         self.run_ref_values = ()
         self.accepted_health = {}
         self.history = ()
@@ -81,7 +82,7 @@ class _NativeQueryCache:
         observed = self.observed_records(
             self.root, self.run_ref_values,
             accepted_health_by_manifest=self.accepted_health)
-        catalog = MissionControlQueryCatalog((*self.base_records, *observed))
+        catalog = self.base_catalog.with_records(observed)
         after = _source_token(self.root)
         if _base_source_token(after) != base:
             return None
@@ -122,7 +123,11 @@ class _NativeQueryCache:
             if isinstance(record, TrainerObservation))
         refs = self.run_refs(base_records)
         health = material.accepted_learning_health_by_manifest or {}
-        catalog = MissionControlQueryCatalog((*base_records, *observed))
+        base_catalog = self.base_catalog
+        if (base_catalog is None or self.pointer_token != before[0]
+                or self.base_records != base_records):
+            base_catalog = MissionControlQueryCatalog(base_records)
+        catalog = base_catalog.with_records(observed)
         after = _source_token(self.root)
         if after[0] != before[0]:
             self.history, self.pointer_token = (), None
@@ -134,12 +139,13 @@ class _NativeQueryCache:
             self._clear_base()
             return catalog
         return self._cache_stable_base(
-            before, after, base_records, refs, health, catalog)
+            before, after, base_records, refs, health, catalog, base_catalog)
 
     def _cache_stable_base(
-            self, before, after, base_records, refs, health, catalog):
+            self, before, after, base_records, refs, health, catalog, base_catalog):
         self.base_token = _base_source_token(before)
         self.base_records = base_records
+        self.base_catalog = base_catalog
         self.run_ref_values = refs
         self.accepted_health = health
         if after == before or not refs:
@@ -147,7 +153,7 @@ class _NativeQueryCache:
             return catalog
         observed = self.observed_records(
             self.root, refs, accepted_health_by_manifest=health)
-        catalog = MissionControlQueryCatalog((*base_records, *observed))
+        catalog = base_catalog.with_records(observed)
         final = _source_token(self.root)
         if final[0] != before[0]:
             self.history, self.pointer_token = (), None
@@ -162,6 +168,7 @@ class _NativeQueryCache:
     def _clear_base(self):
         self.base_token = self.token = self.catalog = None
         self.base_records = self.run_ref_values = ()
+        self.base_catalog = None
         self.accepted_health = {}
 
 
