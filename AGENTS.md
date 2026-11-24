@@ -457,6 +457,23 @@ reads the receipt and log after the human returns, reconciles the result, and on
 then decides the next action. Interactive execution remains appropriate for work
 expected to finish comfortably below five minutes.
 
+**Agent-owned artifact retirement:** The agent that creates a disposable run,
+source snapshot, verification directory or feature worktree owns its cleanup.
+Before launching, identify disposable outputs and any required continuation
+inputs. After reviewing a terminal receipt, retire redundant learner replicas
+before launching another experiment or closing the task. Use
+`python3 -B scripts/bamf/detached/retire_replica.py <receipt> --replica <child>
+--result <result-file> --apply` for completed detached learner replicas. Preserve
+the verified compact evidence, command, source identity, logs and results; do
+not keep full databases, weights and duplicate histories merely as proof.
+Preserve failed-run evidence until diagnosis is complete and retain only named
+dependencies needed for a concrete next step. Remove clean temporary worktrees
+with Git after their necessary changes and source identity are durably
+recoverable and no process or continuation needs them. Never force-remove a
+dirty worktree, delete unknown or active artifacts, or touch sovereign learners,
+shared baseline inputs or production archives. Report reclaimed allocation and
+any retained dependencies at closeout. Do not leave housekeeping for the human.
+
 Every lane-owned BAMF implementation leaf or open lane PR must be represented in that lane's
 machine-readable state under `docs/tasks/bamf-0.2/flow-control/`. Before substantive
 branch mutation, the operator must run `python3 -B scripts/check_bamf_flow_control.py`
