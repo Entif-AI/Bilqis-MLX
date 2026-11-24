@@ -109,7 +109,7 @@ jobs:
             steps.test-impact.outputs.expensive_tests == 'true' &&
             (!contains(github.ref_name, 'bamf') && !contains(github.head_ref, 'bamf') && !contains(github.base_ref, 'bamf'))
           }}
-        run: python3 -B -m scripts.quality.run_verified --check legacy-semantic-boundaries -- python3 -B scripts/check_semantic_boundaries.py
+        run: python3 -B scripts/check_semantic_boundaries.py
       - name: Verify portable BAMF semantic contracts
         if: >-
           ${{
@@ -130,7 +130,7 @@ jobs:
         env:
           QUALITY_BASE_REF: ${{ steps.comparison-base.outputs.base_ref }}
         run: |
-          python3 -B -m scripts.quality.run_verified --check factory-architecture -- python3 -B scripts/check_factory_architecture.py
+          python3 -B scripts/check_factory_architecture.py
           python3 -B scripts/quality/check_docs.py
           if [ -n "$QUALITY_BASE_REF" ]; then
             python3 -B scripts/error_control_plane.py --check --base-ref "$QUALITY_BASE_REF"
@@ -162,7 +162,6 @@ jobs:
       - name: Portable non-neural custody and release tests
         if: steps.test-impact.outputs.expensive_tests == 'true'
         run: >-
-          python3 -B -m scripts.quality.run_verified --check portable-custody --
           python3 -B scripts/run_tests.py
           bilqis_mlx/learning/_teaching/tests/test_teacher_observations.py
           bilqis_mlx/runtime/tests/teacher/test_teacher_observation_capture.py
@@ -186,6 +185,7 @@ jobs:
           scripts/tests/governance/test_smell_verification_reuse.py
           scripts/tests/governance/test_abi_verification_reuse.py
           scripts/tests/tooling/test_verification_receipts.py
+          scripts/tests/tooling/test_verification_environment.py
           scripts/tests/tooling/test_quality_workflow_evidence.py
           scripts/tests/governance/test_pr_scope.py
           scripts/tests/test_run_required_tests.py
@@ -256,7 +256,7 @@ jobs:
           -r lib/ithkuil/requirements-semantic.txt
           mlx==0.31.1 numpy==2.4.4
       - name: Verify launch-critical BAMF journey with no skipped tests
-        run: python3 -B -m scripts.quality.run_verified --check bamf-readiness -- npm run bamf:readiness
+        run: python3 -B -m scripts.quality.run_verified --check bamf-readiness -- python3 -B scripts/run_required_tests.py --bamf-readiness
       - name: Publish passing main verification receipts
         if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule') }}
         continue-on-error: true

@@ -130,7 +130,7 @@ def _records_from_name_status(text):
 
 
 def _staged_records():
-    result=subprocess.run(['git','diff','--cached','--name-status','-M','--diff-filter=ACMR'],
+    result=subprocess.run(['git','--no-replace-objects','diff','--cached','--name-status','-M','--diff-filter=ACMR'],
                           cwd=ROOT,check=True,text=True,stdout=subprocess.PIPE)
     return 'HEAD',_records_from_name_status(result.stdout)
 
@@ -149,7 +149,7 @@ def _debt_baseline_ref(requested_base, scoped_base):
     moved into physical owner compartments.
     """
     result=subprocess.run(
-        ['git','merge-base','--is-ancestor',GOVERNANCE_ADOPTION_COMMIT,requested_base],
+        ['git','--no-replace-objects','merge-base','--is-ancestor',GOVERNANCE_ADOPTION_COMMIT,requested_base],
         cwd=ROOT,text=True,capture_output=True)
     return requested_base if result.returncode==0 else scoped_base
 

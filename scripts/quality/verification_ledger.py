@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import sqlite3
+import stat
 import subprocess
 import sys
 
@@ -17,7 +18,12 @@ def fingerprint(*parts: object) -> str:
 
 
 def full_requested() -> bool:
-    return os.environ.get("BILQIS_VERIFICATION_FULL", "").lower() in {"1", "true"}
+    if os.environ.get("BILQIS_VERIFICATION_FULL", "").lower() in {"1", "true"}:
+        return True
+    # A retry must not resurrect evidence superseded by its earlier failure.
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        return os.environ.get("GITHUB_RUN_ATTEMPT", "1") != "1"
+    return False
 
 
 def ledger_path(root: Path) -> Path | None:
@@ -87,6 +93,8 @@ class VerificationLedger:
     def _open(self, path: Path) -> None:
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
+            if os.environ.get("GITHUB_ACTIONS") != "true":
+                self._ensure_local_owner(path)
             self.connection = sqlite3.connect(path, timeout=0.25)
             self.connection.execute(
                 "CREATE TABLE IF NOT EXISTS receipt_v1 ("
@@ -96,6 +104,21 @@ class VerificationLedger:
             self.connection.commit()
         except (OSError, sqlite3.Error) as error:
             self._unavailable(error)
+
+    @staticmethod
+    def _ensure_local_owner(path: Path) -> None:
+        # The local cache is a same-account performance facility, not a
+        # substitute for independent hosted verification.
+        try:
+            fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+        except FileExistsError:
+            pass
+        else:
+            os.close(fd)
+        info = path.stat()
+        if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid()
+                or info.st_mode & (stat.S_IWGRP | stat.S_IWOTH)):
+            raise PermissionError("untrusted local ledger ownership or permissions")
 
     def _unavailable(self, error: Exception) -> None:
         print(f"VERIFICATION_LEDGER_UNAVAILABLE {type(error).__name__}", file=sys.stderr)

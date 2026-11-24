@@ -23,6 +23,9 @@ class VerificationReceiptTests(unittest.TestCase):
         self.enterContext(patch.dict(os.environ, {
             key: value for key, value in os.environ.items() if not key.startswith("GIT_")
         }, clear=True))
+        self.enterContext(patch(
+            "scripts.quality.verification_frontier.installed_identity",
+            return_value="fixture-installed-environment"))
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.base = Path(self.temp.name).resolve()
@@ -39,6 +42,8 @@ class VerificationReceiptTests(unittest.TestCase):
             "RUNNER_ENVIRONMENT": "github-hosted",
             "ImageOS": "fixture",
             "ImageVersion": "1",
+            "PYTHONPATH": "",
+            "PYTHONHOME": "",
             "RUNNER_OS": "fixture",
             "RUNNER_ARCH": "ARM64",
             "GITHUB_REF": "refs/heads/main",
@@ -209,6 +214,7 @@ class TrustedArtifactTests(unittest.TestCase):
             with patch.dict(os.environ, {
                 "GITHUB_ACTIONS": "true", "RUNNER_ENVIRONMENT": "github-hosted",
                 "GITHUB_REPOSITORY": repo, "GITHUB_RUN_ID": "999",
+                "GITHUB_RUN_ATTEMPT": "1",
                 "BILQIS_VERIFICATION_FULL": "0",
             }), patch("scripts.quality.restore_verification_ledger._runs",
                       return_value=[self.run_metadata(id=124, event="pull_request"),

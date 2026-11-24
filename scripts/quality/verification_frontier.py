@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import hashlib
-import importlib.metadata
 import os
 from pathlib import Path
 import platform
@@ -11,6 +10,7 @@ import subprocess
 import sys
 
 from .verification_ledger import fingerprint
+from .verification_environment import installed_identity
 
 
 def _git(root: Path, *args: str) -> bytes:
@@ -47,11 +47,7 @@ def clean_tracked_tree(root: Path, *, command: list[str]) -> bool:
         return False
     ignored = _git(root, "ls-files", "--others", "--ignored", "--exclude-standard",
                    "--directory", "-z")
-    # The core Python gates run after npm ci. Their node_modules directory is
-    # generated from the bound package lock and is not a Python input.
-    allowed = command[0] != "npm"
-    return all(allowed and "node_modules" in Path(os.fsdecode(path)).parts
-               for path in ignored.split(b"\0") if path)
+    return not any(path for path in ignored.split(b"\0"))
 
 
 def _configuration() -> dict[str, str]:
@@ -90,24 +86,15 @@ def execution_identity(root: Path, check: str, command: list[str]) -> tuple[str,
         return None
     if not clean_tracked_tree(root, command=command):
         return None
-    packages = sorted(
-        (dist.metadata["Name"], dist.version,
-         hashlib.sha256((dist.read_text("RECORD") or "").encode()).hexdigest())
-        for dist in importlib.metadata.distributions()
-    )
-    executable = shutil.which(command[0])
-    if executable is None:
+    if command[0] == "npm" or os.environ.get("PYTHONPATH") or os.environ.get("PYTHONHOME"):
         return None
-    tools = [str(Path(executable).resolve()), str(Path(sys.executable).resolve())]
-    if command[0] == "npm":
-        for tool in ("node", "npm"):
-            resolved = shutil.which(tool)
-            if resolved is None:
-                return None
-            tools.extend((str(Path(resolved).resolve()),
-                          subprocess.check_output([tool, "--version"], text=True).strip()))
-        config = subprocess.check_output(["npm", "config", "list", "--json"], cwd=root)
-        tools.append(hashlib.sha256(config).hexdigest())
+    executable = shutil.which(command[0])
+    git = shutil.which("git")
+    if executable is None or git is None:
+        return None
+    packages = installed_identity((Path(executable), Path(sys.executable), Path(git)))
+    if packages is None:
+        return None
     head = _git(root, "rev-parse", "HEAD").decode().strip()
     if os.environ.get("GITHUB_SHA") != head:
         return None
@@ -115,6 +102,6 @@ def execution_identity(root: Path, check: str, command: list[str]) -> tuple[str,
         sys.implementation.name, sys.version, platform.platform(), platform.machine(),
         os.environ["ImageOS"], os.environ["ImageVersion"],
         os.environ.get("RUNNER_OS"), os.environ.get("RUNNER_ARCH"),
-        packages, tools, _configuration(), _editable_metadata(root),
+        packages, _configuration(), _editable_metadata(root),
     )
     return head, fingerprint("ci-command/v1", check, command, frontier_digest(root, check), environment)

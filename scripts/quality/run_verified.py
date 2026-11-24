@@ -13,11 +13,7 @@ from .verification_frontier import execution_identity, trusted_producer
 from .verification_ledger import VerificationLedger, full_requested, ledger_path
 
 ROOT = Path(__file__).resolve().parents[2]
-CHECKS = (
-    "bamf-readiness",
-    "portable-custody", "factory-architecture",
-    "legacy-semantic-boundaries",
-)
+CHECKS = ("bamf-readiness",)
 
 
 def valid_pass(payload) -> bool:
@@ -34,13 +30,14 @@ def valid_pass(payload) -> bool:
 
 def execute(root: Path, check: str, command: list[str], *, full: bool = False) -> int:
     started = time.perf_counter()
+    command_env = dict(os.environ, GIT_NO_REPLACE_OBJECTS="1")
     try:
         identity = execution_identity(root, check, command)
     except (OSError, ValueError, TypeError, subprocess.SubprocessError):
         identity = None
     if identity is None:
         print(f"VERIFICATION_LEDGER {check} FRESH identity-unavailable", flush=True)
-        return subprocess.run(command, cwd=root).returncode
+        return subprocess.run(command, cwd=root, env=command_env).returncode
     head, key = identity
     with VerificationLedger(ledger_path(root), full=full or full_requested()) as ledger:
         receipt = ledger.lookup(check, key, validate=valid_pass)
@@ -52,7 +49,7 @@ def execute(root: Path, check: str, command: list[str], *, full: bool = False) -
             return 0
         print(f"VERIFICATION_LEDGER {check} FRESH frontier={key}", flush=True)
         command_started = time.perf_counter()
-        result = subprocess.run(command, cwd=root)
+        result = subprocess.run(command, cwd=root, env=command_env)
         duration = time.perf_counter() - command_started
         if result.returncode == 0 and trusted_producer():
             run_id = os.environ.get("GITHUB_RUN_ID", "")
