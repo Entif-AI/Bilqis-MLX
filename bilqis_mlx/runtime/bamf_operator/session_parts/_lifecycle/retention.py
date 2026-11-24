@@ -61,24 +61,18 @@ def _rejected_structural_weaknesses(
         outcome_sha256=how_outcome["outcome_sha256"])
 
 
-def retention_result(
-        run_dir, parent, context, atlas_path, selection, capability, cache, steps,
-        capture, rejection_journal_ordinal, rejection_attempt_ordinal,
-        identity_before, progress, observer, *, evaluate_candidate,
-        issue_decision, identity_delta, resource_observation,
-        derive_successor, bind_baseline_successor, finalize_generation_authority,
-        prepared_visit_type, emit_progress,
-        measure_observed_phase_fn, derive_plasticity_escape=None):
-    step = steps[-1]
-    from .evidence_mode import strict_mode_enabled
-    strict = strict_mode_enabled()
+def _evaluate_retention(
+        run_dir, parent, context, atlas_path, selection, capability, cache, step,
+        identity_before, progress, observer, strict, *, evaluate_candidate,
+        issue_decision, identity_delta, emit_progress,
+        measure_observed_phase_fn, derive_plasticity_escape):
+    from contextlib import nullcontext
     if observer is not None:
         stage = getattr(observer, "stage", None)
         observe = observer.update if strict or not callable(stage) else stage
         observe(phase="RETENTION")
     if strict:
         emit_progress(progress, "evaluating retention evidence")
-    from contextlib import nullcontext
     retention_phase = (
         measure_observed_phase_fn(observer, "retention_wall_seconds")
         if strict else nullcontext())
@@ -112,6 +106,49 @@ def retention_result(
         identity_metrics = identity_delta(identity_before) if strict else None
         retained = (
             evaluation.candidate_state if decision.accepted else evaluation.parent_state)
+    return (
+        evaluation, decision, retained, identity_metrics, plasticity_escape,
+    )
+
+
+def _stage_learning_first_outcome(observer, strict, how_outcome, decision):
+    if strict or observer is None:
+        return
+    stage = getattr(observer, "stage", None)
+    if not callable(stage):
+        return
+    outcome_context = (
+        how_outcome.get("context") if isinstance(how_outcome, dict) else None)
+    stage(
+        retention_phase=(
+            outcome_context.get("phase")
+            if isinstance(outcome_context, dict) else None),
+        retention_decision=getattr(decision, "decision", None),
+        retention_reason=getattr(decision, "reason", None),
+    )
+
+
+def retention_result(
+        run_dir, parent, context, atlas_path, selection, capability, cache, steps,
+        capture, rejection_journal_ordinal, rejection_attempt_ordinal,
+        identity_before, progress, observer, *, evaluate_candidate,
+        issue_decision, identity_delta, resource_observation,
+        derive_successor, bind_baseline_successor, finalize_generation_authority,
+        prepared_visit_type, emit_progress,
+        measure_observed_phase_fn, derive_plasticity_escape=None):
+    step = steps[-1]
+    from .evidence_mode import strict_mode_enabled
+    strict = strict_mode_enabled()
+    evaluation, decision, retained, identity_metrics, plasticity_escape = (
+        _evaluate_retention(
+            run_dir, parent, context, atlas_path, selection, capability, cache, step,
+            identity_before, progress, observer, strict,
+            evaluate_candidate=evaluate_candidate,
+            issue_decision=issue_decision,
+            identity_delta=identity_delta,
+            emit_progress=emit_progress,
+            measure_observed_phase_fn=measure_observed_phase_fn,
+            derive_plasticity_escape=derive_plasticity_escape))
     candidate_evidence, learning_summary = _finalize_retention_evidence(
         strict, observer, capture, run_dir, decision, measure_observed_phase_fn)
     resource = (
@@ -128,19 +165,7 @@ def retention_result(
     how_outcome = build_outcome(
         run_dir, selection, evaluation, decision, candidate_evidence,
         learning_summary=learning_summary)
-    if not strict and observer is not None:
-        stage = getattr(observer, "stage", None)
-        if callable(stage):
-            outcome_context = (
-                how_outcome.get("context")
-                if isinstance(how_outcome, dict) else None)
-            stage(
-                retention_phase=(
-                    outcome_context.get("phase")
-                    if isinstance(outcome_context, dict) else None),
-                retention_decision=getattr(decision, "decision", None),
-                retention_reason=getattr(decision, "reason", None),
-            )
+    _stage_learning_first_outcome(observer, strict, how_outcome, decision)
     structural_weaknesses = (() if decision.accepted else _rejected_structural_weaknesses(
         run_dir, context, selection, candidate_evidence, decision, how_outcome))
     successor, learning_health = _accepted_successor(

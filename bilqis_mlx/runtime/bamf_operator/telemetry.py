@@ -183,18 +183,18 @@ class TrainerObservation:
             self.record['observed_at'] = int(time.time() * 1000)
             self.record['elapsed_ms'] = int((time.monotonic() - self.started) * 1000)
             self.record.update(resource_fields)
-            record = dict(self.record)
-            if isinstance(record.get('candidate_steps'), list):
-                record['candidate_steps'] = [
-                    dict(item) if isinstance(item, dict) else item
-                    for item in record['candidate_steps']]
-            if isinstance(record.get('retention_stage_timings'), list):
-                record['retention_stage_timings'] = [
-                    dict(item) if isinstance(item, dict) else item
-                    for item in record['retention_stage_timings']]
-            visits = [dict(item) for item in self.visits]
-            learning_health = dict(self.learning_health_by_capability)
+            record, visits, learning_health = self._snapshot_state()
         self._persist_snapshot(record, visits, learning_health)
+
+    def _snapshot_state(self):
+        record = dict(self.record)
+        for field in ('candidate_steps', 'retention_stage_timings'):
+            values = record.get(field)
+            if isinstance(values, list):
+                record[field] = [
+                    dict(item) if isinstance(item, dict) else item for item in values]
+        return record, [dict(item) for item in self.visits], dict(
+            self.learning_health_by_capability)
 
     def _persist_snapshot(self, record, visits, learning_health):
         revision = record.get('revision')

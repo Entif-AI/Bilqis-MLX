@@ -14,8 +14,19 @@ SCHEMAS = frozenset(
     f"bilqis.bamf.trainer-observed/v{version}" for version in range(1, 8))
 _DURABLE_EVENTS = frozenset({"BAMF_C16_3_ACCEPTED", "BAMF_CANDIDATE_REJECTED"})
 _DURABLE_EVENT_MARKERS = tuple(name.encode() for name in _DURABLE_EVENTS)
-_DURABLE_HISTORY_CACHE = {}
-_DURABLE_HISTORY_LOCK = threading.Lock()
+
+
+class _DurableHistoryCache:
+    def __init__(self):
+        self.entries = dict()
+        self.lock = threading.Lock()
+
+    def clear(self):
+        with self.lock:
+            self.entries.clear()
+
+
+_DURABLE_HISTORY = _DurableHistoryCache()
 
 
 def _measured_target(how: dict, capability: str):
@@ -153,12 +164,12 @@ def _read_durable_history(run_dir: Path, run_id: str):
     try:
         stat = path.stat()
     except OSError:
-        with _DURABLE_HISTORY_LOCK:
-            _DURABLE_HISTORY_CACHE.pop(key, None)
+        with _DURABLE_HISTORY.lock:
+            _DURABLE_HISTORY.entries.pop(key, None)
         return ()
     identity = (stat.st_dev, stat.st_ino)
-    with _DURABLE_HISTORY_LOCK:
-        cached = _DURABLE_HISTORY_CACHE.get(key)
+    with _DURABLE_HISTORY.lock:
+        cached = _DURABLE_HISTORY.entries.get(key)
         reset = (
             not isinstance(cached, dict)
             or cached.get("identity") != identity
@@ -183,7 +194,7 @@ def _read_durable_history(run_dir: Path, run_id: str):
             observed = path.stat()
         except OSError:
             observed = stat
-        _DURABLE_HISTORY_CACHE[key] = {
+        _DURABLE_HISTORY.entries[key] = {
             "identity": identity,
             "offset": offset,
             "observed_size": observed.st_size,

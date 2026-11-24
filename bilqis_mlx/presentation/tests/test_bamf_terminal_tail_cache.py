@@ -41,8 +41,7 @@ def _write_line(path: Path, event: dict, *, append: bool = False):
 
 
 def _clear_cache():
-    with source._DURABLE_HISTORY_LOCK:
-        source._DURABLE_HISTORY_CACHE.clear()
+    source._DURABLE_HISTORY.clear()
 
 
 def test_history_cache_tails_only_new_events(tmp_path):
