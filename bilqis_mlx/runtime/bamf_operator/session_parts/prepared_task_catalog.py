@@ -7,7 +7,9 @@ import sqlite3
 import sys
 import zlib
 
-from bilqis_mlx.data_plane import REBUILDABLE_OBJECT_REFERENCE_PREFIX, data_plane
+from bilqis_mlx.data_plane import (
+    REBUILDABLE_OBJECT_REFERENCE_PREFIX, SHA256_HEX_LENGTH, data_plane,
+)
 from bilqis_mlx.learning.atlas_readout import DecisionKind, DecisionOutput, DecisionSpec
 from bilqis_mlx.learning.atlas_readout.plan import MAX_DECISIONS
 from bilqis_mlx.runtime.bamf_bundle import is_authenticated_generation_feature_context
@@ -24,7 +26,20 @@ from bilqis_mlx.semantics.domains import contract_digest
 _SCHEMA = "bilqis.bamf.prepared-task-catalog/v1"
 _MAX_BYTES = 16 * 1024 * 1024
 _CACHE_ERRORS = (OSError, ValueError, TypeError, KeyError, sqlite3.Error, zlib.error)
-_INVALID_ROUTE = "PREPARED_TASK_ROUTE_INVALID"
+_TASK_KEY_WIDTH = 3
+_EXECUTION_SNAPSHOT_WIDTH = 4
+
+
+class _CompilerUnavailable(ValueError):
+    """Optional catalog cannot establish its compiler identity."""
+
+
+class _InvalidRoute(ValueError):
+    """Cached decision route violates the training contract."""
+
+
+class _InvalidTaskKey(ValueError):
+    """Cached task key does not belong to the current source binding."""
 
 
 def _compiler_identity():
@@ -34,7 +49,7 @@ def _compiler_identity():
     root = Path(__file__).resolve().parents[4]
     files = implementation_files(root)
     if not files:
-        raise ValueError("PREPARED_TASK_COMPILER_UNAVAILABLE")
+        raise _CompilerUnavailable
     return contract_digest((sys.version_info[:3], files))
 
 
@@ -51,7 +66,7 @@ def _restore_route(record):
         RefinementRequestKind(refinement["kind"]), tuple(refinement["requested_roles"]))
     if (not 1 <= len(decisions) <= MAX_DECISIONS or len(decisions) != len(targets)
             or len(mask) != len(decisions)):
-        raise ValueError(_INVALID_ROUTE)
+        raise _InvalidRoute
     prior = set()
     for decision, target, enabled in zip(decisions, targets, mask, strict=True):
         if (decision.kind not in (DecisionKind.OPERATOR, DecisionKind.OPERAND)
@@ -59,13 +74,13 @@ def _restore_route(record):
                 or decision.decision_id != target.decision_id
                 or target.value not in decision.legal_values
                 or enabled != (target.decision_id, True) or type(enabled[1]) is not bool):
-            raise ValueError(_INVALID_ROUTE)
+            raise _InvalidRoute
         prior.add(decision.decision_id)
     return PreparedTaskRoute(decisions, targets, mask, disposition)
 
 
 def _is_digest(value):
-    return (type(value) is str and len(value) == 64
+    return (type(value) is str and len(value) == SHA256_HEX_LENGTH
             and all(char in "0123456789abcdef" for char in value))
 
 
@@ -98,11 +113,13 @@ class PreparedTaskCatalog:
                     or len(record["entries"]) > _MAX_PREPARED_TASK_ROUTES):
                 return
             restored = OrderedDict()
+            _, release_sha256, _, _, _, semantic_release, _ = self.binding
+            prefix = (release_sha256, semantic_release)
             for key, route in record["entries"]:
                 key = tuple(key)
-                if (len(key) != 3 or key[:2] != (self.binding[1], self.binding[5])
+                if (len(key) != _TASK_KEY_WIDTH or key[:len(prefix)] != prefix
                         or not all(_is_digest(value) for value in key) or key in restored):
-                    raise ValueError("PREPARED_TASK_KEY_INVALID")
+                    raise _InvalidTaskKey
                 restored[key] = _restore_route(route)
             self.routes = restored
             self.initial = dict(restored)
@@ -142,7 +159,7 @@ class PreparedTaskCatalog:
 
 
 def attach_catalog(snapshot, previous):
-    if (type(snapshot) is not tuple or len(snapshot) != 4
+    if (type(snapshot) is not tuple or len(snapshot) != _EXECUTION_SNAPSHOT_WIDTH
             or type(snapshot[1]) is not SourceExecutionContext):
         return previous
     context = snapshot[1]

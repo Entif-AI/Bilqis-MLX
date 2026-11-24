@@ -11,6 +11,9 @@ from .atlas_training_contracts import _invalid
 from .factory_training_source import _prepare_learning_first_model_sources
 from .learning_first_source import prepare_learning_first_source_rows
 
+_MAX_PREPARED_SOURCE_ROWS = 1024
+
+
 @dataclass(frozen=True)
 class LearningFirstPreparedSourceInputs:
     """Generation-independent row/model inputs prepared ahead of neural execution."""
@@ -70,7 +73,7 @@ class LearningFirstSourceRowCache:
             else:
                 self.hits += 1
             self._rows.move_to_end(key)
-            if len(self._rows) > 1024:
+            if len(self._rows) > _MAX_PREPARED_SOURCE_ROWS:
                 self._rows.popitem(last=False)
             # Keep the cache's comparison row private. The prepared structures
             # are independent of optimizer state; the delivered row is current.
