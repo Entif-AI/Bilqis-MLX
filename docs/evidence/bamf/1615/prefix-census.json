@@ -1,0 +1,2760 @@
+{
+  "atlas_bundle_id": "5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7",
+  "baseline_revision": "83671fea5420e13499d83c92b31ca96f44b2a4fc",
+  "deliveries": [
+    {
+      "capability": "A.EDGE",
+      "delivery_digest": "0dbc79b5f4e8860cb52b15378a78406138b708dc3c09d92533d2d1730c8f1151",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "28": 16,
+            "29": 16
+          },
+          "padded_positions": 928,
+          "positions": 912,
+          "repeated_fraction": 0.44627192982456143,
+          "repeated_positions": 407,
+          "rows": 32,
+          "unique_prefix_positions": 505
+        },
+        "exact": {
+          "length_histogram": {
+            "28": 16,
+            "29": 16
+          },
+          "padded_positions": 928,
+          "positions": 912,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 912
+        },
+        "optimistic": {
+          "length_histogram": {
+            "28": 16,
+            "29": 16
+          },
+          "padded_positions": 928,
+          "positions": 912,
+          "repeated_fraction": 0.44627192982456143,
+          "repeated_positions": 407,
+          "rows": 32,
+          "unique_prefix_positions": 505
+        }
+      },
+      "seconds": 0.15893799997866154,
+      "seed": 1615
+    },
+    {
+      "capability": "A.EDGE",
+      "delivery_digest": "41d001a3b8398e015275badfc1e642eb60599ed6241ff623a8775d181bdbdc70",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "28": 16,
+            "29": 16
+          },
+          "padded_positions": 928,
+          "positions": 912,
+          "repeated_fraction": 0.4550438596491228,
+          "repeated_positions": 415,
+          "rows": 32,
+          "unique_prefix_positions": 497
+        },
+        "exact": {
+          "length_histogram": {
+            "28": 16,
+            "29": 16
+          },
+          "padded_positions": 928,
+          "positions": 912,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 912
+        },
+        "optimistic": {
+          "length_histogram": {
+            "28": 16,
+            "29": 16
+          },
+          "padded_positions": 928,
+          "positions": 912,
+          "repeated_fraction": 0.4550438596491228,
+          "repeated_positions": 415,
+          "rows": 32,
+          "unique_prefix_positions": 497
+        }
+      },
+      "seconds": 0.1234819998499006,
+      "seed": 2615
+    },
+    {
+      "capability": "A.IDENTITY",
+      "delivery_digest": "27f4cbdecdc3ba0039255a65e7655ff637e28f831c2f24350967b55eb810e9b0",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "17": 16,
+            "18": 16
+          },
+          "padded_positions": 576,
+          "positions": 560,
+          "repeated_fraction": 0.5535714285714286,
+          "repeated_positions": 310,
+          "rows": 32,
+          "unique_prefix_positions": 250
+        },
+        "exact": {
+          "length_histogram": {
+            "17": 16,
+            "18": 16
+          },
+          "padded_positions": 576,
+          "positions": 560,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 560
+        },
+        "optimistic": {
+          "length_histogram": {
+            "17": 16,
+            "18": 16
+          },
+          "padded_positions": 576,
+          "positions": 560,
+          "repeated_fraction": 0.5535714285714286,
+          "repeated_positions": 310,
+          "rows": 32,
+          "unique_prefix_positions": 250
+        }
+      },
+      "seconds": 0.12011541682295501,
+      "seed": 1615
+    },
+    {
+      "capability": "A.IDENTITY",
+      "delivery_digest": "4b1961b6124ebacd12429f09dbbcd066bc30bc47ccec1696f3839c331a95749b",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "17": 16,
+            "18": 16
+          },
+          "padded_positions": 576,
+          "positions": 560,
+          "repeated_fraction": 0.525,
+          "repeated_positions": 294,
+          "rows": 32,
+          "unique_prefix_positions": 266
+        },
+        "exact": {
+          "length_histogram": {
+            "17": 16,
+            "18": 16
+          },
+          "padded_positions": 576,
+          "positions": 560,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 560
+        },
+        "optimistic": {
+          "length_histogram": {
+            "17": 16,
+            "18": 16
+          },
+          "padded_positions": 576,
+          "positions": 560,
+          "repeated_fraction": 0.525,
+          "repeated_positions": 294,
+          "rows": 32,
+          "unique_prefix_positions": 266
+        }
+      },
+      "seconds": 0.12430800008587539,
+      "seed": 2615
+    },
+    {
+      "capability": "A.LINK",
+      "delivery_digest": "8c2baa0a7ea3537b2c90234aeddb6348a47f1b5ab04739fd6c83ab90f272c435",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "20": 16,
+            "21": 16
+          },
+          "padded_positions": 672,
+          "positions": 656,
+          "repeated_fraction": 0.33689024390243905,
+          "repeated_positions": 221,
+          "rows": 32,
+          "unique_prefix_positions": 435
+        },
+        "exact": {
+          "length_histogram": {
+            "20": 16,
+            "21": 16
+          },
+          "padded_positions": 672,
+          "positions": 656,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 656
+        },
+        "optimistic": {
+          "length_histogram": {
+            "20": 16,
+            "21": 16
+          },
+          "padded_positions": 672,
+          "positions": 656,
+          "repeated_fraction": 0.33689024390243905,
+          "repeated_positions": 221,
+          "rows": 32,
+          "unique_prefix_positions": 435
+        }
+      },
+      "seconds": 0.12437762506306171,
+      "seed": 1615
+    },
+    {
+      "capability": "A.LINK",
+      "delivery_digest": "0cc7ba64b87096a9cfce7a3e324b453ccc62adbaa0a5a7a7d6f5c9124509956a",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "20": 16,
+            "21": 16
+          },
+          "padded_positions": 672,
+          "positions": 656,
+          "repeated_fraction": 0.3307926829268293,
+          "repeated_positions": 217,
+          "rows": 32,
+          "unique_prefix_positions": 439
+        },
+        "exact": {
+          "length_histogram": {
+            "20": 16,
+            "21": 16
+          },
+          "padded_positions": 672,
+          "positions": 656,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 656
+        },
+        "optimistic": {
+          "length_histogram": {
+            "20": 16,
+            "21": 16
+          },
+          "padded_positions": 672,
+          "positions": 656,
+          "repeated_fraction": 0.3307926829268293,
+          "repeated_positions": 217,
+          "rows": 32,
+          "unique_prefix_positions": 439
+        }
+      },
+      "seconds": 0.12411891599185765,
+      "seed": 2615
+    },
+    {
+      "capability": "A.MAPS",
+      "delivery_digest": "c415573d294a99eb9ea7d12b98e0089ca2f9a39adb5459fbe13da0efab2c574f",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "29": 16,
+            "30": 16
+          },
+          "padded_positions": 960,
+          "positions": 944,
+          "repeated_fraction": 0.4216101694915254,
+          "repeated_positions": 398,
+          "rows": 32,
+          "unique_prefix_positions": 546
+        },
+        "exact": {
+          "length_histogram": {
+            "29": 16,
+            "30": 16
+          },
+          "padded_positions": 960,
+          "positions": 944,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 944
+        },
+        "optimistic": {
+          "length_histogram": {
+            "29": 16,
+            "30": 16
+          },
+          "padded_positions": 960,
+          "positions": 944,
+          "repeated_fraction": 0.4216101694915254,
+          "repeated_positions": 398,
+          "rows": 32,
+          "unique_prefix_positions": 546
+        }
+      },
+      "seconds": 0.13955595786683261,
+      "seed": 1615
+    },
+    {
+      "capability": "A.MAPS",
+      "delivery_digest": "45f1b695f9097a206f93fce660ec4c19c8b70452f4605e870e9c66e899e3b96d",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "29": 16,
+            "30": 16
+          },
+          "padded_positions": 960,
+          "positions": 944,
+          "repeated_fraction": 0.4375,
+          "repeated_positions": 413,
+          "rows": 32,
+          "unique_prefix_positions": 531
+        },
+        "exact": {
+          "length_histogram": {
+            "29": 16,
+            "30": 16
+          },
+          "padded_positions": 960,
+          "positions": 944,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 944
+        },
+        "optimistic": {
+          "length_histogram": {
+            "29": 16,
+            "30": 16
+          },
+          "padded_positions": 960,
+          "positions": 944,
+          "repeated_fraction": 0.4375,
+          "repeated_positions": 413,
+          "rows": 32,
+          "unique_prefix_positions": 531
+        }
+      },
+      "seconds": 0.13991995807737112,
+      "seed": 2615
+    },
+    {
+      "capability": "A.MEMBER",
+      "delivery_digest": "6198de857ef4f3a1cdd71dbca035a8755dd84bad553606f891cc9f8a41c4b220",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "28": 16,
+            "29": 16
+          },
+          "padded_positions": 928,
+          "positions": 912,
+          "repeated_fraction": 0.37609649122807015,
+          "repeated_positions": 343,
+          "rows": 32,
+          "unique_prefix_positions": 569
+        },
+        "exact": {
+          "length_histogram": {
+            "28": 16,
+            "29": 16
+          },
+          "padded_positions": 928,
+          "positions": 912,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 912
+        },
+        "optimistic": {
+          "length_histogram": {
+            "28": 16,
+            "29": 16
+          },
+          "padded_positions": 928,
+          "positions": 912,
+          "repeated_fraction": 0.37609649122807015,
+          "repeated_positions": 343,
+          "rows": 32,
+          "unique_prefix_positions": 569
+        }
+      },
+      "seconds": 0.12423600000329316,
+      "seed": 1615
+    },
+    {
+      "capability": "A.MEMBER",
+      "delivery_digest": "7fc1169d8befb9a9bd0d5b754a53d4e657bbee63bb1cc78f9d42c61a5d994442",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "28": 16,
+            "29": 16
+          },
+          "padded_positions": 928,
+          "positions": 912,
+          "repeated_fraction": 0.40021929824561403,
+          "repeated_positions": 365,
+          "rows": 32,
+          "unique_prefix_positions": 547
+        },
+        "exact": {
+          "length_histogram": {
+            "28": 16,
+            "29": 16
+          },
+          "padded_positions": 928,
+          "positions": 912,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 912
+        },
+        "optimistic": {
+          "length_histogram": {
+            "28": 16,
+            "29": 16
+          },
+          "padded_positions": 928,
+          "positions": 912,
+          "repeated_fraction": 0.40021929824561403,
+          "repeated_positions": 365,
+          "rows": 32,
+          "unique_prefix_positions": 547
+        }
+      },
+      "seconds": 0.127029666909948,
+      "seed": 2615
+    },
+    {
+      "capability": "A.PARENT",
+      "delivery_digest": "9edd340027bef4c880f699b20d93a38c4711b2b006e1a14dcefbbfb6474378f4",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "20": 16,
+            "21": 16
+          },
+          "padded_positions": 672,
+          "positions": 656,
+          "repeated_fraction": 0.33384146341463417,
+          "repeated_positions": 219,
+          "rows": 32,
+          "unique_prefix_positions": 437
+        },
+        "exact": {
+          "length_histogram": {
+            "20": 16,
+            "21": 16
+          },
+          "padded_positions": 672,
+          "positions": 656,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 656
+        },
+        "optimistic": {
+          "length_histogram": {
+            "20": 16,
+            "21": 16
+          },
+          "padded_positions": 672,
+          "positions": 656,
+          "repeated_fraction": 0.33384146341463417,
+          "repeated_positions": 219,
+          "rows": 32,
+          "unique_prefix_positions": 437
+        }
+      },
+      "seconds": 0.12310879095457494,
+      "seed": 1615
+    },
+    {
+      "capability": "A.PARENT",
+      "delivery_digest": "649625ebba1bc9dc7561d95df7ff0d3995e7bae537a20b240c9a4f6dcd64ace0",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "20": 16,
+            "21": 16
+          },
+          "padded_positions": 672,
+          "positions": 656,
+          "repeated_fraction": 0.30640243902439024,
+          "repeated_positions": 201,
+          "rows": 32,
+          "unique_prefix_positions": 455
+        },
+        "exact": {
+          "length_histogram": {
+            "20": 16,
+            "21": 16
+          },
+          "padded_positions": 672,
+          "positions": 656,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 656
+        },
+        "optimistic": {
+          "length_histogram": {
+            "20": 16,
+            "21": 16
+          },
+          "padded_positions": 672,
+          "positions": 656,
+          "repeated_fraction": 0.30640243902439024,
+          "repeated_positions": 201,
+          "rows": 32,
+          "unique_prefix_positions": 455
+        }
+      },
+      "seconds": 0.12673800019547343,
+      "seed": 2615
+    },
+    {
+      "capability": "B.AND",
+      "delivery_digest": "c2b3ac7bca48f85b452284dbdf2f878188e6da15dc85b392515ab0d51d045446",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "12": 4,
+            "15": 1,
+            "18": 3,
+            "21": 2,
+            "23": 3,
+            "24": 3,
+            "25": 1,
+            "26": 1,
+            "27": 4,
+            "28": 1,
+            "29": 2,
+            "30": 1,
+            "33": 2,
+            "35": 2,
+            "37": 1,
+            "38": 1
+          },
+          "padded_positions": 1216,
+          "positions": 786,
+          "repeated_fraction": 0.2595419847328244,
+          "repeated_positions": 204,
+          "rows": 32,
+          "unique_prefix_positions": 582
+        },
+        "exact": {
+          "length_histogram": {
+            "12": 4,
+            "15": 1,
+            "18": 3,
+            "21": 2,
+            "23": 3,
+            "24": 3,
+            "25": 1,
+            "26": 1,
+            "27": 4,
+            "28": 1,
+            "29": 2,
+            "30": 1,
+            "33": 2,
+            "35": 2,
+            "37": 1,
+            "38": 1
+          },
+          "padded_positions": 1216,
+          "positions": 786,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 786
+        },
+        "optimistic": {
+          "length_histogram": {
+            "12": 4,
+            "15": 1,
+            "18": 3,
+            "21": 2,
+            "23": 3,
+            "24": 3,
+            "25": 1,
+            "26": 1,
+            "27": 4,
+            "28": 1,
+            "29": 2,
+            "30": 1,
+            "33": 2,
+            "35": 2,
+            "37": 1,
+            "38": 1
+          },
+          "padded_positions": 1216,
+          "positions": 786,
+          "repeated_fraction": 0.2595419847328244,
+          "repeated_positions": 204,
+          "rows": 32,
+          "unique_prefix_positions": 582
+        }
+      },
+      "seconds": 0.28018058300949633,
+      "seed": 1615
+    },
+    {
+      "capability": "B.AND",
+      "delivery_digest": "286ddf8035ac61c64255642e38d3ea3398e58e796c5aad0243f10ad0e171f0c9",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "13": 1,
+            "14": 1,
+            "16": 1,
+            "18": 3,
+            "20": 2,
+            "21": 2,
+            "22": 3,
+            "24": 2,
+            "26": 1,
+            "27": 3,
+            "28": 1,
+            "29": 1,
+            "30": 3,
+            "31": 1,
+            "33": 1,
+            "35": 2,
+            "36": 1,
+            "41": 1,
+            "9": 2
+          },
+          "padded_positions": 1312,
+          "positions": 776,
+          "repeated_fraction": 0.2757731958762887,
+          "repeated_positions": 214,
+          "rows": 32,
+          "unique_prefix_positions": 562
+        },
+        "exact": {
+          "length_histogram": {
+            "13": 1,
+            "14": 1,
+            "16": 1,
+            "18": 3,
+            "20": 2,
+            "21": 2,
+            "22": 3,
+            "24": 2,
+            "26": 1,
+            "27": 3,
+            "28": 1,
+            "29": 1,
+            "30": 3,
+            "31": 1,
+            "33": 1,
+            "35": 2,
+            "36": 1,
+            "41": 1,
+            "9": 2
+          },
+          "padded_positions": 1312,
+          "positions": 776,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 776
+        },
+        "optimistic": {
+          "length_histogram": {
+            "13": 1,
+            "14": 1,
+            "16": 1,
+            "18": 3,
+            "20": 2,
+            "21": 2,
+            "22": 3,
+            "24": 2,
+            "26": 1,
+            "27": 3,
+            "28": 1,
+            "29": 1,
+            "30": 3,
+            "31": 1,
+            "33": 1,
+            "35": 2,
+            "36": 1,
+            "41": 1,
+            "9": 2
+          },
+          "padded_positions": 1312,
+          "positions": 776,
+          "repeated_fraction": 0.2757731958762887,
+          "repeated_positions": 214,
+          "rows": 32,
+          "unique_prefix_positions": 562
+        }
+      },
+      "seconds": 0.2788041669409722,
+      "seed": 2615
+    },
+    {
+      "capability": "B.COMPOSITE",
+      "delivery_digest": "74a60134530da82b42f24767ff822d7936e333618fd09947a02ff88b4343dd28",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "10": 1,
+            "11": 4,
+            "12": 7,
+            "13": 1,
+            "14": 8,
+            "15": 1,
+            "16": 3,
+            "17": 5,
+            "9": 2
+          },
+          "padded_positions": 544,
+          "positions": 429,
+          "repeated_fraction": 0.18181818181818182,
+          "repeated_positions": 78,
+          "rows": 32,
+          "unique_prefix_positions": 351
+        },
+        "exact": {
+          "length_histogram": {
+            "10": 1,
+            "11": 4,
+            "12": 7,
+            "13": 1,
+            "14": 8,
+            "15": 1,
+            "16": 3,
+            "17": 5,
+            "9": 2
+          },
+          "padded_positions": 544,
+          "positions": 429,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 429
+        },
+        "optimistic": {
+          "length_histogram": {
+            "10": 1,
+            "11": 4,
+            "12": 7,
+            "13": 1,
+            "14": 8,
+            "15": 1,
+            "16": 3,
+            "17": 5,
+            "9": 2
+          },
+          "padded_positions": 544,
+          "positions": 429,
+          "repeated_fraction": 0.18181818181818182,
+          "repeated_positions": 78,
+          "rows": 32,
+          "unique_prefix_positions": 351
+        }
+      },
+      "seconds": 0.17155783297494054,
+      "seed": 1615
+    },
+    {
+      "capability": "B.COMPOSITE",
+      "delivery_digest": "635ee47ae73e7e24760615e3a8fc95baa2bb039ad12184be179fe2f278ad5469",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "11": 3,
+            "12": 6,
+            "13": 2,
+            "14": 10,
+            "15": 3,
+            "16": 3,
+            "17": 4,
+            "9": 1
+          },
+          "padded_positions": 544,
+          "positions": 441,
+          "repeated_fraction": 0.15192743764172337,
+          "repeated_positions": 67,
+          "rows": 32,
+          "unique_prefix_positions": 374
+        },
+        "exact": {
+          "length_histogram": {
+            "11": 3,
+            "12": 6,
+            "13": 2,
+            "14": 10,
+            "15": 3,
+            "16": 3,
+            "17": 4,
+            "9": 1
+          },
+          "padded_positions": 544,
+          "positions": 441,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 441
+        },
+        "optimistic": {
+          "length_histogram": {
+            "11": 3,
+            "12": 6,
+            "13": 2,
+            "14": 10,
+            "15": 3,
+            "16": 3,
+            "17": 4,
+            "9": 1
+          },
+          "padded_positions": 544,
+          "positions": 441,
+          "repeated_fraction": 0.15192743764172337,
+          "repeated_positions": 67,
+          "rows": 32,
+          "unique_prefix_positions": 374
+        }
+      },
+      "seconds": 0.16700699995271862,
+      "seed": 2615
+    },
+    {
+      "capability": "B.IDBOOLOPS",
+      "delivery_digest": "e286f4677e297e0a4dd5183e6e24643720a7a97bccb4b84f2687d921558ea473",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "30": 32
+          },
+          "padded_positions": 960,
+          "positions": 960,
+          "repeated_fraction": 0.39479166666666665,
+          "repeated_positions": 379,
+          "rows": 32,
+          "unique_prefix_positions": 581
+        },
+        "exact": {
+          "length_histogram": {
+            "30": 32
+          },
+          "padded_positions": 960,
+          "positions": 960,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 960
+        },
+        "optimistic": {
+          "length_histogram": {
+            "30": 32
+          },
+          "padded_positions": 960,
+          "positions": 960,
+          "repeated_fraction": 0.39479166666666665,
+          "repeated_positions": 379,
+          "rows": 32,
+          "unique_prefix_positions": 581
+        }
+      },
+      "seconds": 0.17481220792979002,
+      "seed": 1615
+    },
+    {
+      "capability": "B.IDBOOLOPS",
+      "delivery_digest": "ebb564330709e2c2ca5eb5b3acb9c9d34696c28216751456809d2d4174e7984c",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "30": 32
+          },
+          "padded_positions": 960,
+          "positions": 960,
+          "repeated_fraction": 0.3958333333333333,
+          "repeated_positions": 380,
+          "rows": 32,
+          "unique_prefix_positions": 580
+        },
+        "exact": {
+          "length_histogram": {
+            "30": 32
+          },
+          "padded_positions": 960,
+          "positions": 960,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 960
+        },
+        "optimistic": {
+          "length_histogram": {
+            "30": 32
+          },
+          "padded_positions": 960,
+          "positions": 960,
+          "repeated_fraction": 0.3958333333333333,
+          "repeated_positions": 380,
+          "rows": 32,
+          "unique_prefix_positions": 580
+        }
+      },
+      "seconds": 0.20065458421595395,
+      "seed": 2615
+    },
+    {
+      "capability": "B.IFF",
+      "delivery_digest": "0b45969628fe29b1afea33929e067db535ade33a841d6a2345c853b09ddefa42",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "10": 1,
+            "15": 2,
+            "18": 2,
+            "21": 2,
+            "22": 4,
+            "24": 2,
+            "26": 1,
+            "27": 3,
+            "29": 1,
+            "30": 4,
+            "32": 2,
+            "33": 1,
+            "34": 2,
+            "36": 1,
+            "37": 1,
+            "38": 1,
+            "39": 2
+          },
+          "padded_positions": 1248,
+          "positions": 864,
+          "repeated_fraction": 0.2881944444444444,
+          "repeated_positions": 249,
+          "rows": 32,
+          "unique_prefix_positions": 615
+        },
+        "exact": {
+          "length_histogram": {
+            "10": 1,
+            "15": 2,
+            "18": 2,
+            "21": 2,
+            "22": 4,
+            "24": 2,
+            "26": 1,
+            "27": 3,
+            "29": 1,
+            "30": 4,
+            "32": 2,
+            "33": 1,
+            "34": 2,
+            "36": 1,
+            "37": 1,
+            "38": 1,
+            "39": 2
+          },
+          "padded_positions": 1248,
+          "positions": 864,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 864
+        },
+        "optimistic": {
+          "length_histogram": {
+            "10": 1,
+            "15": 2,
+            "18": 2,
+            "21": 2,
+            "22": 4,
+            "24": 2,
+            "26": 1,
+            "27": 3,
+            "29": 1,
+            "30": 4,
+            "32": 2,
+            "33": 1,
+            "34": 2,
+            "36": 1,
+            "37": 1,
+            "38": 1,
+            "39": 2
+          },
+          "padded_positions": 1248,
+          "positions": 864,
+          "repeated_fraction": 0.2881944444444444,
+          "repeated_positions": 249,
+          "rows": 32,
+          "unique_prefix_positions": 615
+        }
+      },
+      "seconds": 0.33281087479554117,
+      "seed": 1615
+    },
+    {
+      "capability": "B.IFF",
+      "delivery_digest": "40f58d8fcbe80566b4383c5a11e90bb21aadd0bf739545c83581e5eb3513f6ed",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "14": 1,
+            "15": 2,
+            "18": 3,
+            "20": 1,
+            "21": 3,
+            "23": 1,
+            "24": 4,
+            "25": 1,
+            "27": 2,
+            "30": 1,
+            "32": 1,
+            "33": 6,
+            "38": 1,
+            "39": 2,
+            "41": 1,
+            "9": 2
+          },
+          "padded_positions": 1312,
+          "positions": 814,
+          "repeated_fraction": 0.3144963144963145,
+          "repeated_positions": 256,
+          "rows": 32,
+          "unique_prefix_positions": 558
+        },
+        "exact": {
+          "length_histogram": {
+            "14": 1,
+            "15": 2,
+            "18": 3,
+            "20": 1,
+            "21": 3,
+            "23": 1,
+            "24": 4,
+            "25": 1,
+            "27": 2,
+            "30": 1,
+            "32": 1,
+            "33": 6,
+            "38": 1,
+            "39": 2,
+            "41": 1,
+            "9": 2
+          },
+          "padded_positions": 1312,
+          "positions": 814,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 814
+        },
+        "optimistic": {
+          "length_histogram": {
+            "14": 1,
+            "15": 2,
+            "18": 3,
+            "20": 1,
+            "21": 3,
+            "23": 1,
+            "24": 4,
+            "25": 1,
+            "27": 2,
+            "30": 1,
+            "32": 1,
+            "33": 6,
+            "38": 1,
+            "39": 2,
+            "41": 1,
+            "9": 2
+          },
+          "padded_positions": 1312,
+          "positions": 814,
+          "repeated_fraction": 0.3144963144963145,
+          "repeated_positions": 256,
+          "rows": 32,
+          "unique_prefix_positions": 558
+        }
+      },
+      "seconds": 0.2940225410275161,
+      "seed": 2615
+    },
+    {
+      "capability": "B.IMPLIES",
+      "delivery_digest": "4743cb53aeb82e3878159d3d844b86c2ac6c95d3a79dbbd200bc098aacbf0b72",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "11": 1,
+            "18": 4,
+            "19": 1,
+            "21": 3,
+            "24": 3,
+            "25": 1,
+            "26": 2,
+            "27": 3,
+            "29": 5,
+            "30": 1,
+            "33": 1,
+            "34": 1,
+            "35": 1,
+            "36": 1,
+            "37": 1,
+            "38": 1,
+            "39": 2
+          },
+          "padded_positions": 1248,
+          "positions": 861,
+          "repeated_fraction": 0.38559814169570267,
+          "repeated_positions": 332,
+          "rows": 32,
+          "unique_prefix_positions": 529
+        },
+        "exact": {
+          "length_histogram": {
+            "11": 1,
+            "18": 4,
+            "19": 1,
+            "21": 3,
+            "24": 3,
+            "25": 1,
+            "26": 2,
+            "27": 3,
+            "29": 5,
+            "30": 1,
+            "33": 1,
+            "34": 1,
+            "35": 1,
+            "36": 1,
+            "37": 1,
+            "38": 1,
+            "39": 2
+          },
+          "padded_positions": 1248,
+          "positions": 861,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 861
+        },
+        "optimistic": {
+          "length_histogram": {
+            "11": 1,
+            "18": 4,
+            "19": 1,
+            "21": 3,
+            "24": 3,
+            "25": 1,
+            "26": 2,
+            "27": 3,
+            "29": 5,
+            "30": 1,
+            "33": 1,
+            "34": 1,
+            "35": 1,
+            "36": 1,
+            "37": 1,
+            "38": 1,
+            "39": 2
+          },
+          "padded_positions": 1248,
+          "positions": 861,
+          "repeated_fraction": 0.38559814169570267,
+          "repeated_positions": 332,
+          "rows": 32,
+          "unique_prefix_positions": 529
+        }
+      },
+      "seconds": 0.30315529089421034,
+      "seed": 1615
+    },
+    {
+      "capability": "B.IMPLIES",
+      "delivery_digest": "4cd1af4767e68313a98320555a3358ab0d572d8fbba71836f85fd0c0feb94e9a",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "15": 2,
+            "16": 1,
+            "18": 4,
+            "19": 2,
+            "20": 3,
+            "21": 3,
+            "23": 2,
+            "24": 2,
+            "27": 4,
+            "30": 2,
+            "31": 2,
+            "33": 2,
+            "35": 1,
+            "36": 2
+          },
+          "padded_positions": 1152,
+          "positions": 776,
+          "repeated_fraction": 0.3853092783505155,
+          "repeated_positions": 299,
+          "rows": 32,
+          "unique_prefix_positions": 477
+        },
+        "exact": {
+          "length_histogram": {
+            "15": 2,
+            "16": 1,
+            "18": 4,
+            "19": 2,
+            "20": 3,
+            "21": 3,
+            "23": 2,
+            "24": 2,
+            "27": 4,
+            "30": 2,
+            "31": 2,
+            "33": 2,
+            "35": 1,
+            "36": 2
+          },
+          "padded_positions": 1152,
+          "positions": 776,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 776
+        },
+        "optimistic": {
+          "length_histogram": {
+            "15": 2,
+            "16": 1,
+            "18": 4,
+            "19": 2,
+            "20": 3,
+            "21": 3,
+            "23": 2,
+            "24": 2,
+            "27": 4,
+            "30": 2,
+            "31": 2,
+            "33": 2,
+            "35": 1,
+            "36": 2
+          },
+          "padded_positions": 1152,
+          "positions": 776,
+          "repeated_fraction": 0.3853092783505155,
+          "repeated_positions": 299,
+          "rows": 32,
+          "unique_prefix_positions": 477
+        }
+      },
+      "seconds": 0.27458533295430243,
+      "seed": 2615
+    },
+    {
+      "capability": "B.NOT",
+      "delivery_digest": "594d9be2ddbf946247a6b84a4818231b63e11beb635d01c25501c71d90cae9c9",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "10": 4,
+            "12": 5,
+            "14": 4,
+            "16": 5,
+            "18": 4,
+            "20": 4,
+            "6": 2,
+            "8": 4
+          },
+          "padded_positions": 640,
+          "positions": 432,
+          "repeated_fraction": 0.4166666666666667,
+          "repeated_positions": 180,
+          "rows": 32,
+          "unique_prefix_positions": 252
+        },
+        "exact": {
+          "length_histogram": {
+            "10": 4,
+            "12": 5,
+            "14": 4,
+            "16": 5,
+            "18": 4,
+            "20": 4,
+            "6": 2,
+            "8": 4
+          },
+          "padded_positions": 640,
+          "positions": 432,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 432
+        },
+        "optimistic": {
+          "length_histogram": {
+            "10": 4,
+            "12": 5,
+            "14": 4,
+            "16": 5,
+            "18": 4,
+            "20": 4,
+            "6": 2,
+            "8": 4
+          },
+          "padded_positions": 640,
+          "positions": 432,
+          "repeated_fraction": 0.4166666666666667,
+          "repeated_positions": 180,
+          "rows": 32,
+          "unique_prefix_positions": 252
+        }
+      },
+      "seconds": 0.14946029195562005,
+      "seed": 1615
+    },
+    {
+      "capability": "B.NOT",
+      "delivery_digest": "ee9195aa3c91cbd2044b1f203c66394d7273c9f7e6ea448e6934b24d08cb81a5",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "10": 5,
+            "12": 5,
+            "14": 5,
+            "16": 4,
+            "18": 6,
+            "20": 3,
+            "8": 4
+          },
+          "padded_positions": 640,
+          "positions": 444,
+          "repeated_fraction": 0.42342342342342343,
+          "repeated_positions": 188,
+          "rows": 32,
+          "unique_prefix_positions": 256
+        },
+        "exact": {
+          "length_histogram": {
+            "10": 5,
+            "12": 5,
+            "14": 5,
+            "16": 4,
+            "18": 6,
+            "20": 3,
+            "8": 4
+          },
+          "padded_positions": 640,
+          "positions": 444,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 444
+        },
+        "optimistic": {
+          "length_histogram": {
+            "10": 5,
+            "12": 5,
+            "14": 5,
+            "16": 4,
+            "18": 6,
+            "20": 3,
+            "8": 4
+          },
+          "padded_positions": 640,
+          "positions": 444,
+          "repeated_fraction": 0.42342342342342343,
+          "repeated_positions": 188,
+          "rows": 32,
+          "unique_prefix_positions": 256
+        }
+      },
+      "seconds": 0.15264691598713398,
+      "seed": 2615
+    },
+    {
+      "capability": "B.OR",
+      "delivery_digest": "5254c718e83e2f98d7dedeec35fb0eeb633ec35923a035fa8ba6ce9721b61746",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "11": 1,
+            "12": 2,
+            "15": 2,
+            "17": 1,
+            "18": 1,
+            "19": 1,
+            "20": 1,
+            "21": 2,
+            "22": 1,
+            "24": 4,
+            "25": 1,
+            "27": 4,
+            "29": 2,
+            "30": 1,
+            "32": 1,
+            "33": 1,
+            "35": 1,
+            "36": 1,
+            "38": 1,
+            "39": 1,
+            "9": 2
+          },
+          "padded_positions": 1248,
+          "positions": 751,
+          "repeated_fraction": 0.255659121171771,
+          "repeated_positions": 192,
+          "rows": 32,
+          "unique_prefix_positions": 559
+        },
+        "exact": {
+          "length_histogram": {
+            "11": 1,
+            "12": 2,
+            "15": 2,
+            "17": 1,
+            "18": 1,
+            "19": 1,
+            "20": 1,
+            "21": 2,
+            "22": 1,
+            "24": 4,
+            "25": 1,
+            "27": 4,
+            "29": 2,
+            "30": 1,
+            "32": 1,
+            "33": 1,
+            "35": 1,
+            "36": 1,
+            "38": 1,
+            "39": 1,
+            "9": 2
+          },
+          "padded_positions": 1248,
+          "positions": 751,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 751
+        },
+        "optimistic": {
+          "length_histogram": {
+            "11": 1,
+            "12": 2,
+            "15": 2,
+            "17": 1,
+            "18": 1,
+            "19": 1,
+            "20": 1,
+            "21": 2,
+            "22": 1,
+            "24": 4,
+            "25": 1,
+            "27": 4,
+            "29": 2,
+            "30": 1,
+            "32": 1,
+            "33": 1,
+            "35": 1,
+            "36": 1,
+            "38": 1,
+            "39": 1,
+            "9": 2
+          },
+          "padded_positions": 1248,
+          "positions": 751,
+          "repeated_fraction": 0.255659121171771,
+          "repeated_positions": 192,
+          "rows": 32,
+          "unique_prefix_positions": 559
+        }
+      },
+      "seconds": 0.2630993330385536,
+      "seed": 1615
+    },
+    {
+      "capability": "B.OR",
+      "delivery_digest": "0f71deb62675f80753ac63854e3c2170df916442b106a8fcb8cab6b263911035",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "14": 1,
+            "15": 2,
+            "16": 1,
+            "17": 2,
+            "18": 3,
+            "19": 1,
+            "20": 2,
+            "21": 2,
+            "22": 1,
+            "23": 1,
+            "24": 1,
+            "26": 1,
+            "27": 4,
+            "29": 2,
+            "30": 5,
+            "32": 1,
+            "33": 1,
+            "37": 1
+          },
+          "padded_positions": 1184,
+          "positions": 762,
+          "repeated_fraction": 0.2782152230971129,
+          "repeated_positions": 212,
+          "rows": 32,
+          "unique_prefix_positions": 550
+        },
+        "exact": {
+          "length_histogram": {
+            "14": 1,
+            "15": 2,
+            "16": 1,
+            "17": 2,
+            "18": 3,
+            "19": 1,
+            "20": 2,
+            "21": 2,
+            "22": 1,
+            "23": 1,
+            "24": 1,
+            "26": 1,
+            "27": 4,
+            "29": 2,
+            "30": 5,
+            "32": 1,
+            "33": 1,
+            "37": 1
+          },
+          "padded_positions": 1184,
+          "positions": 762,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 762
+        },
+        "optimistic": {
+          "length_histogram": {
+            "14": 1,
+            "15": 2,
+            "16": 1,
+            "17": 2,
+            "18": 3,
+            "19": 1,
+            "20": 2,
+            "21": 2,
+            "22": 1,
+            "23": 1,
+            "24": 1,
+            "26": 1,
+            "27": 4,
+            "29": 2,
+            "30": 5,
+            "32": 1,
+            "33": 1,
+            "37": 1
+          },
+          "padded_positions": 1184,
+          "positions": 762,
+          "repeated_fraction": 0.2782152230971129,
+          "repeated_positions": 212,
+          "rows": 32,
+          "unique_prefix_positions": 550
+        }
+      },
+      "seconds": 0.2673589999321848,
+      "seed": 2615
+    },
+    {
+      "capability": "B.XOR",
+      "delivery_digest": "49c6178f2c113ab537a038d8ed193ea79857ce23cb5a06f5ef1735546c612e75",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "15": 2,
+            "18": 2,
+            "20": 1,
+            "21": 4,
+            "22": 1,
+            "23": 3,
+            "24": 2,
+            "26": 4,
+            "27": 2,
+            "29": 2,
+            "30": 1,
+            "31": 1,
+            "32": 1,
+            "33": 2,
+            "35": 1,
+            "39": 1,
+            "9": 2
+          },
+          "padded_positions": 1248,
+          "positions": 776,
+          "repeated_fraction": 0.2603092783505155,
+          "repeated_positions": 202,
+          "rows": 32,
+          "unique_prefix_positions": 574
+        },
+        "exact": {
+          "length_histogram": {
+            "15": 2,
+            "18": 2,
+            "20": 1,
+            "21": 4,
+            "22": 1,
+            "23": 3,
+            "24": 2,
+            "26": 4,
+            "27": 2,
+            "29": 2,
+            "30": 1,
+            "31": 1,
+            "32": 1,
+            "33": 2,
+            "35": 1,
+            "39": 1,
+            "9": 2
+          },
+          "padded_positions": 1248,
+          "positions": 776,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 776
+        },
+        "optimistic": {
+          "length_histogram": {
+            "15": 2,
+            "18": 2,
+            "20": 1,
+            "21": 4,
+            "22": 1,
+            "23": 3,
+            "24": 2,
+            "26": 4,
+            "27": 2,
+            "29": 2,
+            "30": 1,
+            "31": 1,
+            "32": 1,
+            "33": 2,
+            "35": 1,
+            "39": 1,
+            "9": 2
+          },
+          "padded_positions": 1248,
+          "positions": 776,
+          "repeated_fraction": 0.2603092783505155,
+          "repeated_positions": 202,
+          "rows": 32,
+          "unique_prefix_positions": 574
+        }
+      },
+      "seconds": 0.2690839159768075,
+      "seed": 1615
+    },
+    {
+      "capability": "B.XOR",
+      "delivery_digest": "7b53c5303f9f81e80e1070b329b4f8359a73bc3f1c5f4265d4809b95f93b87e0",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "12": 2,
+            "15": 1,
+            "17": 1,
+            "18": 2,
+            "21": 4,
+            "22": 2,
+            "23": 3,
+            "24": 1,
+            "25": 1,
+            "26": 1,
+            "27": 5,
+            "28": 1,
+            "33": 4,
+            "34": 1,
+            "36": 3
+          },
+          "padded_positions": 1152,
+          "positions": 801,
+          "repeated_fraction": 0.299625468164794,
+          "repeated_positions": 240,
+          "rows": 32,
+          "unique_prefix_positions": 561
+        },
+        "exact": {
+          "length_histogram": {
+            "12": 2,
+            "15": 1,
+            "17": 1,
+            "18": 2,
+            "21": 4,
+            "22": 2,
+            "23": 3,
+            "24": 1,
+            "25": 1,
+            "26": 1,
+            "27": 5,
+            "28": 1,
+            "33": 4,
+            "34": 1,
+            "36": 3
+          },
+          "padded_positions": 1152,
+          "positions": 801,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 32,
+          "unique_prefix_positions": 801
+        },
+        "optimistic": {
+          "length_histogram": {
+            "12": 2,
+            "15": 1,
+            "17": 1,
+            "18": 2,
+            "21": 4,
+            "22": 2,
+            "23": 3,
+            "24": 1,
+            "25": 1,
+            "26": 1,
+            "27": 5,
+            "28": 1,
+            "33": 4,
+            "34": 1,
+            "36": 3
+          },
+          "padded_positions": 1152,
+          "positions": 801,
+          "repeated_fraction": 0.299625468164794,
+          "repeated_positions": 240,
+          "rows": 32,
+          "unique_prefix_positions": 561
+        }
+      },
+      "seconds": 0.2927930417936295,
+      "seed": 2615
+    },
+    {
+      "capability": "C.ADD",
+      "delivery_digest": "c737c4e24685bc2b3e5ae7860d15588aa832b085cd7cf5400c98952feb59dbb8",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "held_rows": 21,
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "18": 2,
+            "19": 4,
+            "21": 2,
+            "22": 1,
+            "23": 1,
+            "24": 1
+          },
+          "padded_positions": 264,
+          "positions": 223,
+          "repeated_fraction": 0.23318385650224216,
+          "repeated_positions": 52,
+          "rows": 11,
+          "unique_prefix_positions": 171
+        },
+        "exact": {
+          "length_histogram": {
+            "18": 2,
+            "19": 4,
+            "21": 2,
+            "22": 1,
+            "23": 1,
+            "24": 1
+          },
+          "padded_positions": 264,
+          "positions": 223,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 11,
+          "unique_prefix_positions": 223
+        },
+        "optimistic": {
+          "length_histogram": {
+            "18": 2,
+            "19": 4,
+            "21": 2,
+            "22": 1,
+            "23": 1,
+            "24": 1
+          },
+          "padded_positions": 264,
+          "positions": 223,
+          "repeated_fraction": 0.23318385650224216,
+          "repeated_positions": 52,
+          "rows": 11,
+          "unique_prefix_positions": 171
+        }
+      },
+      "missing_schemas": {
+        "[('frame:legacy:school.op.EQ', 1)]": 21
+      },
+      "seconds": 0.4877008330076933,
+      "seed": 1615
+    },
+    {
+      "capability": "C.ADD",
+      "delivery_digest": "7bbeddfb59e2377ab6fe9f5ed80eb83cf7f64b2bc4241d0013be56535ded69e0",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "held_rows": 21,
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "19": 1,
+            "20": 4,
+            "22": 3,
+            "23": 2,
+            "24": 1
+          },
+          "padded_positions": 264,
+          "positions": 235,
+          "repeated_fraction": 0.2425531914893617,
+          "repeated_positions": 57,
+          "rows": 11,
+          "unique_prefix_positions": 178
+        },
+        "exact": {
+          "length_histogram": {
+            "19": 1,
+            "20": 4,
+            "22": 3,
+            "23": 2,
+            "24": 1
+          },
+          "padded_positions": 264,
+          "positions": 235,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 11,
+          "unique_prefix_positions": 235
+        },
+        "optimistic": {
+          "length_histogram": {
+            "19": 1,
+            "20": 4,
+            "22": 3,
+            "23": 2,
+            "24": 1
+          },
+          "padded_positions": 264,
+          "positions": 235,
+          "repeated_fraction": 0.2425531914893617,
+          "repeated_positions": 57,
+          "rows": 11,
+          "unique_prefix_positions": 178
+        }
+      },
+      "missing_schemas": {
+        "[('frame:legacy:school.op.EQ', 1)]": 21
+      },
+      "seconds": 0.40911212493665516,
+      "seed": 2615
+    },
+    {
+      "capability": "C.COUNT",
+      "delivery_digest": "d67d908f20776b95dd8367af5ca03797b1759ab69031b1e1611fbdfab486a9ff",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "held_rows": 21,
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "10": 1,
+            "11": 1,
+            "12": 1,
+            "13": 1,
+            "14": 1,
+            "15": 1,
+            "16": 1,
+            "17": 1,
+            "7": 1,
+            "8": 1,
+            "9": 1
+          },
+          "padded_positions": 187,
+          "positions": 132,
+          "repeated_fraction": 0.25757575757575757,
+          "repeated_positions": 34,
+          "rows": 11,
+          "unique_prefix_positions": 98
+        },
+        "exact": {
+          "length_histogram": {
+            "10": 1,
+            "11": 1,
+            "12": 1,
+            "13": 1,
+            "14": 1,
+            "15": 1,
+            "16": 1,
+            "17": 1,
+            "7": 1,
+            "8": 1,
+            "9": 1
+          },
+          "padded_positions": 187,
+          "positions": 132,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 11,
+          "unique_prefix_positions": 132
+        },
+        "optimistic": {
+          "length_histogram": {
+            "10": 1,
+            "11": 1,
+            "12": 1,
+            "13": 1,
+            "14": 1,
+            "15": 1,
+            "16": 1,
+            "17": 1,
+            "7": 1,
+            "8": 1,
+            "9": 1
+          },
+          "padded_positions": 187,
+          "positions": 132,
+          "repeated_fraction": 0.25757575757575757,
+          "repeated_positions": 34,
+          "rows": 11,
+          "unique_prefix_positions": 98
+        }
+      },
+      "missing_schemas": {
+        "[('frame:legacy:school.op.EQ', 1)]": 21
+      },
+      "seconds": 0.45116037502884865,
+      "seed": 1615
+    },
+    {
+      "capability": "C.COUNT",
+      "delivery_digest": "953fa9b5d677250a2c854d4d3625090c467bef49807d393abbf1d5000b343a1a",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "held_rows": 21,
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "10": 1,
+            "11": 1,
+            "12": 1,
+            "13": 1,
+            "14": 1,
+            "15": 1,
+            "16": 1,
+            "17": 1,
+            "7": 1,
+            "8": 1,
+            "9": 1
+          },
+          "padded_positions": 187,
+          "positions": 132,
+          "repeated_fraction": 0.25757575757575757,
+          "repeated_positions": 34,
+          "rows": 11,
+          "unique_prefix_positions": 98
+        },
+        "exact": {
+          "length_histogram": {
+            "10": 1,
+            "11": 1,
+            "12": 1,
+            "13": 1,
+            "14": 1,
+            "15": 1,
+            "16": 1,
+            "17": 1,
+            "7": 1,
+            "8": 1,
+            "9": 1
+          },
+          "padded_positions": 187,
+          "positions": 132,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 11,
+          "unique_prefix_positions": 132
+        },
+        "optimistic": {
+          "length_histogram": {
+            "10": 1,
+            "11": 1,
+            "12": 1,
+            "13": 1,
+            "14": 1,
+            "15": 1,
+            "16": 1,
+            "17": 1,
+            "7": 1,
+            "8": 1,
+            "9": 1
+          },
+          "padded_positions": 187,
+          "positions": 132,
+          "repeated_fraction": 0.25757575757575757,
+          "repeated_positions": 34,
+          "rows": 11,
+          "unique_prefix_positions": 98
+        }
+      },
+      "missing_schemas": {
+        "[('frame:legacy:school.op.EQ', 1)]": 21
+      },
+      "seconds": 0.42644645902328193,
+      "seed": 2615
+    },
+    {
+      "capability": "C.DIV",
+      "delivery_digest": "1b7f0cb34cb8602ace21e36fe6d4b934ad3b7baad5be123eaec6dbfb4d5501fb",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "held_rows": 21,
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "17": 1,
+            "18": 1,
+            "24": 1,
+            "30": 1,
+            "35": 1,
+            "40": 1,
+            "43": 2,
+            "48": 3
+          },
+          "padded_positions": 528,
+          "positions": 394,
+          "repeated_fraction": 0.3248730964467005,
+          "repeated_positions": 128,
+          "rows": 11,
+          "unique_prefix_positions": 266
+        },
+        "exact": {
+          "length_histogram": {
+            "17": 1,
+            "18": 1,
+            "24": 1,
+            "30": 1,
+            "35": 1,
+            "40": 1,
+            "43": 2,
+            "48": 3
+          },
+          "padded_positions": 528,
+          "positions": 394,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 11,
+          "unique_prefix_positions": 394
+        },
+        "optimistic": {
+          "length_histogram": {
+            "17": 1,
+            "18": 1,
+            "24": 1,
+            "30": 1,
+            "35": 1,
+            "40": 1,
+            "43": 2,
+            "48": 3
+          },
+          "padded_positions": 528,
+          "positions": 394,
+          "repeated_fraction": 0.3248730964467005,
+          "repeated_positions": 128,
+          "rows": 11,
+          "unique_prefix_positions": 266
+        }
+      },
+      "missing_schemas": {
+        "[('frame:legacy:school.op.EQ', 1)]": 21
+      },
+      "seconds": 0.46531358384527266,
+      "seed": 1615
+    },
+    {
+      "capability": "C.DIV",
+      "delivery_digest": "b18fdb906ac92d967e9776c7fb9c76073410a877c4109b591b612c2eae1d4988",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "held_rows": 21,
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "17": 1,
+            "23": 1,
+            "25": 1,
+            "30": 1,
+            "35": 1,
+            "36": 1,
+            "40": 1,
+            "42": 2,
+            "48": 2
+          },
+          "padded_positions": 528,
+          "positions": 386,
+          "repeated_fraction": 0.3160621761658031,
+          "repeated_positions": 122,
+          "rows": 11,
+          "unique_prefix_positions": 264
+        },
+        "exact": {
+          "length_histogram": {
+            "17": 1,
+            "23": 1,
+            "25": 1,
+            "30": 1,
+            "35": 1,
+            "36": 1,
+            "40": 1,
+            "42": 2,
+            "48": 2
+          },
+          "padded_positions": 528,
+          "positions": 386,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 11,
+          "unique_prefix_positions": 386
+        },
+        "optimistic": {
+          "length_histogram": {
+            "17": 1,
+            "23": 1,
+            "25": 1,
+            "30": 1,
+            "35": 1,
+            "36": 1,
+            "40": 1,
+            "42": 2,
+            "48": 2
+          },
+          "padded_positions": 528,
+          "positions": 386,
+          "repeated_fraction": 0.3160621761658031,
+          "repeated_positions": 122,
+          "rows": 11,
+          "unique_prefix_positions": 264
+        }
+      },
+      "missing_schemas": {
+        "[('frame:legacy:school.op.EQ', 1)]": 21
+      },
+      "seconds": 0.6069304589182138,
+      "seed": 2615
+    },
+    {
+      "capability": "C.MUL",
+      "delivery_digest": "6723fb3ef5c7d77caf90f05707c6b6957c0f4176d9bb6e8c054371e35ec4be2c",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "held_rows": 21,
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "17": 1,
+            "23": 1,
+            "25": 1,
+            "28": 1,
+            "31": 1,
+            "33": 1,
+            "37": 2,
+            "38": 2,
+            "43": 1
+          },
+          "padded_positions": 473,
+          "positions": 350,
+          "repeated_fraction": 0.3485714285714286,
+          "repeated_positions": 122,
+          "rows": 11,
+          "unique_prefix_positions": 228
+        },
+        "exact": {
+          "length_histogram": {
+            "17": 1,
+            "23": 1,
+            "25": 1,
+            "28": 1,
+            "31": 1,
+            "33": 1,
+            "37": 2,
+            "38": 2,
+            "43": 1
+          },
+          "padded_positions": 473,
+          "positions": 350,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 11,
+          "unique_prefix_positions": 350
+        },
+        "optimistic": {
+          "length_histogram": {
+            "17": 1,
+            "23": 1,
+            "25": 1,
+            "28": 1,
+            "31": 1,
+            "33": 1,
+            "37": 2,
+            "38": 2,
+            "43": 1
+          },
+          "padded_positions": 473,
+          "positions": 350,
+          "repeated_fraction": 0.3485714285714286,
+          "repeated_positions": 122,
+          "rows": 11,
+          "unique_prefix_positions": 228
+        }
+      },
+      "missing_schemas": {
+        "[('frame:legacy:school.op.EQ', 1)]": 21
+      },
+      "seconds": 0.4659552499651909,
+      "seed": 1615
+    },
+    {
+      "capability": "C.MUL",
+      "delivery_digest": "ee52550dd7b970de41358ec5a6e38f0ecf146950ee4f494df955b88408d312f5",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "held_rows": 21,
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "17": 1,
+            "20": 1,
+            "21": 1,
+            "28": 1,
+            "33": 1,
+            "37": 3,
+            "38": 1,
+            "43": 2
+          },
+          "padded_positions": 473,
+          "positions": 354,
+          "repeated_fraction": 0.3418079096045198,
+          "repeated_positions": 121,
+          "rows": 11,
+          "unique_prefix_positions": 233
+        },
+        "exact": {
+          "length_histogram": {
+            "17": 1,
+            "20": 1,
+            "21": 1,
+            "28": 1,
+            "33": 1,
+            "37": 3,
+            "38": 1,
+            "43": 2
+          },
+          "padded_positions": 473,
+          "positions": 354,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 11,
+          "unique_prefix_positions": 354
+        },
+        "optimistic": {
+          "length_histogram": {
+            "17": 1,
+            "20": 1,
+            "21": 1,
+            "28": 1,
+            "33": 1,
+            "37": 3,
+            "38": 1,
+            "43": 2
+          },
+          "padded_positions": 473,
+          "positions": 354,
+          "repeated_fraction": 0.3418079096045198,
+          "repeated_positions": 121,
+          "rows": 11,
+          "unique_prefix_positions": 233
+        }
+      },
+      "missing_schemas": {
+        "[('frame:legacy:school.op.EQ', 1)]": 21
+      },
+      "seconds": 0.4817851670086384,
+      "seed": 2615
+    },
+    {
+      "capability": "C.NUMBER",
+      "delivery_digest": "89c3f2cd53c5680945a7d3d9d4115d93e64e7cd6093b511f95543051238bef3e",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "held_rows": 21,
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "4": 11
+          },
+          "padded_positions": 44,
+          "positions": 44,
+          "repeated_fraction": 0.22727272727272727,
+          "repeated_positions": 10,
+          "rows": 11,
+          "unique_prefix_positions": 34
+        },
+        "exact": {
+          "length_histogram": {
+            "4": 11
+          },
+          "padded_positions": 44,
+          "positions": 44,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 11,
+          "unique_prefix_positions": 44
+        },
+        "optimistic": {
+          "length_histogram": {
+            "4": 11
+          },
+          "padded_positions": 44,
+          "positions": 44,
+          "repeated_fraction": 0.22727272727272727,
+          "repeated_positions": 10,
+          "rows": 11,
+          "unique_prefix_positions": 34
+        }
+      },
+      "missing_schemas": {
+        "[('frame:legacy:school.op.EQ', 1)]": 21
+      },
+      "seconds": 0.34737424994818866,
+      "seed": 1615
+    },
+    {
+      "capability": "C.NUMBER",
+      "delivery_digest": "d0bf89a0f0492a131375f853be2c0a1c1172cbd040648ba0fabb2d129af4de76",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "held_rows": 21,
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "4": 11
+          },
+          "padded_positions": 44,
+          "positions": 44,
+          "repeated_fraction": 0.22727272727272727,
+          "repeated_positions": 10,
+          "rows": 11,
+          "unique_prefix_positions": 34
+        },
+        "exact": {
+          "length_histogram": {
+            "4": 11
+          },
+          "padded_positions": 44,
+          "positions": 44,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 11,
+          "unique_prefix_positions": 44
+        },
+        "optimistic": {
+          "length_histogram": {
+            "4": 11
+          },
+          "padded_positions": 44,
+          "positions": 44,
+          "repeated_fraction": 0.22727272727272727,
+          "repeated_positions": 10,
+          "rows": 11,
+          "unique_prefix_positions": 34
+        }
+      },
+      "missing_schemas": {
+        "[('frame:legacy:school.op.EQ', 1)]": 21
+      },
+      "seconds": 0.35061333305202425,
+      "seed": 2615
+    },
+    {
+      "capability": "C.SUB",
+      "delivery_digest": "a54201aafecb3dfa61d7de27f08d831e505e7da122a8c44609abb9302b1130a9",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "held_rows": 21,
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "15": 2,
+            "21": 1,
+            "23": 1,
+            "24": 2,
+            "25": 1,
+            "26": 1,
+            "31": 3
+          },
+          "padded_positions": 341,
+          "positions": 266,
+          "repeated_fraction": 0.19172932330827067,
+          "repeated_positions": 51,
+          "rows": 11,
+          "unique_prefix_positions": 215
+        },
+        "exact": {
+          "length_histogram": {
+            "15": 2,
+            "21": 1,
+            "23": 1,
+            "24": 2,
+            "25": 1,
+            "26": 1,
+            "31": 3
+          },
+          "padded_positions": 341,
+          "positions": 266,
+          "repeated_fraction": 0.05639097744360902,
+          "repeated_positions": 15,
+          "rows": 11,
+          "unique_prefix_positions": 251
+        },
+        "optimistic": {
+          "length_histogram": {
+            "15": 2,
+            "21": 1,
+            "23": 1,
+            "24": 2,
+            "25": 1,
+            "26": 1,
+            "31": 3
+          },
+          "padded_positions": 341,
+          "positions": 266,
+          "repeated_fraction": 0.21052631578947367,
+          "repeated_positions": 56,
+          "rows": 11,
+          "unique_prefix_positions": 210
+        }
+      },
+      "missing_schemas": {
+        "[('frame:legacy:school.op.EQ', 1)]": 21
+      },
+      "seconds": 0.42938562482595444,
+      "seed": 1615
+    },
+    {
+      "capability": "C.SUB",
+      "delivery_digest": "afc73cdab3ec1917c4e6d0269fe657b4409f768e2a679fcbc35c4e192c4965f6",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "held_rows": 21,
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "20": 2,
+            "22": 2,
+            "23": 3,
+            "24": 1,
+            "25": 1,
+            "27": 1,
+            "31": 1
+          },
+          "padded_positions": 341,
+          "positions": 260,
+          "repeated_fraction": 0.17307692307692307,
+          "repeated_positions": 45,
+          "rows": 11,
+          "unique_prefix_positions": 215
+        },
+        "exact": {
+          "length_histogram": {
+            "20": 2,
+            "22": 2,
+            "23": 3,
+            "24": 1,
+            "25": 1,
+            "27": 1,
+            "31": 1
+          },
+          "padded_positions": 341,
+          "positions": 260,
+          "repeated_fraction": 0.0,
+          "repeated_positions": 0,
+          "rows": 11,
+          "unique_prefix_positions": 260
+        },
+        "optimistic": {
+          "length_histogram": {
+            "20": 2,
+            "22": 2,
+            "23": 3,
+            "24": 1,
+            "25": 1,
+            "27": 1,
+            "31": 1
+          },
+          "padded_positions": 341,
+          "positions": 260,
+          "repeated_fraction": 0.17307692307692307,
+          "repeated_positions": 45,
+          "rows": 11,
+          "unique_prefix_positions": 215
+        }
+      },
+      "missing_schemas": {
+        "[('frame:legacy:school.op.EQ', 1)]": 21
+      },
+      "seconds": 0.4750307921785861,
+      "seed": 2615
+    },
+    {
+      "capability": "C.SUCCESSOR",
+      "delivery_digest": "2f46f4993c2abd38ddddcc7ded02661140a334c01d1967e2597085ef7f4c6362",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "held_rows": 21,
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "5": 11
+          },
+          "padded_positions": 55,
+          "positions": 55,
+          "repeated_fraction": 0.4,
+          "repeated_positions": 22,
+          "rows": 11,
+          "unique_prefix_positions": 33
+        },
+        "exact": {
+          "length_histogram": {
+            "5": 11
+          },
+          "padded_positions": 55,
+          "positions": 55,
+          "repeated_fraction": 0.09090909090909091,
+          "repeated_positions": 5,
+          "rows": 11,
+          "unique_prefix_positions": 50
+        },
+        "optimistic": {
+          "length_histogram": {
+            "5": 11
+          },
+          "padded_positions": 55,
+          "positions": 55,
+          "repeated_fraction": 0.41818181818181815,
+          "repeated_positions": 23,
+          "rows": 11,
+          "unique_prefix_positions": 32
+        }
+      },
+      "missing_schemas": {
+        "[('frame:legacy:school.op.EQ', 1)]": 21
+      },
+      "seconds": 0.37031425000168383,
+      "seed": 1615
+    },
+    {
+      "capability": "C.SUCCESSOR",
+      "delivery_digest": "9e780a0776ca3954c5d55b5b20566f7e7d71c67ac4d5629c91dde4c2b0c1f8dd",
+      "distinct_row_ids": 32,
+      "event": "delivery",
+      "held_rows": 21,
+      "metrics": {
+        "conservative": {
+          "length_histogram": {
+            "5": 11
+          },
+          "padded_positions": 55,
+          "positions": 55,
+          "repeated_fraction": 0.4,
+          "repeated_positions": 22,
+          "rows": 11,
+          "unique_prefix_positions": 33
+        },
+        "exact": {
+          "length_histogram": {
+            "5": 11
+          },
+          "padded_positions": 55,
+          "positions": 55,
+          "repeated_fraction": 0.09090909090909091,
+          "repeated_positions": 5,
+          "rows": 11,
+          "unique_prefix_positions": 50
+        },
+        "optimistic": {
+          "length_histogram": {
+            "5": 11
+          },
+          "padded_positions": 55,
+          "positions": 55,
+          "repeated_fraction": 0.41818181818181815,
+          "repeated_positions": 23,
+          "rows": 11,
+          "unique_prefix_positions": 32
+        }
+      },
+      "missing_schemas": {
+        "[('frame:legacy:school.op.EQ', 1)]": 21
+      },
+      "seconds": 0.37230016593821347,
+      "seed": 2615
+    }
+  ],
+  "factory_release_sha256": "7cb7a096b9cb5dc3613d17ca30861b63d9f92091bcdddd415d8ef5798fbba136",
+  "final_harness_replay": {
+    "log_sha256": "50e4c1288f462621fce3dcc30a7df9683141e5c4f30e307bf24e29ce1e5b31e1",
+    "matched_all_deliveries": 42,
+    "source_sha256": "05a226b1198bb7493f79c2fc121ee6820559c98743ebc50d3a1575de1f3e294b",
+    "totals": {
+      "conservative_repeated_positions": 8305,
+      "deliveries": 42,
+      "event": "census_complete",
+      "exact_repeated_positions": 25,
+      "held_rows": 294,
+      "optimistic_repeated_positions": 8312,
+      "positions": 23843,
+      "rows": 1050
+    }
+  },
+  "grades": {
+    "A": {
+      "deliveries": 12,
+      "exact": 0,
+      "held": 0,
+      "optimistic": 3803,
+      "padded": 9472,
+      "positions": 9280,
+      "repeated": 3803,
+      "rows": 384
+    },
+    "B": {
+      "deliveries": 16,
+      "exact": 0,
+      "held": 0,
+      "optimistic": 3672,
+      "padded": 16608,
+      "positions": 11633,
+      "repeated": 3672,
+      "rows": 512
+    },
+    "C": {
+      "deliveries": 14,
+      "exact": 25,
+      "held": 294,
+      "optimistic": 837,
+      "padded": 3784,
+      "positions": 2930,
+      "repeated": 830,
+      "rows": 154
+    }
+  },
+  "limitations": [
+    "Standalone direct provider draws, not a census of teacher-selected mixed-rehearsal microbatches.",
+    "Numerical-prefix candidates use admitted ABI and task scope; closure contents are not shared in the conservative arm. Numerical/autodiff parity and speedup remain unproved.",
+    "Grade C rows rejected by the tested compiler for missing schema are reported, not counted as successful positions. This is not a diagnosis of the live learner."
+  ],
+  "requested_per_draw": 32,
+  "schema": "bilqis.bamf.issue1615-prefix-census/v1",
+  "seeds": [
+    1615,
+    2615
+  ],
+  "source_logs": [
+    {
+      "name": "census-20261124-060821-direct/census.log",
+      "sha256": "ebf012364aff94f01f85ead6e6980df546285290e6dad84d958bd770213795f1"
+    },
+    {
+      "name": "census-20261124-060858-numeric/census.log",
+      "sha256": "e37651df96c1da3a4423268c21dc25b2415bc336d76a7f56ae9c2b454a5f4a78"
+    }
+  ],
+  "total": {
+    "deliveries": 42,
+    "exact": 25,
+    "held": 294,
+    "optimistic": 8312,
+    "padded": 29864,
+    "positions": 23843,
+    "repeated": 8305,
+    "rows": 1050
+  }
+}

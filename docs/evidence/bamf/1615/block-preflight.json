@@ -1,0 +1,128 @@
+{
+  "dense": {
+    "authorizing": false,
+    "device": "cpu",
+    "gradient_max_abs_error_by_leaf": {
+      "attn_norm": 2.9103830456733704e-09,
+      "conv_k": 1.382431946694851e-09,
+      "conv_q": 1.1932570487260818e-09,
+      "conv_v": 3.259629011154175e-09,
+      "ffn_in": 8.381903171539307e-09,
+      "ffn_norm": 3.958120942115784e-09,
+      "ffn_out": 3.259629011154175e-09,
+      "input": 6.332993507385254e-08,
+      "key": 4.423782229423523e-09,
+      "output": 1.4901161193847656e-08,
+      "query": 3.92901711165905e-09,
+      "value": 1.3504177331924438e-08
+    },
+    "logical_positions": 19,
+    "losses": [
+      0.18981540203094482,
+      0.18981541693210602
+    ],
+    "passed": true,
+    "schema": "bilqis.bamf.issue1615-block-preflight/v1",
+    "unique_positions": 12,
+    "wall_seconds": [
+      0.008222125004976988,
+      0.0071107919793576
+    ]
+  },
+  "final_harness": {
+    "dense": {
+      "authorizing": false,
+      "device": "cpu",
+      "gradient_max_abs_error_by_leaf": {
+        "attn_norm": 2.9103830456733704e-09,
+        "conv_k": 1.382431946694851e-09,
+        "conv_q": 1.1932570487260818e-09,
+        "conv_v": 3.259629011154175e-09,
+        "ffn_in": 8.381903171539307e-09,
+        "ffn_norm": 3.958120942115784e-09,
+        "ffn_out": 3.259629011154175e-09,
+        "input": 6.332993507385254e-08,
+        "key": 4.423782229423523e-09,
+        "output": 1.4901161193847656e-08,
+        "query": 3.92901711165905e-09,
+        "value": 1.3504177331924438e-08
+      },
+      "logical_positions": 19,
+      "losses": [
+        0.18981540203094482,
+        0.18981541693210602
+      ],
+      "passed": true,
+      "schema": "bilqis.bamf.issue1615-block-preflight/v1",
+      "unique_positions": 12,
+      "wall_seconds": [
+        0.008918125182390213,
+        0.007726375013589859
+      ]
+    },
+    "gathered": {
+      "authorizing": false,
+      "device": "cpu",
+      "gradient_max_abs_error_by_leaf": {
+        "attn_norm": 2.5029294192790985e-09,
+        "conv_k": 1.0040821507573128e-09,
+        "conv_q": 6.257323548197746e-10,
+        "conv_v": 3.899913281202316e-09,
+        "ffn_in": 9.313225746154785e-09,
+        "ffn_norm": 3.725290298461914e-09,
+        "ffn_out": 2.852175384759903e-09,
+        "input": 6.705522537231445e-08,
+        "key": 3.521563485264778e-09,
+        "output": 1.30385160446167e-08,
+        "query": 3.4924596548080444e-09,
+        "value": 1.3737007975578308e-08
+      },
+      "logical_positions": 19,
+      "losses": [
+        0.18981540203094482,
+        0.18981541693210602
+      ],
+      "passed": true,
+      "schema": "bilqis.bamf.issue1615-block-preflight/v1",
+      "unique_positions": 12,
+      "wall_seconds": [
+        0.008335791993886232,
+        0.006748125189915299
+      ]
+    },
+    "source_sha256": "0f6040ed0e3600416288f52a5cb00cb9bbf693c62c0a54223969b96b4e697b23"
+  },
+  "gathered": {
+    "authorizing": false,
+    "device": "cpu",
+    "gradient_max_abs_error_by_leaf": {
+      "attn_norm": 2.5029294192790985e-09,
+      "conv_k": 1.0040821507573128e-09,
+      "conv_q": 6.257323548197746e-10,
+      "conv_v": 3.899913281202316e-09,
+      "ffn_in": 9.313225746154785e-09,
+      "ffn_norm": 3.725290298461914e-09,
+      "ffn_out": 2.852175384759903e-09,
+      "input": 6.705522537231445e-08,
+      "key": 3.521563485264778e-09,
+      "output": 1.30385160446167e-08,
+      "query": 3.4924596548080444e-09,
+      "value": 1.3737007975578308e-08
+    },
+    "logical_positions": 19,
+    "losses": [
+      0.18981540203094482,
+      0.18981541693210602
+    ],
+    "passed": true,
+    "schema": "bilqis.bamf.issue1615-block-preflight/v1",
+    "unique_positions": 12,
+    "wall_seconds": [
+      0.008738166885450482,
+      0.008031083969399333
+    ]
+  },
+  "limitation": "Synthetic inputs, one production-geometry CCGQA/FFN block, independent production ccgqa control. Timings are untuned CPU observations, not evidence of GPU or end-to-end speedup.",
+  "schema": "bilqis.bamf.issue1615-block-preflight/v2",
+  "witness_sha256": "98ae72fe5f43e97dba4f95d3850db7427f88b681a7e20e1c7e29384beb430aad"
+}
