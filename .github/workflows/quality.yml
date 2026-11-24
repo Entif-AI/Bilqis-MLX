@@ -97,6 +97,11 @@ jobs:
       - name: Check BAMF predecessor invariant transfer
         run: |
           python3 -B scripts/check_bamf_invariant_transfer.py
+      - name: Verify detached witness lifecycle
+        run: >-
+          python3 -B -m unittest
+          scripts.tests.bamf.test_checked_launch
+          scripts.tests.bamf.test_detached_long_run
       - name: Install historical semantic integrity dependencies
         if: steps.test-impact.outputs.expensive_tests == 'true'
         run: python3 -m pip install -r lib/ithkuil/requirements-semantic.txt
@@ -260,6 +265,8 @@ jobs:
           python3 -m pip install -e "$BILQIS_READINESS_SOURCE"
           -r "$BILQIS_READINESS_SOURCE/lib/ithkuil/requirements-semantic.txt"
           mlx==0.31.1 numpy==2.4.4
+      - name: Verify canonical native instrumentation imports
+        run: python3 -B -m unittest scripts.tests.bamf.test_checked_witness
       - name: Verify launch-critical BAMF journey with no skipped tests
         run: python3 -B -m scripts.quality.run_verified --check bamf-readiness -- python3 -B scripts/run_required_tests.py --bamf-readiness
       - name: Publish passing main verification receipts
