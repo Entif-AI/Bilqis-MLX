@@ -15,6 +15,84 @@ All new releases use [Semantic Versioning](https://semver.org/) and Conventional
 
 * **bamf:** collapse ordinary planning ceremony ([#1604](https://github.com/Entif-AI/Bilqis-MLX/issues/1604)) ([c3fec58](https://github.com/Entif-AI/Bilqis-MLX/commit/c3fec582c862650876b6c4e4464fab3d4ef2a883))
 
+<!-- release-history:pr:1602:start -->
+### PR #1602 constituent commit inventory
+
+Release Please summarized PR #1602 as [`750d1ad`](https://github.com/Entif-AI/Bilqis-MLX/commit/750d1ad16a09d0a6fb542f03756c94eaffd45f12). This generated inventory preserves **6 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **5 source commits and 1 internal merge commit**.
+
+<details>
+<summary>5 source commits (newest-first PR order)</summary>
+
+- [`f80a4df714`](https://github.com/Entif-AI/Bilqis-MLX/commit/f80a4df714124ac4797f157f6b20ca466ff8e9fd) chore(bamf): record CI repair for strict-mode boundary (#1566)
+- [`7fb730115f`](https://github.com/Entif-AI/Bilqis-MLX/commit/7fb730115fe554aea29353cf38a65728bf143191) refactor(bamf): satisfy portable hygiene gate (#1566)
+- [`a5bab06acf`](https://github.com/Entif-AI/Bilqis-MLX/commit/a5bab06acff6fa710c16508b9d16aec93253c8e2) chore(bamf): turn in strict-mode boundary (#1566)
+- [`be469c0049`](https://github.com/Entif-AI/Bilqis-MLX/commit/be469c004933fa9e649954ebb72bf2e1cdc0e619) fix(bamf): enforce strict-mode execution boundary (#1566)
+- [`9a4a97fb4f`](https://github.com/Entif-AI/Bilqis-MLX/commit/9a4a97fb4f35b7525588150327ee46ed8f21abd0) chore(bamf): reopen strict-mode boundary (#1566)
+
+</details>
+
+<details>
+<summary>1 internal merge commit (newest-first PR order)</summary>
+
+- [`bbcaa941e4`](https://github.com/Entif-AI/Bilqis-MLX/commit/bbcaa941e464d34e494e14e7d5df45321e0f2fc2) Merge remote-tracking branch 'origin/main' into codex/1566-strict-mode-boundary-20261123
+
+</details>
+
+<!-- release-history:pr:1602:end -->
+
+<!-- release-history:pr:1604:start -->
+### PR #1604 constituent commit inventory
+
+Release Please summarized PR #1604 as [`c3fec58`](https://github.com/Entif-AI/Bilqis-MLX/commit/c3fec582c862650876b6c4e4464fab3d4ef2a883). This generated inventory preserves **11 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **9 source commits and 2 internal merge commits**.
+
+<details>
+<summary>9 source commits (newest-first PR order)</summary>
+
+- [`50bc13e181`](https://github.com/Entif-AI/Bilqis-MLX/commit/50bc13e1810fdbbadb7cb003a10f13861851b665) refactor(bamf): split strict and learning-first selectors
+- [`85a8aa122a`](https://github.com/Entif-AI/Bilqis-MLX/commit/85a8aa122a1c0d865907aad2424ba41fac7c7e06) test(gui): follow strict salience owner refactor
+- [`e8faf2b7cb`](https://github.com/Entif-AI/Bilqis-MLX/commit/e8faf2b7cb0cab6b4d6fed25470626bfc1127603) refactor(bamf): compartment learning-first fast path
+- [`ab7c13416b`](https://github.com/Entif-AI/Bilqis-MLX/commit/ab7c13416bb528dff9a95c54c6a3b3e2a0d26cab) perf(bamf): collapse ordinary planning ceremony
+- [`f80a4df714`](https://github.com/Entif-AI/Bilqis-MLX/commit/f80a4df714124ac4797f157f6b20ca466ff8e9fd) chore(bamf): record CI repair for strict-mode boundary (#1566)
+- [`7fb730115f`](https://github.com/Entif-AI/Bilqis-MLX/commit/7fb730115fe554aea29353cf38a65728bf143191) refactor(bamf): satisfy portable hygiene gate (#1566)
+- [`a5bab06acf`](https://github.com/Entif-AI/Bilqis-MLX/commit/a5bab06acff6fa710c16508b9d16aec93253c8e2) chore(bamf): turn in strict-mode boundary (#1566)
+- [`be469c0049`](https://github.com/Entif-AI/Bilqis-MLX/commit/be469c004933fa9e649954ebb72bf2e1cdc0e619) fix(bamf): enforce strict-mode execution boundary (#1566)
+- [`9a4a97fb4f`](https://github.com/Entif-AI/Bilqis-MLX/commit/9a4a97fb4f35b7525588150327ee46ed8f21abd0) chore(bamf): reopen strict-mode boundary (#1566)
+
+</details>
+
+<details>
+<summary>2 internal merge commits (newest-first PR order)</summary>
+
+- [`4fc5b4acb3`](https://github.com/Entif-AI/Bilqis-MLX/commit/4fc5b4acb3ad626845dce80e2e360d01afcc32ff) Merge remote-tracking branch 'origin/main' into codex/1566-strict-mode-boundary-20261123
+- [`bbcaa941e4`](https://github.com/Entif-AI/Bilqis-MLX/commit/bbcaa941e464d34e494e14e7d5df45321e0f2fc2) Merge remote-tracking branch 'origin/main' into codex/1566-strict-mode-boundary-20261123
+
+</details>
+
+<!-- release-history:pr:1604:end -->
+
+<!-- release-history:pr:1605:start -->
+### PR #1605 constituent commit inventory
+
+Release Please summarized PR #1605 as [`744f17e`](https://github.com/Entif-AI/Bilqis-MLX/commit/744f17ee7f2efbe59a28b57b0d03b692a7f282f8). This generated inventory preserves **11 additional constituent commits** that are newer than the prior release boundary but absent from the generated release section: **11 source commits**.
+
+<details>
+<summary>11 source commits (newest-first PR order)</summary>
+
+- [`49a3436d91`](https://github.com/Entif-AI/Bilqis-MLX/commit/49a3436d9124322257e212be1f2bd8b22a84bb01) fix(bamf): refresh packaged bootstrap source seed
+- [`8f5e2346a5`](https://github.com/Entif-AI/Bilqis-MLX/commit/8f5e2346a5d2fda5f60fc068f81ec952e6e98897) fix(bamf): retire repeated target failures and report teacher evidence
+- [`89026a1f32`](https://github.com/Entif-AI/Bilqis-MLX/commit/89026a1f32169e77c4ec815d0529f5c1cb076d86) fix(ci): clear observability smell debt
+- [`3c5cc97bcd`](https://github.com/Entif-AI/Bilqis-MLX/commit/3c5cc97bcd82b8a8142bb8127fc2f14e8a5036fc) fix(bamf): remove ordinary observability tax
+- [`9fb21bbd57`](https://github.com/Entif-AI/Bilqis-MLX/commit/9fb21bbd576d954c7e8ec602fede1bf5cb787e8f) fix(ci): clear portable code smell debt
+- [`8c3a74d2b0`](https://github.com/Entif-AI/Bilqis-MLX/commit/8c3a74d2b03f5a17b7db57ad080d33e041720686) fix(bamf): restore ordinary live semantics
+- [`d7248a9c34`](https://github.com/Entif-AI/Bilqis-MLX/commit/d7248a9c3479fdf42497e8a9db83862222a1d924) fix(ci): satisfy operator contract ratchet
+- [`65f0747000`](https://github.com/Entif-AI/Bilqis-MLX/commit/65f0747000ea639b7d09134acadd65b88af13f26) fix(ci): refresh invariant transfer paths
+- [`c2190e19cb`](https://github.com/Entif-AI/Bilqis-MLX/commit/c2190e19cb4106d6716d700ebccd44f7357f5dda) fix(bamf): restore boolean provider resume lineage
+- [`6023590246`](https://github.com/Entif-AI/Bilqis-MLX/commit/6023590246bcd52c22cc435dfa7a21794f70f70f) fix(ci): preserve runtime owner structure identities
+- [`e2e480f7be`](https://github.com/Entif-AI/Bilqis-MLX/commit/e2e480f7bede8e873f08dad7483d6f48bbfefec9) fix(bamf): complete learning-first performance repair
+
+</details>
+
+<!-- release-history:pr:1605:end -->
 ## [1.5.1](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.5.0...v1.5.1) (2026-11-23)
 
 
