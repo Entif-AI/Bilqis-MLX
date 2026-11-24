@@ -1,6 +1,7 @@
 """Learning-first ahead-preparation identities and candidate-local caches."""
 from collections import OrderedDict
-from dataclasses import dataclass, field
+from copy import deepcopy
+from dataclasses import dataclass, field, replace
 from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.factory.teaching import content_digest
 from bilqis_mlx.runtime.bamf_bundle import is_authenticated_generation_feature_context
@@ -35,6 +36,49 @@ def _learning_first_preparation_binding(source_context, authenticated) -> tuple:
     )
 
 
+@dataclass
+class LearningFirstSourceRowCache:
+    """Single-writer, visit-local cache of complete invariant row preparation."""
+
+    _binding: tuple | None = None
+    _rows: OrderedDict = field(default_factory=OrderedDict)
+    hits: int = 0
+    misses: int = 0
+
+    def prepare(self, context, authenticated, rows, *, source_seed, source_each,
+                prepare_rows=prepare_learning_first_source_rows,
+                prepare_models=_prepare_learning_first_model_sources):
+        binding = (str(context.run_dir),
+                   *_learning_first_preparation_binding(context, authenticated))
+        if self._binding != binding:
+            self._binding = binding
+            self._rows.clear()
+        sources, models = [], []
+        for row in rows:
+            key = (source_seed, source_each, content_digest(row))
+            cached = self._rows.get(key)
+            if cached is None or cached[0].row != row:
+                source = prepare_rows(
+                    context, authenticated, (deepcopy(row),),
+                    source_seed=source_seed, source_each=source_each)[0]
+                model = prepare_models(authenticated, (source,))[0]
+                if model.eligibility_digest != source.projection.digest:
+                    _invalid("LEARNING_FIRST_PREPARATION_ELIGIBILITY_DRIFT")
+                cached = (source, model)
+                self._rows[key] = cached
+                self.misses += 1
+            else:
+                self.hits += 1
+            self._rows.move_to_end(key)
+            if len(self._rows) > 1024:
+                self._rows.popitem(last=False)
+            # Keep the cache's comparison row private. The prepared structures
+            # are independent of optimizer state; the delivered row is current.
+            sources.append(replace(cached[0], row=row))
+            models.append(cached[1])
+        return tuple(sources), tuple(models)
+
+
 def _learning_first_preparation_identity(
         binding, rows_sha256: str, source_seed: int, source_each: int) -> str:
     return contract_digest({
@@ -46,7 +90,8 @@ def _learning_first_preparation_identity(
 
 def prepare_learning_first_source_inputs_ahead(
         source_context, authenticated, rows, *, source_seed: int, source_each: int,
-        source_identity: str | None = None, content_digest_fn=content_digest):
+        source_identity: str | None = None, content_digest_fn=content_digest,
+        row_cache=None):
     """Prepare only source/model inputs that do not depend on optimizer state."""
     rows = tuple(rows)
     if (type(source_context) is not SourceExecutionContext
@@ -66,10 +111,15 @@ def prepare_learning_first_source_inputs_ahead(
     # retain the content digest as the conservative fallback.
     rows_sha256 = (
         source_identity if source_identity is not None else content_digest_fn(rows))
-    source_rows = prepare_learning_first_source_rows(
-        source_context, authenticated, rows,
-        source_seed=source_seed, source_each=source_each)
-    model_sources = _prepare_learning_first_model_sources(authenticated, source_rows)
+    if row_cache is None:
+        source_rows = prepare_learning_first_source_rows(
+            source_context, authenticated, rows,
+            source_seed=source_seed, source_each=source_each)
+        model_sources = _prepare_learning_first_model_sources(authenticated, source_rows)
+    else:
+        source_rows, model_sources = row_cache.prepare(
+            source_context, authenticated, rows,
+            source_seed=source_seed, source_each=source_each)
     identity = _learning_first_preparation_identity(
         binding, rows_sha256, source_seed, source_each)
     return LearningFirstPreparedSourceInputs(
@@ -134,10 +184,8 @@ class LearningFirstPreparationCache:
     """Candidate-local source inputs and release-bound reusable task routes."""
 
     _binding: tuple | None = None
-    _rows: dict = field(default_factory=dict)
+    source_rows: LearningFirstSourceRowCache = field(default_factory=LearningFirstSourceRowCache)
     _task_inputs: OrderedDict = field(default_factory=OrderedDict)
-    hits: int = 0
-    misses: int = 0
     task_hits: int = 0
     task_misses: int = 0
 
@@ -147,7 +195,6 @@ class LearningFirstPreparationCache:
         if self._binding == binding:
             return
         self._binding = binding
-        self._rows.clear()
         self._task_inputs = OrderedDict()
         if (type(source_context) is SourceExecutionContext
                 and is_authenticated_generation_feature_context(authenticated)):
@@ -157,23 +204,13 @@ class LearningFirstPreparationCache:
                 object.__setattr__(source_context, "_prepared_task_binding", shared)
             self._task_inputs = shared[1]
 
-    @staticmethod
-    def key(row, eligibility_digest=None):
-        row_id = row.get("id") if isinstance(row, dict) else None
-        if not isinstance(row_id, str) or not row_id:
-            _invalid("LEARNING_FIRST_PREPARATION_ROW_ID_REQUIRED")
-        return row_id, eligibility_digest, content_digest(row)
+    @property
+    def hits(self):
+        return self.source_rows.hits
 
-    def get(self, row, eligibility_digest):
-        value = self._rows.get(self.key(row, eligibility_digest))
-        if value is None:
-            self.misses += 1
-        else:
-            self.hits += 1
-        return value
-
-    def put(self, row, eligibility_digest, model_source) -> None:
-        self._rows[self.key(row, eligibility_digest)] = model_source
+    @property
+    def misses(self):
+        return self.source_rows.misses
 
     @staticmethod
     def task_key(row, semantic_release, release_sha256):

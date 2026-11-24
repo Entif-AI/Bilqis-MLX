@@ -1,6 +1,7 @@
 """Production-shaped proof for the authority-light BAMF source path."""
 import time
 import unittest
+from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -18,6 +19,7 @@ from bilqis_mlx.runtime.factory_candidate_cost import realized_candidate_cost
 from bilqis_mlx.runtime.factory_training_bridge import (
     LearningFirstPreparationCache, prepare_factory_training_batch,
 )
+from bilqis_mlx.runtime.factory_training_preparation import LearningFirstSourceRowCache
 from bilqis_mlx.runtime.tests.batch.training.visit_provenance_support import visit_provenance
 
 from .pre_neural_journey_support import (
@@ -138,18 +140,8 @@ class LearningFirstSourcePathTests(PreNeuralJourneySupport, unittest.TestCase):
         self.assertEqual(second_inputs[4].generation_binding, second_generation)
         self.assertEqual(first_inputs[2:4], second_inputs[2:4])
 
-    def test_learning_first_cache_misses_when_exact_row_content_changes(self):
-        cache = LearningFirstPreparationCache()
-        row = {"id": "row:1", "capability": "A.TEST", "tokens": [1, 2]}
-        model_source = object()
-        cache.put(row, "eligibility:a", model_source)
-
-        assert cache.get(row, "eligibility:a") is model_source
-        assert cache.get({**row, "tokens": [1, 3]}, "eligibility:a") is None
-        assert cache.get(row, "eligibility:b") is None
-
-    def test_learning_first_cache_invalidates_changed_feature_digest(self):
-        cache = LearningFirstPreparationCache()
+    def test_learning_first_cache_invalidates_exact_row_coordinates_and_features(self):
+        cache = LearningFirstSourceRowCache()
         context = SimpleNamespace(
             run_dir=Path("/run"), release=SimpleNamespace(release_sha256="release"))
         snapshot = SimpleNamespace(
@@ -163,11 +155,36 @@ class LearningFirstSourcePathTests(PreNeuralJourneySupport, unittest.TestCase):
             features=SimpleNamespace(semantic_release="semantic", digest="features:b"))
         row = {"id": "row:1", "capability": "A.TEST", "tokens": [1, 2]}
 
-        cache.bind(context, first)
-        cache.put(row, "eligibility", object())
-        cache.bind(context, changed)
+        @dataclass(frozen=True)
+        class Source:
+            row: dict
+            projection: object
 
-        assert cache.get(row, "eligibility") is None
+        def prepare_rows(_context, features, rows, *, source_seed, source_each):
+            return tuple(Source(item, SimpleNamespace(digest=(
+                features.features.digest, source_seed, source_each,
+                tuple(item["tokens"])))) for item in rows)
+
+        def prepare_models(_features, sources):
+            return tuple(SimpleNamespace(eligibility_digest=item.projection.digest)
+                         for item in sources)
+
+        def prepare(item, features=first, seed=7, each=1):
+            return cache.prepare(
+                context, features, (item,), source_seed=seed, source_each=each,
+                prepare_rows=prepare_rows, prepare_models=prepare_models)
+
+        _, initial = prepare(row)
+        row["tokens"][1] = 3
+        _, updated = prepare(row)
+        row["tokens"][1] = 2
+        _, restored = prepare(row)
+        assert restored[0] is initial[0]
+        assert updated[0].eligibility_digest == ("features:a", 7, 1, (1, 3))
+        assert prepare(row, seed=8)[1][0].eligibility_digest == ("features:a", 8, 1, (1, 2))
+        assert prepare(row, each=2)[1][0].eligibility_digest == ("features:a", 7, 2, (1, 2))
+        assert prepare(row, changed)[1][0].eligibility_digest == ("features:b", 7, 1, (1, 2))
+        assert (cache.hits, cache.misses) == (1, 5)
 
     def test_candidate_cost_reports_authority_free_rows_without_requalification(self):
         compiled_row = SimpleNamespace(positions=(object(), object()))
