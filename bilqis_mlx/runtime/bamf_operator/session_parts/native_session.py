@@ -101,9 +101,7 @@ def candidate_horizon_execution(
     if host_cache is None and not strict:
         invalid("BAMF_LEARNING_FIRST_SESSION_CACHE_REQUIRED")
     cache = host_cache if host_cache is not None else bind_accepted_execution_cache(run_dir)
-    from bilqis_mlx.runtime.bamf_bundle.execution_cache import require_accepted_execution_cache
-    from bilqis_mlx.runtime.factory_retention_owner import CURRENT_EVIDENCE_STAGE
-    from bilqis_mlx.runtime.capability_retention import EvidenceStage
+    from bilqis_mlx.runtime.bamf_bundle.execution_cache import AcceptedExecutionCache
     candidate_visit = (
         prepare_accepted_priority_candidate_visit(selection, context)
         if strict else None)
