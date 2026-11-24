@@ -14,6 +14,7 @@ from scripts.quality.restore_verification_ledger import _latest_run, main as res
 from scripts.quality.run_verified import execute
 from scripts.quality.verification_frontier import frontier_digest
 from scripts.quality.verification_ledger import ledger_path
+from scripts.quality.verification_projection import prepare
 
 
 class VerificationReceiptTests(unittest.TestCase):
@@ -169,6 +170,25 @@ class VerificationReceiptTests(unittest.TestCase):
                 (self.root / "shadow.pyc").write_bytes(b"ignored")
                 self.assertIn("identity-unavailable", self.run_check()[1])
         self.assertEqual(self.marker.read_text(), "xxx")
+
+    def test_projected_main_receipt_survives_frontend_edit_not_runtime_edit(self):
+        self.commit("apps/mission-control/view.js", "const version = 1;\n")
+        os.environ["GITHUB_SHA"] = self.git("rev-parse", "HEAD")
+        source = self.base / "projection"
+        self.assertTrue(prepare(self.root, source))
+        with patch.dict(os.environ, {"BILQIS_READINESS_SOURCE": str(source)}):
+            self.assertEqual(self.run_check()[0], 0)
+            with self.pr_context():
+                trusted = self.restore_producer()
+                self.commit("apps/mission-control/view.js", "const version = 2;\n")
+                os.environ["GITHUB_SHA"] = self.git("rev-parse", "HEAD")
+                with patch.dict(os.environ, trusted):
+                    self.assertIn("TEST_EVIDENCE_REUSED", self.run_check()[1])
+                    self.assertEqual(self.marker.read_text(), "x")
+                    self.commit("scripts/check_bamf_flow_control.py", "# changed gate\n")
+                    os.environ["GITHUB_SHA"] = self.git("rev-parse", "HEAD")
+                    self.assertNotIn("TEST_EVIDENCE_REUSED", self.run_check()[1])
+                    self.assertEqual(self.marker.read_text(), "xx")
 
     def test_common_git_directory_shares_local_ledger(self):
         other = self.base / "worktree"

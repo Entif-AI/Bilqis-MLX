@@ -11,6 +11,7 @@ import time
 
 from .verification_frontier import execution_identity, trusted_producer
 from .verification_ledger import VerificationLedger, full_requested, ledger_path
+from .verification_projection import validate_projection
 
 ROOT = Path(__file__).resolve().parents[2]
 CHECKS = ("bamf-readiness",)
@@ -31,13 +32,32 @@ def valid_pass(payload) -> bool:
 def execute(root: Path, check: str, command: list[str], *, full: bool = False) -> int:
     started = time.perf_counter()
     command_env = dict(os.environ, GIT_NO_REPLACE_OBJECTS="1")
+    source = root
+    projected = None
+    if not (full or full_requested()) and (name := os.environ.get("BILQIS_READINESS_SOURCE")):
+        candidate = Path(name).resolve()
+        if candidate != root:
+            projected = validate_projection(root, candidate)
+            if projected is not None:
+                source = candidate
+    execution_env = command_env if source == root else dict(
+        command_env, GIT_DIR=str(source / ".unavailable-git"), GIT_WORK_TREE=str(source))
+
+    def run_command():
+        result = subprocess.run(command, cwd=source, env=execution_env).returncode
+        if result and source != root:
+            print("READINESS_PROJECTION_REJECTED; executing original full source", flush=True)
+            return subprocess.run(command, cwd=root, env=command_env).returncode, False
+        return result, True
+
     try:
-        identity = execution_identity(root, check, command)
+        identity = execution_identity(root, check, command, execution_root=source,
+                                      projected_digest=projected)
     except (OSError, ValueError, TypeError, subprocess.SubprocessError):
         identity = None
     if identity is None:
         print(f"VERIFICATION_LEDGER {check} FRESH identity-unavailable", flush=True)
-        return subprocess.run(command, cwd=root, env=command_env).returncode
+        return run_command()[0]
     head, key = identity
     with VerificationLedger(ledger_path(root), full=full or full_requested()) as ledger:
         receipt = ledger.lookup(check, key, validate=valid_pass)
@@ -49,9 +69,9 @@ def execute(root: Path, check: str, command: list[str], *, full: bool = False) -
             return 0
         print(f"VERIFICATION_LEDGER {check} FRESH frontier={key}", flush=True)
         command_started = time.perf_counter()
-        result = subprocess.run(command, cwd=root, env=command_env)
+        result, qualified = run_command()
         duration = time.perf_counter() - command_started
-        if result.returncode == 0 and trusted_producer():
+        if result == 0 and qualified and trusted_producer():
             run_id = os.environ.get("GITHUB_RUN_ID", "")
             attempt = os.environ.get("GITHUB_RUN_ATTEMPT", "")
             receipt = dict(result="PASS", verified_head=head, run_id=run_id,
@@ -61,13 +81,13 @@ def execute(root: Path, check: str, command: list[str], *, full: bool = False) -
             if valid_pass(receipt):
                 # Never publish a proof after a command changed its input frontier.
                 try:
-                    unchanged = execution_identity(root, check, command) == identity
+                    unchanged = execution_identity(root, check, command, execution_root=source) == identity
                 except (OSError, ValueError, TypeError, subprocess.SubprocessError):
                     unchanged = False
                 if unchanged:
                     ledger.record(check, key, receipt)
         ledger.report(check, time.perf_counter() - started)
-        return result.returncode
+        return result
 
 
 def main(argv=None) -> int:

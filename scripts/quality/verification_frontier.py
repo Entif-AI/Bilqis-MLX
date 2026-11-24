@@ -11,6 +11,7 @@ import sys
 
 from .verification_ledger import fingerprint
 from .verification_environment import installed_identity
+from .verification_projection import validate_projection
 
 
 def _git(root: Path, *args: str) -> bytes:
@@ -81,7 +82,14 @@ def _editable_metadata(root: Path) -> tuple[tuple[str, str], ...]:
     )
 
 
-def execution_identity(root: Path, check: str, command: list[str]) -> tuple[str, str] | None:
+def execution_identity(root: Path, check: str, command: list[str], *,
+                       execution_root: Path | None = None, projected_digest: str | None = None
+                       ) -> tuple[str, str] | None:
+    source = execution_root or root
+    frontier = frontier_digest(root, check) if source == root else (
+        projected_digest or validate_projection(root, source))
+    if frontier is None:
+        return None
     if not hosted_runner() or not os.environ.get("ImageVersion") or not os.environ.get("ImageOS"):
         return None
     if not clean_tracked_tree(root, command=command):
@@ -102,6 +110,6 @@ def execution_identity(root: Path, check: str, command: list[str]) -> tuple[str,
         sys.implementation.name, sys.version, platform.platform(), platform.machine(),
         os.environ["ImageOS"], os.environ["ImageVersion"],
         os.environ.get("RUNNER_OS"), os.environ.get("RUNNER_ARCH"),
-        packages, _configuration(), _editable_metadata(root),
+        packages, _configuration(), _editable_metadata(source),
     )
-    return head, fingerprint("ci-command/v1", check, command, frontier_digest(root, check), environment)
+    return head, fingerprint("ci-command/v2", check, command, frontier, environment)

@@ -27,14 +27,24 @@ publish the result. Missing, expired, corrupted or mismatched evidence falls
 back to computation. Weekly scheduled, manually dispatched, and retried workflows perform
 fresh verification. The portable aggregate still requires every applicable job.
 
-BAMF readiness has a passing receipt bound to its complete tracked Git tree,
+BAMF readiness has a passing receipt bound to a validated Git source view,
 canonical Python test command, actual installed artifact bytes, resolved tools,
 runner image, editable-install metadata and execution configuration. The
 fingerprint has a 512 MiB byte budget; unavailable or larger environments run
 fresh. The required runner uses the same canonical target list from npm and CI,
-including its failure on any skipped case. The other portable gates continue
-to execute; narrow, independently qualified readiness frontiers can extend
-reuse to unrelated source changes without weakening the original suite.
+including its failure on any skipped case.
+
+For normal hosted readiness, Git archives a source view without
+`apps/mission-control/` or `docs/evidence/development/`. The archive contains
+no Git history and is verified against the selected tree entries, including file
+modes and symlink targets. Dependencies install against that view; the required
+suite executes in it with Git repository discovery disabled. Frontend and
+engineering-evidence edits therefore cannot change this predicate's visible
+source. An invalid archive or a failed projected check falls back to the
+original full source; no projected pass is minted from a fallback. Full mode,
+scheduled verification and retries use the complete checkout. Changes to any
+included source invalidate the readiness receipt. The other portable gates
+continue to execute.
 
 The changed-path gate finds the governance adoption merge using a logarithmic
 first-parent search and uses the ordinary merge base when the branch inherited
@@ -48,7 +58,9 @@ Local M3 Ultra measured full/warm parity: 3,228 smell inspections in 5.81 s
 cold and 0.30 s warm; 1,489 ABI literal inspections in 1.61 s cold and 0.31 s
 warm. Both output files matched byte for byte; the combined database was
 1.2 MiB. The unchanged required readiness targets completed with 37 passes
-and no skips in 61.65 s using a single bounded MLX process.
+and no skips in 61.65 s using a single bounded MLX process. The canonical
+runner passed all 37 tests on full source in 64.23 s and the independently
+archived projected source passed all 37 in 63.23 s, with no skips in either.
 
 The changed-file structure gate previously remained active after 35 s on this
 branch; the repaired gate finished in 1.11 s. The changed-file smell gate
