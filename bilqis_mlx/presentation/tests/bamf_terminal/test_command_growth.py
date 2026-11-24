@@ -101,3 +101,42 @@ def test_fixed_reference_target_drives_growth_and_partial_is_explicit(tmp_path):
     assert summary["right_grew"] == " 56% [-17%]"
     assert summary["outcome"] == "REF 3/3 S1"
     assert "-17~" in board._compact_headers(board.state)[0][1]
+
+
+def test_curriculum_survives_rejection_window_and_cold_resume(tmp_path):
+    (tmp_path / "bamf-state.json").write_text(json.dumps({"run_id": "fixture"}))
+    log = tmp_path / "events.jsonl"
+    retained = _event(1, "A.EDGE", [["A.EDGE", 0, 6, 6]],
+                      fixed=[["A.EDGE", 3, 4, 6], ["A.LINK", 4, 4, 6],
+                             ["A.PARENT", 5, 5, 6]])
+    rejected = [
+        _event(i, "A.EDGE", [["A.EDGE", 4, 0, 6]], accepted=False)
+        for i in range(2, 82)
+    ]
+    log.write_text("\n".join(map(json.dumps, (retained, *rejected))) + "\n")
+    board = Dashboard(stream=io.StringIO(), tables=LETTER_TABLES,
+                      compact_header=True, show_all_panels=True)
+    board.school_telemetry = SchoolTelemetry(board, active_grades=("A",))
+    board.log_hint = str(log)
+    begin_bamf_command_accounting(board)
+    board.draw()
+    assert len(board.rows["CANDIDATES"]) == 64
+    assert {r["result"] for r in board.rows["CANDIDATES"]} == {"REJECTED"}
+    rows = board._section_rows("GRADES & MASTERY")
+    assert {r["subject"]: r["latest"] for r in rows} == {
+        "A": "13/18", "A.EDGE": "4/6", "A.LINK": "4/6", "A.PARENT": "5/6",
+    }
+    assert board.state["_bamf_growth_coverage"] == (3, 3, 0)
+    assert board.state["grew"] == 0
+    # A fresh acceptance replaces the retained reference checkpoint, while
+    # rejected candidates cannot rewrite the curriculum.
+    next_event = _event(82, "A.LINK", [["A.LINK", 4, 5, 6]],
+                        fixed=[["A.EDGE", 4, 4, 6], ["A.LINK", 4, 5, 6],
+                               ["A.PARENT", 5, 5, 6]])
+    with log.open("a") as stream:
+        stream.write(json.dumps(next_event) + "\n")
+    ingest(board, next_event)
+    board.draw()
+    rows = board._section_rows("GRADES & MASTERY")
+    assert {r["subject"]: r["latest"] for r in rows}["A"] == "14/18"
+    assert board.state["grew"] == 6

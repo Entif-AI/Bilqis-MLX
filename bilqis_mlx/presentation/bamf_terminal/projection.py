@@ -10,7 +10,7 @@ from .rows import (
 from .accounting import bamf_command_accounting_active
 from .reference_growth import ReferenceGrowth
 from .source import (
-    logical_visit_identity, read_bamf_terminal_observation,
+    logical_visit_identity, read_bamf_terminal_projection,
 )
 
 
@@ -63,6 +63,16 @@ def _update_session_state(board, session_visits, terminal_visits) -> None:
     )
 
 
+def _curriculum_visits(retained, recent):
+    """Keep durable measurements; supplement only newer live-only acceptances."""
+    latest_step = max((v.get("candidate_optimizer_step") or 0 for v in retained),
+                      default=-1)
+    live = (v for v in recent if not v.get("_durable_terminal_history")
+            and v.get("outcome") == "ACCEPTED"
+            and (v.get("candidate_optimizer_step") or 0) > latest_step)
+    return (*retained, *live)
+
+
 def refresh_bamf_terminal_projection(board) -> None:
     """Update display-only rows; malformed input preserves the last good view."""
     hint = getattr(board, "log_hint", "")
@@ -71,10 +81,10 @@ def refresh_bamf_terminal_projection(board) -> None:
     run_dir = Path(hint).parent
     if not (run_dir / "bamf-state.json").exists():
         return
-    loaded = read_bamf_terminal_observation(run_dir)
+    loaded = read_bamf_terminal_projection(run_dir)
     if loaded is None:
         return
-    run_id, visits = loaded
+    run_id, visits, durable = loaded
     prior_run = getattr(board, "_bamf_terminal_observed_run_id", None)
     if prior_run != run_id:
         if prior_run is not None:
@@ -113,7 +123,8 @@ def refresh_bamf_terminal_projection(board) -> None:
     if baseline is None:
         baseline = set(identities)
         board._bamf_session_visit_baseline = baseline
-        growth.prime(projected_visits)
+        if not growth.seen and not growth.scores:
+            growth = board._bamf_reference_growth = durable.reference
     session_visits = tuple(
         visit for visit in projected_visits
         if logical_visit_identity(visit) not in baseline)
@@ -129,7 +140,8 @@ def refresh_bamf_terminal_projection(board) -> None:
     teacher_history = {}
     board.rows["SOUP & TEACHER"].extend(
         teacher_row(visit, teacher_history) for visit in projected_visits)
-    summaries, families = mastery_rows(projected_visits)
+    summaries, families = mastery_rows(
+        _curriculum_visits(durable.retained, projected_visits))
     for visit in terminal_visits:
         growth.observe(visit)
     growth.apply_rows(summaries, families)

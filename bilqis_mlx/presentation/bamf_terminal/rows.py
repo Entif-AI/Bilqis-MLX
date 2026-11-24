@@ -220,6 +220,14 @@ def teacher_row(visit, history=None):
     }
 
 
+def retained_scores(visit):
+    scores = paired_scores(visit)
+    capability = visit.get("capability_id")
+    if not scores and isinstance(capability, str) and (measured := score(visit)):
+        return {capability: measured}
+    return scores
+
+
 def mastery_rows(visits):
     latest, grades = {}, {}
     accepted = None
@@ -228,10 +236,7 @@ def mastery_rows(visits):
             continue
         accepted = visit
         capability = visit.get("capability_id")
-        scores = paired_scores(visit)
-        if not scores and isinstance(capability, str) and (measured := score(visit)):
-            scores = {capability: measured}
-        for subject, measured in scores.items():
+        for subject, measured in retained_scores(visit).items():
             owner = grade(visit) if subject == capability else subject.partition(".")[0]
             latest[subject] = (visit, owner, measured)
             grades[owner] = visit
