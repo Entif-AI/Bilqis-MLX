@@ -33,6 +33,46 @@ class PreparedOwner:
                 and self.source_registry is context.source_registry)
 
 
+def _patch_loaded_aliases(targets, around):
+    """Patch only already-loaded canonical production module aliases."""
+    modules = [m for m in tuple(sys.modules.values())
+               if m is not None and getattr(m, '__name__', '').startswith('bilqis_mlx.')]
+    scope_names = ('_learning_first_task_goals', 'factory_evaluation_instruments',
+                   'factory_evaluation_case_from_source')
+    for module in modules:
+        for name in scope_names:
+            fn = vars(module).get(name)
+            if callable(fn) and id(fn) not in targets:
+                targets[id(fn)] = around(fn)
+    for module in modules:
+        for name, value in tuple(vars(module).items()):
+            if id(value) in targets:
+                setattr(module, name, targets[id(value)])
+
+
+def _source_registry_wrapper(fn, owned, counts):
+    @wraps(fn)
+    def call():
+        owner = owned()
+        if owner is None:
+            return fn()
+        if owner.canonical_registry is None:
+            counts['source_registry_miss'] += 1
+            fresh = fn()
+            # Only reuse the actual context's registry if the complete
+            # registered adapter set (including callables) matches.
+            if fresh._by_generator == owner.source_registry._by_generator:
+                counts['source_registry_owner_reuse'] += 1
+                owner.canonical_registry = owner.source_registry
+            else:
+                counts['source_registry_owner_mismatch'] += 1
+                owner.canonical_registry = fresh
+        else:
+            counts['source_registry_hit'] += 1
+        return owner.canonical_registry
+    return call
+
+
 def install_scope():
     """Patch actual function aliases for one disposable worker, after profiling.
 
@@ -100,45 +140,11 @@ def install_scope():
             return owner.lowerers
         return call
 
-    def source_registry(fn):
-        @wraps(fn)
-        def call():
-            owner = owned()
-            if owner is None:
-                return fn()
-            if owner.canonical_registry is None:
-                counts['source_registry_miss'] += 1
-                fresh = fn()
-                # Only reuse the actual context's registry if the complete
-                # registered adapter set (including callables) matches.
-                if fresh._by_generator == owner.source_registry._by_generator:
-                    counts['source_registry_owner_reuse'] += 1
-                    owner.canonical_registry = owner.source_registry
-                else:
-                    counts['source_registry_owner_mismatch'] += 1
-                    owner.canonical_registry = fresh
-            else:
-                counts['source_registry_hit'] += 1
-            return owner.canonical_registry
-        return call
-
     targets = {
         id(registry.default_registry): memoized(registry.default_registry, lambda owner: owner.registries, 'operator_registry'),
         id(registry._implementation_digest): memoized(registry._implementation_digest, lambda owner: owner.implementation_digests, 'operator_digest'),
-        id(school.live_source_registry): source_registry(school.live_source_registry),
+        id(school.live_source_registry): _source_registry_wrapper(school.live_source_registry, owned, counts),
         id(task_goal_registry.live_task_goal_lowerers): lowerers(task_goal_registry.live_task_goal_lowerers),
     }
-    modules = [m for m in tuple(sys.modules.values())
-               if m is not None and getattr(m, '__name__', '').startswith('bilqis_mlx.')]
-    scope_names = ('_learning_first_task_goals', 'factory_evaluation_instruments',
-                   'factory_evaluation_case_from_source')
-    for module in modules:
-        for name in scope_names:
-            fn = vars(module).get(name)
-            if callable(fn) and id(fn) not in targets:
-                targets[id(fn)] = around(fn)
-    for module in modules:
-        for name, value in tuple(vars(module).items()):
-            if id(value) in targets:
-                setattr(module, name, targets[id(value)])
+    _patch_loaded_aliases(targets, around)
     return counts
