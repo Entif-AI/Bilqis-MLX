@@ -1,6 +1,7 @@
 """Derive mechanically enforceable change scope for long-lived feature branches."""
 from __future__ import annotations
 
+from bisect import bisect_left
 from pathlib import Path
 import subprocess
 
@@ -8,7 +9,7 @@ GOVERNANCE_ADOPTION_COMMIT = "f3c33e2ef06650a04914d2660ca9cc5e14f0f08b"
 
 
 def _git(root: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(["git", *args], cwd=root, text=True, capture_output=True, check=check)
+    return subprocess.run(["git", "--no-replace-objects", *args], cwd=root, text=True, capture_output=True, check=check)
 
 
 def _is_ancestor(root: Path, ancestor: str, descendant: str) -> bool:
@@ -19,8 +20,14 @@ def _adoption_point(root: Path, head: str) -> str | None:
     if not _is_ancestor(root, GOVERNANCE_ADOPTION_COMMIT, head):
         return None
     first_parent = _git(root, "rev-list", "--first-parent", "--reverse", head).stdout.splitlines()
-    return next((commit for commit in first_parent
-                 if _is_ancestor(root, GOVERNANCE_ADOPTION_COMMIT, commit)), None)
+    # Reachability of an ancestor is monotone along the first-parent chain.
+    # A direct adoption is already known; an adoption merge needs only O(log n)
+    # ancestry checks instead of one process per historical commit.
+    if GOVERNANCE_ADOPTION_COMMIT in first_parent:
+        return GOVERNANCE_ADOPTION_COMMIT
+    index = bisect_left(first_parent, True, key=lambda commit: _is_ancestor(
+        root, GOVERNANCE_ADOPTION_COMMIT, commit))
+    return first_parent[index] if index < len(first_parent) else None
 
 
 def effective_base(root: Path, requested_base: str, head: str = "HEAD") -> str:
@@ -34,7 +41,10 @@ def effective_base(root: Path, requested_base: str, head: str = "HEAD") -> str:
         # unrelated mainline work look branch-owned.
         return ordinary
     adoption = _adoption_point(root, head)
-    if not adoption or adoption == GOVERNANCE_ADOPTION_COMMIT:
+    if (not adoption or adoption == GOVERNANCE_ADOPTION_COMMIT
+            or _is_ancestor(root, adoption, ordinary)):
+        # A branch that inherited main's already-adopted governance has no
+        # private pre-adoption history to protect.
         return ordinary
     parent = _git(root, "rev-parse", f"{adoption}^1", check=False)
     return parent.stdout.strip() if parent.returncode == 0 and parent.stdout.strip() else ordinary
@@ -106,8 +116,10 @@ def scoped_name_status(
     ordinary = _git(root, "merge-base", requested_base, head).stdout.strip()
     boundary = effective_base(root, requested_base, head)
     result = _git(root, "diff", "--name-status", "-M", f"--diff-filter={diff_filter}", boundary, head)
+    if boundary == ordinary:
+        return boundary, result.stdout
     adoption = _adoption_point(root, head)
-    if boundary == ordinary or not adoption:
+    if not adoption:
         return boundary, result.stdout
     touched = _post_adoption_touched_paths(root, adoption, head)
     lines = [line for line in result.stdout.splitlines()
