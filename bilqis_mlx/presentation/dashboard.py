@@ -320,7 +320,7 @@ def build(run_dir: Path, *, stream=None, reserve_gib: float = 100.) -> Dashboard
 
 def ingest(board: Dashboard, event: dict) -> None:
     """Incrementally update the same renderer used by past/future grades."""
-    from .bamf_terminal_accounting import ingest_bamf_command_event
+    from .bamf_terminal.accounting import ingest_bamf_command_event
     if ingest_bamf_command_event(board, event):
         return
     if event.get("event") == "BAMF_OPERATOR_STATUS_OBSERVED":
