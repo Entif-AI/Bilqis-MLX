@@ -6,17 +6,23 @@ bug, rewrite source, or alter the currently hash-bound training recipe.
 from __future__ import annotations
 
 import argparse
-import ast
 from collections import Counter, defaultdict
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 import json
 from pathlib import Path
 import subprocess
+import time
 
 try:
     from quality.change_scope import GOVERNANCE_ADOPTION_COMMIT, scoped_name_status
+    from quality.code_smell_rules import Finding, inspect_source
+    from quality.smell_inspection import SourceInspection
+    from quality.verification_ledger import VerificationLedger, full_requested, ledger_path
 except ModuleNotFoundError:  # dynamic test import from repository root
     from scripts.quality.change_scope import GOVERNANCE_ADOPTION_COMMIT, scoped_name_status
+    from scripts.quality.code_smell_rules import Finding, inspect_source
+    from scripts.quality.smell_inspection import SourceInspection
+    from scripts.quality.verification_ledger import VerificationLedger, full_requested, ledger_path
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,8 +30,6 @@ DEFAULT_DIRS = tuple(sorted(
     path.name for path in ROOT.iterdir()
     if path.is_dir() and (path.name.startswith('bilqis_') or
                           path.name in ('scripts','tests'))))
-GRADE_BOUNDS = {'grade', 'number', 'i', 'index', 'stage'}
-ALLOWED_LITERALS = {0, 1, 2, 3, 4, 8, 16, 32, 64}
 
 PHYSICAL_OWNER_GROUPS = frozenset({
     "_projection", "_admission", "_capability", "_source", "_model", "_custody",
@@ -71,71 +75,6 @@ def logical_source_path(path: str) -> str:
     return Path(path).as_posix()
 
 
-@dataclass(frozen=True)
-class Finding:
-    path: str
-    line: int
-    rule: str
-    context: str
-
-
-def _function_nodes(tree):
-    return [node for node in ast.walk(tree)
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))]
-
-
-def _boundary_operand(node):
-    return isinstance(node, ast.Name) and node.id.lower() in GRADE_BOUNDS
-
-
-def inspect_source(path: str, source: str) -> list[Finding]:
-    """Inspect a single source string; no imports or code execution."""
-    try:
-        tree = ast.parse(source, filename=path)
-    except SyntaxError as error:
-        return [Finding(path, error.lineno or 1, 'syntax', str(error.msg))]
-    findings = []
-    for node in _function_nodes(tree):
-        length = node.end_lineno - node.lineno + 1
-        if length > 85:
-            findings.append(Finding(path, node.lineno, 'long-function',
-                                    f'{node.name}: {length} lines'))
-        branches = sum(isinstance(item, (ast.If, ast.IfExp, ast.For, ast.AsyncFor,
-                         ast.While, ast.Try, ast.Match)) for item in ast.walk(node))
-        if branches > 18:
-            findings.append(Finding(path, node.lineno, 'branch-density',
-                                    f'{node.name}: {branches} branches'))
-    error_codes = defaultdict(list)
-    for node in ast.walk(tree):
-        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
-                and node.func.id == 'ValueError' and node.args
-                and isinstance(node.args[0], ast.Constant)
-                and isinstance(node.args[0].value, str)):
-            code = node.args[0].value
-            if len(code) >= 8 and code.isupper() and '_' in code:
-                error_codes[code].append(node.lineno)
-        if (isinstance(node, ast.Compare) and any(_boundary_operand(x)
-             for x in (node.left, *node.comparators))):
-            for operand in (node.left, *node.comparators):
-                if (isinstance(operand, ast.Constant) and type(operand.value) is int
-                        and operand.value >= 10 and operand.value not in ALLOWED_LITERALS):
-                    findings.append(Finding(path,node.lineno,'positional-grade-boundary',
-                            f'grade-like comparison to literal {operand.value}'))
-    for code,lines in error_codes.items():
-        if len(lines) >= 2:
-            findings.append(Finding(path, min(lines), 'duplicate-error-code',
-                                    f'{code}: used {len(lines)} times'))
-    for statement in tree.body:
-        if isinstance(statement, (ast.Assign, ast.AnnAssign)):
-            value = statement.value
-            if isinstance(value, (ast.List, ast.Dict, ast.Set)):
-                targets = statement.targets if isinstance(statement,ast.Assign) else [statement.target]
-                for target in targets:
-                    if isinstance(target, ast.Name) and not target.id.startswith('__'):
-                        findings.append(Finding(path, statement.lineno,'module-mutable-literal',
-                                                target.id))
-    return sorted(findings, key=lambda f: (f.line,f.rule))
-
 
 def _paths(user_paths):
     if user_paths is not None:
@@ -145,13 +84,16 @@ def _paths(user_paths):
                   if path.is_file())
 
 
-def audit(paths):
+def audit(paths, inspection=None):
     records = []
     for path in paths:
         if not path.is_file() or path.suffix != '.py':
             continue
         name = logical_source_path(str(path.relative_to(ROOT)))
-        records.extend(inspect_source(name, path.read_text(encoding='utf-8')))
+        if inspection is None:
+            records.extend(inspect_source(name, path.read_text(encoding='utf-8')))
+        else:
+            records.extend(inspection.current(name, path))
     return sorted(records, key=lambda f:(f.path,f.line,f.rule))
 
 
@@ -212,36 +154,50 @@ def _debt_baseline_ref(requested_base, scoped_base):
     return requested_base if result.returncode==0 else scoped_base
 
 
-def _base_findings(merge_base,records):
-    # A historical logical path may already have moved to a physical runtime
-    # owner on the PR base. Resolve that owner from the base tree itself rather
-    # than treating its existing findings as newly introduced debt. An
-    # ambiguous logical owner is never evidence of a pre-existing finding.
-    tree=subprocess.run(['git','ls-tree','-r','--name-only','-z',merge_base],
-                        cwd=ROOT,check=True,text=True,capture_output=True)
-    physical_owners=defaultdict(list)
-    for name in tree.stdout.split('\0'):
-        if name.endswith('.py'):
-            physical_owners[logical_source_path(name)].append(name)
-    found=[]
-    for status,old,new in records:
-        result=subprocess.run(['git','show',f'{merge_base}:{old}'],cwd=ROOT,text=True,
-                              capture_output=True)
-        logical_old = logical_source_path(new)
-        if result.returncode != 0 and logical_old != new:
-            canonical=subprocess.run(
-                ['git','show',f'{merge_base}:{logical_old}'],cwd=ROOT,text=True,
-                capture_output=True)
-            if canonical.returncode==0:
-                result=canonical
-        if result.returncode != 0 and status.startswith('R'):
-            owners=physical_owners[logical_old]
-            if len(owners)==1:
-                result=subprocess.run(['git','show',f'{merge_base}:{owners[0]}'],
-                                      cwd=ROOT,text=True,capture_output=True)
-        if result.returncode==0:
-            found.extend(inspect_source(logical_source_path(new),result.stdout))
-    return sorted(found,key=lambda f:(f.path,f.line,f.rule))
+def _base_findings(merge_base, records, inspection=None):
+    # Preserve the existing rename and canonical-owner debt semantics.
+    tree = subprocess.run(
+        ['git', '--no-replace-objects', 'ls-tree', '-r', '-z', merge_base], cwd=ROOT,
+        check=True, capture_output=True,
+    )
+    blobs = {}
+    owners = defaultdict(list)
+    for entry in tree.stdout.split(b'\0'):
+        if not entry:
+            continue
+        header, raw_name = entry.split(b'\t', 1)
+        _mode, kind, oid = header.decode().split()
+        name = raw_name.decode('utf-8')
+        if kind == 'blob':
+            blobs[name] = oid
+            if name.endswith('.py'):
+                owners[logical_source_path(name)].append(name)
+    found = []
+    for status, old, new in records:
+        logical = logical_source_path(new)
+        if old in blobs:
+            source = old
+        elif logical != new and logical in blobs:
+            source = logical
+        elif status.startswith('R') and len(owners[logical]) == 1:
+            source = owners[logical][0]
+        else:
+            continue
+        oid = blobs[source]
+        if inspection is not None:
+            found.extend(inspection.committed(logical, oid))
+        else:
+            raw = subprocess.check_output(['git', '--no-replace-objects', 'cat-file', 'blob', oid], cwd=ROOT)
+            found.extend(inspect_source(logical, raw.decode('utf-8')))
+    return sorted(found, key=lambda f: (f.path, f.line, f.rule))
+
+
+def _scoped_baseline(args, changed, merge_base, inspection):
+    if changed is None:
+        return None
+    baseline_ref = merge_base if args.staged else _debt_baseline_ref(args.changed_from, merge_base)
+    return {'fingerprints': [list(fingerprint(item))
+                             for item in _base_findings(baseline_ref, changed, inspection)]}
 
 
 def main(argv=None):
@@ -250,6 +206,7 @@ def main(argv=None):
     scope=parser.add_mutually_exclusive_group()
     scope.add_argument('--staged',action='store_true',help='Audit staged Python files only')
     scope.add_argument('--changed-from',help='Audit Python files changed from merge-base with REF')
+    parser.add_argument('--full', action='store_true', help='Recompute all scoped findings')
     parser.add_argument('--json',action='store_true',help='Output machine-readable findings')
     parser.add_argument('--strict',action='store_true',help='Exit nonzero on any finding; explicit opt-in')
     parser.add_argument('--write-baseline',type=Path,
@@ -267,7 +224,13 @@ def main(argv=None):
     else:
         scoped=args.paths
     paths=_paths(scoped if args.staged or args.changed_from else (args.paths or None))
-    found=audit(paths)
+    started = time.perf_counter()
+    with VerificationLedger(ledger_path(ROOT), full=args.full or full_requested()) as ledger:
+        inspection = SourceInspection(ROOT, ledger)
+        found = audit(paths, inspection)
+        base_findings = _scoped_baseline(args, changed, merge_base if changed is not None else None,
+                                         inspection)
+        ledger.report('code-smell', time.perf_counter() - started)
     if args.write_baseline:
         if args.staged or args.changed_from or args.paths:
             raise ValueError('HYGIENE_BASELINE_REQUIRES_WHOLE_CURRENT_CORE')
@@ -277,11 +240,8 @@ def main(argv=None):
         args.write_baseline.parent.mkdir(parents=True,exist_ok=True)
         args.write_baseline.write_text(json.dumps(output,indent=2)+'\n',encoding='utf-8')
     new=[]
-    if args.staged or args.changed_from:
-        baseline_ref=(merge_base if args.staged else
-                      _debt_baseline_ref(args.changed_from,merge_base))
-        prior={'fingerprints':[list(fingerprint(item)) for item in _base_findings(baseline_ref,changed)]}
-        new=compare_to_baseline(found,prior)
+    if base_findings is not None:
+        new = compare_to_baseline(found, base_findings)
     elif args.check_baseline:
         baseline=json.loads(args.check_baseline.read_text(encoding='utf-8'))
         if baseline.get('schema')!='bilqis.code-smell-baseline/v1':

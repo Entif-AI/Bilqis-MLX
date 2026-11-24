@@ -1,0 +1,102 @@
+"""Git-native input identities for reusable CI command results."""
+from __future__ import annotations
+
+import hashlib
+import importlib.metadata
+import os
+from pathlib import Path
+import platform
+import shutil
+import subprocess
+import sys
+
+from .verification_ledger import fingerprint
+
+
+def _git(root: Path, *args: str) -> bytes:
+    return subprocess.check_output(["git", "--no-replace-objects", *args], cwd=root)
+
+
+def frontier_digest(root: Path, check: str) -> str:
+    # Broad commands use the complete committed tree until a narrower input
+    # boundary has been independently qualified.
+    return fingerprint(check, _git(root, "rev-parse", "HEAD^{tree}").decode().strip())
+
+
+def hosted_runner() -> bool:
+    return (os.environ.get("GITHUB_ACTIONS") == "true"
+            and os.environ.get("RUNNER_ENVIRONMENT") == "github-hosted")
+
+
+def trusted_producer() -> bool:
+    return (hosted_runner() and os.environ.get("GITHUB_REF") == "refs/heads/main"
+            and os.environ.get("GITHUB_EVENT_NAME") in ("push", "schedule"))
+
+
+def clean_tracked_tree(root: Path, *, command: list[str]) -> bool:
+    if subprocess.run(["git", "--no-replace-objects", "diff", "--quiet", "HEAD", "--"],
+                      cwd=root).returncode:
+        return False
+    untracked = _git(root, "ls-files", "--others", "--exclude-standard", "--directory", "-z")
+    if any(not os.fsdecode(path).startswith("bilqis_mlx_private.egg-info/")
+           for path in untracked.split(b"\0") if path):
+        return False
+    ignored = _git(root, "ls-files", "--others", "--ignored", "--exclude-standard",
+                   "--directory", "-z")
+    # The core Python gates run after npm ci. Their node_modules directory is
+    # generated from the bound package lock and is not a Python input.
+    allowed = command[0] != "npm"
+    return all(allowed and "node_modules" in Path(os.fsdecode(path)).parts
+               for path in ignored.split(b"\0") if path)
+
+
+def _configuration() -> dict[str, str]:
+    # Runner correlation/temporary file identities do not alter these commands.
+    # Bind all other environment, including npm, shell, loader and import config.
+    volatile = {
+        "PWD", "OLDPWD", "SHLVL", "_", "GITHUB_ACTION", "GITHUB_ACTION_PATH",
+        "GITHUB_EVENT_PATH", "GITHUB_ENV", "GITHUB_OUTPUT", "GITHUB_PATH",
+        "GITHUB_STEP_SUMMARY", "GITHUB_STATE", "GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT",
+        "GITHUB_RUN_NUMBER", "GITHUB_REF", "GITHUB_REF_NAME", "GITHUB_REF_TYPE",
+        "GITHUB_HEAD_REF", "GITHUB_BASE_REF", "GITHUB_SHA", "GITHUB_WORKFLOW_SHA",
+        "GITHUB_EVENT_NAME", "GITHUB_WORKFLOW_REF", "GITHUB_REF_PROTECTED",
+        "GITHUB_ACTOR", "GITHUB_ACTOR_ID", "GITHUB_TRIGGERING_ACTOR",
+        "RUNNER_TEMP", "RUNNER_TRACKING_ID", "RUNNER_NAME",
+        "BILQIS_VERIFICATION_LEDGER", "BILQIS_VERIFICATION_FULL",
+        "BILQIS_VERIFICATION_TRUSTED_LEDGER", "BILQIS_VERIFICATION_TRUSTED_SHA256",
+        "BILQIS_VERIFICATION_TRUSTED_DESTINATION",
+    }
+    return {key: value for key, value in os.environ.items() if key not in volatile}
+
+
+def execution_identity(root: Path, check: str, command: list[str]) -> tuple[str, str] | None:
+    if not hosted_runner() or not os.environ.get("ImageVersion") or not os.environ.get("ImageOS"):
+        return None
+    if not clean_tracked_tree(root, command=command):
+        return None
+    packages = sorted(
+        (dist.metadata["Name"], dist.version,
+         hashlib.sha256((dist.read_text("RECORD") or "").encode()).hexdigest())
+        for dist in importlib.metadata.distributions()
+    )
+    executable = shutil.which(command[0])
+    if executable is None:
+        return None
+    tools = [str(Path(executable).resolve()), str(Path(sys.executable).resolve())]
+    if command[0] == "npm":
+        for tool in ("node", "npm"):
+            resolved = shutil.which(tool)
+            if resolved is None:
+                return None
+            tools.extend((str(Path(resolved).resolve()),
+                          subprocess.check_output([tool, "--version"], text=True).strip()))
+        config = subprocess.check_output(["npm", "config", "list", "--json"], cwd=root)
+        tools.append(hashlib.sha256(config).hexdigest())
+    head = _git(root, "rev-parse", "HEAD").decode().strip()
+    environment = fingerprint(
+        sys.implementation.name, sys.version, platform.platform(), platform.machine(),
+        os.environ["ImageOS"], os.environ["ImageVersion"],
+        os.environ.get("RUNNER_OS"), os.environ.get("RUNNER_ARCH"),
+        packages, tools, _configuration(),
+    )
+    return head, fingerprint("ci-command/v1", check, command, frontier_digest(root, check), environment)
