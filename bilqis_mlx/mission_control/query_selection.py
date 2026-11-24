@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from .contracts.model import WireRecord
 from .contracts.dossier import CapabilityDossier
+from .contracts.events import LearningHistorySummary
 from .contracts.observability import (
     GenerationManifest, GenerationManifestV2, MemorySnapshot, MemorySnapshotV2, NeuralRuntimeSample, ResourceSample,
     SemanticAtlasSnapshot, SemanticProjectionSnapshot, SemanticReleaseSnapshot,
@@ -131,7 +132,7 @@ def _current_identity(record: WireRecord):
 
 def matches_identity(
         item: WireRecord, request: QueryRequest, *, match_record_id: bool = True) -> bool:
-    if isinstance(item, TrainerObservation) and (
+    if isinstance(item, (TrainerObservation, LearningHistorySummary)) and (
             request.mode is not QueryMode.CURRENT or request.generation is not None
             or request.as_of is not None or request.frontier_id is not None):
         return False

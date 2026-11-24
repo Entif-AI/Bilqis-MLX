@@ -4909,6 +4909,722 @@
       "type": "object",
       "x-bilqis-runtime-validator": "bilqis_mlx.mission_control.codec.decode_record"
     },
+    "bilqis.bamf.mission-control.learning-history-summary/v1": {
+      "$id": "bilqis.bamf.mission-control.learning-history-summary/v1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "accepted_count": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "active_episode": {
+          "anyOf": [
+            {
+              "additionalProperties": false,
+              "properties": {
+                "capability_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "completed_at": {
+                  "anyOf": [
+                    {
+                      "maximum": 9007199254740991,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "episode_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "meta": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "as_of": {
+                      "anyOf": [
+                        {
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "authority": {
+                      "enum": [
+                        "SOURCE_AUTHORITATIVE",
+                        "MEASURED",
+                        "DERIVED",
+                        "INFERRED"
+                      ],
+                      "type": "string"
+                    },
+                    "coverage": {
+                      "enum": [
+                        "COMPLETE",
+                        "PARTIAL",
+                        "UNKNOWN",
+                        "NOT_APPLICABLE"
+                      ],
+                      "type": "string"
+                    },
+                    "evidence_refs": {
+                      "items": {
+                        "minLength": 1,
+                        "not": {
+                          "pattern": "\\n"
+                        },
+                        "pattern": "\\S",
+                        "type": "string",
+                        "x-bilqis-unicode-domain": "scalar-values"
+                      },
+                      "type": "array",
+                      "uniqueItems": true
+                    },
+                    "materialized_at": {
+                      "maximum": 9007199254740991,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "observed_at": {
+                      "anyOf": [
+                        {
+                          "maximum": 9007199254740991,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "receipt_refs": {
+                      "items": {
+                        "minLength": 1,
+                        "not": {
+                          "pattern": "\\n"
+                        },
+                        "pattern": "\\S",
+                        "type": "string",
+                        "x-bilqis-unicode-domain": "scalar-values"
+                      },
+                      "type": "array",
+                      "uniqueItems": true
+                    },
+                    "record_id": {
+                      "minLength": 1,
+                      "not": {
+                        "pattern": "\\n"
+                      },
+                      "pattern": "\\S",
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
+                    },
+                    "run": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "candidate_identity_sha256": {
+                              "pattern": "^[0-9a-f]{64}$",
+                              "type": "string",
+                              "x-bilqis-unicode-domain": "scalar-values"
+                            },
+                            "factory_release_sha256": {
+                              "pattern": "^[0-9a-f]{64}$",
+                              "type": "string",
+                              "x-bilqis-unicode-domain": "scalar-values"
+                            },
+                            "generation": {
+                              "maximum": 9007199254740991,
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "generation_manifest_sha256": {
+                              "pattern": "^[0-9a-f]{64}$",
+                              "type": "string",
+                              "x-bilqis-unicode-domain": "scalar-values"
+                            },
+                            "run_id": {
+                              "minLength": 1,
+                              "not": {
+                                "pattern": "\\n"
+                              },
+                              "pattern": "\\S",
+                              "type": "string",
+                              "x-bilqis-unicode-domain": "scalar-values"
+                            },
+                            "run_identity_sha256": {
+                              "pattern": "^[0-9a-f]{64}$",
+                              "type": "string",
+                              "x-bilqis-unicode-domain": "scalar-values"
+                            },
+                            "semantic_release_sha256": {
+                              "pattern": "^[0-9a-f]{64}$",
+                              "type": "string",
+                              "x-bilqis-unicode-domain": "scalar-values"
+                            },
+                            "topology_sha256": {
+                              "pattern": "^[0-9a-f]{64}$",
+                              "type": "string",
+                              "x-bilqis-unicode-domain": "scalar-values"
+                            }
+                          },
+                          "required": [
+                            "run_id",
+                            "run_identity_sha256",
+                            "generation",
+                            "generation_manifest_sha256",
+                            "candidate_identity_sha256",
+                            "factory_release_sha256",
+                            "semantic_release_sha256",
+                            "topology_sha256"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "source_refs": {
+                      "items": {
+                        "minLength": 1,
+                        "not": {
+                          "pattern": "\\n"
+                        },
+                        "pattern": "\\S",
+                        "type": "string",
+                        "x-bilqis-unicode-domain": "scalar-values"
+                      },
+                      "type": "array",
+                      "uniqueItems": true
+                    }
+                  },
+                  "required": [
+                    "record_id",
+                    "run",
+                    "materialized_at",
+                    "observed_at",
+                    "as_of",
+                    "coverage",
+                    "authority",
+                    "source_refs",
+                    "evidence_refs",
+                    "receipt_refs"
+                  ],
+                  "type": "object"
+                },
+                "started_at": {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "state": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "visit_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                }
+              },
+              "required": [
+                "meta",
+                "episode_id",
+                "capability_id",
+                "visit_id",
+                "state",
+                "started_at",
+                "completed_at"
+              ],
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "decision_count": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            },
+            "materialized_at": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            },
+            "record_id": {
+              "minLength": 1,
+              "not": {
+                "pattern": "\\n"
+              },
+              "pattern": "\\S",
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
+            },
+            "run": {
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                }
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
+            },
+            "source_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "recent_decisions": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "candidate_id": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "capability_id": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "meta": {
+                "additionalProperties": false,
+                "properties": {
+                  "as_of": {
+                    "anyOf": [
+                      {
+                        "maximum": 9007199254740991,
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "authority": {
+                    "enum": [
+                      "SOURCE_AUTHORITATIVE",
+                      "MEASURED",
+                      "DERIVED",
+                      "INFERRED"
+                    ],
+                    "type": "string"
+                  },
+                  "coverage": {
+                    "enum": [
+                      "COMPLETE",
+                      "PARTIAL",
+                      "UNKNOWN",
+                      "NOT_APPLICABLE"
+                    ],
+                    "type": "string"
+                  },
+                  "evidence_refs": {
+                    "items": {
+                      "minLength": 1,
+                      "not": {
+                        "pattern": "\\n"
+                      },
+                      "pattern": "\\S",
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "materialized_at": {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "observed_at": {
+                    "anyOf": [
+                      {
+                        "maximum": 9007199254740991,
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "receipt_refs": {
+                    "items": {
+                      "minLength": 1,
+                      "not": {
+                        "pattern": "\\n"
+                      },
+                      "pattern": "\\S",
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "record_id": {
+                    "minLength": 1,
+                    "not": {
+                      "pattern": "\\n"
+                    },
+                    "pattern": "\\S",
+                    "type": "string",
+                    "x-bilqis-unicode-domain": "scalar-values"
+                  },
+                  "run": {
+                    "anyOf": [
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "candidate_identity_sha256": {
+                            "pattern": "^[0-9a-f]{64}$",
+                            "type": "string",
+                            "x-bilqis-unicode-domain": "scalar-values"
+                          },
+                          "factory_release_sha256": {
+                            "pattern": "^[0-9a-f]{64}$",
+                            "type": "string",
+                            "x-bilqis-unicode-domain": "scalar-values"
+                          },
+                          "generation": {
+                            "maximum": 9007199254740991,
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "generation_manifest_sha256": {
+                            "pattern": "^[0-9a-f]{64}$",
+                            "type": "string",
+                            "x-bilqis-unicode-domain": "scalar-values"
+                          },
+                          "run_id": {
+                            "minLength": 1,
+                            "not": {
+                              "pattern": "\\n"
+                            },
+                            "pattern": "\\S",
+                            "type": "string",
+                            "x-bilqis-unicode-domain": "scalar-values"
+                          },
+                          "run_identity_sha256": {
+                            "pattern": "^[0-9a-f]{64}$",
+                            "type": "string",
+                            "x-bilqis-unicode-domain": "scalar-values"
+                          },
+                          "semantic_release_sha256": {
+                            "pattern": "^[0-9a-f]{64}$",
+                            "type": "string",
+                            "x-bilqis-unicode-domain": "scalar-values"
+                          },
+                          "topology_sha256": {
+                            "pattern": "^[0-9a-f]{64}$",
+                            "type": "string",
+                            "x-bilqis-unicode-domain": "scalar-values"
+                          }
+                        },
+                        "required": [
+                          "run_id",
+                          "run_identity_sha256",
+                          "generation",
+                          "generation_manifest_sha256",
+                          "candidate_identity_sha256",
+                          "factory_release_sha256",
+                          "semantic_release_sha256",
+                          "topology_sha256"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "source_refs": {
+                    "items": {
+                      "minLength": 1,
+                      "not": {
+                        "pattern": "\\n"
+                      },
+                      "pattern": "\\S",
+                      "type": "string",
+                      "x-bilqis-unicode-domain": "scalar-values"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  }
+                },
+                "required": [
+                  "record_id",
+                  "run",
+                  "materialized_at",
+                  "observed_at",
+                  "as_of",
+                  "coverage",
+                  "authority",
+                  "source_refs",
+                  "evidence_refs",
+                  "receipt_refs"
+                ],
+                "type": "object"
+              },
+              "outcome": {
+                "enum": [
+                  "ACCEPTED",
+                  "REJECTED",
+                  "HELD",
+                  "ACTION_REQUIRED"
+                ],
+                "type": "string"
+              },
+              "reason_code": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              }
+            },
+            "required": [
+              "meta",
+              "candidate_id",
+              "capability_id",
+              "outcome",
+              "reason_code"
+            ],
+            "type": "object"
+          },
+          "maxItems": 8,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "rejected_count": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.learning-history-summary/v1",
+          "type": "string"
+        },
+        "source_rows_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        },
+        "visit_count": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "source_rows_sha256",
+        "visit_count",
+        "decision_count",
+        "accepted_count",
+        "rejected_count",
+        "recent_decisions",
+        "active_episode"
+      ],
+      "title": "LearningHistorySummary",
+      "type": "object",
+      "x-bilqis-runtime-invariants": [
+        "counts describe projected CURRENT episode rows, not lifetime training counters",
+        "recent decisions and active episode belong to the same run through the accepted tip"
+      ],
+      "x-bilqis-runtime-validator": "bilqis_mlx.mission_control.codec.decode_record"
+    },
     "bilqis.bamf.mission-control.memory-snapshot/v1": {
       "$id": "bilqis.bamf.mission-control.memory-snapshot/v1",
       "$schema": "https://json-schema.org/draft/2020-12/schema",

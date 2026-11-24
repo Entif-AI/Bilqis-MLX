@@ -7,7 +7,7 @@ from .envelopes import (
 )
 from .events import (
     CandidateDecision, CorrectionEvent, FrameCompileReceipt, LearningEpisode,
-    SalienceEvent,
+    SalienceEvent, LearningHistorySummary,
 )
 from .observability import (
     GenerationManifest, GenerationManifestV2, MemorySnapshot, MemorySnapshotV2, NeuralRuntimeSample, ResourceSample,
@@ -54,6 +54,7 @@ ALL_RECORD_TYPES = (
     CurriculumFrontier,
     LearningEpisode,
     CandidateDecision,
+    LearningHistorySummary,
     SemanticAtlasSnapshot,
     SemanticReleaseSnapshot,
     SemanticProjectionSnapshot,

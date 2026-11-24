@@ -19,6 +19,7 @@ from .native_rejections import rejection_material
 from .native_contracts import run_ref
 from .observed import observed_records, publish_observed_events
 from .projection.memory import accepted_memory_records
+from .projection.learning_history import LearningHistoryProjection, learning_history_summary
 from .projection.capability_dossier import (
     accepted_capability_dossiers as _accepted_capability_dossiers,
 )
@@ -105,7 +106,7 @@ class _AcceptedBaseCache:
 def _materialize_authenticated_history(
         run_dir: Path, history: tuple[AuthenticatedGeneration, ...], *,
         include_live_rejections: bool, accepted_base=_project_accepted_base,
-        rejection_source=None,
+        rejection_source=None, learning_summary=learning_history_summary,
 ) -> NativeProjectionMaterial:
     """Project accepted custody, rejection evidence, and the live overlay."""
     run_dir = Path(run_dir)
@@ -128,6 +129,10 @@ def _materialize_authenticated_history(
             run_dir, tuple(run_ref(item) for item in history),
             accepted_health_by_manifest=accepted_health))
     records.extend(rejected_records)
+    if include_live_rejections:
+        summary = learning_summary(history[-1], records)
+        if summary is not None:
+            records.append(summary)
     events.extend(rejected_events)
     return NativeProjectionMaterial(
         tuple(records), tuple(events), base.generation_manifests, accepted_health)
@@ -184,7 +189,8 @@ def native_query_source(run_dir: Path):
         authenticated_history_fn=authenticated_history,
         materialize_history_fn=partial(
             _materialize_authenticated_history, accepted_base=_AcceptedBaseCache(),
-            rejection_source=RejectionLedgerCache()),
+            rejection_source=RejectionLedgerCache(),
+            learning_summary=LearningHistoryProjection()),
         run_refs_fn=_run_refs,
         observed_records_fn=observed_records,
     )

@@ -205,6 +205,12 @@ def record_schema(record_type: type[WireRecord]) -> dict:
             "type": "string", "const": "PARTIAL",
         }
         properties["missing_fields"]["minItems"] = 1
+    elif record_type.__name__ == "LearningHistorySummary":
+        properties["recent_decisions"]["maxItems"] = 8
+        schema["x-bilqis-runtime-invariants"] = [
+            "counts describe projected CURRENT episode rows, not lifetime training counters",
+            "recent decisions and active episode belong to the same run through the accepted tip",
+        ]
     elif record_type.__name__ == "StaleEnvelope":
         schema["x-bilqis-runtime-invariants"] = [
             "meta.as_of == stale_as_of",

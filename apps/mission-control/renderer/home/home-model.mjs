@@ -3,6 +3,7 @@ import { formatDurationSeconds } from "../foundation/temporal.mjs";
 
 const QUERY_SCHEMA = "bilqis.bamf.control-plane.query/v1";
 const PRESENT = "PRESENT";
+export const HISTORY_SUMMARY_SCHEMA = "bilqis.bamf.mission-control.learning-history-summary/v1";
 const NOTIFICATION_EVENT_FAMILIES = new Set([
   "capability.graduated", "grade.promoted", "semantic.release.changed",
   "graph.materialized", "qualification.gate.changed", "blocker.changed",
@@ -183,18 +184,20 @@ export function projectionFromPages(pages, context) {
   const teacher = latest(teachers, "bilqis.bamf.mission-control.teacher-snapshot/v1");
   const capabilityRows = capabilities.filter((record) => record.schema_version === "bilqis.bamf.mission-control.capability-snapshot/v1");
   const episodeRows = episodes.filter((record) => record.schema_version === "bilqis.bamf.mission-control.learning-episode/v1");
-  const decisions = episodes.filter((record) => record.schema_version === "bilqis.bamf.mission-control.candidate-decision/v1");
+  const summary = latest(episodes, HISTORY_SUMMARY_SCHEMA);
+  const decisions = summary?.recent_decisions ?? episodes.filter((record) => record.schema_version === "bilqis.bamf.mission-control.candidate-decision/v1");
   const episodeComplete = completePage(pages, "episode");
   const currentCorrect = measuredSum(capabilityRows, "score_correct");
   const currentTotal = measuredSum(capabilityRows, "score_total");
   const debt = measuredSum(capabilityRows, "debt");
-  const retained = observedCount(decisions.filter((record) => record.outcome === "ACCEPTED"), episodeComplete);
-  const rejected = observedCount(decisions.filter((record) => record.outcome === "REJECTED"), episodeComplete);
-  const activeEpisode = episodeRows.find((record) => record.state !== "COMPLETED") ?? null;
+  const count = (number) => number || (episodeComplete ? 0 : null);
+  const retained = count(summary?.accepted_count ?? decisions.filter((record) => record.outcome === "ACCEPTED").length);
+  const rejected = count(summary?.rejected_count ?? decisions.filter((record) => record.outcome === "REJECTED").length);
+  const activeEpisode = summary?.active_episode ?? episodeRows.find((record) => record.state !== "COMPLETED") ?? null;
   const correctionDebt = observedCount(corrections.filter((record) => record.state === "REQUALIFICATION_REQUIRED"), completePage(pages, "correction"));
   const qualified = capabilityRows.filter((record) => record.status === "QUALIFIED").length;
   const domainRecordCount = (
-    capabilities.length + episodes.length + schoolRecords.length + semanticRecords.length + neuralRecords.length +
+    capabilities.length + (summary ? summary.visit_count + summary.decision_count : episodes.length) + schoolRecords.length + semanticRecords.length + neuralRecords.length +
     resources.length + corrections.length + teachers.length + notifications.length
   );
   const startup = run && !observed.current && context?.mode !== "HISTORICAL" && domainRecordCount === 0
@@ -264,7 +267,7 @@ export function projectionFromPages(pages, context) {
       running: typeof context?.operatorActive === "boolean" ? context.operatorActive : null,
       elapsed: Number.isFinite(observed.current?.elapsed_ms)
         ? formatDurationSeconds(observed.current.elapsed_ms / 1000) : null,
-      visits: observedCount(episodeRows, episodeComplete),
+      visits: count(summary?.visit_count ?? episodeRows.length),
       visitRate: null,
       retainedCandidates: retained,
       rejectedCandidates: rejected,

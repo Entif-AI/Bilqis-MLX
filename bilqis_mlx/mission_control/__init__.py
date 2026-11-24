@@ -6,7 +6,7 @@ from .contracts.envelopes import (
 )
 from .contracts.events import (
     CandidateDecision, CandidateOutcome, CorrectionEvent, FrameCompileReceipt,
-    LearningEpisode, SalienceEvent,
+    LearningEpisode, LearningHistorySummary, SalienceEvent,
 )
 from .contracts.factory import (
     FactoryAdmissionAuthority, FactoryBlocker, FactoryCockpitSnapshot,
@@ -62,7 +62,7 @@ __all__ = (
     "FactoryCurrencyState", "FactoryDeliveryStatus", "FactoryGradeFrontier",
     "FactoryLifecycleStatus", "FactoryRunLineage", "FactorySubjectKind",
     "FactoryTopologyEvidence", "FactoryTopologyKnowledge",
-    "LearningEpisode", "MemorySnapshot", "MemorySnapshotV2", "MissionControlContractError",
+    "LearningEpisode", "LearningHistorySummary", "MemorySnapshot", "MemorySnapshotV2", "MissionControlContractError",
     "Notification", "NotificationKind", "NotificationSeverity", "NotificationState",
     "MissionControlQueryCatalog",
     "MissionControlProjection", "PROJECTION_SCHEMA", "PROJECTION_SCHEMA_VERSION",

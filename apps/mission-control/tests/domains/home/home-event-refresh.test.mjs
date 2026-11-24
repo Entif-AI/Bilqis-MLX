@@ -40,7 +40,7 @@ test("event bursts refresh the same family once without losing any history", asy
     h.event({ event_family: "candidate.rejected" }),
     h.event({ event_family: "run.state.changed" }),
     h.event({ event_family: "checkpoint.committed" })]);
-  assert.deepEqual(h.calls, ["episode", "run"]);
+  assert.deepEqual(h.calls, ["record", "episode", "run"]);
   assert.equal(h.controller.currentModel().runtime.rejectedCandidates, 3);
   await h.controller.deactivate();
 });
@@ -64,7 +64,7 @@ test("a rejection arriving during a pending episode query gets a follow-up refre
   const second = h.event({ event_family: "candidate.rejected" });
   release();
   await Promise.all([first, second]);
-  assert.deepEqual(h.calls, ["episode", "run", "episode", "run"]);
+  assert.deepEqual(h.calls, ["record", "episode", "run", "record", "episode", "run"]);
   assert.equal(h.controller.currentModel().runtime.rejectedCandidates, 3);
   await h.controller.deactivate();
 });
@@ -99,5 +99,33 @@ test("stream termination resubscribes and reconciles missed same-generation deci
   assert.deepEqual(h.counts(), { subscriptions: 2, stopped: 1 });
   assert.equal(h.controller.currentModel().observed.acceptedGeneration, 0);
   assert.equal(h.controller.currentModel().runtime.rejectedCandidates, 4);
+  await h.controller.deactivate();
+});
+
+test("Home consumes a bounded cumulative history summary without draining episodes", async () => {
+  const summary = {
+    schema_version: "bilqis.bamf.mission-control.learning-history-summary/v1",
+    visit_count: 1166, decision_count: 598, accepted_count: 59, rejected_count: 539,
+    recent_decisions: Array.from({ length: 8 }, (_, index) => rejected(index)),
+    active_episode: null,
+  };
+  const h = harness(({ family, schema_version }) => {
+    if (family === "run") return runPage();
+    if (family === "record") {
+      assert.equal(schema_version, summary.schema_version);
+      return { ...empty(), state: "PARTIAL", coverage: "PARTIAL", records: [summary] };
+    }
+    assert.notEqual(family, "episode");
+    return empty();
+  });
+  await h.activate();
+  const model = h.controller.currentModel();
+  assert.equal(model.runtime.visits, 1166);
+  assert.equal(model.runtime.retainedCandidates, 59);
+  assert.equal(model.runtime.rejectedCandidates, 539);
+  assert.equal(model.pulse.length, 8);
+  h.calls.length = 0;
+  await h.event({ event_family: "candidate.rejected" });
+  assert.deepEqual(h.calls, ["record", "run"]);
   await h.controller.deactivate();
 });

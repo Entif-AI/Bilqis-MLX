@@ -65,7 +65,7 @@ test("live home refreshes affected families and verifies the accepted anchor", a
   };
   const controller = createHomeController(api);
   await controller.activate(context, { host: fakeHost(), onInspect: () => {}, defense: { historical: false } });
-  assert.deepEqual(new Set(calls), new Set(HOME_FAMILIES));
+  assert.deepEqual(new Set(calls), new Set([...HOME_FAMILIES, "record"]));
   assert.equal(controller.currentModel().runtime.running, true);
   const baseline = calls.length;
   active = false;
@@ -180,7 +180,7 @@ test("failed unsubscribe does not make a changed context look successfully activ
   await controller.activate(context, {
     host: fakeHost(), onInspect: () => {}, defense: { historical: false },
   });
-  assert.equal(calls.length, HOME_FAMILIES.length + 1);
+  assert.equal(calls.length, HOME_FAMILIES.length + 2);
   assert.equal(subscriptions, 1);
 
   const changed = { ...context, generation: context.generation + 1 };
@@ -191,7 +191,7 @@ test("failed unsubscribe does not make a changed context look successfully activ
   await controller.activate(changed, {
     host: fakeHost(), onInspect: () => {}, defense: { historical: false },
   });
-  assert.equal(calls.length, (HOME_FAMILIES.length + 1) * 2);
+  assert.equal(calls.length, (HOME_FAMILIES.length + 2) * 2);
   assert.equal(subscriptions, 2);
   await controller.deactivate();
 });
@@ -223,7 +223,7 @@ test("concurrent changed-context activation waits for failed teardown and retrie
   await controller.activate(context, {
     host: fakeHost(), onInspect: () => {}, defense: { historical: false },
   });
-  assert.equal(calls.length, HOME_FAMILIES.length + 1);
+  assert.equal(calls.length, HOME_FAMILIES.length + 2);
   assert.equal(subscriptions, 1);
 
   const changed = { ...context, generation: context.generation + 1 };
@@ -241,7 +241,7 @@ test("concurrent changed-context activation waits for failed teardown and retrie
   await rejected;
   await second;
   assert.equal(stopCalls, 2);
-  assert.equal(calls.length, (HOME_FAMILIES.length + 1) * 2);
+  assert.equal(calls.length, (HOME_FAMILIES.length + 2) * 2);
   assert.equal(subscriptions, 2);
   await controller.deactivate();
 });
@@ -284,14 +284,14 @@ test("failed CP04 startup is retried with a complete snapshot to recover missed 
     host: fakeHost(), onInspect: () => {}, defense: { historical: false },
   });
   assert.equal(subscriptions, 1);
-  assert.equal(calls.length, HOME_FAMILIES.length + 1);
+  assert.equal(calls.length, HOME_FAMILIES.length + 2);
   assert.ok(controller.currentModel());
 
   const baselineCalls = calls.length;
   await scheduled();
   assert.equal(subscriptions, 2);
-  assert.equal(calls.length, baselineCalls + HOME_FAMILIES.length + 1);
-  assert.deepEqual(new Set(calls.slice(baselineCalls)), new Set(HOME_FAMILIES));
+  assert.equal(calls.length, baselineCalls + HOME_FAMILIES.length + 2);
+  assert.deepEqual(new Set(calls.slice(baselineCalls)), new Set([...HOME_FAMILIES, "record"]));
 
   await controller.deactivate();
 });

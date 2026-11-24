@@ -53,6 +53,42 @@ class CandidateDecision(WireRecord):
 
 
 @dataclass(frozen=True)
+class LearningHistorySummary(WireRecord):
+    """Bounded, cumulative CURRENT episode evidence, not a training counter."""
+
+    SCHEMA = "bilqis.bamf.mission-control.learning-history-summary/v1"
+    meta: RecordMeta
+    source_rows_sha256: str
+    visit_count: int
+    decision_count: int
+    accepted_count: int
+    rejected_count: int
+    recent_decisions: tuple[CandidateDecision, ...]
+    active_episode: LearningEpisode | None
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        require(is_sha256(self.source_rows_sha256), "HISTORY_DIGEST")
+        require(all(is_wire_integer(n) and n >= 0 for n in (
+            self.visit_count, self.decision_count, self.accepted_count,
+            self.rejected_count)), "HISTORY_COUNTS")
+        require(self.accepted_count + self.rejected_count <= self.decision_count,
+                "HISTORY_OUTCOMES")
+        require(type(self.recent_decisions) is tuple
+                and len(self.recent_decisions) == min(8, self.decision_count)
+                and all(type(row) is CandidateDecision for row in self.recent_decisions),
+                "HISTORY_RECENT")
+        require(self.active_episode is None or (
+            type(self.active_episode) is LearningEpisode and self.visit_count > 0
+            and self.active_episode.state != "COMPLETED"), "HISTORY_ACTIVE")
+        rows = self.recent_decisions + (() if self.active_episode is None else (self.active_episode,))
+        require(len({row.meta.record_id for row in rows}) == len(rows), "HISTORY_DUPLICATE")
+        require(all(row.meta.run.run_id == self.meta.run.run_id
+                    and row.meta.run.generation <= self.meta.run.generation
+                    for row in rows), "HISTORY_RUN")
+
+
+@dataclass(frozen=True)
 class FrameCompileReceipt(WireRecord):
     SCHEMA = "bilqis.bamf.mission-control.frame-compile-receipt/v1"
     meta: RecordMeta

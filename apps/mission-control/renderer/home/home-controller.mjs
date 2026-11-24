@@ -1,5 +1,6 @@
 import {
   HOME_FAMILIES,
+  HISTORY_SUMMARY_SCHEMA,
   familiesForEvent,
   projectionFromPages,
   queryRequest,
@@ -74,6 +75,13 @@ export function createHomeController(api, {
     return result;
   }
   async function queryFamily(family, source) {
+    if (family === "episode" && !historical && source?.fixture !== true) {
+      const page = await api.query(queryRequest("record", source,
+        { schema_version: HISTORY_SUMMARY_SCHEMA, limit: 1 }));
+      if (page?.accepted !== true || transientPage(page) || page.state === "DENIED") return page;
+      if (page.records?.some((row) => row.schema_version === HISTORY_SUMMARY_SCHEMA)) return page;
+      // Older/fixture producers may expose only the detailed episode family.
+    }
     const paginated = new Set(["run", "episode", "notification"]);
     if (!paginated.has(family)) return api.query(queryRequest(family, source,
       family === "semantic" ? { schema_version: "bilqis.bamf.mission-control.semantic-atlas-snapshot/v1" } : {}));
