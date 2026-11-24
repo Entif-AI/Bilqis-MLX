@@ -1,0 +1,1145 @@
+{
+  "arms": [
+    {
+      "activation_cache": "not used in native arm",
+      "actual_parent_policy": "FOUNDATION",
+      "atlas_artifact": "5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7",
+      "attempt_seconds": 25.202187458984554,
+      "attempted_steps": 10,
+      "attempted_steps_per_minute": 23.807457228721653,
+      "candidate_state_sha256": "ffdd91bad39644d1a89805376b9bdeff49228fafb50c3a33084a0c207cd6c777",
+      "completed_candidate_trials_per_hour": 142.84474337232993,
+      "extents_sha256": "ce291e18d242d72b891e45e34c3b8f7958ec9b4eb22bf22374631de12052888b",
+      "fixed_probe": {
+        "candidate_change_per_hour": {
+          "A.IDENTITY": 142.84474337232993,
+          "B.AND": -285.68948674465986,
+          "B.IFF": 285.68948674465986
+        },
+        "candidate_scores": {
+          "A.IDENTITY": [
+            4,
+            6
+          ],
+          "B.AND": [
+            2,
+            6
+          ],
+          "B.IFF": [
+            3,
+            6
+          ]
+        },
+        "cohort_sha256": "f605a7c1f796047a72db08bea8ad94a10dbd88a7c345a99439392aba2044d633",
+        "parent_scores": {
+          "A.IDENTITY": [
+            3,
+            6
+          ],
+          "B.AND": [
+            4,
+            6
+          ],
+          "B.IFF": [
+            1,
+            6
+          ]
+        },
+        "protected_baseline": "not established at genesis",
+        "retention_selected_change_per_hour": {
+          "A.IDENTITY": 142.84474337232993,
+          "B.AND": -285.68948674465986,
+          "B.IFF": 285.68948674465986
+        },
+        "retention_selected_scores": {
+          "A.IDENTITY": [
+            4,
+            6
+          ],
+          "B.AND": [
+            2,
+            6
+          ],
+          "B.IFF": [
+            3,
+            6
+          ]
+        },
+        "row_ids": [
+          "c44e924744ad69db4c3e16d7d5acd40c33b308279add2a86e6357abd59353652",
+          "9560bfc73eede4d2ce83b2aa39991f3cc81aa0555a7111e40a5e35097f67069e",
+          "6fe3c522c734d4dd928c5b198a4e6160bc1cdf9c5200fd14e103c84236e6b03d",
+          "6c89ef17cf317ab3608b4e96a0e5608604ae3134799f5457dca7d2c973b7788d",
+          "bcbabb92284dd63093dbc9d13a25b0cc5d8a73df448ce182f6742ea054c3d206",
+          "6cb7214e11adf7cfcd5f7333a1b680cc6661636aa80ac8284d91d43b18f62b7d",
+          "070da8d57b78d5e06a3cfb280ab39e8d11a5f06cb87c18217f00769aa0a57875",
+          "2f3aa3eb0cf5f9b06bb36f8853d59135dc892d21d1d16f5f9eb53a1db7be2e41",
+          "94ebddf540b77348b4ddc7db7c51683153ce167ea0fcef32a77304e9616da9cd",
+          "c035b9fb8a56812e0ec5a0d17e511d6ea96c035bd5ddf0cadd80abfda5a35c1c",
+          "375f46fc726b246eeac0f6296ee77388383cf5e698fd80a63a13fffd26ed26d7",
+          "d9c5c1c662cc88f33a9ca91fe67e66a5ab9cc668644a14e1499a2f609987afef",
+          "f5c7da89824deb503ad568d81775de3d9b6a979b3c9a1f406a34586835a7a0b4",
+          "0fa3ba2e3351bf2642b3c9ecfb2aee5ee7e91c01ec96cb4502dcea59eaf3d46a",
+          "0b0e75b9684ea1024dbea37c484f6bb123fef1a51c2bc0005578b47309a5c7a2",
+          "0ba466c054723fb1a302bc7e297205cbe5c491dc144e6f26401f5207dcc6f9c0",
+          "ba0d9f08c255e822640b07709b85dfc09ec3e16d0591db375c680525e7da5dc9",
+          "cb3e1183707f358440a67fc0c82b19334d2d925a4c46ce90c665a368ae077b7e"
+        ],
+        "seed": 98318,
+        "training_row_overlap": 0
+      },
+      "gradient_launches": 10,
+      "gradient_launches_per_step": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "initial_state_sha256": "d11bffd868e6e9aaff398e798633636c758f2aa73329a923f3a4ce6717ca21e9",
+      "learning_rate": 1e-05,
+      "logical_batch_size": 32,
+      "mode": "FULL",
+      "optimizer": {
+        "betas": [
+          0.9,
+          0.95
+        ],
+        "eps": 1e-08,
+        "learning_rate": 1e-05,
+        "weight_decay": 0.01
+      },
+      "optimizer_proof": {
+        "advanced_update_counts": 175,
+        "changed_leaves": 168,
+        "frozen_nonzero_parameter_leaves": 0,
+        "rejection_returns_exact_parent": true,
+        "unchanged_rows": 26117,
+        "whole_frozen_leaves": 0
+      },
+      "optimizer_step_seeds": [
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26
+      ],
+      "peak_mlx_bytes": 11632444612,
+      "protection_plan_sha256": "a427f2f8a2f94e5d937a087da42a4a9bd0eeb7d2a57b3e84d41cff6735165b4a",
+      "retention_accepted": true,
+      "retention_evidence_sha256": "92a185a3ad6a3be4f88d1467550bd4556b1fce78b77f5feec5f52164f6a87f70",
+      "retention_outcome_scores": [
+        [
+          "B.AND",
+          3,
+          4,
+          6
+        ]
+      ],
+      "retention_reason": "PAIRED_SCREEN_WITHIN_BUDGET",
+      "scope": "disposable genesis mask intervention; no publication",
+      "selected_visit": {
+        "accepted_manifest_sha256": "75e7adcec339995f8ee44b4a2116f669244d3afb5e6af0d4823167dea569e2cd",
+        "capability_id": "B.AND",
+        "cursor": "GENESIS",
+        "generation": 0,
+        "policy_key": "p-other",
+        "run_identity_sha256": "925accfa6bd8ee73e2989bf7de09c854be5ec61a663e60aa15d7a3435a0baaf8",
+        "run_seed": 993,
+        "schema": "bilqis.bamf.c03-teacher-visit-identity/v1",
+        "selection_seed": 993,
+        "student_sha256": "8aa8e0551a52056b9edb57e5b6d4ed99f3d9345e56fdb364c834d10acd52333a",
+        "teacher_epoch": 0,
+        "teacher_identity": "ca6d20c969e0e8fcd453da403945fc6d173e99b70616e5a095dcfe73987d7e0a",
+        "visit_id": "3c0dfa4c8ef446a6406af3001028f9305e59423ef16526ede731965830144a20"
+      },
+      "source_release_sha256": "5749166f23d7a8c932ce78efbf3e73ffe077973318c16704721a1ef78b3f55f4",
+      "source_seed": 37116,
+      "topology_sha256": "4ea0a04087596dc243a667ed17138ff0ffb3df8b4339759ddf533cdad7e0bd96",
+      "training_row_ids": [
+        "177bd6d672f6e492e740958021db5dbe61187dbb027b5b9cf7c6f504200db640",
+        "7398326f553d9f0329fb2a65495deb095827f7d4ede5a7775d5ef044c9ccb931",
+        "cb28a3f460d251a0d10fcfa794197b322c7025eafbfb65523b997cd14bf3d9fd",
+        "b956bdc7b93abb42f1cf501e416d84e6c67059b50899a497ad0c0a5e09d8154d",
+        "ae02be3ed4e81a26a4b340783075ade919d992583ceb21336ad40179fbdcacfd",
+        "d248b7052f8a28b722be2cfeacd7272bc4d437d6f299dbb39508ca829ba46fb6",
+        "fcad4adc5e5d26d080d63d1d3dc572e61f9eab64850416e9fa5ca7ea7b2ee053",
+        "cc8d40f3952ea19a8fb5a94ab95d6083020863cb9a1e486e6d9504081108c357",
+        "e01fb09feb5654dec7fc2007b1e33e2c0735c318367aea64ff38702a1261f17c",
+        "661c62e6628f0f6b509357d9033f4186679f7c8c0b6719c4e9164beb0ddef3df",
+        "074832467c00dd613f1de67790501644f9a10d1b694a5397d33c89d26de45913",
+        "5455ec54eb2ca941519a462da0c77ad5f2e6fa740b17240d9d96fc7dff6a2192",
+        "d72d631cd52541969e03191facc474405b6a7edd96e3938c2c1d7842e44daf29",
+        "492d77e55b843e44e3049936ebb65b304f5d5ed483c06bead2d97cf5aa8df59f",
+        "dd274efa9de9a8b96b43f85107c1a5d4eb5e15c3b5cb482af98cafc77f8a2541",
+        "e0d54b4fd6fc32f75c942a606752cc2a6e06105490a99d286eb32b4158a4940e",
+        "11fe6b4871e0d347d53d3bb3572fd4cc80b73c3ecff7bdff1db34405c27a1dca",
+        "d8fc821c830fabee7e293e85c25f065a28f2c4e6b77dad771ffd5b5843732576",
+        "2ff2886d0de32e034ac8b31ce87f9f63b00c1482d39d2e6f3bdfcc6672255b38",
+        "1305e0ab1b21997ff3026dfe6211397622b17234bf61cf7dac46681a0da1cf48",
+        "b29ebd0c221693148d40d988fdd403f008d493d41bf85a47be06ddf51d715ae0",
+        "a269519df0e75974e54ebb4cc186a3610461362510f712cd94e9e56921f4ddbc",
+        "00b2fcc65cfa58b256538628bd4d05b7416a8a97faacf33769ed3108b5d6a145",
+        "011dc517b90a915031c7afad42b21b3bdc37be6fb83c43a2cd2c2019b9884006",
+        "4694d80a32086c109482f4a414f5248595bd42c3a4e58f9a29c0e85a7bf9a83e",
+        "6af584134057d4b8b6405f1d28c41b2f4918378d186d78d99d33a21fe4d0c43f",
+        "f18c5fc023f9d6cc6e5efa6e3c7cc99570b84d1805a31e49063f2ee706ded3cc",
+        "2b1f9ae0af142388841c867c352dd846e731f97be1d75ca95c2c65ba66a05aaa",
+        "2bf3e0b82546ce3f0aa29c166a771a21243a60af162a9e438c3aa1b6acfb7777",
+        "31278fc699ea2ad5b1325226c517b6ccd31dc9adfd8e9341cc0c89fbfaff4296",
+        "b2ba45f19faca7f62a95dc1390cc7498700f669b37240c4c7e522dc7faf2f56d",
+        "d71626bc2a7696066a2242b05951e3756e81e9a31117d3a8662a1225d19b5a2a"
+      ],
+      "training_seconds": 24.036084209103137,
+      "training_source_coordinates": [
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "00b2fcc65cfa58b256538628bd4d05b7416a8a97faacf33769ed3108b5d6a145"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "011dc517b90a915031c7afad42b21b3bdc37be6fb83c43a2cd2c2019b9884006"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "074832467c00dd613f1de67790501644f9a10d1b694a5397d33c89d26de45913"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "11fe6b4871e0d347d53d3bb3572fd4cc80b73c3ecff7bdff1db34405c27a1dca"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "1305e0ab1b21997ff3026dfe6211397622b17234bf61cf7dac46681a0da1cf48"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "177bd6d672f6e492e740958021db5dbe61187dbb027b5b9cf7c6f504200db640"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "2b1f9ae0af142388841c867c352dd846e731f97be1d75ca95c2c65ba66a05aaa"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "2bf3e0b82546ce3f0aa29c166a771a21243a60af162a9e438c3aa1b6acfb7777"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "2ff2886d0de32e034ac8b31ce87f9f63b00c1482d39d2e6f3bdfcc6672255b38"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "31278fc699ea2ad5b1325226c517b6ccd31dc9adfd8e9341cc0c89fbfaff4296"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "4694d80a32086c109482f4a414f5248595bd42c3a4e58f9a29c0e85a7bf9a83e"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "492d77e55b843e44e3049936ebb65b304f5d5ed483c06bead2d97cf5aa8df59f"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "5455ec54eb2ca941519a462da0c77ad5f2e6fa740b17240d9d96fc7dff6a2192"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "661c62e6628f0f6b509357d9033f4186679f7c8c0b6719c4e9164beb0ddef3df"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "6af584134057d4b8b6405f1d28c41b2f4918378d186d78d99d33a21fe4d0c43f"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "7398326f553d9f0329fb2a65495deb095827f7d4ede5a7775d5ef044c9ccb931"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "a269519df0e75974e54ebb4cc186a3610461362510f712cd94e9e56921f4ddbc"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "ae02be3ed4e81a26a4b340783075ade919d992583ceb21336ad40179fbdcacfd"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "b29ebd0c221693148d40d988fdd403f008d493d41bf85a47be06ddf51d715ae0"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "b2ba45f19faca7f62a95dc1390cc7498700f669b37240c4c7e522dc7faf2f56d"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "b956bdc7b93abb42f1cf501e416d84e6c67059b50899a497ad0c0a5e09d8154d"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "cb28a3f460d251a0d10fcfa794197b322c7025eafbfb65523b997cd14bf3d9fd"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "cc8d40f3952ea19a8fb5a94ab95d6083020863cb9a1e486e6d9504081108c357"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "d248b7052f8a28b722be2cfeacd7272bc4d437d6f299dbb39508ca829ba46fb6"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "d71626bc2a7696066a2242b05951e3756e81e9a31117d3a8662a1225d19b5a2a"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "d72d631cd52541969e03191facc474405b6a7edd96e3938c2c1d7842e44daf29"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "d8fc821c830fabee7e293e85c25f065a28f2c4e6b77dad771ffd5b5843732576"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "dd274efa9de9a8b96b43f85107c1a5d4eb5e15c3b5cb482af98cafc77f8a2541"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "e01fb09feb5654dec7fc2007b1e33e2c0735c318367aea64ff38702a1261f17c"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "e0d54b4fd6fc32f75c942a606752cc2a6e06105490a99d286eb32b4158a4940e"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "f18c5fc023f9d6cc6e5efa6e3c7cc99570b84d1805a31e49063f2ee706ded3cc"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "fcad4adc5e5d26d080d63d1d3dc572e61f9eab64850416e9fa5ca7ea7b2ee053"
+        ]
+      ],
+      "training_steps_per_minute": 24.962468710804533
+    },
+    {
+      "activation_cache": "not used in native arm",
+      "actual_parent_policy": "FOUNDATION",
+      "atlas_artifact": "5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7",
+      "attempt_seconds": 24.051296750083566,
+      "attempted_steps": 10,
+      "attempted_steps_per_minute": 24.946679849930142,
+      "candidate_state_sha256": "4d26b28f619d413a4b89b483410f7c6d2875781a798fa2503f754fdc84647904",
+      "completed_candidate_trials_per_hour": 149.68007909958087,
+      "extents_sha256": "ce291e18d242d72b891e45e34c3b8f7958ec9b4eb22bf22374631de12052888b",
+      "fixed_probe": {
+        "candidate_change_per_hour": {
+          "A.IDENTITY": 0.0,
+          "B.AND": 0.0,
+          "B.IFF": 0.0
+        },
+        "candidate_scores": {
+          "A.IDENTITY": [
+            3,
+            6
+          ],
+          "B.AND": [
+            4,
+            6
+          ],
+          "B.IFF": [
+            1,
+            6
+          ]
+        },
+        "cohort_sha256": "f605a7c1f796047a72db08bea8ad94a10dbd88a7c345a99439392aba2044d633",
+        "parent_scores": {
+          "A.IDENTITY": [
+            3,
+            6
+          ],
+          "B.AND": [
+            4,
+            6
+          ],
+          "B.IFF": [
+            1,
+            6
+          ]
+        },
+        "protected_baseline": "not established at genesis",
+        "retention_selected_change_per_hour": {
+          "A.IDENTITY": 0.0,
+          "B.AND": 0.0,
+          "B.IFF": 0.0
+        },
+        "retention_selected_scores": {
+          "A.IDENTITY": [
+            3,
+            6
+          ],
+          "B.AND": [
+            4,
+            6
+          ],
+          "B.IFF": [
+            1,
+            6
+          ]
+        },
+        "row_ids": [
+          "c44e924744ad69db4c3e16d7d5acd40c33b308279add2a86e6357abd59353652",
+          "9560bfc73eede4d2ce83b2aa39991f3cc81aa0555a7111e40a5e35097f67069e",
+          "6fe3c522c734d4dd928c5b198a4e6160bc1cdf9c5200fd14e103c84236e6b03d",
+          "6c89ef17cf317ab3608b4e96a0e5608604ae3134799f5457dca7d2c973b7788d",
+          "bcbabb92284dd63093dbc9d13a25b0cc5d8a73df448ce182f6742ea054c3d206",
+          "6cb7214e11adf7cfcd5f7333a1b680cc6661636aa80ac8284d91d43b18f62b7d",
+          "070da8d57b78d5e06a3cfb280ab39e8d11a5f06cb87c18217f00769aa0a57875",
+          "2f3aa3eb0cf5f9b06bb36f8853d59135dc892d21d1d16f5f9eb53a1db7be2e41",
+          "94ebddf540b77348b4ddc7db7c51683153ce167ea0fcef32a77304e9616da9cd",
+          "c035b9fb8a56812e0ec5a0d17e511d6ea96c035bd5ddf0cadd80abfda5a35c1c",
+          "375f46fc726b246eeac0f6296ee77388383cf5e698fd80a63a13fffd26ed26d7",
+          "d9c5c1c662cc88f33a9ca91fe67e66a5ab9cc668644a14e1499a2f609987afef",
+          "f5c7da89824deb503ad568d81775de3d9b6a979b3c9a1f406a34586835a7a0b4",
+          "0fa3ba2e3351bf2642b3c9ecfb2aee5ee7e91c01ec96cb4502dcea59eaf3d46a",
+          "0b0e75b9684ea1024dbea37c484f6bb123fef1a51c2bc0005578b47309a5c7a2",
+          "0ba466c054723fb1a302bc7e297205cbe5c491dc144e6f26401f5207dcc6f9c0",
+          "ba0d9f08c255e822640b07709b85dfc09ec3e16d0591db375c680525e7da5dc9",
+          "cb3e1183707f358440a67fc0c82b19334d2d925a4c46ce90c665a368ae077b7e"
+        ],
+        "seed": 98318,
+        "training_row_overlap": 0
+      },
+      "gradient_launches": 10,
+      "gradient_launches_per_step": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "initial_state_sha256": "d11bffd868e6e9aaff398e798633636c758f2aa73329a923f3a4ce6717ca21e9",
+      "learning_rate": 1e-05,
+      "logical_batch_size": 32,
+      "mode": "FAST",
+      "optimizer": {
+        "betas": [
+          0.9,
+          0.95
+        ],
+        "eps": 1e-08,
+        "learning_rate": 1e-05,
+        "weight_decay": 0.01
+      },
+      "optimizer_proof": {
+        "advanced_update_counts": 17,
+        "changed_leaves": 10,
+        "frozen_nonzero_parameter_leaves": 183,
+        "rejection_returns_exact_parent": true,
+        "unchanged_rows": 26120,
+        "whole_frozen_leaves": 193
+      },
+      "optimizer_step_seeds": [
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26
+      ],
+      "peak_mlx_bytes": 4205113133,
+      "protection_plan_sha256": "a427f2f8a2f94e5d937a087da42a4a9bd0eeb7d2a57b3e84d41cff6735165b4a",
+      "retention_accepted": true,
+      "retention_evidence_sha256": "2d2f292b0c2321e93e58313a079f13e3c8fb6734c97b30573b3f57867e71d92b",
+      "retention_outcome_scores": [
+        [
+          "B.AND",
+          3,
+          3,
+          6
+        ]
+      ],
+      "retention_reason": "PAIRED_SCREEN_WITHIN_BUDGET",
+      "scope": "disposable genesis mask intervention; no publication",
+      "selected_visit": {
+        "accepted_manifest_sha256": "75e7adcec339995f8ee44b4a2116f669244d3afb5e6af0d4823167dea569e2cd",
+        "capability_id": "B.AND",
+        "cursor": "GENESIS",
+        "generation": 0,
+        "policy_key": "p-other",
+        "run_identity_sha256": "925accfa6bd8ee73e2989bf7de09c854be5ec61a663e60aa15d7a3435a0baaf8",
+        "run_seed": 993,
+        "schema": "bilqis.bamf.c03-teacher-visit-identity/v1",
+        "selection_seed": 993,
+        "student_sha256": "8aa8e0551a52056b9edb57e5b6d4ed99f3d9345e56fdb364c834d10acd52333a",
+        "teacher_epoch": 0,
+        "teacher_identity": "ca6d20c969e0e8fcd453da403945fc6d173e99b70616e5a095dcfe73987d7e0a",
+        "visit_id": "3c0dfa4c8ef446a6406af3001028f9305e59423ef16526ede731965830144a20"
+      },
+      "source_release_sha256": "5749166f23d7a8c932ce78efbf3e73ffe077973318c16704721a1ef78b3f55f4",
+      "source_seed": 37116,
+      "topology_sha256": "4ea0a04087596dc243a667ed17138ff0ffb3df8b4339759ddf533cdad7e0bd96",
+      "training_row_ids": [
+        "177bd6d672f6e492e740958021db5dbe61187dbb027b5b9cf7c6f504200db640",
+        "7398326f553d9f0329fb2a65495deb095827f7d4ede5a7775d5ef044c9ccb931",
+        "cb28a3f460d251a0d10fcfa794197b322c7025eafbfb65523b997cd14bf3d9fd",
+        "b956bdc7b93abb42f1cf501e416d84e6c67059b50899a497ad0c0a5e09d8154d",
+        "ae02be3ed4e81a26a4b340783075ade919d992583ceb21336ad40179fbdcacfd",
+        "d248b7052f8a28b722be2cfeacd7272bc4d437d6f299dbb39508ca829ba46fb6",
+        "fcad4adc5e5d26d080d63d1d3dc572e61f9eab64850416e9fa5ca7ea7b2ee053",
+        "cc8d40f3952ea19a8fb5a94ab95d6083020863cb9a1e486e6d9504081108c357",
+        "e01fb09feb5654dec7fc2007b1e33e2c0735c318367aea64ff38702a1261f17c",
+        "661c62e6628f0f6b509357d9033f4186679f7c8c0b6719c4e9164beb0ddef3df",
+        "074832467c00dd613f1de67790501644f9a10d1b694a5397d33c89d26de45913",
+        "5455ec54eb2ca941519a462da0c77ad5f2e6fa740b17240d9d96fc7dff6a2192",
+        "d72d631cd52541969e03191facc474405b6a7edd96e3938c2c1d7842e44daf29",
+        "492d77e55b843e44e3049936ebb65b304f5d5ed483c06bead2d97cf5aa8df59f",
+        "dd274efa9de9a8b96b43f85107c1a5d4eb5e15c3b5cb482af98cafc77f8a2541",
+        "e0d54b4fd6fc32f75c942a606752cc2a6e06105490a99d286eb32b4158a4940e",
+        "11fe6b4871e0d347d53d3bb3572fd4cc80b73c3ecff7bdff1db34405c27a1dca",
+        "d8fc821c830fabee7e293e85c25f065a28f2c4e6b77dad771ffd5b5843732576",
+        "2ff2886d0de32e034ac8b31ce87f9f63b00c1482d39d2e6f3bdfcc6672255b38",
+        "1305e0ab1b21997ff3026dfe6211397622b17234bf61cf7dac46681a0da1cf48",
+        "b29ebd0c221693148d40d988fdd403f008d493d41bf85a47be06ddf51d715ae0",
+        "a269519df0e75974e54ebb4cc186a3610461362510f712cd94e9e56921f4ddbc",
+        "00b2fcc65cfa58b256538628bd4d05b7416a8a97faacf33769ed3108b5d6a145",
+        "011dc517b90a915031c7afad42b21b3bdc37be6fb83c43a2cd2c2019b9884006",
+        "4694d80a32086c109482f4a414f5248595bd42c3a4e58f9a29c0e85a7bf9a83e",
+        "6af584134057d4b8b6405f1d28c41b2f4918378d186d78d99d33a21fe4d0c43f",
+        "f18c5fc023f9d6cc6e5efa6e3c7cc99570b84d1805a31e49063f2ee706ded3cc",
+        "2b1f9ae0af142388841c867c352dd846e731f97be1d75ca95c2c65ba66a05aaa",
+        "2bf3e0b82546ce3f0aa29c166a771a21243a60af162a9e438c3aa1b6acfb7777",
+        "31278fc699ea2ad5b1325226c517b6ccd31dc9adfd8e9341cc0c89fbfaff4296",
+        "b2ba45f19faca7f62a95dc1390cc7498700f669b37240c4c7e522dc7faf2f56d",
+        "d71626bc2a7696066a2242b05951e3756e81e9a31117d3a8662a1225d19b5a2a"
+      ],
+      "training_seconds": 23.21202941588126,
+      "training_source_coordinates": [
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "00b2fcc65cfa58b256538628bd4d05b7416a8a97faacf33769ed3108b5d6a145"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "011dc517b90a915031c7afad42b21b3bdc37be6fb83c43a2cd2c2019b9884006"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "074832467c00dd613f1de67790501644f9a10d1b694a5397d33c89d26de45913"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "11fe6b4871e0d347d53d3bb3572fd4cc80b73c3ecff7bdff1db34405c27a1dca"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "1305e0ab1b21997ff3026dfe6211397622b17234bf61cf7dac46681a0da1cf48"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "177bd6d672f6e492e740958021db5dbe61187dbb027b5b9cf7c6f504200db640"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "2b1f9ae0af142388841c867c352dd846e731f97be1d75ca95c2c65ba66a05aaa"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "2bf3e0b82546ce3f0aa29c166a771a21243a60af162a9e438c3aa1b6acfb7777"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "2ff2886d0de32e034ac8b31ce87f9f63b00c1482d39d2e6f3bdfcc6672255b38"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "31278fc699ea2ad5b1325226c517b6ccd31dc9adfd8e9341cc0c89fbfaff4296"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "4694d80a32086c109482f4a414f5248595bd42c3a4e58f9a29c0e85a7bf9a83e"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "492d77e55b843e44e3049936ebb65b304f5d5ed483c06bead2d97cf5aa8df59f"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "5455ec54eb2ca941519a462da0c77ad5f2e6fa740b17240d9d96fc7dff6a2192"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "661c62e6628f0f6b509357d9033f4186679f7c8c0b6719c4e9164beb0ddef3df"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "6af584134057d4b8b6405f1d28c41b2f4918378d186d78d99d33a21fe4d0c43f"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "7398326f553d9f0329fb2a65495deb095827f7d4ede5a7775d5ef044c9ccb931"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "a269519df0e75974e54ebb4cc186a3610461362510f712cd94e9e56921f4ddbc"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "ae02be3ed4e81a26a4b340783075ade919d992583ceb21336ad40179fbdcacfd"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "b29ebd0c221693148d40d988fdd403f008d493d41bf85a47be06ddf51d715ae0"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "b2ba45f19faca7f62a95dc1390cc7498700f669b37240c4c7e522dc7faf2f56d"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "b956bdc7b93abb42f1cf501e416d84e6c67059b50899a497ad0c0a5e09d8154d"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "cb28a3f460d251a0d10fcfa794197b322c7025eafbfb65523b997cd14bf3d9fd"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "cc8d40f3952ea19a8fb5a94ab95d6083020863cb9a1e486e6d9504081108c357"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "d248b7052f8a28b722be2cfeacd7272bc4d437d6f299dbb39508ca829ba46fb6"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "d71626bc2a7696066a2242b05951e3756e81e9a31117d3a8662a1225d19b5a2a"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "d72d631cd52541969e03191facc474405b6a7edd96e3938c2c1d7842e44daf29"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "d8fc821c830fabee7e293e85c25f065a28f2c4e6b77dad771ffd5b5843732576"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "dd274efa9de9a8b96b43f85107c1a5d4eb5e15c3b5cb482af98cafc77f8a2541"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "e01fb09feb5654dec7fc2007b1e33e2c0735c318367aea64ff38702a1261f17c"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "e0d54b4fd6fc32f75c942a606752cc2a6e06105490a99d286eb32b4158a4940e"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "f18c5fc023f9d6cc6e5efa6e3c7cc99570b84d1805a31e49063f2ee706ded3cc"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "fcad4adc5e5d26d080d63d1d3dc572e61f9eab64850416e9fa5ca7ea7b2ee053"
+        ]
+      ],
+      "training_steps_per_minute": 25.84866619156921
+    },
+    {
+      "activation_cache": "not used in native arm",
+      "actual_parent_policy": "FOUNDATION",
+      "atlas_artifact": "5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7",
+      "attempt_seconds": 28.1452248331625,
+      "attempted_steps": 12,
+      "attempted_steps_per_minute": 25.581604135975848,
+      "candidate_state_sha256": "c3508f3074037a2a6710834ec04c3c936545a1f685dbba4279ba31acd91019d7",
+      "completed_candidate_trials_per_hour": 127.90802067987924,
+      "extents_sha256": "ce291e18d242d72b891e45e34c3b8f7958ec9b4eb22bf22374631de12052888b",
+      "fixed_probe": {
+        "candidate_change_per_hour": {
+          "A.IDENTITY": 0.0,
+          "B.AND": 0.0,
+          "B.IFF": 0.0
+        },
+        "candidate_scores": {
+          "A.IDENTITY": [
+            3,
+            6
+          ],
+          "B.AND": [
+            4,
+            6
+          ],
+          "B.IFF": [
+            1,
+            6
+          ]
+        },
+        "cohort_sha256": "f605a7c1f796047a72db08bea8ad94a10dbd88a7c345a99439392aba2044d633",
+        "parent_scores": {
+          "A.IDENTITY": [
+            3,
+            6
+          ],
+          "B.AND": [
+            4,
+            6
+          ],
+          "B.IFF": [
+            1,
+            6
+          ]
+        },
+        "protected_baseline": "not established at genesis",
+        "retention_selected_change_per_hour": {
+          "A.IDENTITY": 0.0,
+          "B.AND": 0.0,
+          "B.IFF": 0.0
+        },
+        "retention_selected_scores": {
+          "A.IDENTITY": [
+            3,
+            6
+          ],
+          "B.AND": [
+            4,
+            6
+          ],
+          "B.IFF": [
+            1,
+            6
+          ]
+        },
+        "row_ids": [
+          "c44e924744ad69db4c3e16d7d5acd40c33b308279add2a86e6357abd59353652",
+          "9560bfc73eede4d2ce83b2aa39991f3cc81aa0555a7111e40a5e35097f67069e",
+          "6fe3c522c734d4dd928c5b198a4e6160bc1cdf9c5200fd14e103c84236e6b03d",
+          "6c89ef17cf317ab3608b4e96a0e5608604ae3134799f5457dca7d2c973b7788d",
+          "bcbabb92284dd63093dbc9d13a25b0cc5d8a73df448ce182f6742ea054c3d206",
+          "6cb7214e11adf7cfcd5f7333a1b680cc6661636aa80ac8284d91d43b18f62b7d",
+          "070da8d57b78d5e06a3cfb280ab39e8d11a5f06cb87c18217f00769aa0a57875",
+          "2f3aa3eb0cf5f9b06bb36f8853d59135dc892d21d1d16f5f9eb53a1db7be2e41",
+          "94ebddf540b77348b4ddc7db7c51683153ce167ea0fcef32a77304e9616da9cd",
+          "c035b9fb8a56812e0ec5a0d17e511d6ea96c035bd5ddf0cadd80abfda5a35c1c",
+          "375f46fc726b246eeac0f6296ee77388383cf5e698fd80a63a13fffd26ed26d7",
+          "d9c5c1c662cc88f33a9ca91fe67e66a5ab9cc668644a14e1499a2f609987afef",
+          "f5c7da89824deb503ad568d81775de3d9b6a979b3c9a1f406a34586835a7a0b4",
+          "0fa3ba2e3351bf2642b3c9ecfb2aee5ee7e91c01ec96cb4502dcea59eaf3d46a",
+          "0b0e75b9684ea1024dbea37c484f6bb123fef1a51c2bc0005578b47309a5c7a2",
+          "0ba466c054723fb1a302bc7e297205cbe5c491dc144e6f26401f5207dcc6f9c0",
+          "ba0d9f08c255e822640b07709b85dfc09ec3e16d0591db375c680525e7da5dc9",
+          "cb3e1183707f358440a67fc0c82b19334d2d925a4c46ce90c665a368ae077b7e"
+        ],
+        "seed": 98318,
+        "training_row_overlap": 0
+      },
+      "gradient_launches": 12,
+      "gradient_launches_per_step": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "initial_state_sha256": "d11bffd868e6e9aaff398e798633636c758f2aa73329a923f3a4ce6717ca21e9",
+      "learning_rate": 1e-05,
+      "logical_batch_size": 32,
+      "mode": "FAST",
+      "optimizer": {
+        "betas": [
+          0.9,
+          0.95
+        ],
+        "eps": 1e-08,
+        "learning_rate": 1e-05,
+        "weight_decay": 0.01
+      },
+      "optimizer_proof": {
+        "advanced_update_counts": 17,
+        "changed_leaves": 10,
+        "frozen_nonzero_parameter_leaves": 183,
+        "rejection_returns_exact_parent": true,
+        "unchanged_rows": 26120,
+        "whole_frozen_leaves": 193
+      },
+      "optimizer_step_seeds": [
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28
+      ],
+      "peak_mlx_bytes": 4357474237,
+      "protection_plan_sha256": "a427f2f8a2f94e5d937a087da42a4a9bd0eeb7d2a57b3e84d41cff6735165b4a",
+      "retention_accepted": true,
+      "retention_evidence_sha256": "218af49025629cfd72543a6bc6b5ae6c0938a28cedcf6b246451157d4b4abda2",
+      "retention_outcome_scores": [
+        [
+          "B.AND",
+          2,
+          2,
+          6
+        ]
+      ],
+      "retention_reason": "PAIRED_SCREEN_WITHIN_BUDGET",
+      "scope": "disposable genesis mask intervention; no publication",
+      "selected_visit": {
+        "accepted_manifest_sha256": "75e7adcec339995f8ee44b4a2116f669244d3afb5e6af0d4823167dea569e2cd",
+        "capability_id": "B.AND",
+        "cursor": "GENESIS",
+        "generation": 0,
+        "policy_key": "p-other",
+        "run_identity_sha256": "925accfa6bd8ee73e2989bf7de09c854be5ec61a663e60aa15d7a3435a0baaf8",
+        "run_seed": 993,
+        "schema": "bilqis.bamf.c03-teacher-visit-identity/v1",
+        "selection_seed": 993,
+        "student_sha256": "8aa8e0551a52056b9edb57e5b6d4ed99f3d9345e56fdb364c834d10acd52333a",
+        "teacher_epoch": 0,
+        "teacher_identity": "ca6d20c969e0e8fcd453da403945fc6d173e99b70616e5a095dcfe73987d7e0a",
+        "visit_id": "3c0dfa4c8ef446a6406af3001028f9305e59423ef16526ede731965830144a20"
+      },
+      "source_release_sha256": "5749166f23d7a8c932ce78efbf3e73ffe077973318c16704721a1ef78b3f55f4",
+      "source_seed": 37116,
+      "topology_sha256": "4ea0a04087596dc243a667ed17138ff0ffb3df8b4339759ddf533cdad7e0bd96",
+      "training_row_ids": [
+        "177bd6d672f6e492e740958021db5dbe61187dbb027b5b9cf7c6f504200db640",
+        "7398326f553d9f0329fb2a65495deb095827f7d4ede5a7775d5ef044c9ccb931",
+        "cb28a3f460d251a0d10fcfa794197b322c7025eafbfb65523b997cd14bf3d9fd",
+        "b956bdc7b93abb42f1cf501e416d84e6c67059b50899a497ad0c0a5e09d8154d",
+        "ae02be3ed4e81a26a4b340783075ade919d992583ceb21336ad40179fbdcacfd",
+        "d248b7052f8a28b722be2cfeacd7272bc4d437d6f299dbb39508ca829ba46fb6",
+        "fcad4adc5e5d26d080d63d1d3dc572e61f9eab64850416e9fa5ca7ea7b2ee053",
+        "cc8d40f3952ea19a8fb5a94ab95d6083020863cb9a1e486e6d9504081108c357",
+        "e01fb09feb5654dec7fc2007b1e33e2c0735c318367aea64ff38702a1261f17c",
+        "661c62e6628f0f6b509357d9033f4186679f7c8c0b6719c4e9164beb0ddef3df",
+        "074832467c00dd613f1de67790501644f9a10d1b694a5397d33c89d26de45913",
+        "5455ec54eb2ca941519a462da0c77ad5f2e6fa740b17240d9d96fc7dff6a2192",
+        "d72d631cd52541969e03191facc474405b6a7edd96e3938c2c1d7842e44daf29",
+        "492d77e55b843e44e3049936ebb65b304f5d5ed483c06bead2d97cf5aa8df59f",
+        "dd274efa9de9a8b96b43f85107c1a5d4eb5e15c3b5cb482af98cafc77f8a2541",
+        "e0d54b4fd6fc32f75c942a606752cc2a6e06105490a99d286eb32b4158a4940e",
+        "11fe6b4871e0d347d53d3bb3572fd4cc80b73c3ecff7bdff1db34405c27a1dca",
+        "d8fc821c830fabee7e293e85c25f065a28f2c4e6b77dad771ffd5b5843732576",
+        "2ff2886d0de32e034ac8b31ce87f9f63b00c1482d39d2e6f3bdfcc6672255b38",
+        "1305e0ab1b21997ff3026dfe6211397622b17234bf61cf7dac46681a0da1cf48",
+        "b29ebd0c221693148d40d988fdd403f008d493d41bf85a47be06ddf51d715ae0",
+        "a269519df0e75974e54ebb4cc186a3610461362510f712cd94e9e56921f4ddbc",
+        "00b2fcc65cfa58b256538628bd4d05b7416a8a97faacf33769ed3108b5d6a145",
+        "011dc517b90a915031c7afad42b21b3bdc37be6fb83c43a2cd2c2019b9884006",
+        "4694d80a32086c109482f4a414f5248595bd42c3a4e58f9a29c0e85a7bf9a83e",
+        "6af584134057d4b8b6405f1d28c41b2f4918378d186d78d99d33a21fe4d0c43f",
+        "f18c5fc023f9d6cc6e5efa6e3c7cc99570b84d1805a31e49063f2ee706ded3cc",
+        "2b1f9ae0af142388841c867c352dd846e731f97be1d75ca95c2c65ba66a05aaa",
+        "2bf3e0b82546ce3f0aa29c166a771a21243a60af162a9e438c3aa1b6acfb7777",
+        "31278fc699ea2ad5b1325226c517b6ccd31dc9adfd8e9341cc0c89fbfaff4296",
+        "b2ba45f19faca7f62a95dc1390cc7498700f669b37240c4c7e522dc7faf2f56d",
+        "d71626bc2a7696066a2242b05951e3756e81e9a31117d3a8662a1225d19b5a2a"
+      ],
+      "training_seconds": 27.25113720819354,
+      "training_source_coordinates": [
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "00b2fcc65cfa58b256538628bd4d05b7416a8a97faacf33769ed3108b5d6a145"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "011dc517b90a915031c7afad42b21b3bdc37be6fb83c43a2cd2c2019b9884006"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "074832467c00dd613f1de67790501644f9a10d1b694a5397d33c89d26de45913"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "11fe6b4871e0d347d53d3bb3572fd4cc80b73c3ecff7bdff1db34405c27a1dca"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "1305e0ab1b21997ff3026dfe6211397622b17234bf61cf7dac46681a0da1cf48"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "177bd6d672f6e492e740958021db5dbe61187dbb027b5b9cf7c6f504200db640"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "2b1f9ae0af142388841c867c352dd846e731f97be1d75ca95c2c65ba66a05aaa"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "2bf3e0b82546ce3f0aa29c166a771a21243a60af162a9e438c3aa1b6acfb7777"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "2ff2886d0de32e034ac8b31ce87f9f63b00c1482d39d2e6f3bdfcc6672255b38"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "31278fc699ea2ad5b1325226c517b6ccd31dc9adfd8e9341cc0c89fbfaff4296"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "4694d80a32086c109482f4a414f5248595bd42c3a4e58f9a29c0e85a7bf9a83e"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "492d77e55b843e44e3049936ebb65b304f5d5ed483c06bead2d97cf5aa8df59f"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "5455ec54eb2ca941519a462da0c77ad5f2e6fa740b17240d9d96fc7dff6a2192"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "661c62e6628f0f6b509357d9033f4186679f7c8c0b6719c4e9164beb0ddef3df"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "6af584134057d4b8b6405f1d28c41b2f4918378d186d78d99d33a21fe4d0c43f"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "7398326f553d9f0329fb2a65495deb095827f7d4ede5a7775d5ef044c9ccb931"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "a269519df0e75974e54ebb4cc186a3610461362510f712cd94e9e56921f4ddbc"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "ae02be3ed4e81a26a4b340783075ade919d992583ceb21336ad40179fbdcacfd"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "b29ebd0c221693148d40d988fdd403f008d493d41bf85a47be06ddf51d715ae0"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "b2ba45f19faca7f62a95dc1390cc7498700f669b37240c4c7e522dc7faf2f56d"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "b956bdc7b93abb42f1cf501e416d84e6c67059b50899a497ad0c0a5e09d8154d"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "cb28a3f460d251a0d10fcfa794197b322c7025eafbfb65523b997cd14bf3d9fd"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "cc8d40f3952ea19a8fb5a94ab95d6083020863cb9a1e486e6d9504081108c357"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "d248b7052f8a28b722be2cfeacd7272bc4d437d6f299dbb39508ca829ba46fb6"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "d71626bc2a7696066a2242b05951e3756e81e9a31117d3a8662a1225d19b5a2a"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "d72d631cd52541969e03191facc474405b6a7edd96e3938c2c1d7842e44daf29"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "d8fc821c830fabee7e293e85c25f065a28f2c4e6b77dad771ffd5b5843732576"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "dd274efa9de9a8b96b43f85107c1a5d4eb5e15c3b5cb482af98cafc77f8a2541"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "e01fb09feb5654dec7fc2007b1e33e2c0735c318367aea64ff38702a1261f17c"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "e0d54b4fd6fc32f75c942a606752cc2a6e06105490a99d286eb32b4158a4940e"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "f18c5fc023f9d6cc6e5efa6e3c7cc99570b84d1805a31e49063f2ee706ded3cc"
+        ],
+        [
+          "B.AND",
+          "43a5aa2e0e56c5ebd69ad1bcf7c6201d6c43ffc52f98b96918122628b4e33a2e",
+          "fcad4adc5e5d26d080d63d1d3dc572e61f9eab64850416e9fa5ca7ea7b2ee053"
+        ]
+      ],
+      "training_steps_per_minute": 26.420915740115213
+    }
+  ],
+  "detached_receipt": {
+    "command": [
+      "/bin/bash",
+      "-c",
+      "set -e\nprintf \"ACCELERATOR_QUEUE waiting for previously observed #1616 and #1615 jobs (14934,36042)\\\\n\"\nfor ((i=0; i<180; i++)); do\n  if ! kill -0 14934 2>/dev/null && ! kill -0 36042 2>/dev/null; then break; fi\n  sleep 10\ndone\nif kill -0 14934 2>/dev/null || kill -0 36042 2>/dev/null; then echo \"Accelerator coordination deadline exceeded; no experiment started\"; exit 75; fi\nprintf \"ACCELERATOR_QUEUE clear for serialized FULL10 FAST10 FAST12 arms\\\\n\"\nexport PYTHONDONTWRITEBYTECODE=1 BILQIS_TEST_WORKERS=1\nP=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14\n\"$P\" -B -m scripts.experiments.issue1618.run --mode FULL --batch-size 32 --horizon 10 --learning-rate 1e-5\n\"$P\" -B -m scripts.experiments.issue1618.run --mode FAST --batch-size 32 --horizon 10 --learning-rate 1e-5\n\"$P\" -B -m scripts.experiments.issue1618.run --mode FAST --batch-size 32 --horizon 12 --learning-rate 1e-5\n"
+    ],
+    "command_returncode": 0,
+    "final_mutation_guard_sha256": "6d6f3eb8a879e1c3e36cf47628607906bc4d4483e44c9637e57690e598e56ea1",
+    "final_snapshot_sha256": "871681f3ff8f49a03b1fb2558fcd6a86a27d50f4538df5cfda35c203553f45aa",
+    "finished_at": "2026-11-24T11:38:19.454941+00:00",
+    "heartbeat_seconds": 60.0,
+    "label": "BAMF #1618 | matched steps and approximate wall-time comparison",
+    "log": "/Users/emilie/Code/bilqis-mlx-runs/throughput-20261124-1618-selective-region-r3/profile.log",
+    "mutation_guard_sha256": "6d6f3eb8a879e1c3e36cf47628607906bc4d4483e44c9637e57690e598e56ea1",
+    "pid": 37686,
+    "returncode": 0,
+    "schema": "bilqis.bamf.detached-long-run/v2",
+    "snapshot_sha256": "871681f3ff8f49a03b1fb2558fcd6a86a27d50f4538df5cfda35c203553f45aa",
+    "source_mutated": false,
+    "source_sha256": "871681f3ff8f49a03b1fb2558fcd6a86a27d50f4538df5cfda35c203553f45aa",
+    "source_workdir": "/Users/emilie/Code/.worktrees/bilqis-mlx/1618-selective-region-reuse",
+    "started_at": "2026-11-24T11:33:08.352245+00:00",
+    "status": "PASS",
+    "workdir": "/Users/emilie/Code/bilqis-mlx-runs/throughput-20261124-1618-selective-region-r3/source-snapshot"
+  },
+  "matched_fields": [
+    "initial_state_sha256",
+    "source_release_sha256",
+    "atlas_artifact",
+    "topology_sha256",
+    "extents_sha256",
+    "protection_plan_sha256",
+    "source_seed",
+    "optimizer",
+    "learning_rate",
+    "selected_visit",
+    "training_row_ids",
+    "training_source_coordinates",
+    "logical_batch_size"
+  ],
+  "schema": "bilqis.research.issue1618.matched-longer-trial/v1",
+  "source_commit": "af57d45d57e803d10cac1e2487955809dfb40a94"
+}
