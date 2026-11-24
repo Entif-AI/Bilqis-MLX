@@ -16,7 +16,7 @@ test("generation zero shows observed retention and separates accepted coordinate
   assert.match(html, /data-source-unix-seconds="1000"/);
   assert.match(html, />5 minutes ago</);
   assert.doesNotMatch(html, /Waiting for the first accepted/);
-  assert.equal(model.runtime.retainedCandidates, 0);
+  assert.equal(model.runtime.retainedCandidates, null);
 });
 
 test("v4 observation is visible and v5 learning health renders warning evidence", () => {
@@ -293,7 +293,7 @@ test("accepted, rejected and held observations never change retained counts", ()
   for (const outcome of ["ACCEPTED", "REJECTED", "HELD", "INTERRUPTED"]) {
     const model = projectionFromPages({ run: runPage(observation({ phase: "COMPLETED", outcome,
       connection_state: "FINISHED" })) }, context);
-    assert.equal(model.runtime.retainedCandidates, 0);
+    assert.equal(model.runtime.retainedCandidates, null);
     assert.equal(model.observed.history[0].outcome, outcome);
     assert.match(renderHomeMarkup(model), new RegExp(outcome));
   }

@@ -2,10 +2,8 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-from types import ModuleType
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import sys
 import unittest
 from unittest.mock import patch
 
@@ -14,7 +12,8 @@ from bilqis_mlx.control_plane.native_contracts import (
 )
 from bilqis_mlx.control_plane.native_source import native_query_source
 from bilqis_mlx.control_plane.projection.semantic_release import (
-    _projection_record, _release_record, accepted_semantic_release_records,
+    AcceptedSemanticProjection, _projection_record, _release_record,
+    accepted_semantic_release_records,
 )
 from bilqis_mlx.mission_control import SemanticProjectionState, ValueState
 from bilqis_mlx.runtime.akasha_outbox import AkashaEvent, AkashaEventKind
@@ -160,27 +159,39 @@ class SemanticReleaseProjectionTests(unittest.TestCase):
                 self.assertEqual(authenticate.call_count, 1)
 
     def test_missing_feature_authority_degrades_only_semantic_cockpit(self):
-        bamf_bundle = ModuleType("bilqis_mlx.runtime.bamf_bundle")
-        bamf_bundle.read_current_accepted_generation_semantic_snapshot = (
-            lambda _path: invalid("SEMANTIC_FIXTURE_UNAVAILABLE"))
-        with TemporaryDirectory() as temporary:
-            with patch.dict(sys.modules, {"bilqis_mlx.runtime.bamf_bundle": bamf_bundle}):
-                records = accepted_semantic_release_records(Path(temporary), generation())
+        with TemporaryDirectory() as temporary, patch(
+                "bilqis_mlx.control_plane.projection.semantic_release._accepted_source_snapshot",
+                side_effect=lambda *_: invalid("SEMANTIC_FIXTURE_UNAVAILABLE")):
+            records = accepted_semantic_release_records(Path(temporary), generation())
         self.assertEqual(len(records), 1)
         self.assertIs(records[0].state, SemanticProjectionState.ERROR)
 
     def test_accepted_semantic_source_also_projects_atlas_summary(self):
-        bamf_bundle = ModuleType("bilqis_mlx.runtime.bamf_bundle")
-        bamf_bundle.read_current_accepted_generation_semantic_snapshot = (
-            lambda _path: snapshot())
-        with TemporaryDirectory() as temporary, patch.dict(
-                sys.modules, {"bilqis_mlx.runtime.bamf_bundle": bamf_bundle}), patch(
+        with TemporaryDirectory() as temporary, patch(
+                "bilqis_mlx.control_plane.projection.semantic_release._accepted_source_snapshot",
+                return_value=snapshot()), patch(
                 "bilqis_mlx.control_plane.projection.semantic_release.read_outbox_read_only",
                 return_value=()):
             records = accepted_semantic_release_records(Path(temporary), generation())
         self.assertTrue(any(
             record.schema_version == "bilqis.bamf.mission-control.semantic-atlas-snapshot/v1"
             for record in records))
+
+    def test_materialization_receipts_refresh_without_reloading_accepted_source(self):
+        with TemporaryDirectory() as temporary, patch(
+                "bilqis_mlx.control_plane.projection.semantic_release._accepted_source_snapshot",
+                return_value=snapshot()) as load, patch(
+                "bilqis_mlx.control_plane.projection.semantic_release.read_outbox_read_only",
+                side_effect=[(), (materialization(),)]):
+            source = AcceptedSemanticProjection()
+            accepted = generation()
+            missing = source(Path(temporary), accepted)
+            current = source(Path(temporary), accepted)
+            self.assertIs(missing[1].state, SemanticProjectionState.MISSING)
+            self.assertIs(current[1].state, SemanticProjectionState.CURRENT)
+            self.assertIs(missing[0], current[0])
+            self.assertEqual(missing[2:], current[2:])
+            self.assertEqual(load.call_count, 1)
 
 
 if __name__ == "__main__":

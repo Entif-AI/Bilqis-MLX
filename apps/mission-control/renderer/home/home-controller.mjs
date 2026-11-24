@@ -93,7 +93,7 @@ export function createHomeController(api, {
     do {
       const page = await api.query(queryRequest(
         family, source, { cursor }));
-      if (page?.accepted !== true) return page;
+      if (page?.accepted !== true || transientPage(page)) return page;
       first ??= page;
       records.push(...(page.records ?? []));
       for (const marker of page.markers ?? []) {
@@ -114,6 +114,9 @@ export function createHomeController(api, {
       returned: records.length, truncated: false, next_cursor: null,
     };
   }
+  function transientPage(page) {
+    return !historical && page?.accepted === true && ["UNAVAILABLE", "STALE"].includes(page.state);
+  }
   function transportRejected(page) {
     const reason = String(page?.reason ?? "");
     return page?.accepted === false &&
@@ -129,6 +132,13 @@ export function createHomeController(api, {
   async function loadFamily(family, current) {
     const page = await safeQueryFamily(family, context);
     if (current !== epoch) return null;
+    if (family !== "run" && transientPage(page)) {
+      retryFamilies.add(family);
+      const previous = pages[family];
+      pages = { ...pages, [family]: previous?.records?.length ? { ...previous, state: "STALE", coverage: "PARTIAL" } : page };
+      project();
+      return page;
+    }
     if (transportRejected(page)) throw new Error("HOME_TRANSPORT_UNAVAILABLE");
     if (page?.accepted !== true && !familyLocalRejected(page)) {
       throw new Error("HOME_QUERY_UNAVAILABLE");
@@ -150,6 +160,7 @@ export function createHomeController(api, {
     const frontier = historical ? null : await request("run");
     if (current !== epoch) return;
     const queried = [...entries.map(([, page]) => page), ...[anchor, frontier].filter(Boolean)];
+    if (!historical && (transientPage(anchor) || transientPage(frontier))) { needsSnapshot = true; failed(current); return; }
     if (queried.some(transportRejected)) throw new Error("HOME_TRANSPORT_UNAVAILABLE");
     if ((!historical && (anchor?.accepted !== true || frontier?.accepted !== true)) ||
         entries.some(([, page]) => page?.accepted !== true && !familyLocalRejected(page))) {
@@ -164,7 +175,7 @@ export function createHomeController(api, {
     const allEntries = historical ? entries : [...entries, ["run", run]];
     pages = Object.fromEntries(allEntries);
     retryFamilies = new Set(allEntries
-      .filter(([, page]) => page?.accepted !== true)
+      .filter(([, page]) => page?.accepted !== true || transientPage(page))
       .map(([family]) => family));
     needsSnapshot = false;
     disconnected = false;
@@ -174,6 +185,7 @@ export function createHomeController(api, {
   async function refreshRun(current) {
     const page = await safeQueryFamily("run", context);
     if (current !== epoch) return;
+    if (transientPage(page)) { needsSnapshot = true; failed(current); return null; }
     if (transportRejected(page)) throw new Error("HOME_TRANSPORT_UNAVAILABLE");
     if (page?.accepted !== true) throw new Error("HOME_QUERY_UNAVAILABLE");
     retryFamilies.delete("run");
@@ -228,7 +240,7 @@ export function createHomeController(api, {
       await refreshStatus(current);
       if (current !== epoch) return;
       await refreshRun(current);
-      if (current !== epoch) return;
+      if (current !== epoch || disconnected) return;
       const families = new Set([...retryFamilies, "notification"]);
       families.delete("run");
       for (const family of families) {

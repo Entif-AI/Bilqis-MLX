@@ -14,7 +14,7 @@ from bilqis_mlx.mission_control.model import (
     ValueOrigin, ValueState,
 )
 from bilqis_mlx.mission_control.observability import (
-    GenerationManifest, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
+    GenerationManifest, GenerationManifestV2, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
     SemanticAtlasSnapshot, SemanticProjectionSnapshot, SemanticProjectionState,
     SemanticReleaseSnapshot, TeacherSnapshot,
 )
@@ -124,6 +124,8 @@ BASE_SAMPLES = (
     CorrectionEvent(meta("correction"), "correction-1", 4, "source:a", D1, D2,
                     "REQUALIFICATION_REQUIRED"),
     GenerationManifest(meta("generation"), D1, D2, D3, D4, "ACCEPTED"),
+    GenerationManifestV2(meta("generation-partial", coverage=CoverageState.PARTIAL),
+                         D1, None, None, D4, "ACCEPTED"),
     ResourceSample(meta("resources"), value(100, "bytes"), value(1000, "bytes"),
                    value(500, "bytes"), value(1.5, "steps/minute")),
     SemanticConceptSnapshot(

@@ -13,7 +13,7 @@ from bilqis_mlx.mission_control.envelopes import (
 from bilqis_mlx.mission_control.model import (
     AuthorityClass, ContractErrorCode, CoverageState, DataValue,
     MAX_WIRE_INTEGER, MissionControlContractError, RecordMeta,
-    ValueOrigin, ValueState,
+    ValueOrigin, ValueState, is_text,
 )
 from bilqis_mlx.mission_control.operator import (
     ActionParameter, ActionReceiptState, OperatorActionReceipt,
@@ -69,6 +69,12 @@ class MissionControlStateTests(unittest.TestCase):
         )
         with self.assertRaises(MissionControlContractError):
             decode_json(forged)
+
+    def test_text_validation_preserves_unicode_scalar_domain(self):
+        for text in ("", "ASCII\x00\n", "Français", "日本語", chr(0x10FFFF)):
+            self.assertTrue(is_text(text))
+        for code in (0xD800, 0xDBFF, 0xDC00, 0xDFFF):
+            self.assertFalse(is_text("before" + chr(code) + "after"))
 
     def test_absent_values_round_trip_through_a_real_snapshot(self):
         school = next(sample for sample in SAMPLES if type(sample) is SchoolSnapshot)

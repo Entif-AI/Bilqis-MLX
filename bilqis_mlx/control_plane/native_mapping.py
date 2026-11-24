@@ -4,7 +4,7 @@ import math
 
 from bilqis_mlx.mission_control import (
     CandidateDecision, CandidateOutcome, CapabilitySnapshot, CoverageState, DataValue,
-    LearningEpisode, NeuralRuntimeSample, OperatorView, ResourceSample, RunContext,
+    GenerationManifestV2, LearningEpisode, NeuralRuntimeSample, OperatorView, ResourceSample, RunContext,
     TeacherSnapshot,
     UnavailableEnvelope,
     UnavailableReason, ValueOrigin, ValueState,
@@ -279,13 +279,13 @@ def accepted_records(
     operator_view = OperatorView(
         record_meta(f"operator-view:{run.run_id}:{run.generation}", run, generation),
         "READY", stage, None, (context.meta.record_id,))
-    generation_unavailable = UnavailableEnvelope(
+    generation_record = GenerationManifestV2(
         record_meta(
-            f"generation-unavailable:{run.run_id}:{run.generation}", run, generation,
-            coverage=CoverageState.UNKNOWN),
-        f"generation:{run.run_id}", UnavailableReason.UNKNOWN,
-        f"bamf-manifest:{generation.manifest_sha256}")
-    records = [context, operator_view, generation_unavailable]
+            f"generation:{run.run_id}:{run.generation}", run, generation,
+            coverage=CoverageState.PARTIAL),
+        manifest["tensors"]["sha256"], None, None,
+        manifest["parent_manifest_sha256"], "ACCEPTED")
+    records = [context, operator_view, generation_record]
     _append_teacher_snapshot(generation, run, records)
     events = [(EventFamily.RUN_STATE_CHANGED, context,
                f"native-run:{generation.manifest_sha256}")]

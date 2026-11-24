@@ -21,6 +21,7 @@ from .contracts import (
     ProjectionFrontierStatus, ProjectionStats, projection_invalid,
 )
 from ..query_catalog import MissionControlQueryCatalog
+from ..query_selection import record_sort_key
 from . import store
 
 
@@ -272,10 +273,15 @@ class MissionControlProjection:
 
     def notifications(self) -> tuple[Notification, ...]:
         """Return notification records for safe composition with source reads."""
-        return tuple(
-            record for record in self.catalog().records
-            if type(record) is Notification
-        )
+        try:
+            with store.connect(self.path) as db:
+                rows = tuple(db.execute(
+                    """SELECT payload_json, payload_sha256 FROM record_revisions
+                    WHERE active = 1 AND schema_version = ? ORDER BY record_id""",
+                    (Notification.SCHEMA,)))
+                return tuple(sorted(store.decode_rows(rows), key=record_sort_key))
+        except sqlite3.Error:
+            projection_invalid("PROJECTION_READ_FAILED_REBUILD_REQUIRED")
 
     def revisions(self, record_id: str) -> tuple[WireRecord, ...]:
         try:

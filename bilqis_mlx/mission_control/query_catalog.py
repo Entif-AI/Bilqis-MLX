@@ -1,6 +1,7 @@
 """Ephemeral CP03 bounded query catalog over authoritative CP02 records."""
 from __future__ import annotations
 
+from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import replace
 from functools import lru_cache
@@ -39,7 +40,24 @@ class MissionControlQueryCatalog:
         require(len(ids) == len(set(ids)), "QUERY_RECORD_ID_DUPLICATE")
         self._records = tuple(sorted(copied, key=record_sort_key))
         self.available = available
-        self._by_id = {item.meta.record_id: item for item in self._records}
+        self._by_id = {}
+        self._by_type = defaultdict(list)
+        self._by_schema = defaultdict(list)
+        self._marker_records = []
+        self._current_generation = {}
+        self._episodes_by_capability = defaultdict(list)
+        for item in self._records:
+            self._by_id[item.meta.record_id] = item
+            self._by_type[type(item)].append(item)
+            self._by_schema[item.schema_version].append(item)
+            if type(item) in {PartialEnvelope, StaleEnvelope, UnavailableEnvelope}:
+                self._marker_records.append(item)
+            run = item.meta.run
+            if run is not None and not isinstance(item, TrainerObservation):
+                self._current_generation[run.run_id] = max(
+                    run.generation, self._current_generation.get(run.run_id, -1))
+            if type(item) is LearningEpisode:
+                self._episodes_by_capability[run, item.capability_id].append(item)
         self._selection = lru_cache(maxsize=32)(self._select)
         self._selection_digest = lru_cache(maxsize=32)(self._digest)
 
@@ -55,8 +73,18 @@ class MissionControlQueryCatalog:
     def _base_records(self, request: QueryRequest) -> tuple[WireRecord, ...]:
         record_types = FAMILY_TYPES.get(request.family)
         require(record_types is not None, "QUERY_FAMILY_RECORDS")
+        if request.record_id is not None:
+            item = self._by_id.get(request.record_id)
+            candidates = () if item is None else (item,)
+        elif request.schema_version is not None:
+            candidates = self._by_schema.get(request.schema_version, ())
+        elif request.family is QueryFamily.RECORD:
+            candidates = self._records
+        else:
+            candidates = (
+                item for kind in record_types for item in self._by_type.get(kind, ()))
         rows = [
-            item for item in self._records
+            item for item in candidates
             if type(item) in record_types and matches_identity(item, request)
         ]
         if request.mode is QueryMode.CURRENT and request.record_id is None:
@@ -76,7 +104,7 @@ class MissionControlQueryCatalog:
             None if request.run_id is None else f"{request.family.value}:{request.run_id}",
         }
         markers = [
-            item for item in self._records
+            item for item in self._marker_records
             if ((type(item) is PartialEnvelope and item.partial_record_id in record_ids)
                 or (type(item) is StaleEnvelope and item.stale_record_id in record_ids))
                 or (type(item) is UnavailableEnvelope and item.resource in resources
@@ -85,7 +113,7 @@ class MissionControlQueryCatalog:
         ]
         if not records and request.as_of is not None:
             markers.extend(
-                item for item in self._records
+                item for item in self._marker_records
                 if type(item) is StaleEnvelope
                 and item.requested_as_of == request.as_of
                 and item.stale_record_id in self._by_id
@@ -95,16 +123,10 @@ class MissionControlQueryCatalog:
         cumulative = request.family in {QueryFamily.CAPABILITY, QueryFamily.EPISODE}
         if (request.mode is QueryMode.CURRENT and request.generation is None
                 and request.as_of is None and not cumulative):
-            current_generation = {}
-            for item in self._records:
-                run = item.meta.run
-                if run is not None and not isinstance(item, TrainerObservation):
-                    current_generation[run.run_id] = max(
-                        run.generation, current_generation.get(run.run_id, -1))
             markers = [
                 item for item in markers
                 if item.meta.run is None
-                or item.meta.run.generation == current_generation.get(
+                or item.meta.run.generation == self._current_generation.get(
                     item.meta.run.run_id, item.meta.run.generation)
             ]
         return tuple(sorted(markers, key=record_sort_key))
@@ -164,13 +186,11 @@ class MissionControlQueryCatalog:
                           record.target_semantic_id, meta.record_id),
             ))
         if type(record) is CapabilitySnapshot and meta.run is not None:
-            for item in self._records:
-                if (type(item) is LearningEpisode and item.meta.run == meta.run
-                        and item.capability_id == record.capability_id):
-                    links.append(QueryLink(
-                        "EPISODE", meta.record_id, item.meta.record_id,
-                        item.meta.record_id))
-        if type(record) is GenerationManifest:
+            for item in self._episodes_by_capability.get((meta.run, record.capability_id), ()):
+                links.append(QueryLink(
+                    "EPISODE", meta.record_id, item.meta.record_id,
+                    item.meta.record_id))
+        if isinstance(record, GenerationManifest):
             checkpoint_ref = f"checkpoint:{record.checkpoint_sha256}"
             links.append(QueryLink(
                 "CHECKPOINT", meta.record_id,
@@ -201,7 +221,7 @@ class MissionControlQueryCatalog:
             if exact_checkpoint:
                 source_records = [
                     item for item in source_records
-                    if type(item) is GenerationManifest
+                    if isinstance(item, GenerationManifest)
                     and f"checkpoint:{item.checkpoint_sha256}" == request.record_id
                 ]
             elif request.mode is QueryMode.CURRENT:

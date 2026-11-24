@@ -88,7 +88,12 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
             current_resource_page = projection.catalog().query(QueryRequest(
                 QueryFamily.RESOURCE, run_id=source.run_id,
             ))
-            self.assertEqual(generation_gap.state.value, "UNKNOWN")
+            self.assertEqual(generation_gap.state.value, "PARTIAL")
+            self.assertEqual(len(generation_gap.records), 1)
+            self.assertEqual(generation_gap.records[0].checkpoint_sha256,
+                             history[-1].manifest["tensors"]["sha256"])
+            self.assertIsNone(generation_gap.records[0].student_sha256)
+            self.assertIsNone(generation_gap.records[0].optimizer_state_sha256)
             self.assertEqual(resource_page.state.value, "PARTIAL")
             self.assertIsInstance(resource_page.records[0], ResourceSample)
             self.assertEqual(current_resource_page.state.value, "PARTIAL")

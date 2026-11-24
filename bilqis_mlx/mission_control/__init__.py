@@ -19,7 +19,7 @@ from .contracts.model import (
     MissionControlContractError, RecordMeta, RunRef, ValueOrigin, ValueState,
 )
 from .contracts.observability import (
-    GenerationManifest, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
+    GenerationManifest, GenerationManifestV2, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
     SemanticAtlasSnapshot, SemanticProjectionSnapshot, SemanticProjectionState,
     SemanticReleaseSnapshot, TeacherSnapshot,
 )
@@ -57,7 +57,7 @@ __all__ = (
     "AuthorityClass", "CandidateDecision", "CandidateOutcome",
     "CapabilitySnapshot", "ContractErrorCode", "CorrectionEvent",
     "CoverageState", "CurriculumFrontier", "DataValue", "ErrorEnvelope",
-    "EventEnvelope", "FrameCompileReceipt", "GenerationManifest",
+    "EventEnvelope", "FrameCompileReceipt", "GenerationManifest", "GenerationManifestV2",
     "FactoryAdmissionAuthority", "FactoryBlocker", "FactoryCockpitSnapshot",
     "FactoryCurrencyState", "FactoryDeliveryStatus", "FactoryGradeFrontier",
     "FactoryLifecycleStatus", "FactoryRunLineage", "FactorySubjectKind",

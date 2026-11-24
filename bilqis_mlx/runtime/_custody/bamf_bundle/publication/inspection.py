@@ -26,6 +26,8 @@ class AcceptedGenerationInspection:
     semantic_release_sha256: str
     topology_sha256: str
     acceptance_sha256: str
+    run_seed: int
+    source_identity: str
 
 
 def inspect_accepted_generation(pointer_path: Path) -> AcceptedGenerationInspection:
@@ -109,6 +111,8 @@ def inspect_accepted_generation(pointer_path: Path) -> AcceptedGenerationInspect
         semantic_release_sha256=semantic_release_sha256,
         topology_sha256=identity.initial_topology_digest,
         acceptance_sha256=pointer["acceptance_sha256"],
+        run_seed=identity.run_seed,
+        source_identity=identity.initial_source_identity,
     )
 
 

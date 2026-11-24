@@ -13,6 +13,7 @@ from .native_contracts import AuthenticatedGeneration, NativeProjectionMaterial
 from .native_custody import accepted_pointer, authenticated_history
 from .native_mapping import accepted_records
 from .native_cache.source import _source_token
+from .native_cache.rejections import RejectionLedgerCache, LEDGER_CHANGED
 from .native_factory import accepted_factory_records
 from .native_rejections import rejection_material
 from .native_contracts import run_ref
@@ -20,7 +21,9 @@ from .observed import observed_records, publish_observed_events
 from .projection.capability_dossier import (
     accepted_capability_dossiers as _accepted_capability_dossiers,
 )
-from .projection.semantic_release import accepted_semantic_release_records
+from .projection.semantic_release import (
+    AcceptedSemanticProjection, accepted_semantic_release_records,
+)
 from bilqis_mlx.mission_control.contracts.trainer import TrainerObservation
 
 
@@ -62,7 +65,8 @@ def _service_lock(service):
         return lock
 
 
-def _project_accepted_base(run_dir, history):
+def _project_accepted_base(run_dir, history, *,
+                           semantic_projection=accepted_semantic_release_records):
     records, events = [], []
     parent = None
     for generation in history:
@@ -72,7 +76,7 @@ def _project_accepted_base(run_dir, history):
         parent = generation
     records.extend(accepted_factory_records(history))
     if history:
-        records.extend(accepted_semantic_release_records(run_dir, history[-1]))
+        records.extend(semantic_projection(run_dir, history[-1]))
     return NativeProjectionMaterial(
         tuple(records), tuple(events),
         tuple(generation.manifest_sha256 for generation in history),
@@ -84,11 +88,13 @@ class _AcceptedBaseCache:
 
     def __init__(self):
         self.history = self.outbox_token = self.material = None
+        self.semantic_projection = AcceptedSemanticProjection()
 
     def __call__(self, run_dir, history):
         outbox_token = _source_token(run_dir)[3:]
         if self.history is not history or self.outbox_token != outbox_token:
-            material = _project_accepted_base(run_dir, history)
+            material = _project_accepted_base(
+                run_dir, history, semantic_projection=self.semantic_projection)
             self.history, self.outbox_token, self.material = (
                 history, outbox_token, material)
         return self.material
@@ -96,14 +102,15 @@ class _AcceptedBaseCache:
 
 def _materialize_authenticated_history(
         run_dir: Path, history: tuple[AuthenticatedGeneration, ...], *,
-        include_live_rejections: bool, accepted_base=_project_accepted_base
+        include_live_rejections: bool, accepted_base=_project_accepted_base,
+        rejection_source=None,
 ) -> NativeProjectionMaterial:
     """Project accepted custody, rejection evidence, and the live overlay."""
     run_dir = Path(run_dir)
     base = accepted_base(run_dir, history)
     records, events = list(base.records), list(base.events)
     rejected_records, rejected_events = (
-        rejection_material(run_dir, history)
+        (rejection_source or rejection_material)(run_dir, history)
         if include_live_rejections
         else rejection_material(run_dir, history, portable_only=True))
     records.extend(_accepted_capability_dossiers(history, rejected_records))
@@ -159,6 +166,7 @@ def native_query_catalog(run_dir: Path) -> MissionControlQueryCatalog:
         if error.context.get("reason") in {
             "BAMF_GENERATION_POINTER_CHANGED_DURING_READ",
             "CONTROL_PLANE_NATIVE_HISTORY_POINTER_CHANGED",
+            LEDGER_CHANGED,
         }:
             return MissionControlQueryCatalog.unavailable()
         raise
@@ -173,7 +181,8 @@ def native_query_source(run_dir: Path):
         run_dir,
         authenticated_history_fn=authenticated_history,
         materialize_history_fn=partial(
-            _materialize_authenticated_history, accepted_base=_AcceptedBaseCache()),
+            _materialize_authenticated_history, accepted_base=_AcceptedBaseCache(),
+            rejection_source=RejectionLedgerCache()),
         run_refs_fn=_run_refs,
         observed_records_fn=observed_records,
     )
@@ -264,6 +273,7 @@ def refresh_native_events(service):
             if error.context.get("reason") in {
                 "BAMF_GENERATION_POINTER_CHANGED_DURING_READ",
                 "CONTROL_PLANE_NATIVE_HISTORY_POINTER_CHANGED",
+                LEDGER_CHANGED,
             }:
                 return ()
             raise

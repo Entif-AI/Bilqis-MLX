@@ -150,3 +150,15 @@ test("inline evidence is bounded, uniquely hooked, and offers the full Evidence 
   assert.match(html, /Open in Evidence/);
   assert.match(html, /<details[^>]*data-test-id="capability-evidence-entry"/);
 });
+
+
+test("unselected capability resolves from accepted evidence, not a fixture identity", async () => {
+  const actual = { ...row, capability_id: "A.IDENTITY" };
+  const controller = new DossierController(async () => page([actual]));
+  await controller.load(lens, null);
+  assert.equal(controller.state.dossier, actual);
+  assert.equal(controller.state.capabilityId, "A.IDENTITY");
+  await controller.load(lens, "B.AND");
+  assert.equal(controller.state.dossier, null);
+  assert.equal(chooseDossier([actual], { ...lens, generation: 2 }, null), null);
+});

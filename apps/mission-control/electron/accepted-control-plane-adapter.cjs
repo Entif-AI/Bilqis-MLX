@@ -1,6 +1,7 @@
 "use strict";
 
 const { Cp01PythonBroker } = require("./cp01-python-broker.cjs");
+const { validatePage } = require("./query-contract.cjs");
 
 const OPERATOR_VIEW_SCHEMA = "bilqis.bamf.mission-control.operator-view/v1";
 const SNAPSHOT_QUERY_SCHEMA = "bamf.gui20.operator-view-query/v1";
@@ -112,16 +113,24 @@ class AcceptedControlPlaneAdapter {
       throw operatorViewUnavailable("FRAME_INSPECTION_NOT_EXPOSED");
     }
     if (request?.schemaVersion === SNAPSHOT_QUERY_SCHEMA && request?.schema === OPERATOR_VIEW_SCHEMA) {
-      const page = await this.#retryReadonly(() => this.broker.query(runQuery()));
-      if (page?.accepted !== true) {
-        throw operatorViewUnavailable(page?.state);
+      const query = runQuery();
+      const response = await this.#retryReadonly(() => this.broker.query(query));
+      if (response?.accepted !== true) {
+        throw operatorViewUnavailable(response?.state);
       }
-      if (!Array.isArray(page.records)) throw operatorViewUnavailable(page?.state);
-      const operatorView = [...page.records].reverse().find(
-        (record) => record?.schema_version === OPERATOR_VIEW_SCHEMA,
-      );
+      const { accepted, ...page } = response;
+      validatePage(page);
+      if (Object.keys(query).some((key) => page.request[key] !== query[key]) ||
+          page.links.length || page.records.some((record) => record.schema_version !== OPERATOR_VIEW_SCHEMA)) {
+        throw operatorViewUnavailable("QUERY_IDENTITY_MISMATCH");
+      }
+      const operatorView = page.records[0];
+      if (page.state === "STALE") return operatorViewAvailability(page.state);
       if (!operatorView) {
         if (TRANSIENT_VIEW_STATES.has(page.state)) return operatorViewAvailability(page.state);
+        throw operatorViewUnavailable(page.state);
+      }
+      if (!["PRESENT", "PARTIAL"].includes(page.state)) {
         throw operatorViewUnavailable(page.state);
       }
       return structuredClone(operatorView);

@@ -25,7 +25,7 @@ export class DossierController {
       if (epoch !== this.epoch) return;
       const records = [...this.state.records, ...page.records];
       const dossier = chooseDossier(records, lens, capabilityId);
-      this.publish({ records, dossier, cursor: page.next_cursor, markers: page.markers,
+      this.publish({ records, dossier, capabilityId: capabilityId ?? dossier?.capability_id ?? null, cursor: page.next_cursor, markers: page.markers,
         coverage: page.coverage, status: !dossier && page.next_cursor ? "PARTIAL" :
           !dossier && page.state === "PRESENT" ? "MISSING" : page.state });
     } catch (error) {

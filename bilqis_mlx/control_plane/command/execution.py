@@ -1,16 +1,13 @@
 """Runtime execution and postcondition support for CP05/C11 commands."""
 from __future__ import annotations
 
-from dataclasses import asdict
 import hashlib
 import os
 from pathlib import Path
 import signal
 
 from bilqis_mlx.errors import BilqisError
-from bilqis_mlx.runtime.bamf_bundle import inspect_accepted_generation
-
-from .c11 import report_target, same_lineage
+from .c11 import read_only_target, report_target, same_lineage
 from .model import (
     CommandAction, CommandMode, CommandPlan, ResolvedCommandTarget,
 )
@@ -83,21 +80,14 @@ class C11ExecutionRuntime:
     def inert_postcondition(self, plan: CommandPlan, preflight: dict) -> dict:
         if plan.mode is CommandMode.MUTATING:
             _invalid("CONTROL_PLANE_COMMAND_MUTATION_REQUIRED")
-        if plan.action is CommandAction.STATUS:
-            from bilqis_mlx.presentation.operator_cli.inspection import _inspect
+        if plan.action in {CommandAction.STATUS, CommandAction.CHECKPOINT_VERIFY}:
+            target, inspection = read_only_target(self.run_dir)
+            if target != plan.target:
+                _invalid("CONTROL_PLANE_COMMAND_TARGET_DRIFT")
             return {
-                "kind": "operator-status",
-                "target": plan.target.to_record(),
-                "status": _inspect(self.run_dir),
-            }
-        if plan.action is CommandAction.CHECKPOINT_VERIFY:
-            inspection = inspect_accepted_generation(self.run_dir / "bamf-state.json")
-            if inspection is None:
-                _invalid("CONTROL_PLANE_COMMAND_CHECKPOINT_UNAVAILABLE")
-            return {
-                "kind": "checkpoint-verified",
-                "target": plan.target.to_record(),
-                "inspection": asdict(inspection),
+                "kind": plan.postcondition_kind,
+                "target": target.to_record(),
+                "inspection": inspection,
             }
         return preflight
 

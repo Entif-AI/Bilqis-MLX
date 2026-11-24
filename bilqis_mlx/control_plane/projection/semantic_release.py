@@ -17,6 +17,7 @@ from bilqis_mlx.mission_control.semantic.projection import (
 )
 
 from ..native_contracts import AuthenticatedGeneration, invalid, run_ref
+from ..native_custody import _read_bound_json
 
 
 def _present(value, units=None):
@@ -158,28 +159,72 @@ def _projection_record(generation, snapshot, events):
     )
 
 
-def accepted_semantic_release_records(run_dir: Path, generation: AuthenticatedGeneration):
-    """Project the accepted release and durable materialization evidence without mutation."""
-    root = Path(run_dir)
-    from bilqis_mlx.runtime.bamf_bundle import (
-        read_current_accepted_generation_semantic_snapshot,
+def _accepted_source_snapshot(root: Path, generation: AuthenticatedGeneration):
+    """Authenticate the source pin from accepted metadata, not neural execution state."""
+    from bilqis_mlx.runtime.bamf_bundle.feature.replay_support import (
+        artifact_identity, feature_source,
     )
-    try:
-        snapshot = read_current_accepted_generation_semantic_snapshot(root)
-    except BilqisError:
-        return (_empty_projection(generation, SemanticProjectionState.ERROR),)
+    from bilqis_mlx.semantics.atlas.snapshot import (
+        load_pinned_atlas_snapshot, resolve_atlas_artifact_selection,
+    )
+    manifest = generation.manifest
+    compiler = _read_bound_json(
+        root / "bamf-bundles" / generation.manifest_sha256,
+        manifest["sidecars"].get("compiler_features"),
+        reason="CONTROL_PLANE_SEMANTIC_COMPILER_BINDING_DRIFT")
+    if not isinstance(compiler, dict):
+        invalid("CONTROL_PLANE_SEMANTIC_COMPILER_BINDING_DRIFT")
+    source = feature_source(compiler)
+    extents = manifest["extents"]
+    if (source["release_sha256"] != run_ref(generation).semantic_release_sha256
+            or compiler.get("factor_map_sha256") != extents["factor_map_digest"]):
+        invalid("CONTROL_PLANE_SEMANTIC_COMPILER_BINDING_DRIFT")
+    selection = resolve_atlas_artifact_selection(artifact_identity(source))
+    snapshot = load_pinned_atlas_snapshot(selection)
+    if snapshot.active_set_sha256 != extents["active_semantic_digest"]:
+        invalid("CONTROL_PLANE_SEMANTIC_ACTIVE_SET_DRIFT")
+    return snapshot
+
+
+def _source_records(root, generation):
+    snapshot = _accepted_source_snapshot(root, generation)
     release = _release_record(generation, snapshot)
-    try:
-        events = read_outbox_read_only(root / "akasha-outbox.sqlite3")
-        projection = _projection_record(generation, snapshot, events)
-    except BilqisError:
-        projection = _empty_projection(generation, SemanticProjectionState.ERROR)
     active_indices = tuple(
         entry.index for entry in getattr(snapshot, "abi_entries", ())
         if getattr(entry, "active", False))
     atlas = project_semantic_atlas_records(
         snapshot, run_ref(generation), active_indices, materialized_at=0)
-    return release, projection, *atlas
+    return snapshot, (release, *atlas)
+
+
+class AcceptedSemanticProjection:
+    """Retain immutable source records across changes to materialization receipts."""
+
+    def __init__(self):
+        self.generation = self.source = None
+
+    def __call__(self, run_dir: Path, generation: AuthenticatedGeneration):
+        root = Path(run_dir)
+        if self.generation is not generation:
+            self.source = None
+        if self.source is None:
+            try:
+                self.source = _source_records(root, generation)
+            except BilqisError:
+                return (_empty_projection(generation, SemanticProjectionState.ERROR),)
+            self.generation = generation
+        snapshot, records = self.source
+        try:
+            events = read_outbox_read_only(root / "akasha-outbox.sqlite3")
+            projection = _projection_record(generation, snapshot, events)
+        except BilqisError:
+            projection = _empty_projection(generation, SemanticProjectionState.ERROR)
+        return records[0], projection, *records[1:]
+
+
+def accepted_semantic_release_records(run_dir: Path, generation: AuthenticatedGeneration):
+    """Project accepted source metadata and durable materialization evidence without mutation."""
+    return AcceptedSemanticProjection()(run_dir, generation)
 
 
 __all__ = ("accepted_semantic_release_records",)

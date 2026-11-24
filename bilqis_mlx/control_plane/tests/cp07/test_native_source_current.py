@@ -288,7 +288,9 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
 
             generation = catalog.query(QueryRequest(
                 QueryFamily.GENERATION, run_id=source.run_id))
-            self.assertEqual(generation.state.value, "UNKNOWN")
-            self.assertEqual(generation.coverage.value, "UNKNOWN")
-            self.assertEqual(generation.records, ())
-            self.assertEqual(len(generation.markers), 1)
+            self.assertEqual(generation.state.value, "PARTIAL")
+            self.assertEqual(generation.coverage.value, "PARTIAL")
+            self.assertEqual(len(generation.records), 1)
+            self.assertEqual(generation.records[0].meta.run.generation, 1)
+            self.assertIsNone(generation.records[0].optimizer_state_sha256)
+            self.assertEqual(generation.markers, ())

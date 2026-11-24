@@ -8,6 +8,7 @@ import threading
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.mission_control import MissionControlQueryCatalog
 from bilqis_mlx.mission_control.contracts.trainer import TrainerObservation
+from .rejections import LEDGER_CHANGED
 
 
 def _source_token(run_dir: Path):
@@ -20,9 +21,10 @@ def _source_token(run_dir: Path):
         path = root / name
         try:
             stat = path.stat()
-            token.append((name, stat.st_ino, stat.st_size, stat.st_mtime_ns))
+            token.append((name, stat.st_dev, stat.st_ino, stat.st_size,
+                          stat.st_mtime_ns, stat.st_ctime_ns))
         except FileNotFoundError:
-            token.append((name, None, None, None))
+            token.append((name, None, None, None, None, None))
     return tuple(token)
 
 
@@ -48,8 +50,13 @@ class _NativeQueryCache:
         self.material = None
 
     def query(self, request=None):
+        return self.snapshot(request)[0]
+
+    def snapshot(self, request=None):
+        """Pair the catalog with the exact authenticated history used to build it."""
         with self.lock:
-            return self._current()
+            catalog = self._current()
+            return catalog, self.history if catalog.available else ()
 
     def event_material(self):
         with self.lock:
@@ -103,6 +110,7 @@ class _NativeQueryCache:
             if error.context.get("reason") in {
                 "BAMF_GENERATION_POINTER_CHANGED_DURING_READ",
                 "CONTROL_PLANE_NATIVE_HISTORY_POINTER_CHANGED",
+                LEDGER_CHANGED,
             }:
                 return MissionControlQueryCatalog.unavailable()
             raise
@@ -169,6 +177,7 @@ def build_native_query_source(
 
     source._bilqis_query_aware = True
     source._native_material = cache.event_material
+    source._native_snapshot = cache.snapshot
     return source
 
 

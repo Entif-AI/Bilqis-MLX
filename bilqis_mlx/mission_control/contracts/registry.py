@@ -10,7 +10,7 @@ from .events import (
     SalienceEvent,
 )
 from .observability import (
-    GenerationManifest, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
+    GenerationManifest, GenerationManifestV2, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
     SemanticAtlasSnapshot, SemanticProjectionSnapshot, SemanticReleaseSnapshot,
     TeacherSnapshot,
 )
@@ -69,6 +69,7 @@ ALL_RECORD_TYPES = (
     SalienceEvent,
     CorrectionEvent,
     GenerationManifest,
+    GenerationManifestV2,
     ResourceSample,
     Notification,
     OperatorActionRequest,

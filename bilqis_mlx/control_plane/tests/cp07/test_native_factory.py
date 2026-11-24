@@ -34,7 +34,7 @@ def generation(number, release, semantic, *, adoption=False):
             "initial_candidate_identity_sha256": digest("8"),
             "factory_release_sha256": release,
         },
-        {}, outbox, {},
+        correction_frontier={}, teacher_state={}, outbox=outbox,
     )
 
 

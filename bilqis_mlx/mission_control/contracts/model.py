@@ -9,6 +9,7 @@ from typing import ClassVar, TypeAlias
 
 
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+_SURROGATE = re.compile(r"[\ud800-\udfff]")
 _SCHEMA = re.compile(r"bilqis\.bamf\.mission-control\.[a-z0-9-]+/v[1-9][0-9]*\Z")
 MAX_WIRE_INTEGER = (1 << 53) - 1
 Scalar: TypeAlias = str | int | float | bool
@@ -42,7 +43,7 @@ def require(condition: bool, detail: str) -> None:
 
 def is_text(value: object) -> bool:
     return (isinstance(value, str)
-            and all(not 0xD800 <= ord(char) <= 0xDFFF for char in value))
+            and (value.isascii() or _SURROGATE.search(value) is None))
 
 
 def is_name(value: object) -> bool:

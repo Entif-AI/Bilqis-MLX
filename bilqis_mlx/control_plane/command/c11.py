@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import asdict
 from pathlib import Path
 import subprocess
 import sys
@@ -127,6 +128,16 @@ def report_target(
             inspection.acceptance_sha256 if inspection else None),
         source_identity=identity.get("initial_source_identity"),
     )
+
+
+def read_only_target(run_dir: Path):
+    """Bind observation to accepted identity, not eligibility to resume training."""
+    inspection = inspect_accepted_generation(run_dir / "bamf-state.json")
+    if inspection is None:
+        _invalid("CONTROL_PLANE_COMMAND_TARGET_UNAVAILABLE")
+    fields = asdict(inspection)
+    target = ResolvedCommandTarget(run_dir=str(run_dir), **fields)
+    return target, fields
 
 
 def same_lineage(

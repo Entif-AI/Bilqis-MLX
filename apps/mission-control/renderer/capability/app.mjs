@@ -62,6 +62,7 @@ export function createCapabilityExplorer({
 
   function draw() {
     if (!lens) return;
+    capabilityId ??= controller.state.capabilityId;
     host.innerHTML = `<div class="capability-explorer" ${testIdAttribute("capability", "view")}>
       ${controlsMarkup()}
       <div class="capability-dossier-host" ${testIdAttribute("capability", "dossier", "host")}>${renderDossier(controller.state)}</div>
@@ -125,7 +126,7 @@ export function createCapabilityExplorer({
 
   return {
     update(state) {
-      const nextId = state.selected?.kind === "capability" ? state.selected.id : "B.AND";
+      const nextId = state.selected?.kind === "capability" ? state.selected.id : fixture ? "B.AND" : null;
       const nextKey = JSON.stringify([
         state.context.runId, state.context.generation, state.context.mode, state.context.fixture, nextId,
       ]);

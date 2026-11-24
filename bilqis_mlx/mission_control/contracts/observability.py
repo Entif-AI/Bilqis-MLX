@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from .model import (
-    DataValue, RecordMeta, WireRecord, is_name, is_sha256, is_wire_integer, require,
+    CoverageState, DataValue, RecordMeta, WireRecord, is_name, is_sha256, is_wire_integer, require,
 )
 
 
@@ -175,6 +175,25 @@ class GenerationManifest(WireRecord):
         require(self.parent_manifest_sha256 is None
                 or is_sha256(self.parent_manifest_sha256), "PARENT_MANIFEST")
         require(is_name(self.status), "GENERATION_STATUS")
+
+
+@dataclass(frozen=True)
+class GenerationManifestV2(GenerationManifest):
+    """A combined checkpoint need not have separate component digests."""
+    SCHEMA = "bilqis.bamf.mission-control.generation-manifest/v2"
+    student_sha256: str | None
+    optimizer_state_sha256: str | None
+
+    def __post_init__(self) -> None:
+        WireRecord.__post_init__(self)
+        require(is_sha256(self.checkpoint_sha256), "GENERATION_DIGEST")
+        require(all(item is None or is_sha256(item) for item in (
+            self.student_sha256, self.optimizer_state_sha256)), "GENERATION_DIGEST")
+        require(self.parent_manifest_sha256 is None
+                or is_sha256(self.parent_manifest_sha256), "PARENT_MANIFEST")
+        require(is_name(self.status), "GENERATION_STATUS")
+        if self.student_sha256 is None or self.optimizer_state_sha256 is None:
+            require(self.meta.coverage is CoverageState.PARTIAL, "GENERATION_COVERAGE")
 
 
 @dataclass(frozen=True)
