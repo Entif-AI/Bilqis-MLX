@@ -126,3 +126,34 @@ def test_skip_receipt_replays_neutrally_from_real_journal_and_cas(monkeypatch, t
             journal.authenticate_perfect_target_skip({**events[0], 'optimizer_step': 5}, parent, cache.accepted_manifest_sha256)
     finally:
         plane.close()
+
+
+@pytest.mark.parametrize('measured,perfect', [(True, True), (False, True), (True, False)])
+def test_native_visit_preflight_routes_before_any_candidate_execution(monkeypatch, tmp_path, measured, perfect):
+    from bilqis_mlx.runtime.bamf_bundle import execution_cache
+    from bilqis_mlx.runtime.bamf_operator.session_parts import native_session
+    issued, parent, cache, _, _, _, _ = _fixture(monkeypatch, measured, perfect)
+    selection = N(offer=N(capability_id='target', rows=lambda: ()), visit=N(identity=issued.visit))
+    monkeypatch.setattr(execution_cache, 'require_accepted_execution_cache', lambda value: value)
+    monkeypatch.setattr(native_session, 'rejection_attempt_ordinals', lambda *_: (1, 1))
+    prepare = Mock(return_value=issued)
+    monkeypatch.setattr(pre, 'prepare_factory_target_preflight', prepare)
+    horizon = Mock(return_value=(cache, (), None, 1, 1, None))
+    final = Mock(return_value='CONTINUED')
+    monkeypatch.setattr(native_session, 'candidate_horizon_execution', horizon)
+    monkeypatch.setattr(native_session, 'retention_result', final)
+    with evidence_mode(strict=False):
+        result = native_session.execute_selected_visit(
+            tmp_path, parent, N(), 'atlas', 'features', selection, cache, 6, 1,
+            None, 0, None, None, None, emit_progress=lambda *_: None,
+            invalid=lambda reason: pytest.fail(reason))
+    prepare.assert_called_once()
+    if measured and perfect:
+        assert result.status == 'PERFECT_TARGET_SKIPPED'
+        assert result.preflight is issued
+        horizon.assert_not_called()
+        final.assert_not_called()
+    else:
+        assert result == 'CONTINUED'
+        assert horizon.call_args.kwargs['attempt_ordinals'] == (1, 1)
+        assert final.call_args.kwargs['preflight'] is issued
