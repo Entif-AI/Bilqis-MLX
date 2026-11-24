@@ -1083,7 +1083,7 @@
         "oracle_id": "bilqis.mlx.grade-b-connective-record-oracle/v1",
         "prerequisites": [],
         "provider_id": "source.micro.boolean-identification/v1",
-        "provider_implementation_sha256": "811ed2ad7708e6a7ce3a72fb20d92ea8fcc1df51aae45afc01e711fea07d18c6",
+        "provider_implementation_sha256": "8425b3e50e4ddd974ce2dd4a77dc9d6c9a329acdbf35a429924a13cb9ebb433c",
         "provider_parameters": [],
         "source_anchor": "repo:bilqis_logic/kernel.py::TABLES+encode",
         "stage": 0,
@@ -1116,7 +1116,7 @@
         "oracle_id": "bilqis.mlx.grade-b-connective-record-oracle/v1",
         "prerequisites": [],
         "provider_id": "source.micro.boolean-identification/v1",
-        "provider_implementation_sha256": "811ed2ad7708e6a7ce3a72fb20d92ea8fcc1df51aae45afc01e711fea07d18c6",
+        "provider_implementation_sha256": "8425b3e50e4ddd974ce2dd4a77dc9d6c9a329acdbf35a429924a13cb9ebb433c",
         "provider_parameters": [],
         "source_anchor": "repo:bilqis_logic/kernel.py::TABLES+encode",
         "stage": 0,
@@ -1149,7 +1149,7 @@
         "oracle_id": "bilqis.mlx.grade-b-connective-record-oracle/v1",
         "prerequisites": [],
         "provider_id": "source.micro.boolean-identification/v1",
-        "provider_implementation_sha256": "811ed2ad7708e6a7ce3a72fb20d92ea8fcc1df51aae45afc01e711fea07d18c6",
+        "provider_implementation_sha256": "8425b3e50e4ddd974ce2dd4a77dc9d6c9a329acdbf35a429924a13cb9ebb433c",
         "provider_parameters": [],
         "source_anchor": "repo:bilqis_logic/kernel.py::TABLES+encode",
         "stage": 0,
@@ -1182,7 +1182,7 @@
         "oracle_id": "bilqis.mlx.grade-b-connective-record-oracle/v1",
         "prerequisites": [],
         "provider_id": "source.micro.boolean-identification/v1",
-        "provider_implementation_sha256": "811ed2ad7708e6a7ce3a72fb20d92ea8fcc1df51aae45afc01e711fea07d18c6",
+        "provider_implementation_sha256": "8425b3e50e4ddd974ce2dd4a77dc9d6c9a329acdbf35a429924a13cb9ebb433c",
         "provider_parameters": [],
         "source_anchor": "repo:bilqis_logic/kernel.py::TABLES+encode",
         "stage": 0,
@@ -1215,7 +1215,7 @@
         "oracle_id": "bilqis.mlx.grade-b-connective-record-oracle/v1",
         "prerequisites": [],
         "provider_id": "source.micro.boolean-identification/v1",
-        "provider_implementation_sha256": "811ed2ad7708e6a7ce3a72fb20d92ea8fcc1df51aae45afc01e711fea07d18c6",
+        "provider_implementation_sha256": "8425b3e50e4ddd974ce2dd4a77dc9d6c9a329acdbf35a429924a13cb9ebb433c",
         "provider_parameters": [],
         "source_anchor": "repo:bilqis_logic/kernel.py::TABLES+encode",
         "stage": 0,
@@ -1248,7 +1248,7 @@
         "oracle_id": "bilqis.mlx.grade-b-connective-record-oracle/v1",
         "prerequisites": [],
         "provider_id": "source.micro.boolean-identification/v1",
-        "provider_implementation_sha256": "811ed2ad7708e6a7ce3a72fb20d92ea8fcc1df51aae45afc01e711fea07d18c6",
+        "provider_implementation_sha256": "8425b3e50e4ddd974ce2dd4a77dc9d6c9a329acdbf35a429924a13cb9ebb433c",
         "provider_parameters": [],
         "source_anchor": "repo:bilqis_logic/kernel.py::TABLES+encode",
         "stage": 0,
@@ -1281,7 +1281,7 @@
         "oracle_id": "bilqis.mlx.grade-b-composite-record-oracle/v1",
         "prerequisites": [],
         "provider_id": "source.micro.boolean-identification/v1",
-        "provider_implementation_sha256": "811ed2ad7708e6a7ce3a72fb20d92ea8fcc1df51aae45afc01e711fea07d18c6",
+        "provider_implementation_sha256": "8425b3e50e4ddd974ce2dd4a77dc9d6c9a329acdbf35a429924a13cb9ebb433c",
         "provider_parameters": [],
         "source_anchor": "repo:bilqis_logic/kernel.py::TABLES+encode",
         "stage": 0,
@@ -1318,7 +1318,7 @@
         "oracle_id": "bilqis.mlx.grade-b-idboolops-record-oracle/v1",
         "prerequisites": [],
         "provider_id": "source.micro.boolean-identification/v1",
-        "provider_implementation_sha256": "811ed2ad7708e6a7ce3a72fb20d92ea8fcc1df51aae45afc01e711fea07d18c6",
+        "provider_implementation_sha256": "8425b3e50e4ddd974ce2dd4a77dc9d6c9a329acdbf35a429924a13cb9ebb433c",
         "provider_parameters": [],
         "source_anchor": "repo:bilqis_logic/kernel.py::TABLES+_operation",
         "stage": 0,
@@ -1762,7 +1762,7 @@
         "capability_id": "B.NOT",
         "coverage": "09ebd253d87fb600ef3ba2729579f666ffc98386f704d3445056f1fc64aa6f9b",
         "schedule": "b1a88e1581431e186b6b4bc3ae4a98721c6b45f6d588121c0607500758c38419",
-        "source": "915c663c5dceb372e08069ae2bd7f18e1af60580f66eb775101aed7ec8d808a3",
+        "source": "9aef4cf1b83130d5bf0d28931dabc43fedf618af0adcfadba9156f18078f5204",
         "teaching": "af34576037f0bb495ee8029c48ebc794fef7b6ee026220954f0c0747caeb2a90"
       },
       {
@@ -1771,7 +1771,7 @@
         "capability_id": "B.AND",
         "coverage": "2e8bcf984932413a93dc23ab5172ea626f434ee1df728ae5026fff9834825e39",
         "schedule": "d8dc7321e07ec354e64530efafce3774aaee00e46366bf17904d61c96499d400",
-        "source": "dab8b0ee3671a2baaa55035fefe2936af92fbcaee45bf941637a499b4de08ce1",
+        "source": "73b464302dd20cbebcbecfcc29a579459819ce4790efe6b8825b6cc12273c935",
         "teaching": "478ae6d033c8e8ec59afc907423a5814ea29e5b77a57c35648aa2ad6d06448f3"
       },
       {
@@ -1780,7 +1780,7 @@
         "capability_id": "B.OR",
         "coverage": "80a5e9c8068b97b5cbc2f51586548e802edec0d98aba2e9587ec3383997e9b48",
         "schedule": "c2238f4cda7a89dd28ef2cdc21a0f7639ab085ca82b93ab469b78a0c54314186",
-        "source": "37c880ce5dbdb0a009cc8189e212400df06e08d323dc8f303de28150e883d19f",
+        "source": "ec39022cfbcd5bc7d221621631cb97a6c51ae3f5394957ad973d48165a0967a9",
         "teaching": "f8d327c51c43ad57a8fd6c497024ff49f6d2f2d6c0c9bf71dc42b70f8134c6bc"
       },
       {
@@ -1789,7 +1789,7 @@
         "capability_id": "B.XOR",
         "coverage": "a5621b4d8366a149ec31478b8a66ba2956d6c8822e39ae7fb54ce6b755e1c391",
         "schedule": "d573c329b0553e53ebee2ebf44532be95cd38664854f261394c35beb8ea40fe7",
-        "source": "2bc26a0178118712c41479650f69175597317c122397c0d2a2420e3c8021821b",
+        "source": "c4e6ec347ff2f413e84e9d24a295389ac49c5d5dc69052dc1f432708816bd20c",
         "teaching": "c2da80ba455337c85b1f9846cf5132ad03c60f6235a541dc48dfeb69c47ca86d"
       },
       {
@@ -1798,7 +1798,7 @@
         "capability_id": "B.IMPLIES",
         "coverage": "50c77074e2baae077556aafd5848628823b31e8fcee732ae018b0d7c1b343da1",
         "schedule": "ac00360edf17263cf323bc8525f7159f3ff4912d25648629290a5702920db688",
-        "source": "cc4f4933b6cf3a2d34d679568149f37949652e3e7268d45b79b1788de254286f",
+        "source": "5ab1a0ad7c7933e0c92f6d8bc955247ad6c5ce8f0846938c906fa9ef58956d2b",
         "teaching": "c7b3a4634690047b0bfeb685056c1a76f3c90b12a6355b06ecfedf48c583bb67"
       },
       {
@@ -1807,7 +1807,7 @@
         "capability_id": "B.IFF",
         "coverage": "592ffc8c1bb6f6bb935b69e8d24a84d0c03a9a8d815b914537c8255783e2f022",
         "schedule": "386443556a9aab9c578717e533afc4eb0cd47c0d19cb88bce5bd4fa5751b4f3a",
-        "source": "176ef3ecb6e9355f4c3c12befb25b777bec0afd05ee4495df92b799e80df7c68",
+        "source": "3a3ea44e41000317257d18dfc57610a298e5f5cb416b6656f1c460c409d3fc03",
         "teaching": "629b24a7328b600716713bb93a59d0a9ca9680c10fc0d2fc2a2c7084da3ed763"
       },
       {
@@ -1816,7 +1816,7 @@
         "capability_id": "B.COMPOSITE",
         "coverage": "8153bc23c6d38fe734367e590862c3d56181f5c82e2810eb40c3d041e7df0de2",
         "schedule": "702a2e0be16a7075197ad5bc9687c985feebb7af3f7773e7965adbb22f157b8b",
-        "source": "33d8aaa9089aa3c534ea179f95a3e122bdf805048606c0d2a50274371b0fcbe5",
+        "source": "220c575638fc40f69a51d046cd5e8cd6702d4f13b8b9307d76b3327ba42cb1c4",
         "teaching": "0edf2d074760157247641313153d0f536d8b00d7613b3bb6f77b9876a3d5788f"
       },
       {
@@ -1825,7 +1825,7 @@
         "capability_id": "B.IDBOOLOPS",
         "coverage": "6d8377279a30ddab349fbc2a193ef6f8e9ac5ceefc8b7ae245354f1cdfed2edd",
         "schedule": "377d8bd54c5a58d3e8bc1ef1eb10186708354d0ca98338139739ffc87ffa5f64",
-        "source": "23895f3f118673effd3e14755c247d60b1cb1014a9f5f22bdf9bd271c691f512",
+        "source": "3fb389917bd1db7a20221ecdc20a87ec502025c4d7d2ca93afdfa40aceb5636e",
         "teaching": "5e860ba394b13bbd55a401036a975f12a015286c74a51e316d8cc10d3675e514"
       },
       {
@@ -2013,12 +2013,12 @@
       "coverage": "de649821d303d34cb4fb0d6ee43d6771c05de659551c48ff89d8abf78a60a237",
       "roster": "e008d340979f1a21688888d843fca9f2ac27e3b0d78f7605482d6f1b37704ab4",
       "schedule": "3443c440b98eea0bc8ff62b7a0f3b743d917aa12c8fc90962389e3f3bd239ebc",
-      "source": "a2f5f6faff6fa0032364651e5fbe5974ffaac9701accdf851574064fb11ba379",
+      "source": "42b20f4736f32ae0bb17cebf9ff7659c06c9f40bb3a1113785eb505354f59ea1",
       "teaching": "1b33ca7010457da56602c8691953d73691a7c0827a3399a5f204b460ecd3387b"
     },
     "source_binding_sha256": "d6aac2d42b94387f34ef408d767a5c9b010c5ac3abebe3507b0a89d987d3acfd"
   },
-  "factory_release_sha256": "fe043a64c963c048489461ee0686425659caac1ad4f9887305dd9be5b5aefb0f",
+  "factory_release_sha256": "7cb7a096b9cb5dc3613d17ca30861b63d9f92091bcdddd415d8ef5798fbba136",
   "foundation_capability_ids": [
     "A.IDENTITY",
     "A.PARENT",
@@ -2371,11 +2371,11 @@
       "cohort_releases": [
         [
           "bilqis.mlx.grade-a-b-idboolops/20261019-v1",
-          "811ed2ad7708e6a7ce3a72fb20d92ea8fcc1df51aae45afc01e711fea07d18c6"
+          "8425b3e50e4ddd974ce2dd4a77dc9d6c9a329acdbf35a429924a13cb9ebb433c"
         ]
       ],
       "generator_id": "bilqis.mlx.grade-b-idboolops-constructor/v1",
-      "implementation_sha256": "811ed2ad7708e6a7ce3a72fb20d92ea8fcc1df51aae45afc01e711fea07d18c6",
+      "implementation_sha256": "8425b3e50e4ddd974ce2dd4a77dc9d6c9a329acdbf35a429924a13cb9ebb433c",
       "profile_dimensions": [
         [
           "operators",
@@ -2614,14 +2614,14 @@
           "d56bfdd54e71f45bcb4daed9f0e1241d3fe4f8eb88dfef246858656269f85716",
           "7189a98d2fabba8da72f5dad060bcde5c1313778d095aa12547646b56c6757fd",
           "fac3cf7a9a27120d6b5421c9f0e18d0071165cae787e77e13cac442bd221ac51",
-          "31bd5c3d7bbdf1dd7b5e8ef2b31b3cf57e5ff17f19d17bf3f00858de1d82e216",
-          "d558d4a2d09cb8667af6d3b7e6a7834967b0ff187584761e9d077ab292a46db8",
-          "f7db933481ea24f28186e5a91c276bb9d85bae6f8aff9d1535b99cb83165c56c",
-          "10648c9fcddc6bac815e8dbbb190261101a75df54951b7c8240c6e666e31d3d8",
-          "ac0f4372a99cee857ee258844b6c2a2631ec4747c4c8b379f569861b8dccf37a",
-          "d5c993750e54f1f272fdf880477ab18a0e0078a0f0d898323bd4de2050a81d38",
-          "66cae36210ef5a1da03a0fb733abefc24999d4cecae84d4b169b0ef57196fc3f",
-          "74d8408d18d04126101cfd67c1110cb11cf43e5eaf9b51a2ed1413f803e6526b"
+          "3176f0a40b1a9814f2617683a30e1962446f1f17b367f4ca185f035af5f6456c",
+          "15b38829cbe99e783d2a7650c8064e108c09b36856df495959b62f9c9a34c7c3",
+          "3b914738a90afee86c1f0b069baa6bbf4c0bb7864e2c4409b58f0a728609f9b1",
+          "f1fd1418c1c78c7a081a3011577d4e22cdd78c4c825e269a0b93b5c230360c92",
+          "e8376e0ab5ec0c56a9881fb294e2dcc4cddb912926887f02910d3ae2c26f7dd9",
+          "20b469995e3dd20f4a40da69a71daf66235a961af690c8faffebaec9259f37fc",
+          "d33f096ea3579b80b78fe3536b464de180d602f28ad98328d8c5c764b21793e9",
+          "bd319656eab37c9608fab691092c9d4bdc2c738e6a0a57c5c52e36ef71182ee9"
         ],
         "cumulative_scope": [
           "A.IDENTITY",
@@ -2640,7 +2640,7 @@
           "B.IDBOOLOPS"
         ],
         "grade_id": "B",
-        "seal_sha256": "d41d069c3ed01a4c3d3055fdecf7d869f788b5961e3be705ecf644d6c2535e5a"
+        "seal_sha256": "b33edcb50f9d1f8b58017ed743d8963daba6418f56688bb3acca31dc052e06ca"
       },
       {
         "assessment_blueprint_sha256": "fcd01711d416ff646c64e1a5ad349fcba89d9e0a9b93d3f70d4eb387647d9d86",
@@ -2651,14 +2651,14 @@
           "d56bfdd54e71f45bcb4daed9f0e1241d3fe4f8eb88dfef246858656269f85716",
           "7189a98d2fabba8da72f5dad060bcde5c1313778d095aa12547646b56c6757fd",
           "fac3cf7a9a27120d6b5421c9f0e18d0071165cae787e77e13cac442bd221ac51",
-          "31bd5c3d7bbdf1dd7b5e8ef2b31b3cf57e5ff17f19d17bf3f00858de1d82e216",
-          "d558d4a2d09cb8667af6d3b7e6a7834967b0ff187584761e9d077ab292a46db8",
-          "f7db933481ea24f28186e5a91c276bb9d85bae6f8aff9d1535b99cb83165c56c",
-          "10648c9fcddc6bac815e8dbbb190261101a75df54951b7c8240c6e666e31d3d8",
-          "ac0f4372a99cee857ee258844b6c2a2631ec4747c4c8b379f569861b8dccf37a",
-          "d5c993750e54f1f272fdf880477ab18a0e0078a0f0d898323bd4de2050a81d38",
-          "66cae36210ef5a1da03a0fb733abefc24999d4cecae84d4b169b0ef57196fc3f",
-          "74d8408d18d04126101cfd67c1110cb11cf43e5eaf9b51a2ed1413f803e6526b",
+          "3176f0a40b1a9814f2617683a30e1962446f1f17b367f4ca185f035af5f6456c",
+          "15b38829cbe99e783d2a7650c8064e108c09b36856df495959b62f9c9a34c7c3",
+          "3b914738a90afee86c1f0b069baa6bbf4c0bb7864e2c4409b58f0a728609f9b1",
+          "f1fd1418c1c78c7a081a3011577d4e22cdd78c4c825e269a0b93b5c230360c92",
+          "e8376e0ab5ec0c56a9881fb294e2dcc4cddb912926887f02910d3ae2c26f7dd9",
+          "20b469995e3dd20f4a40da69a71daf66235a961af690c8faffebaec9259f37fc",
+          "d33f096ea3579b80b78fe3536b464de180d602f28ad98328d8c5c764b21793e9",
+          "bd319656eab37c9608fab691092c9d4bdc2c738e6a0a57c5c52e36ef71182ee9",
           "7a93ef17116b51059d4681fe5079dc8b411cdd11c15179a196a5e326980114ee",
           "4693dcc7a6944e05a3162dc3f515b713379a5e360d49fe91c221914a0f91a3ea",
           "c9d4f8ae926bafff9d039b13dfc4e865a328a33b26ddc3b0f0f20dc73fce79fc",
@@ -2691,7 +2691,7 @@
           "C.DIV"
         ],
         "grade_id": "C",
-        "seal_sha256": "5bec83be6b393f3ec03915ceeb2b0aad997139d1031678d1d4e6cf7ad2af2496"
+        "seal_sha256": "07164a9b851837bd791f249f80575d4eb5ddb99e879685dcde775c87d127fb88"
       }
     ],
     "capabilities": [
@@ -2759,7 +2759,7 @@
         "answer_schema_projection_sha256": "4ac75c1bd49415ed08a07ee3616d501eb7735b3a3bc350d43a7d20096dd5d5f6",
         "capability_id": "B.NOT",
         "coverage_projection_sha256": "09ebd253d87fb600ef3ba2729579f666ffc98386f704d3445056f1fc64aa6f9b",
-        "source_projection_sha256": "915c663c5dceb372e08069ae2bd7f18e1af60580f66eb775101aed7ec8d808a3",
+        "source_projection_sha256": "9aef4cf1b83130d5bf0d28931dabc43fedf618af0adcfadba9156f18078f5204",
         "specimen_content_sha256": "4f1a8cc1931d9fd225d6daa89e6b05422f821b997db3aeeac6f8c1c251c555ea",
         "specimen_count": 12,
         "specimen_ids_sha256": "d2cc0ddc04ad8a51abf2fee75d929645e68ab512c1591b0c8eadc54a8d7a718e",
@@ -2769,7 +2769,7 @@
         "answer_schema_projection_sha256": "fce34e9565d72228d5fef7793bccf0ef2b34a13cd8436f0fd2b8bfcee149b071",
         "capability_id": "B.AND",
         "coverage_projection_sha256": "2e8bcf984932413a93dc23ab5172ea626f434ee1df728ae5026fff9834825e39",
-        "source_projection_sha256": "dab8b0ee3671a2baaa55035fefe2936af92fbcaee45bf941637a499b4de08ce1",
+        "source_projection_sha256": "73b464302dd20cbebcbecfcc29a579459819ce4790efe6b8825b6cc12273c935",
         "specimen_content_sha256": "a25a3647528efa9b2d9f3c8ed8780d664c618b1ca46ec96f4a6463e4813a40a8",
         "specimen_count": 12,
         "specimen_ids_sha256": "a2ea74d2b263de89b98874072c85dcd4db4e60e137d12738a6b7149f0b029945",
@@ -2779,7 +2779,7 @@
         "answer_schema_projection_sha256": "7e5b67ea95de0775f0f5c762533c8ab7a9579f058c83d675e4c81f7e2c4ca240",
         "capability_id": "B.OR",
         "coverage_projection_sha256": "80a5e9c8068b97b5cbc2f51586548e802edec0d98aba2e9587ec3383997e9b48",
-        "source_projection_sha256": "37c880ce5dbdb0a009cc8189e212400df06e08d323dc8f303de28150e883d19f",
+        "source_projection_sha256": "ec39022cfbcd5bc7d221621631cb97a6c51ae3f5394957ad973d48165a0967a9",
         "specimen_content_sha256": "3c7604dd09d92d3233b720d8299c6bb10a8b4fff1911db9bf01c97579a6334ce",
         "specimen_count": 12,
         "specimen_ids_sha256": "426a4b016df0469f40eda36988666c46b978c327a6e5c73944a36e25eb5c786e",
@@ -2789,7 +2789,7 @@
         "answer_schema_projection_sha256": "d82061b71088684443e34e160618477de0b345cb71c5d3ee4947be4629d55384",
         "capability_id": "B.XOR",
         "coverage_projection_sha256": "a5621b4d8366a149ec31478b8a66ba2956d6c8822e39ae7fb54ce6b755e1c391",
-        "source_projection_sha256": "2bc26a0178118712c41479650f69175597317c122397c0d2a2420e3c8021821b",
+        "source_projection_sha256": "c4e6ec347ff2f413e84e9d24a295389ac49c5d5dc69052dc1f432708816bd20c",
         "specimen_content_sha256": "00667ad5352acac2e548fa112b94531c0f2a6e424487cf033847afc783e173ca",
         "specimen_count": 12,
         "specimen_ids_sha256": "a3ce40791f742e2ed3d754be35536d14f966003ed2d560524436194915d8d8bf",
@@ -2799,7 +2799,7 @@
         "answer_schema_projection_sha256": "b278e04454ce4703d92b0f316eb20e7fc70d1030f8b240c16ba0fb0d78c4a895",
         "capability_id": "B.IMPLIES",
         "coverage_projection_sha256": "50c77074e2baae077556aafd5848628823b31e8fcee732ae018b0d7c1b343da1",
-        "source_projection_sha256": "cc4f4933b6cf3a2d34d679568149f37949652e3e7268d45b79b1788de254286f",
+        "source_projection_sha256": "5ab1a0ad7c7933e0c92f6d8bc955247ad6c5ce8f0846938c906fa9ef58956d2b",
         "specimen_content_sha256": "ad9cbf0c2548526a2c3f7b8b7bb690b737360c6cbc4d1b5c27a19ad3eda3c609",
         "specimen_count": 12,
         "specimen_ids_sha256": "53c53e06464142557a77ba8434c4e6542d10d053f4cc7fac7420a3e34817424b",
@@ -2809,7 +2809,7 @@
         "answer_schema_projection_sha256": "8167891e2b0494f7c52a9975671f1b97119a6cec5fb1ffbb6dd70febb6216717",
         "capability_id": "B.IFF",
         "coverage_projection_sha256": "592ffc8c1bb6f6bb935b69e8d24a84d0c03a9a8d815b914537c8255783e2f022",
-        "source_projection_sha256": "176ef3ecb6e9355f4c3c12befb25b777bec0afd05ee4495df92b799e80df7c68",
+        "source_projection_sha256": "3a3ea44e41000317257d18dfc57610a298e5f5cb416b6656f1c460c409d3fc03",
         "specimen_content_sha256": "d677451a75b80800a8a88b5bb0c81e87f3fc48460fc8d9ee34992f9fabad2065",
         "specimen_count": 12,
         "specimen_ids_sha256": "25685e74bd3b8111daccdfd720358e6ad43b89a2615e2551f7058e6e64d9556a",
@@ -2819,7 +2819,7 @@
         "answer_schema_projection_sha256": "31b6ea5d6b4c5365c62f82819a24d5c71de5a967ed3c3c08b87f7f2f4c1bbe7b",
         "capability_id": "B.COMPOSITE",
         "coverage_projection_sha256": "8153bc23c6d38fe734367e590862c3d56181f5c82e2810eb40c3d041e7df0de2",
-        "source_projection_sha256": "33d8aaa9089aa3c534ea179f95a3e122bdf805048606c0d2a50274371b0fcbe5",
+        "source_projection_sha256": "220c575638fc40f69a51d046cd5e8cd6702d4f13b8b9307d76b3327ba42cb1c4",
         "specimen_content_sha256": "82f64c47d01a4d5b8906f68a1ecf0415201c832b8d0570201701ece24e695ee2",
         "specimen_count": 12,
         "specimen_ids_sha256": "556839bf0e6e6e16188500f8e2cc41e29eab39b422ed0a44d9a63f96ff42c10a",
@@ -2829,7 +2829,7 @@
         "answer_schema_projection_sha256": "53f6d77d835e5989512bec48cdb691d0cd11a00bd663b6d8fb681db741bc8aa8",
         "capability_id": "B.IDBOOLOPS",
         "coverage_projection_sha256": "6d8377279a30ddab349fbc2a193ef6f8e9ac5ceefc8b7ae245354f1cdfed2edd",
-        "source_projection_sha256": "23895f3f118673effd3e14755c247d60b1cb1014a9f5f22bdf9bd271c691f512",
+        "source_projection_sha256": "3fb389917bd1db7a20221ecdc20a87ec502025c4d7d2ca93afdfa40aceb5636e",
         "specimen_content_sha256": "91b1b3ce95d6ce5f9b1da078977567f7c9a25dfea1e40364979829fbb54d1e7b",
         "specimen_count": 12,
         "specimen_ids_sha256": "a0743e90ba9fad67714848029de0aa85c55ac83aa91187e6835be34b2ad0d3c4",
@@ -2906,8 +2906,8 @@
         "verification_seed": 2026101905
       }
     ],
-    "execution_plan_sha256": "ac4a41d176f307383e736554339a978be01c656fb5bcf46f4c1cfbb0050ba040",
-    "provider_descriptors_sha256": "645fc64935e7c11314236303cf610bb92e2627cba373b5b7ef216559915e6dbd",
+    "execution_plan_sha256": "88e416a2b5c1c440411bb87a1043bb6f67e10f089418d1436ea3646ba1e23f4f",
+    "provider_descriptors_sha256": "26c80bac4114a4bf6e035b9d05e67aa72e848b986473ad5ec3b263054586eb7b",
     "semantic_catalog_sha256": "477ccbf6c7a9c0e978d94ff88329bccd6b51da46c788782976aefb6fe2021d38",
     "source_binding_sha256": "d6aac2d42b94387f34ef408d767a5c9b010c5ac3abebe3507b0a89d987d3acfd",
     "verification_seed": 2026101905
