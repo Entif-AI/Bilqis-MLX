@@ -29,13 +29,20 @@ from scripts.experiments.issue1618.participation import selected_inputs, verify_
 ARTIFACT = "5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7"
 
 
-def run(mode, batch_size, horizon):
+def run(mode, batch_size, horizon, learning_rate):
     root = Path.cwd()
     artifact = root / "bilqis_mlx/bootstrap_assets/atlas" / ARTIFACT
     source = root / "vendor/legacy-v16"
     profile, c16 = fixture.profile, fixture.c16
     execution = importlib.import_module("bilqis_mlx.runtime.candidate.execution")
     calls = []
+    launch_counts = []
+    original_batch = execution.execute_factory_logical_batch
+
+    def observed_batch(*args, **kwargs):
+        result = original_batch(*args, **kwargs)
+        launch_counts.append(result[0].gradient_launches)
+        return result
 
     def selection(parent):
         selected, active = selected_inputs(parent, mode)
@@ -71,10 +78,11 @@ def run(mode, batch_size, horizon):
         mx.reset_peak_memory()
         started = time.perf_counter()
         with evidence_mode(strict=False), patch.object(execution, "derive_participation_inputs", selection), \
-                patch.object(c16, "train_bamf_factory_step", side_effect=train):
+                patch.object(c16, "train_bamf_factory_step", side_effect=train), \
+                patch.object(execution, "execute_factory_logical_batch", observed_batch):
             bound, rows, steps = c16.real_candidate_training_horizon(
                 run_dir, parent, context, feature_path, artifact,
-                learning_rate=profile.C05_TRAINING_LEARNING_RATE,
+                learning_rate=learning_rate,
                 horizon=horizon, capability="B.AND", source_each=batch_size)
             mx.synchronize()
             training_wall = time.perf_counter() - started
@@ -87,6 +95,7 @@ def run(mode, batch_size, horizon):
             attempt_wall = time.perf_counter() - started
             peak = int(mx.get_peak_memory())
             print("ISSUE1618_C05", mode, evaluation.decision.reason, flush=True)
+            assert len(launch_counts) == horizon and all(count > 0 for count in launch_counts)
             assert len(calls) == horizon, f"intervention count {len(calls)} != {horizon}"
             assert all(item == calls[0] for item in calls)
             optimizer = verify_optimizer(parent, transaction, calls[0])
@@ -110,7 +119,7 @@ def run(mode, batch_size, horizon):
                 "extents_sha256": parent.extents.digest,
                 "protection_plan_sha256": protection.digest,
                 "source_seed": c16.SOURCE_SEED, "optimizer_step_seeds": list(range(17, 17 + horizon)),
-                "optimizer": asdict(profile.HP), "learning_rate": profile.C05_TRAINING_LEARNING_RATE,
+                "optimizer": {**asdict(profile.HP), "learning_rate": learning_rate}, "learning_rate": learning_rate,
                 "selected_visit": bound.identity.to_record(),
                 "training_row_ids": [row["id"] for row in rows],
                 "training_source_coordinates": transaction.training_source_coordinates,
@@ -120,7 +129,8 @@ def run(mode, batch_size, horizon):
                 "training_steps_per_minute": horizon * 60 / training_wall,
                 "completed_candidate_trials_per_hour": 3600 / attempt_wall,
                 "peak_mlx_bytes": peak,
-                "gradient_launches": sum(int(s.realized_cost.get("c08_gradient_launches", 0)) for s in steps),
+                "gradient_launches": sum(launch_counts),
+                "gradient_launches_per_step": launch_counts,
                 "retention_accepted": accepted, "retention_reason": evaluation.decision.reason,
                 "retention_outcome_scores": evaluation.decision.outcome_scores,
                 "retention_evidence_sha256": evaluation.decision.evidence_sha256,
@@ -133,11 +143,12 @@ def main():
     parser.add_argument("--mode", choices=("FULL", "FAST"), required=True)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--horizon", type=int, default=4)
+    parser.add_argument("--learning-rate", type=float, choices=(1e-6, 1e-5), default=1e-6)
     args = parser.parse_args()
     if not 1 <= args.horizon <= 12 or not 2 <= args.batch_size <= 32:
         parser.error("disposable bounds: horizon 1..12; batch size 2..32")
     mx.set_default_device(mx.gpu)
-    result = run(args.mode, args.batch_size, args.horizon)
+    result = run(args.mode, args.batch_size, args.horizon, args.learning_rate)
     print("ISSUE1618_RESULT " + json.dumps(result, sort_keys=True, default=str), flush=True)
 
 
