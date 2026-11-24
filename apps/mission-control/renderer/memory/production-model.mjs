@@ -1,5 +1,5 @@
 const QUERY_SCHEMA = "bilqis.bamf.control-plane.query/v1";
-const MEMORY_SCHEMA = "bilqis.bamf.mission-control.memory-snapshot/v1";
+const MEMORY_SCHEMAS = new Set(["bilqis.bamf.mission-control.memory-snapshot/v1", "bilqis.bamf.mission-control.memory-snapshot/v2"]);
 const PRESENT = "PRESENT";
 
 function datum(value) {
@@ -11,7 +11,7 @@ function datum(value) {
 
 function memoryRecords(page) {
   return page?.accepted === true && Array.isArray(page.records)
-    ? page.records.filter(record => record?.schema_version === MEMORY_SCHEMA)
+    ? page.records.filter(record => MEMORY_SCHEMAS.has(record?.schema_version))
     : [];
 }
 
@@ -23,7 +23,7 @@ export function memoryQuery(context, overrides = {}) {
     mode: historical ? "historical" : "current",
     run_id: context?.runId ?? null,
     record_id: null,
-    schema_version: MEMORY_SCHEMA,
+    schema_version: null,
     generation: historical ? context?.generation ?? null : null,
     frontier_id: null,
     as_of: null,
@@ -45,8 +45,9 @@ export function historicalMemoryQuery(context, generation) {
 }
 
 export function memoryProfileFromPage(page, context) {
-  const records = memoryRecords(page);
-  const record = records.at(-1) ?? null;
+  const records = memoryRecords(page).filter(record => record.meta?.run?.run_id === context?.runId &&
+    record.meta.run.generation === context?.generation);
+  const record = records.find(record => record.schema_version.endsWith("/v2")) ?? records.at(-1) ?? null;
   if (!record) return null;
   return Object.freeze({
     provenance: "LIVE_QUERY",
@@ -58,6 +59,9 @@ export function memoryProfileFromPage(page, context) {
     evidenceRefs: Object.freeze([...(record.meta?.evidence_refs ?? [])]),
     receiptRefs: Object.freeze([...(record.meta?.receipt_refs ?? [])]),
     metrics: Object.freeze({
+      ...Object.fromEntries([["allocatedSlots", "allocated_slots"], ["slotCapacity", "slot_capacity"],
+        ["pendingKeys", "pending_keys"], ["aliases", "aliases"]].filter(([, field]) => Number.isSafeInteger(record[field]))
+        .map(([key, field]) => [key, datum({ state: PRESENT, value: record[field], origin: "SOURCE_AUTHORITATIVE" })])),
       used: datum(record.used_bytes),
       budget: datum(record.budget_bytes),
       hits: datum(record.hits),

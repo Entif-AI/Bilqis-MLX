@@ -4,7 +4,7 @@ from __future__ import annotations
 from .contracts.model import WireRecord
 from .contracts.dossier import CapabilityDossier
 from .contracts.observability import (
-    GenerationManifest, GenerationManifestV2, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
+    GenerationManifest, GenerationManifestV2, MemorySnapshot, MemorySnapshotV2, NeuralRuntimeSample, ResourceSample,
     SemanticAtlasSnapshot, SemanticProjectionSnapshot, SemanticReleaseSnapshot,
     TeacherSnapshot,
 )
@@ -118,7 +118,7 @@ def _current_identity(record: WireRecord):
     if type(record) in {
         RunContext, OperatorView, SchoolSnapshot, CurriculumFrontier,
         GenerationManifest, GenerationManifestV2, SemanticAtlasSnapshot, NeuralRuntimeSample,
-        MemorySnapshot, TeacherSnapshot, ResourceSample, SemanticReleaseSnapshot,
+        MemorySnapshot, MemorySnapshotV2, TeacherSnapshot, ResourceSample, SemanticReleaseSnapshot,
         SemanticProjectionSnapshot,
     }:
         return base

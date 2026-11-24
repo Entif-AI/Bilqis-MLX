@@ -2,6 +2,7 @@
 from hashlib import sha256
 import os
 from pathlib import Path
+from typing import NamedTuple
 
 from bilqis_mlx._data_plane.contracts import HASH_CHUNK_BYTES
 from bilqis_mlx.errors import BilqisError
@@ -13,8 +14,17 @@ from ..native_rejections import project_rejection_rows, read_rejection_rows
 LEDGER_CHANGED = "CONTROL_PLANE_NATIVE_EVENT_LEDGER_CHANGED_DURING_READ"
 
 
+class LedgerIdentity(NamedTuple):
+    device: int
+    inode: int
+    size: int
+    modified_ns: int
+    changed_ns: int
+
+
 def _identity(stat):
-    return stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns
+    return LedgerIdentity(stat.st_dev, stat.st_ino, stat.st_size,
+                          stat.st_mtime_ns, stat.st_ctime_ns)
 
 
 def _hash_prefix(stream, size):
@@ -81,9 +91,9 @@ class RejectionLedgerCache:
     def _read(self, stream, before):
         if before == self.identity:
             return self.rows, self.digest, True
-        size = before[2]
-        if self.identity is not None and size >= self.identity[2]:
-            prefix = _hash_prefix(stream, self.identity[2])
+        size = before.size
+        if self.identity is not None and size >= self.identity.size:
+            prefix = _hash_prefix(stream, self.identity.size)
             if prefix.digest() == self.digest:
                 rows = tuple(read_rejection_rows(_hashed_lines(stream, size, prefix)))
                 return (*self.rows, *rows), prefix.digest(), True

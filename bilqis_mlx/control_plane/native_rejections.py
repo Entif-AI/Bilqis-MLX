@@ -250,12 +250,12 @@ def project_rejection_rows(
                 continue
             if verified is None:
                 continue
-            receipt_sha = verified[2]
+            _event_id, _authority, receipt_sha, _evidence, portable = verified
             if receipt_sha in seen_receipts:
                 continue
             projected_records, projected_events = _project_verified_rejection(
                 verified, generation)
-            if verified[4] and verified_portable is not None:
+            if portable and verified_portable is not None:
                 verified_portable[index] = receipt_sha, projected_records, projected_events
         if receipt_sha in seen_receipts:
             continue

@@ -138,6 +138,27 @@ class MemorySnapshot(WireRecord):
 
 
 @dataclass(frozen=True)
+class MemorySnapshotV2(MemorySnapshot):
+    """Retained motif allocation, distinct from retrieval and byte telemetry."""
+    SCHEMA = "bilqis.bamf.mission-control.memory-snapshot/v2"
+    allocated_slots: int
+    slot_capacity: int
+    pending_keys: int
+    aliases: int
+    allocation_snapshot_sha256: str
+    motif_manifest_sha256: str
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        require(all(is_wire_integer(item) and item >= 0 for item in (
+            self.allocated_slots, self.slot_capacity, self.pending_keys, self.aliases,
+        )) and 0 < self.slot_capacity and self.allocated_slots <= self.slot_capacity,
+                "MEMORY_ALLOCATION_COUNTS")
+        require(is_sha256(self.allocation_snapshot_sha256)
+                and is_sha256(self.motif_manifest_sha256), "MEMORY_ALLOCATION_DIGEST")
+
+
+@dataclass(frozen=True)
 class TeacherSnapshot(WireRecord):
     SCHEMA = "bilqis.bamf.mission-control.teacher-snapshot/v1"
     meta: RecordMeta

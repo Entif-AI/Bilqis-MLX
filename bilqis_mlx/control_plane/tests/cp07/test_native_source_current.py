@@ -266,11 +266,19 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
 
             for family in (
                     QueryFamily.CAPABILITY, QueryFamily.RESOURCE,
-                    QueryFamily.TEACHER, QueryFamily.NEURAL):
+                    QueryFamily.TEACHER, QueryFamily.NEURAL, QueryFamily.MEMORY):
                 page = catalog.query(QueryRequest(family, run_id=source.run_id))
                 self.assertEqual(page.state.value, "PARTIAL", family.value)
                 self.assertGreater(len(page.records), 0, family.value)
                 self.assertEqual(page.markers, (), family.value)
+
+            memory = catalog.query(QueryRequest(QueryFamily.MEMORY, run_id=source.run_id))
+            self.assertEqual(len(memory.records), 1)
+            self.assertEqual(memory.records[0].allocated_slots, len(source.retained_state.allocations.manifest.slots))
+            self.assertEqual(memory.records[0].slot_capacity, source.retained_state.allocations.manifest.capacity)
+            self.assertIsNone(memory.records[0].hits.value)
+            self.assertIsNone(memory.records[0].used_bytes.value)
+            self.assertEqual(memory.records[0].allocation_snapshot_sha256, source.retained_state.allocations.digest)
 
             semantic = catalog.query(QueryRequest(
                 QueryFamily.SEMANTIC, run_id=source.run_id))
@@ -279,7 +287,7 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
 
             for family in (
                     QueryFamily.SCHOOL, QueryFamily.FRAME,
-                    QueryFamily.MEMORY, QueryFamily.SALIENCE, QueryFamily.CORRECTION):
+                    QueryFamily.SALIENCE, QueryFamily.CORRECTION):
                 page = catalog.query(QueryRequest(family, run_id=source.run_id))
                 self.assertEqual(page.state.value, "EMPTY", family.value)
                 self.assertEqual(page.coverage.value, "COMPLETE", family.value)

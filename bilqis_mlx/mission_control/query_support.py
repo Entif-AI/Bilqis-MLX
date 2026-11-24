@@ -22,7 +22,7 @@ from .contracts.events import (
 from .contracts.model import CoverageState, WireRecord, is_wire_integer, require
 from .contracts.registry import ALL_RECORD_TYPES
 from .contracts.observability import (
-    GenerationManifest, GenerationManifestV2, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
+    GenerationManifest, GenerationManifestV2, MemorySnapshot, MemorySnapshotV2, NeuralRuntimeSample, ResourceSample,
     SemanticAtlasSnapshot, SemanticProjectionSnapshot, SemanticReleaseSnapshot,
     TeacherSnapshot,
 )
@@ -59,7 +59,7 @@ FAMILY_TYPES = MappingProxyType({
     ),
     QueryFamily.FRAME: (FrameCompileReceipt,),
     QueryFamily.NEURAL: (NeuralRuntimeSample,),
-    QueryFamily.MEMORY: (MemorySnapshot,),
+    QueryFamily.MEMORY: (MemorySnapshot, MemorySnapshotV2),
     QueryFamily.TEACHER: (TeacherSnapshot,),
     QueryFamily.SALIENCE: (SalienceEvent,),
     QueryFamily.CORRECTION: (CorrectionEvent,),
