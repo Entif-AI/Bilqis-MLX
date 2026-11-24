@@ -15,7 +15,7 @@ from bilqis_mlx.runtime.autonomy_state import (
     persist_autonomy_state,
     read_autonomy_state,
 )
-from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation_authority
+from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
 from bilqis_mlx.runtime.lawful_teaching_frontier import (
     issue_lawful_teaching_frontier,
     require_current_lawful_teaching_frontier,
@@ -90,6 +90,12 @@ class LawfulTeachingFrontierRuntimeTests(MixedWitnessSupport, unittest.TestCase)
             "bilqis_mlx.runtime.atlas_flywheel_runtime."
             "resolve_atlas_artifact_selection", return_value=selection))
         stack.enter_context(patch(
+            "bilqis_mlx.runtime.bamf_bundle.feature.current_authority."
+            "resolve_atlas_artifact_selection", return_value=selection))
+        stack.enter_context(patch(
+            "bilqis_mlx.runtime.bamf_bundle.feature.current_authority."
+            "load_pinned_atlas_snapshot", return_value=snapshot))
+        stack.enter_context(patch(
             "bilqis_mlx.factory.skos_curriculum.compile_semantic_curriculum",
             return_value=candidate))
         stack.enter_context(patch(
@@ -128,8 +134,7 @@ class LawfulTeachingFrontierRuntimeTests(MixedWitnessSupport, unittest.TestCase)
             stack, selection = self._runtime_patches(
                 snapshot, schema, features, candidate)
             with stack:
-                parent, _ = load_bamf_generation_authority(
-                    self.run / "bamf-state.json")
+                parent = load_accepted_generation(self.run)
                 context = AcceptedRuntimeHost(self.run).source_context(
                     source_root=LEGACY_SOURCE.resolve())
                 frontier = issue_lawful_teaching_frontier(
@@ -179,8 +184,7 @@ class LawfulTeachingFrontierRuntimeTests(MixedWitnessSupport, unittest.TestCase)
             cold_stack, selection = self._runtime_patches(
                 snapshot, schema, features, candidate)
             with cold_stack:
-                cold_parent, _ = load_bamf_generation_authority(
-                    self.run / "bamf-state.json")
+                cold_parent = load_accepted_generation(self.run)
                 cold_context = AcceptedRuntimeHost(self.run).source_context(
                     source_root=LEGACY_SOURCE.resolve())
                 cold = issue_lawful_teaching_frontier(

@@ -25,6 +25,7 @@ from bilqis_mlx.runtime.priority_source_offer import (
     materialize_priority_source_intent,
 )
 from bilqis_mlx.runtime.teacher_policy_selection import select_visit_policy
+from bilqis_mlx.runtime.bamf_operator.session_parts.rehearsal import reserve_visit_preservation
 from bilqis_mlx.runtime.priority_lesson import (
     LessonShapeUnavailable, prepare_lesson_pool, shape_priority_lesson,
 )
@@ -42,7 +43,7 @@ from .accepted_priority_candidate import (
 from .accepted_priority_learning_first import execute_learning_first_priority_candidate
 from .accepted_priority_visit_contracts import (
     PriorityVisitResult,
-    _issue_result,
+    _cadence_context, _empty_priority_result, _issue_result,
     accepted_priority_school,
 )
 
@@ -54,6 +55,22 @@ def _action_required_hold_reason(action_kind):
     return ('CORRECTION_ACTION_REQUIRED'
             if action_kind == ActionKind.CORRECTION
             else 'PROCEDURE_REPAIR_ACTION_REQUIRED')
+
+def _selected_ranking_evidence(priority_features, dispatch_tier, option, planning_offer, offer):
+    planning_authority = getattr(planning_offer, 'source_authority', None)
+    return {
+        **priority_features,
+        'dispatch_tier': int(dispatch_tier),
+        'eligible_since': option.eligible_since,
+        'downstream_unlocks': option.downstream_unlocks,
+        'stable_id': option.stable_id,
+        'salience_inputs_digest': option.salience_inputs_digest,
+        'planning_source_receipt_sha256': getattr(planning_authority, 'content_sha256', None),
+        'planning_source_each': planning_offer.source_each,
+        'selected_source_receipt_sha256': offer.source_authority.content_sha256,
+        'selected_source_each': offer.source_each,
+    }
+
 
 def _selected_priority_result(
         run_dir, source_context, parent, cache, projection, epoch, teacher,
@@ -90,12 +107,16 @@ def _selected_priority_result(
         option.context.scope, diagnostics,
         grade, total_capabilities=total_capabilities,
         plasticity_escape=plasticity_escape)
+    lesson_pool, allocation = reserve_visit_preservation(
+        source_context, parent, cache, offer, lesson_pool, teacher, option.context.scope)
     shape_started = time.monotonic() if strict else None
     offer, primary_lesson = shape_priority_lesson(
         source_context, parent, offer, lesson_pool, policy)
     if strict and source_materialization_wall_seconds is not None:
         source_materialization_wall_seconds += pool_wall + time.monotonic() - shape_started
     metadata = {**metadata, 'primary_lesson': primary_lesson}
+    if allocation is not None:
+        metadata['preservation_allocation'] = allocation
     metadata = {**metadata, 'how_context': context_for_selection(
         source_context.release, program, grade, school, option, teacher, metadata,
         total_capabilities, **({} if strict else {"prepared_context": prepared_context}))}
@@ -113,22 +134,8 @@ def _selected_priority_result(
         capability_id=capability,
         policy_key=key)
     recorded = record_teacher_visit_identity(selected.teacher_state, identity)
-    ranking_evidence = None
-    if strict:
-        planning_authority = getattr(planning_offer, 'source_authority', None)
-        planning_receipt = getattr(planning_authority, 'content_sha256', None)
-        ranking_evidence = {
-            **priority_features,
-            'dispatch_tier': int(dispatch_tier),
-            'eligible_since': option.eligible_since,
-            'downstream_unlocks': option.downstream_unlocks,
-            'stable_id': option.stable_id,
-            'salience_inputs_digest': option.salience_inputs_digest,
-            'planning_source_receipt_sha256': planning_receipt,
-            'planning_source_each': planning_offer.source_each,
-            'selected_source_receipt_sha256': offer.source_authority.content_sha256,
-            'selected_source_each': offer.source_each,
-        }
+    ranking_evidence = (_selected_ranking_evidence(
+        priority_features, dispatch_tier, option, planning_offer, offer) if strict else None)
     recorded = record_teacher_visit_authority(recorded, identity)
     visit = _issue_bound_visit(recorded, identity)
     return _issue_result(
@@ -173,43 +180,6 @@ def _accepted_context(run_dir, source_context, school, lawful_frontier,
     if getattr(getattr(school, 'current_student', None), 'sha256', None) != expected:
         _invalid('BAMF_PRIORITY_STUDENT_DRIFT')
     return parent, cache
-
-
-def _cadence_context(cadence_authorization, lawful_frontier):
-    if cadence_authorization is None:
-        return None, None
-    from bilqis_mlx.runtime.active_grade_cadence_contracts import (
-        ActiveGradeCadenceAuthorization,
-    )
-    if not isinstance(cadence_authorization, ActiveGradeCadenceAuthorization):
-        _invalid('BAMF_ACTIVE_GRADE_CADENCE_AUTHORITY_INVALID')
-    cadence_ids = tuple(cadence_authorization.authorized_capability_ids)
-    if not set(cadence_ids) <= set(lawful_frontier.ready_capability_ids):
-        _invalid('BAMF_ACTIVE_GRADE_CADENCE_AUTHORITY_DRIFT')
-    return cadence_ids, {'cadence': cadence_authorization.to_record()}
-
-
-def _empty_priority_result(run_dir, source_context, parent, frontier, history,
-                           lawful_frontier, cadence_authorization,
-                           cadence_ids, cadence_metadata):
-    from bilqis_mlx.runtime.lawful_teaching_frontier import (
-        require_bound_lawful_teaching_frontier,
-    )
-    require_bound_lawful_teaching_frontier(lawful_frontier, source_context, parent)
-    if (frontier is not None or history is not None
-            or (lawful_frontier.ready_capability_ids and cadence_ids is None)
-            or cadence_ids):
-        _invalid('BAMF_PRIORITY_EMPTY_AUTHORITY_DRIFT')
-    holds = sorted(
-        (item.capability_id, item.code.value) for item in lawful_frontier.exclusions)
-    if cadence_authorization is not None:
-        disposition = cadence_authorization.disposition.value
-        if disposition != 'TEACHING':
-            holds.append(('__active_grade__', 'CADENCE_' + disposition))
-    return _issue_result(
-        'NO_ADMISSIBLE_TEACHING', None, None, None, None, cadence_metadata, None,
-        holds, run_dir, lawful_frontier,
-        cadence_authorization=cadence_authorization)
 
 
 def _qualified_priority_context(

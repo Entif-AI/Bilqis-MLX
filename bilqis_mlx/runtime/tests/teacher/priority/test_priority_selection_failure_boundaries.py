@@ -141,6 +141,7 @@ def test_policy_value_error_is_not_reclassified_as_source_hold(priority):
     with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5], patches[6], \
          patch.object(priority, "salience_priority_features", return_value={}), \
          patch.object(priority, "_grade", return_value="g"), \
+         patch.object(priority, "prepare_lesson_pool", return_value=object()), \
          patch.object(
              priority, "select_visit_policy",
              side_effect=ValueError("policy invalid")):

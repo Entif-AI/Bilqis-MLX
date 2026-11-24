@@ -191,3 +191,61 @@ def test_selected_direct_authority_does_not_redraw_or_accept_foreign_content(adm
             _selected_delivery_authority(
                 admitted, (*rows, *extra), authority, delivery, "C.ADD", 17)
     assert admitted._source_preparation_metrics.provider_draws == draws
+
+
+def test_protected_interference_reserves_real_primary_rows_and_rotates_rehearsal(
+        admitted, offer_factory):
+    from bilqis_mlx.runtime.bamf_operator.session_parts.rehearsal import (
+        RehearsalPlan, materialize_rehearsal_rows, reserve_preservation,
+    )
+
+    parent, draw = offer_factory
+    original = draw("A.PARENT")
+    pool = prepare_lesson_pool(admitted, original)
+    protected = ("A.IDENTITY", "A.MAPS", "A.MEMBER")
+    target = SimpleNamespace(protected_capability_ids=protected)
+    protection = SimpleNamespace(digest="a" * 64)
+    teacher = {"causal_experiment": {"negative_archetypes": [
+        {"capability": "A.PARENT", "curriculum_scope": "school",
+         "fixed_reference_deltas": {"A.MAPS": -.8, "A.IDENTITY": -.2, "A.PARENT": -1}},
+        {"capability": "A.EDGE", "curriculum_scope": "school",
+         "fixed_reference_deltas": {"A.MEMBER": -1}},
+        {"capability": "A.PARENT", "curriculum_scope": "other",
+         "fixed_reference_deltas": {"A.MEMBER": -1}},
+    ]}}
+    reduced, allocation = reserve_preservation(
+        admitted, original, pool, protection, target, teacher, "school")
+    assert allocation["reserved_rows"] == 8
+    shaped, _ = shape_priority_lesson(
+        admitted, parent, original, reduced, {"depth": 1, "contrast": 0})
+    assert shaped.source_each == 24
+    assert Counter(row["gold"] for row in shaped.rows()) == {"TRUE": 12, "FALSE": 12}
+    assert admitted.require_bound_rows(shaped.rows(), shaped.source_authority) is shaped.source_authority
+    plan = RehearsalPlan("A.PARENT", "A", (), protected, (),
+                         "a" * 64, "b" * 64, "c" * 64, "d" * 64,
+                         preservation_allocation=allocation)
+    counts = Counter()
+    for ordinal in range(1, 7):
+        delivered = materialize_rehearsal_rows(admitted, plan, ordinal)
+        rows = delivered.retention_support
+        assert len(rows) + shaped.source_each == 32
+        assert Counter(row["gold"] for row in rows) == {"TRUE": 4, "FALSE": 4}
+        assert len({row["id"] for row in rows}) == len(rows)
+        for row in rows:
+            authority = delivered.authorities_by_id[row["id"]]
+            assert admitted.require_bound_rows((row,), authority) is authority
+            counts[row["capability"]] += 1
+    assert set(counts) == set(protected)
+    assert counts["A.MAPS"] > counts["A.MEMBER"]
+
+    neutral_pool, neutral = reserve_preservation(
+        admitted, original, pool, protection, target, {}, "school")
+    assert neutral["reserved_rows"] == 4
+    assert len(neutral_pool.baseline) == 28
+    assert reduced != neutral_pool
+    # No authority for a non-predicate or incomplete construction: unchanged.
+    other = draw("B.AND")
+    other_pool = prepare_lesson_pool(admitted, other)
+    assert reserve_preservation(
+        admitted, other, other_pool, protection, target, teacher, "school"
+    ) == (other_pool, None)

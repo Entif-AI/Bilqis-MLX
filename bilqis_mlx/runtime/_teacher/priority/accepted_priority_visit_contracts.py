@@ -197,3 +197,40 @@ __all__ = (
     "require_priority_cadence_authorization",
     "require_priority_lawful_frontier",
 )
+
+
+def _cadence_context(cadence_authorization, lawful_frontier):
+    if cadence_authorization is None:
+        return None, None
+    from bilqis_mlx.runtime.active_grade_cadence_contracts import (
+        ActiveGradeCadenceAuthorization,
+    )
+    if not isinstance(cadence_authorization, ActiveGradeCadenceAuthorization):
+        _invalid('BAMF_ACTIVE_GRADE_CADENCE_AUTHORITY_INVALID')
+    cadence_ids = tuple(cadence_authorization.authorized_capability_ids)
+    if not set(cadence_ids) <= set(lawful_frontier.ready_capability_ids):
+        _invalid('BAMF_ACTIVE_GRADE_CADENCE_AUTHORITY_DRIFT')
+    return cadence_ids, {'cadence': cadence_authorization.to_record()}
+
+
+def _empty_priority_result(run_dir, source_context, parent, frontier, history,
+                           lawful_frontier, cadence_authorization,
+                           cadence_ids, cadence_metadata):
+    from bilqis_mlx.runtime.lawful_teaching_frontier import (
+        require_bound_lawful_teaching_frontier,
+    )
+    require_bound_lawful_teaching_frontier(lawful_frontier, source_context, parent)
+    if (frontier is not None or history is not None
+            or (lawful_frontier.ready_capability_ids and cadence_ids is None)
+            or cadence_ids):
+        _invalid('BAMF_PRIORITY_EMPTY_AUTHORITY_DRIFT')
+    holds = sorted(
+        (item.capability_id, item.code.value) for item in lawful_frontier.exclusions)
+    if cadence_authorization is not None:
+        disposition = cadence_authorization.disposition.value
+        if disposition != 'TEACHING':
+            holds.append(('__active_grade__', 'CADENCE_' + disposition))
+    return _issue_result(
+        'NO_ADMISSIBLE_TEACHING', None, None, None, None, cadence_metadata, None,
+        holds, run_dir, lawful_frontier,
+        cadence_authorization=cadence_authorization)
