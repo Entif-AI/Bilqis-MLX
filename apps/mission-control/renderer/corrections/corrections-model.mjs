@@ -1,5 +1,6 @@
 const QUERY_SCHEMA = "bilqis.bamf.control-plane.query/v1";
 const CORRECTION_SCHEMA = "bilqis.bamf.mission-control.correction-event/v1";
+const FRONTIER_SCHEMA = "bilqis.bamf.mission-control.correction-frontier-snapshot/v1";
 const TERMINAL_EVIDENCE_STATES = new Set(["RECOMPUTED", "REQUALIFIED"]);
 
 export function correctionQuery(context) {
@@ -12,7 +13,18 @@ export function correctionQuery(context) {
   });
 }
 
-export function productionProjectionFromPage(page, context, selectedId = null) {
+export function correctionFrontierQuery(context) {
+  return Object.freeze({ ...correctionQuery(context), family: "record", schema_version: FRONTIER_SCHEMA, limit: 1 });
+}
+
+function acceptedFrontier(page, context) {
+  if (page?.accepted !== true || !["PRESENT", "PARTIAL"].includes(page.state)) return null;
+  return page.records?.find(record => record.schema_version === FRONTIER_SCHEMA
+    && record.meta?.run?.run_id === context?.runId
+    && (context?.generation == null || record.meta.run.generation === context.generation)) ?? null;
+}
+
+export function productionProjectionFromPage(page, context, selectedId = null, frontierPage = null) {
   const records = page?.accepted === true && Array.isArray(page.records)
     ? page.records.filter(record => record?.schema_version === CORRECTION_SCHEMA) : [];
   const selected = records.find(record => record.correction_id === selectedId || record.meta?.record_id === selectedId)
@@ -21,6 +33,7 @@ export function productionProjectionFromPage(page, context, selectedId = null) {
     posture: context?.mode === "HISTORICAL" ? "historical" : "live",
     generation: context?.mode === "HISTORICAL" ? context?.generation ?? null : null,
     pageState: page?.accepted === true ? page.state : "UNAVAILABLE", correction: null,
+    frontier: acceptedFrontier(frontierPage, context),
     nodes: Object.freeze([]), edges: Object.freeze([]), queue: Object.freeze([]), history: Object.freeze([]),
   });
   const history = records.map(record => Object.freeze({

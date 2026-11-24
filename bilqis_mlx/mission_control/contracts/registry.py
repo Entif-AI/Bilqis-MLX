@@ -6,7 +6,7 @@ from .envelopes import (
     UnavailableEnvelope,
 )
 from .events import (
-    CandidateDecision, CorrectionEvent, FrameCompileReceipt, LearningEpisode,
+    CandidateDecision, CorrectionEvent, CorrectionFrontierSnapshot, FrameCompileReceipt, LearningEpisode,
     SalienceEvent, LearningHistorySummary,
 )
 from .observability import (
@@ -70,6 +70,7 @@ ALL_RECORD_TYPES = (
     TeacherSnapshot,
     SalienceEvent,
     CorrectionEvent,
+    CorrectionFrontierSnapshot,
     GenerationManifest,
     GenerationManifestV2,
     ResourceSample,

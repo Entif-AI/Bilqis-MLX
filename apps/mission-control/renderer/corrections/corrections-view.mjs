@@ -52,14 +52,25 @@ function graphMarkup(t, projection) {
   return `<details class="correction-graph-disclosure" data-test-id="corrections-graph"><summary data-test-id="corrections-graph-toggle">${esc(t("corrections.graph.toggle", { count: edges.length }))}</summary>${help(t, "graph", "graph")}<ol class="correction-graph" aria-label="${esc(t("corrections.graph.label"))}" data-test-id="corrections-graph-edges">${edges.map((edge, index) => `<li data-test-id="${hook("graph-edge", `${index}:${edge.from}:${edge.to}`)}"><div><span class="correction-endpoint-label">${esc(t("corrections.graph.from"))}</span>${endpoint(edge.from, `graph-from-${index}`)}</div><div class="correction-relation"><span aria-hidden="true">→</span><code>${esc(edge.relation)}</code><span aria-hidden="true">→</span></div><div><span class="correction-endpoint-label">${esc(t("corrections.graph.to"))}</span>${endpoint(edge.to, `graph-to-${index}`)}</div></li>`).join("")}</ol>${tableWrap("corrections-edge-table", t("corrections.graph.edgeTable"), [t("corrections.graph.from"), t("corrections.graph.relation"), t("corrections.graph.to")], edges.map(edge => `<tr><td><code>${esc(edge.from)}</code></td><td><code>${esc(edge.relation)}</code></td><td><code>${esc(edge.to)}</code></td></tr>`).join(""), t)}</details>`;
 }
 
+function frontierMarkup(t, frontier) {
+  const fields = [
+    ["acceptedGeneration", frontier.meta.run.generation],
+    ["generation", frontier.correction_generation],
+    ["entries", frontier.frontier_entry_count],
+  ];
+  const refs = [...frontier.meta.source_refs, ...frontier.meta.evidence_refs];
+  return `<section class="correction-panel" data-test-id="corrections-accepted-frontier"><h3>${esc(t("corrections.frontier.title"))}</h3><dl>${fields.map(([key, value]) => `<dt>${esc(t("corrections.frontier." + key))}</dt><dd>${esc(value)}</dd>`).join("")}</dl><p>${esc(t("corrections.frontier.boundary"))}</p><details><summary>${esc(t("corrections.context.receipts"))}</summary>${references(refs, "frontier-evidence", t)}${references(frontier.meta.receipt_refs, "frontier-receipt", t, "receipt")}</details></section>`;
+}
+
 function contextMarkup(t, projection, locale) {
   const correction = projection.correction;
+  if (!correction && projection.frontier) return frontierMarkup(t, projection.frontier);
   if (!correction) return `<section class="correction-panel"><h3>${esc(t("corrections.state.unavailableTitle"))}</h3><p>${esc(t("corrections.state.unavailableBody"))}</p></section>`;
   const rows = [
     ["id", correction.id, null], ["before", correction.priorRevision, help(t, "prior", "prior")],
     ["after", correction.currentRevision, help(t, "current", "current")],
     ["generation", correction.correctionGeneration, help(t, "generation", "generation")],
-    ["unknown", t("corrections.context.unknownCount", { count: unknownInfluenceRows(projection).length }), help(t, "unknown", "unknown")],
+    ["unknown", projection.pageState ? t("corrections.evidence.none") : t("corrections.context.unknownCount", { count: unknownInfluenceRows(projection).length }), help(t, "unknown", "unknown")],
   ];
   const time = correction.observedAt == null ? "" : `<div class="correction-observed"><span>${esc(t("corrections.history.observed"))}</span>${temporalMarkup({ unixSeconds: correction.observedAt, locale, testId: "corrections-context-time" })}</div>`;
   const sourceRefs = [correction.sourceReference].filter(Boolean);
@@ -70,7 +81,7 @@ function contextMarkup(t, projection, locale) {
 function impactMarkup(t, projection) {
   const nodes = evidencedDescendants(projection);
   const rows = impactRows(projection).map(row => `<tr data-test-id="${hook("impact-row", row.id)}"><th scope="row">${inspectNode(row, "artifact")}</th><td>${esc(row.kind)}</td><td>${stateBadge(row.state, t)}</td><td>${references(row.evidenceRefs, "artifact-ref", t, "reference", row.id)}</td></tr>`).join("");
-  return `<section class="correction-impact" data-test-id="corrections-impact"><header><h3>${esc(t("corrections.impact.title"))}</h3><div class="correction-panel-tools">${help(t, "impact", "impact")}<p>${esc(t("corrections.impact.summary", { artifacts: nodes.length, edges: projection.edges?.length ?? 0 }))}</p></div></header><p>${esc(t("corrections.impact.boundary"))}</p>${graphMarkup(t, projection)}${rows ? tableWrap("corrections-impact-table", t("corrections.table.caption"), ["identity", "class", "state", "evidence"].map(key => t(`corrections.table.${key}`)), rows, t) : ""}</section>`;
+  return `<section class="correction-impact" data-test-id="corrections-impact"><header><h3>${esc(t("corrections.impact.title"))}</h3><div class="correction-panel-tools">${help(t, "impact", "impact")}<p>${esc(projection.pageState ? t("corrections.impact.unavailable") : t("corrections.impact.summary", { artifacts: nodes.length, edges: projection.edges?.length ?? 0 }))}</p></div></header><p>${esc(t("corrections.impact.boundary"))}</p>${graphMarkup(t, projection)}${rows ? tableWrap("corrections-impact-table", t("corrections.table.caption"), ["identity", "class", "state", "evidence"].map(key => t(`corrections.table.${key}`)), rows, t) : ""}</section>`;
 }
 
 function queueMarkup(t, projection) {

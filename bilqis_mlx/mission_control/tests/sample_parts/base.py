@@ -6,7 +6,7 @@ from bilqis_mlx.mission_control.envelopes import (
     StreamPosition, UnavailableEnvelope, UnavailableReason, event_cursor_sha256,
 )
 from bilqis_mlx.mission_control.events import (
-    CandidateDecision, CandidateOutcome, CorrectionEvent, FrameCompileReceipt,
+    CandidateDecision, CandidateOutcome, CorrectionEvent, CorrectionFrontierSnapshot, FrameCompileReceipt,
     LearningEpisode, SalienceEvent,
 )
 from bilqis_mlx.mission_control.model import (
@@ -233,3 +233,7 @@ BASE_SAMPLES += (FactoryCockpitSnapshot(
         ),
     ),),
 ),)
+
+BASE_SAMPLES += (
+    CorrectionFrontierSnapshot(meta("correction-frontier", coverage=CoverageState.PARTIAL), 4, 0, D1),
+)

@@ -19,6 +19,7 @@ from .native_rejections import rejection_material
 from .native_contracts import run_ref
 from .observed import observed_records, publish_observed_events
 from .projection.memory import accepted_memory_records
+from .projection.correction_frontier import accepted_correction_frontier
 from .projection.learning_history import LearningHistoryProjection, learning_history_summary
 from .projection.capability_dossier import (
     accepted_capability_dossiers as _accepted_capability_dossiers,
@@ -75,6 +76,7 @@ def _project_accepted_base(run_dir, history, *,
         generated, emitted = accepted_records(generation, parent)
         records.extend(generated)
         records.extend(accepted_memory_records(run_dir, generation))
+        records.extend(accepted_correction_frontier(generation))
         events.extend(emitted)
         parent = generation
     records.extend(accepted_factory_records(history))

@@ -5,7 +5,7 @@ from .contracts.envelopes import (
     StreamPosition, UnavailableEnvelope, UnavailableReason,
 )
 from .contracts.events import (
-    CandidateDecision, CandidateOutcome, CorrectionEvent, FrameCompileReceipt,
+    CandidateDecision, CandidateOutcome, CorrectionEvent, CorrectionFrontierSnapshot, FrameCompileReceipt,
     LearningEpisode, LearningHistorySummary, SalienceEvent,
 )
 from .contracts.factory import (
@@ -55,7 +55,7 @@ from .contracts.snapshots import (
 __all__ = (
     "ALL_RECORD_TYPES", "ActionParameter", "ActionReceiptState",
     "AuthorityClass", "CandidateDecision", "CandidateOutcome",
-    "CapabilitySnapshot", "ContractErrorCode", "CorrectionEvent",
+    "CapabilitySnapshot", "ContractErrorCode", "CorrectionEvent", "CorrectionFrontierSnapshot",
     "CoverageState", "CurriculumFrontier", "DataValue", "ErrorEnvelope",
     "EventEnvelope", "FrameCompileReceipt", "GenerationManifest", "GenerationManifestV2",
     "FactoryAdmissionAuthority", "FactoryBlocker", "FactoryCockpitSnapshot",

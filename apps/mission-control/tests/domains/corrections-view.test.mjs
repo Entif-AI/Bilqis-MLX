@@ -126,3 +126,29 @@ test("fixture remains grounded in executable correction and CP03 contracts", () 
   assert.match(runtimeEvidence, /class CorrectionEvent/);
   assert.match(querySupport, /QueryFamily\.CORRECTION: \(CorrectionEvent,\)/);
 });
+
+test("authenticated frontier inventory distinguishes measured empty from unmeasured correction debt", async () => {
+  const { correctionFrontierQuery } = await import("../../renderer/corrections/corrections-model.mjs");
+  const context = { runId: "run-real", generation: 59, mode: "LIVE" };
+  const query = correctionFrontierQuery(context);
+  assert.equal(query.family, "record");
+  const record = {
+    schema_version: query.schema_version,
+    meta: { run: { run_id: "run-real", generation: 59 },
+      source_refs: ["bamf-manifest:fixture"], evidence_refs: ["correction-frontier:fixture"],
+      receipt_refs: ["bamf-acceptance:fixture"] },
+    correction_generation: 0, frontier_entry_count: 0,
+  };
+  const page = { accepted: true, state: "PARTIAL", records: [record] };
+  const empty = { accepted: true, state: "EMPTY", records: [] };
+  const projection = productionProjectionFromPage(empty, context, null, page);
+  const markup = renderCorrectionsMarkup(projection);
+  assert.match(markup, /Accepted correction frontier/);
+  assert.match(markup, /Recorded frontier entries<\/dt><dd>0<\/dd>/);
+  assert.doesNotMatch(markup, /0 artifacts|0 explicitly untracked/);
+  assert.equal(projection.correction, null);
+  for (const unavailable of [{ ...page, state: "STALE" }, { ...page, state: "DENIED" }]) {
+    assert.equal(productionProjectionFromPage(empty, context, null, unavailable).frontier, null);
+  }
+  assert.equal(productionProjectionFromPage(empty, { ...context, generation: 60 }, null, page).frontier, null);
+});

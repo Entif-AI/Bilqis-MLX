@@ -145,3 +145,20 @@ class CorrectionEvent(WireRecord):
         require(is_wire_integer(self.correction_generation)
                 and self.correction_generation >= 0, "CORRECTION_GENERATION")
         require(is_sha256(self.old_digest) and is_sha256(self.new_digest), "CORRECTION_DIGEST")
+
+
+@dataclass(frozen=True)
+class CorrectionFrontierSnapshot(WireRecord):
+    """Accepted sidecar inventory, not an event, impact graph or work queue."""
+
+    SCHEMA = "bilqis.bamf.mission-control.correction-frontier-snapshot/v1"
+    meta: RecordMeta
+    correction_generation: int
+    frontier_entry_count: int
+    frontier_sha256: str
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        require(all(is_wire_integer(n) and n >= 0 for n in (
+            self.correction_generation, self.frontier_entry_count)), "FRONTIER_COUNTS")
+        require(is_sha256(self.frontier_sha256), "FRONTIER_DIGEST")
