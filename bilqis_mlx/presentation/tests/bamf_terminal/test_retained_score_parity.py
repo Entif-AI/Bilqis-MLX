@@ -1,8 +1,8 @@
 import io
 import json
 
-from bilqis_mlx.presentation.bamf_terminal_rows import mastery_rows, retention_row
-from bilqis_mlx.presentation.bamf_terminal_source import read_bamf_terminal_observation
+from bilqis_mlx.presentation.bamf_terminal.rows import mastery_rows, retention_row
+from bilqis_mlx.presentation.bamf_terminal.source import read_bamf_terminal_observation
 from bilqis_mlx.presentation.school_telemetry import LETTER_TABLES, SchoolTelemetry
 from bilqis_mlx.presentation.spiral_dashboard import Dashboard
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from bilqis_mlx.presentation.school50.formatting import _display, _scaled_lr, _whole
 from bilqis_mlx.presentation.teacher_vnext import teacher_fields
-from .bamf_terminal_scores import complete_local_pair, paired_scores, protected_deltas
+from .scores import complete_local_pair, paired_scores, protected_deltas
 
 
 MARKER = "_bamf_terminal_observed"

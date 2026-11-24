@@ -187,7 +187,7 @@ class RenderView:
         with self._draw_lock:
             self.dirty=False
             try:
-                from ..bamf_terminal_projection import refresh_bamf_terminal_projection
+                from ..bamf_terminal.projection import refresh_bamf_terminal_projection
                 refresh_bamf_terminal_projection(self)
                 self._sample_step_rate()
                 if self.stream.isatty():

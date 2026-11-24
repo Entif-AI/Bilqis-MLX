@@ -10,7 +10,7 @@ _COUNTER_FIELDS = ("visits", "retained_visits", "attempted_steps", "retained_ste
 
 def begin_bamf_command_accounting(board) -> None:
     """Start one operator-command counter epoch."""
-    from .bamf_reference_growth import ReferenceGrowth
+    from .reference_growth import ReferenceGrowth
     board._bamf_reference_growth = ReferenceGrowth()
     board._bamf_session_visit_baseline = None
     board._bamf_terminal_projection_token = None
@@ -101,7 +101,7 @@ def ingest_bamf_command_event(board, event: dict) -> bool:
     accounting["retained_visits"] += 1 if accepted else 0
     accounting["attempted_steps"] += attempted
     accounting["retained_steps"] += retained
-    from .bamf_terminal_source import _durable_visit
+    from .source import _durable_visit
     growth = board._bamf_reference_growth
     growth.observe(_durable_visit(event, getattr(board, "_bamf_terminal_observed_run_id", "")))
     growth.publish(board)

@@ -2,7 +2,7 @@
 import io
 import json
 
-from bilqis_mlx.presentation.bamf_terminal_accounting import begin_bamf_command_accounting
+from bilqis_mlx.presentation.bamf_terminal.accounting import begin_bamf_command_accounting
 from bilqis_mlx.presentation.dashboard import ingest
 from bilqis_mlx.presentation.school_telemetry import LETTER_TABLES, SchoolTelemetry
 from bilqis_mlx.presentation.spiral_dashboard import Dashboard

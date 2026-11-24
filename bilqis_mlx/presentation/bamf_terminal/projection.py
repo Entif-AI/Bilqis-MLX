@@ -3,13 +3,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .bamf_terminal_rows import (
+from .rows import (
     MARKER, candidate_row, grade, mastery_rows, retention_row, system_rows,
     teacher_row,
 )
-from .bamf_terminal_accounting import bamf_command_accounting_active
-from .bamf_reference_growth import ReferenceGrowth
-from .bamf_terminal_source import (
+from .accounting import bamf_command_accounting_active
+from .reference_growth import ReferenceGrowth
+from .source import (
     logical_visit_identity, read_bamf_terminal_observation,
 )
 

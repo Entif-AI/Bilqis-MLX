@@ -1,4 +1,4 @@
-from bilqis_mlx.presentation.bamf_terminal_rows import (
+from bilqis_mlx.presentation.bamf_terminal.rows import (
     candidate_row,
     retention_row,
     teacher_row,

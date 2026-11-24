@@ -4,8 +4,8 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 
-from .bamf_terminal_scores import paired_scores
-from .growth_projection import _grew
+from .scores import paired_scores
+from ..growth_projection import _grew
 
 
 @dataclass
