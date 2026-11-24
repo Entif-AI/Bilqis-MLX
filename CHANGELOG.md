@@ -2,6 +2,19 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.5.2](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.5.1...v1.5.2) (2026-11-24)
+
+
+### Bug Fixes
+
+* **bamf:** complete learning-first performance repair ([#1605](https://github.com/Entif-AI/Bilqis-MLX/issues/1605)) ([744f17e](https://github.com/Entif-AI/Bilqis-MLX/commit/744f17ee7f2efbe59a28b57b0d03b692a7f282f8))
+* **bamf:** enforce strict-mode execution boundary ([#1602](https://github.com/Entif-AI/Bilqis-MLX/issues/1602)) ([750d1ad](https://github.com/Entif-AI/Bilqis-MLX/commit/750d1ad16a09d0a6fb542f03756c94eaffd45f12))
+
+
+### Performance Improvements
+
+* **bamf:** collapse ordinary planning ceremony ([#1604](https://github.com/Entif-AI/Bilqis-MLX/issues/1604)) ([c3fec58](https://github.com/Entif-AI/Bilqis-MLX/commit/c3fec582c862650876b6c4e4464fab3d4ef2a883))
+
 ## [1.5.1](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.5.0...v1.5.1) (2026-11-23)
 
 
