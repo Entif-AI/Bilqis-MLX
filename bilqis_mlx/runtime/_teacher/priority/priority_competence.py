@@ -80,41 +80,63 @@ def instructional_members(ready, competence):
     return active or ready
 
 
-def _score_rows(observation, target, accepted, members):
-    scores = observation.get("scores")
-    protected = observation.get("protected_capabilities")
-    digest = observation.get("outcome_sha256")
-    if (not isinstance(scores, (list, tuple))
-            or not isinstance(protected, (list, tuple))
-            or not isinstance(digest, str) or len(digest) != SHA256_HEX_LENGTH):
-        return ()
-    result, seen = [], set()
-    for row in scores:
+def _score_map(rows):
+    if not isinstance(rows, (list, tuple)):
+        return None
+    result = {}
+    for row in rows:
         if not isinstance(row, (tuple, list)) or len(row) != len(SCORE_FIELDS):
-            return ()
+            return None
         cap, before, after, total = row
-        if (not isinstance(cap, str) or cap in seen
+        if (not isinstance(cap, str) or not cap or cap in result
                 or any(type(value) is not int for value in (before, after, total))
                 or total <= 0 or not 0 <= before <= total or not 0 <= after <= total):
-            return ()
-        seen.add(cap)
-        if cap not in members:
-            continue
-        if cap == target:
-            kind = "TARGET_SAMPLE"
-        elif (cap in protected and "candidate_evidence" in observation
-              and observation["candidate_evidence"] is None
-              and observation.get("proposal_id") is None
-              and isinstance(observation["decision"].get(
-                  "retention_protection_plan_sha256"), str)):
-            # Ordinary C05 uses deterministic run/release/capability peers.
-            # Its independently drawn target is not a fixed reference.
-            kind = "FIXED_REFERENCE"
-        else:
-            continue
-        result.append((cap, CompetenceScore(
-            after if accepted else before, total, kind, digest)))
-    return tuple(result)
+            return None
+        result[cap] = (before, after, total)
+    return result
+
+
+def _reference_rows(observation, target, scores, protected):
+    ordinary = ("candidate_evidence" in observation
+                and observation["candidate_evidence"] is None
+                and observation.get("proposal_id") is None
+                and isinstance(observation["decision"].get(
+                    "retention_protection_plan_sha256"), str))
+    if ("fixed_reference_scores" in observation
+            or "fixed_reference_cohort_sha256" in observation):
+        reference = _score_map(observation.get("fixed_reference_scores"))
+        cohort = observation.get("fixed_reference_cohort_sha256")
+        if (not ordinary or not reference
+                or not isinstance(cohort, str) or len(cohort) != SHA256_HEX_LENGTH
+                or any(char not in "0123456789abcdef" for char in cohort)
+                or reference.keys() != scores.keys() or target not in reference
+                or set(reference) - {target} != set(protected)
+                or any(reference[cap] != scores[cap] for cap in protected)):
+            return None
+        return reference
+    # Historical ordinary C05 outcomes contain only comparable peer scores.
+    return {cap: score for cap, score in scores.items()
+            if ordinary and cap != target and cap in protected}
+
+
+def _score_rows(observation, target, accepted, members):
+    scores = _score_map(observation.get("scores"))
+    protected = observation.get("protected_capabilities")
+    digest = observation.get("outcome_sha256")
+    if (scores is None or not isinstance(protected, (list, tuple))
+            or any(not isinstance(cap, str) for cap in protected)
+            or not isinstance(digest, str) or len(digest) != SHA256_HEX_LENGTH):
+        return ()
+    references = _reference_rows(observation, target, scores, protected)
+    if references is None:
+        return ()
+    def records(rows, kind):
+        return tuple((cap, CompetenceScore(
+            after if accepted else before, total, kind, digest))
+            for cap, (before, after, total) in rows.items() if cap in members)
+
+    fresh = {cap: score for cap, score in scores.items() if cap == target}
+    return records(fresh, "TARGET_SAMPLE") + records(references, "FIXED_REFERENCE")
 
 
 def _compatible(observation, target, visit_id, generation, manifest,
