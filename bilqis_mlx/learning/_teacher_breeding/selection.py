@@ -3,7 +3,7 @@ from __future__ import annotations
 from ..teacher_strategy_population import (
     ACTIVE_EFFECTIVE_STRATEGY_LIMIT, active_effective_strategy_keys,
     checkpoint_active_effective_strategy_keys,
-    effective_policy_key, effective_strategy_inventory, BAMF_SUCCESSOR_SELECTION,
+    BAMF_SUCCESSOR_SELECTION,
 )
 from .mutation import mint_bespoke_effective_strategy
 
@@ -18,7 +18,7 @@ def _numeric_scope_family(scope: str) -> str | None:
 
 
 def portable_retained_challenger(teacher: dict, *, capability: str, phase: str,
-                                 curriculum_scope: str):
+                                 curriculum_scope: str, inventory: dict[str, list[str]]):
     """Retry one proven same-capability policy after a numeric scope revision.
 
     Prior-scope reward remains prior-scope evidence. This helper uses retention
@@ -30,12 +30,14 @@ def portable_retained_challenger(teacher: dict, *, capability: str, phase: str,
         return None
     channel = teacher.get("causal_experiment", {})
     strategies = teacher.get("strategies", {})
-    inventory = effective_strategy_inventory(teacher)
+    effective_by_policy = {
+        member: effective for effective, members in inventory.items() for member in members
+    }
     live = set(channel.get("live_effective_strategies", inventory))
     current = channel.get("contexts", {}).get(
         capability + "|" + phase + "|" + curriculum_scope, {})
     tried = {
-        effective_policy_key(strategies[key])
+        effective_by_policy[key]
         for key in current if key in strategies
     }
     candidates = {}
@@ -56,7 +58,7 @@ def portable_retained_challenger(teacher: dict, *, capability: str, phase: str,
             trials = int(record.get("trials", 0))
             if retained < 1 or trials < retained:
                 continue
-            effective = effective_policy_key(policy)
+            effective = effective_by_policy[policy_key]
             if effective not in live or effective in tried:
                 continue
             target = candidates.setdefault(effective, {
@@ -93,16 +95,16 @@ def portable_retained_challenger(teacher: dict, *, capability: str, phase: str,
 
 def pressure_challenger(engine, teacher: dict, rng, *, capability: str, phase: str,
                         curriculum_scope: str, diagnostic_key: str | None,
-                        total_capabilities: int):
+                        total_capabilities: int, inventory: dict[str, list[str]]):
     portable = portable_retained_challenger(
         teacher, capability=capability, phase=phase,
-        curriculum_scope=curriculum_scope)
+        curriculum_scope=curriculum_scope, inventory=inventory)
     if portable is not None:
         return (*portable[:2], "PORTABLE_RETAINED_CHALLENGER", portable[2])
     novel = mint_bespoke_effective_strategy(
         engine, teacher, rng, capability=capability,
         curriculum_scope=curriculum_scope, diagnostic_key=diagnostic_key,
-        total_capabilities=total_capabilities)
+        total_capabilities=total_capabilities, inventory=inventory)
     return ((*novel[:2], "FRESH_MUTATED_CHALLENGER", novel[2])
             if novel is not None else None)
 

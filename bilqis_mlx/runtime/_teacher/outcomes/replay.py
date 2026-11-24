@@ -111,7 +111,7 @@ def _recover_mutated_selected_teacher(run_dir, teacher, observation):
         random.Random(visit["selection_seed"]),
         capability=capability, phase=phase, curriculum_scope=scope_name,
         diagnostic_key=diagnostic_key,
-        total_capabilities=total_capabilities)
+        total_capabilities=total_capabilities, inventory=inventory)
     if challenger is None:
         invalid()
     key, policy, reason, _detail = challenger
