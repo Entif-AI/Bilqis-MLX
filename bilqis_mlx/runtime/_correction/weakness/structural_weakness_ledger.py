@@ -7,6 +7,9 @@ from .structural_weakness_contracts import (
 )
 
 
+_SCORED_RESOLUTION_ROW_WIDTH = 2
+
+
 def _ledger_key(record: dict) -> str:
     return (
         record["context"]["context_sha256"] + ":"
@@ -226,7 +229,7 @@ def record_scored_resolutions(teacher: dict, observation: dict) -> None:
             _invalid("BAMF_WEAKNESS_RESOLUTION_INVALID")
         row_ids = []
         for row in rows:
-            if (not isinstance(row, list) or len(row) != 2
+            if (not isinstance(row, list) or len(row) != _SCORED_RESOLUTION_ROW_WIDTH
                     or not isinstance(row[0], str) or not row[0]
                     or not _sha(row[1])):
                 _invalid("BAMF_WEAKNESS_RESOLUTION_INVALID")

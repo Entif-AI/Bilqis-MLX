@@ -2,8 +2,18 @@
 
 from collections import Counter, defaultdict
 from dataclasses import dataclass
+from enum import Enum
 from random import Random
 from typing import Hashable
+
+
+class LessonSelectionError(str, Enum):
+    EMPTY_GROUPS = "empty lesson groups"
+    INVALID_GROUP = "empty or invalid lesson group"
+    INVALID_ROW = "invalid lesson row"
+    DUPLICATE_ROW = "duplicate lesson row identity or token tuple"
+    INSUFFICIENT_CAPACITY = "insufficient complete-group stratum capacity"
+    BASELINE_UNAVAILABLE = "complete baseline unavailable"
 
 
 class LessonCapacityError(ValueError):
@@ -33,25 +43,25 @@ class LessonSelection:
 
 def _validate_groups(groups):
     if not groups:
-        raise ValueError("empty lesson groups")
+        raise ValueError(LessonSelectionError.EMPTY_GROUPS.value)
     ids, tokens = set(), set()
     for group in groups:
         if not isinstance(group, LessonGroup) or not group.rows:
-            raise ValueError("empty or invalid lesson group")
+            raise ValueError(LessonSelectionError.INVALID_GROUP.value)
         hash(group.stratum)
         for row in group.rows:
             if not isinstance(row, dict):
-                raise ValueError("invalid lesson row")
+                raise ValueError(LessonSelectionError.INVALID_ROW.value)
             identity, sequence = row.get("id"), row.get("tokens")
             if (not isinstance(identity, str) or not identity
                     or not isinstance(sequence, (list, tuple)) or not sequence
                     or any(type(token) is not int for token in sequence)
                     or not isinstance(row.get("answer_kind", "binary"), str)
                     or not isinstance(row.get("gold"), str)):
-                raise ValueError("invalid lesson row")
+                raise ValueError(LessonSelectionError.INVALID_ROW.value)
             sequence = tuple(sequence)
             if identity in ids or sequence in tokens:
-                raise ValueError("duplicate lesson row identity or token tuple")
+                raise ValueError(LessonSelectionError.DUPLICATE_ROW.value)
             ids.add(identity)
             tokens.add(sequence)
 
@@ -126,7 +136,7 @@ def select_group_lesson(baseline, pool, *, seed, deep, contrast):
     strata = _options(pool, seed)
     if any(len(strata.get(key, ())) < count
            for key, count in Counter(slots).items()):
-        raise LessonCapacityError("insufficient complete-group stratum capacity")
+        raise LessonCapacityError(LessonSelectionError.INSUFFICIENT_CAPACITY.value)
     # The unchanged owner draw is the control. A neutral HOW policy must
     # not replace instruction merely because a larger candidate pool exists.
     a = _Variant(tuple(baseline), sum(map(_depth, baseline)),

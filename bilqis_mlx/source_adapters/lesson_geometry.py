@@ -1,7 +1,19 @@
 """Complete construction geometry of repository-owned source adapters."""
 
 from dataclasses import dataclass
+from enum import Enum
 from bilqis_mlx.learning.native_lesson_selection import LessonGroup
+
+
+NUMERIC_LESSON_GROUP_WIDTH = 3
+PAIRED_LESSON_GROUP_WIDTH = 2
+
+
+class LessonGeometryError(str, Enum):
+    NUMERIC_CONSTRUCTION = "invalid numeric lesson construction"
+    PAIRED_GOLD = "invalid paired lesson gold"
+    COPULAR_PAIR = "invalid copular lesson pair"
+    EVENT_PAIR = "invalid event lesson pair"
 
 
 @dataclass(frozen=True)
@@ -12,7 +24,7 @@ class LessonGeometry:
 
     def expanded_count(self, requested):
         count = min(2 * requested, self.maximum or 128, 128)
-        return count - count % 3 if self.layout == "numeric" else count
+        return count - count % NUMERIC_LESSON_GROUP_WIDTH if self.layout == "numeric" else count
 
 
 def geometry_for_adapter(adapter):
@@ -48,21 +60,21 @@ def _validate_numeric(group):
             or group[0].get("answer_kind") != "numeric_active"
             or [(row.get("answer_kind", "binary"), row["gold"])
                 for row in group[1:]] != [("binary", "TRUE"), ("binary", "FALSE")]):
-        raise ValueError("invalid numeric lesson construction")
+        raise ValueError(LessonGeometryError.NUMERIC_CONSTRUCTION.value)
 
 
 def _validate_pair(group, layout):
     first, second = group
     a, b = first["record"], second["record"]
     if {first["gold"], second["gold"]} != {"TRUE", "FALSE"}:
-        raise ValueError("invalid paired lesson gold")
+        raise ValueError(LessonGeometryError.PAIRED_GOLD.value)
     if layout == "copular":
         if (a["query"] != b["query"] or a["entities"] != b["entities"]
                 or len(a["denotations"]) != len(b["denotations"])
                 or sum(x != y for x, y in zip(a["denotations"], b["denotations"])) != 1):
-            raise ValueError("invalid copular lesson pair")
+            raise ValueError(LessonGeometryError.COPULAR_PAIR.value)
     elif a["events"] != b["events"] or a["query"] == b["query"]:
-        raise ValueError("invalid event lesson pair")
+        raise ValueError(LessonGeometryError.EVENT_PAIR.value)
 
 
 def _event_pattern(row):
@@ -92,11 +104,11 @@ def complete_groups(rows, geometry):
     offset = 0
     while offset < len(rows):
         if layout == "numeric":
-            width = 3
+            width = NUMERIC_LESSON_GROUP_WIDTH
         elif layout == "copular":
             width = (2, 2, 2, 2, 1, 1, 1, 1)[len(groups) % 8]
-        elif layout == "event-pair" and offset == 0 and len(rows) >= 2:
-            width = 2
+        elif layout == "event-pair" and offset == 0 and len(rows) >= PAIRED_LESSON_GROUP_WIDTH:
+            width = PAIRED_LESSON_GROUP_WIDTH
         else:
             width = 1
         group = tuple(rows[offset:offset + width])
@@ -104,7 +116,7 @@ def complete_groups(rows, geometry):
             break
         if layout == "numeric":
             _validate_numeric(group)
-        elif width == 2:
+        elif width == PAIRED_LESSON_GROUP_WIDTH:
             _validate_pair(group, layout)
         groups.append(LessonGroup(group, _stratum(group, geometry)))
         offset += width
