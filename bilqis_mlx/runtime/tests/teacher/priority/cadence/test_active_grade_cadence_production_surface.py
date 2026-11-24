@@ -29,7 +29,11 @@ def test_priority_planning_import_path_is_scheduler_neutral():
     owner = (runtime / "_teacher/priority/priority_planning_owner.py").read_text(
         encoding="utf-8")
     assert "runtime.autonomy_live import" not in owner
-    assert "runtime._autonomy_live.planning import" in owner
+    assert "runtime.priority_planning_parts.epoch import" in owner
+    epoch = (runtime / "_teacher/priority/priority_planning_parts/epoch.py").read_text(
+        encoding="utf-8")
+    assert "runtime._autonomy_live.planning import" in epoch
+    assert "runtime.autonomy_live import" not in epoch
 
 
 def test_native_bamf_teacher_and_operator_do_not_reference_cross_grade_scheduler_symbols():
@@ -53,8 +57,13 @@ def test_native_bamf_teacher_and_operator_do_not_reference_cross_grade_scheduler
 def test_operate_bamf_native_call_chain_reaches_active_grade_cadence_owner():
     runtime = Path(__file__).resolve().parents[4]
     assert "_visit_impl" in _called_names(runtime / "bamf_operator/session.py")
-    assert "select_foundation_priority_visit" in _called_names(
-        runtime / "bamf_operator/session.py")
+    session = ast.parse((runtime / "bamf_operator/session.py").read_text(encoding="utf-8"))
+    assert any(isinstance(node, ast.keyword) and node.arg == "select_priority_visit"
+               and isinstance(node.value, ast.Name)
+               and node.value.id == "select_foundation_priority_visit"
+               for node in ast.walk(session))
+    assert "select_priority_visit" in _called_names(
+        runtime / "bamf_operator/session_parts/prepare_visit.py")
     assert "issue_foundation_priority_authority" in _called_names(
         runtime / "_teacher/priority/foundation_teacher_owner.py")
     assert "issue_active_grade_cadence" in _called_names(

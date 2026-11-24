@@ -84,7 +84,7 @@ def test_compact_fresh_mutation_reconstructs_exact_selected_teacher():
          if name != "outcome_sha256"})
 
     with patch.object(replay, "_factory_capability_count", return_value=21):
-        recovered = replay._selected_teacher_override(
+        recovered = replay._recover_selected_teacher(
             "unused", teacher, compact)
 
     assert recovered == selected

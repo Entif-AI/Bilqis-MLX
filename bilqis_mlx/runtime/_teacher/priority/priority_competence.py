@@ -33,12 +33,17 @@ class CapabilityCompetence:
 
     @property
     def priority(self):
+        # Fixed references are comparable across capabilities. Fresh target
+        # samples identify possible weaknesses but cannot outrank established
+        # reference deficits, especially when a perfect reference contradicts them.
         deficit = self.deficit
-        if deficit is not None:
-            return 0, deficit.accuracy, int(deficit.kind != "FIXED_REFERENCE")
+        if self.reference is not None and self.reference.accuracy < 1:
+            return 0, self.reference.accuracy
         if self.reference is None:
-            return 1, Fraction(0), 0
-        return 2, Fraction(1), 0
+            return (1, deficit.accuracy) if deficit is not None else (2, Fraction(0))
+        if deficit is not None:
+            return 3, deficit.accuracy
+        return 4, Fraction(1)
 
     def to_record(self):
         deficit = self.deficit
@@ -66,7 +71,7 @@ def instructional_members(ready, competence):
     """
     ready = tuple(ready)
     active = tuple(cap for cap in ready
-                   if competence.get(cap, UNKNOWN_COMPETENCE).priority[0] < 2)
+                   if competence.get(cap, UNKNOWN_COMPETENCE).priority[0] < 4)
     return active or ready
 
 

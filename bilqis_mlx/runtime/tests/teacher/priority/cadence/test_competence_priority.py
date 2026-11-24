@@ -97,7 +97,8 @@ def test_measured_deficit_overrides_recency_and_certification_counts():
         100, {WEAK: 100}, 12, {WEAK: 12}, competence=competence)
     assert tuple(option.stable_id for option in frontier.options) == (
         WEAK, MEDIUM, UNMEASURED, PERFECT)
-    state = SimpleNamespace(recovery_retained_counts=((WEAK, 8),))
+    state = SimpleNamespace(recovery_retained_counts=((WEAK, 8),),
+                            recovery_attempt_counts=((WEAK, 8),))
     assert recovery_members(state, MEMBERS, {PERFECT: 99, WEAK: 1},
                             MEMBERS, competence) == (WEAK, MEDIUM, UNMEASURED)
 
@@ -183,3 +184,27 @@ def test_legacy_cadence_migrates_once_and_preserves_history(tmp_path):
     assert PERFECT not in migrated.authorized_capability_ids
     assert resumed.state.cadence_sha256 == migrated.state.cadence_sha256
     assert resumed.authorized_capability_ids == migrated.authorized_capability_ids
+
+
+def test_contradictory_target_sample_does_not_displace_reference_deficits():
+    fixture = _accepted_fixture()
+    rejection = _rejection(fixture, PERFECT, [(PERFECT, 0, 6, 6), (WEAK, 2, 2, 6)])
+    competence = _project(fixture, (rejection,))
+    assert PERFECT in instructional_members(MEMBERS, competence)
+    _, frontier = learning_first_priority_frontier(
+        SHA, tuple((cap, None) for cap in MEMBERS), SimpleNamespace(selection=None),
+        100, {}, 12, {}, competence=competence)
+    assert tuple(option.stable_id for option in frontier.options) == (
+        WEAK, MEDIUM, UNMEASURED, PERFECT)
+    state = SimpleNamespace(recovery_retained_counts=(), recovery_attempt_counts=())
+    assert recovery_members(state, MEMBERS, {PERFECT: 99}, MEMBERS, competence) == (
+        WEAK, MEDIUM, UNMEASURED)
+
+
+def test_recovery_rotates_equally_weak_members_after_rejected_attempts():
+    scores = {cap: CapabilityCompetence(CompetenceScore(2, 6, "FIXED_REFERENCE", SHA))
+              for cap in MEMBERS}
+    state = SimpleNamespace(recovery_retained_counts=(),
+                            recovery_attempt_counts=((WEAK, 2),))
+    assert recovery_members(state, MEMBERS, {WEAK: 99}, MEMBERS, scores) == (
+        PERFECT, MEDIUM, UNMEASURED)
