@@ -1,4 +1,5 @@
 """Training-first execution for one accepted C03 priority visit."""
+from dataclasses import replace
 from pathlib import Path
 
 from bilqis_mlx.runtime.atlas_training_contracts import BamfVisitProvenance
@@ -45,6 +46,7 @@ def execute_learning_first_priority_candidate(
         teacher_hparams, observation, optimizer_step_seed, max_norm,
         memory_budget=None, salience_provider=None, capture_diagnostics=False,
         candidate=None, finalize_candidate=True, prepared_source_rows=None,
+        prepared_source_seed=None,
         prepared_enrichment_rows=(), prepared_rehearsal_rows=(),
         rehearsal_by_id=None, rehearsal_bindings=None, rehearsal_authorities=None,
         prepared_fresh_support_rows=(), fresh_support_by_id=None,
@@ -82,13 +84,16 @@ def execute_learning_first_priority_candidate(
     (offer, rows, enrichment, rehearsal, rehearsal_by_id, rehearsal_bindings,
      rehearsal_authorities, fresh_support, fresh_support_by_id, capability, delivery,
      observation) = delivery_inputs
+    source_seed = offer.source_seed if prepared_source_seed is None else prepared_source_seed
+    if prepared_source_seed is not None:
+        observation = replace(observation, seed=source_seed)
     delivered_rows = (*rows, *rehearsal, *enrichment, *fresh_support)
     provenance = BamfVisitProvenance.from_c03_record(selection.visit.identity.to_record())
     return execute_factory_candidate_step(
         Path(selection._run_dir), source_context, parent,
         atlas_artifact_path, feature_artifact_path, delivered_rows,
         capability=capability, delivery=delivery, requested_count=len(delivered_rows),
-        source_seed=offer.source_seed, source_each=len(rows) + len(enrichment),
+        source_seed=source_seed, source_each=len(rows) + len(enrichment),
         optimizer_step_seed=optimizer_step_seed, visit_provenance=provenance,
         teacher_strategy=policy, teacher_hparams=hparams, max_norm=max_norm,
         observation=observation, memory_budget=memory_budget,

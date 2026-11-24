@@ -90,7 +90,7 @@ def _fresh_request_payload(fresh_support: FreshSupportSpecimen | None) -> dict:
 def priority_source_request(
         selection, source_context, parent, ordinal: int, *, enrichment_rows=None,
         rehearsal_plan=None, rehearsal=None,
-        fresh_support: FreshSupportSpecimen | None = None) -> dict:
+        fresh_support: FreshSupportSpecimen | None = None, target_batch=None) -> dict:
     """Bind one pure worker request to the exact accepted candidate step."""
     if type(ordinal) is not int or ordinal < 1:
         _invalid("BAMF_SOURCE_PREFETCH_STEP_INVALID")
@@ -98,12 +98,18 @@ def priority_source_request(
     enrichment, role_rows, bindings = _lesson_rows(
         selection, source_context, ordinal, enrichment_rows, rehearsal_plan, rehearsal)
     fresh = _fresh_request_payload(fresh_support)
+    rows, authority, seed = (
+        (offer.rows(), offer.source_authority, offer.source_seed)
+        if target_batch is None else target_batch)
+    if (len(rows) != offer.source_each
+            or any(row.get("capability") != offer.capability_id for row in rows)):
+        _invalid("BAMF_SOURCE_PREFETCH_TARGET_SCOPE_DRIFT")
     content_binding = {
         "release_sha256": offer.release_sha256, "capability": offer.capability_id,
-        "source_seed": offer.source_seed, "source_each": offer.source_each,
-        "source_family_id": offer.source_family_id,
+        "source_seed": seed, "source_each": offer.source_each,
+        "source_family_id": authority.source_family_id,
         "source_binding_digest": offer.source_binding_digest,
-        "source_content_sha256": offer.source_authority.content_sha256,
+        "source_content_sha256": authority.content_sha256,
         "teaching_enrichment_sha256": contract_digest(enrichment),
         "rehearsal_plan_sha256": None if rehearsal_plan is None else rehearsal_plan.identity,
         "rehearsal_rows_sha256": contract_digest({"rows": role_rows, "bindings": bindings}),
@@ -120,7 +126,7 @@ def priority_source_request(
     }
     return {
         **binding, "identity": _fingerprint(binding),
-        "executable_release": source_context.release, "source_rows": offer.rows(),
+        "executable_release": source_context.release, "source_rows": rows,
         "prior_rows": list(role_rows["prior"]),
         "preservation_rows": list(role_rows["preservation"]),
         "retention_support_rows": list(role_rows["retention_support"]),
