@@ -10,7 +10,8 @@ from bilqis_mlx.learning.teacher_strategy_population import (
 )
 from bilqis_mlx.runtime.state import _fingerprint
 
-SCHEMA = 'bilqis.bamf.teacher-outcome/v1'
+LEGACY_SCHEMA = 'bilqis.bamf.teacher-outcome/v1'
+SCHEMA = 'bilqis.bamf.teacher-outcome/v2'
 SCORE_FIELDS = ('capability', 'before', 'after', 'total')
 
 
@@ -68,7 +69,7 @@ def _deltas(observation):
 
 def _apply_outcome(teacher, observation, *, selected_teacher_override=None):
     """Return a credited copy, or the unchanged copy for identical delivery."""
-    if (not isinstance(observation, dict) or observation.get('schema') != SCHEMA
+    if (not isinstance(observation, dict) or observation.get('schema') not in (LEGACY_SCHEMA, SCHEMA)
             or observation.get('outcome_sha256') != outcome_digest(observation)):
         invalid()
     visit, context = observation['teacher_visit'], observation['context']
@@ -119,6 +120,12 @@ def _apply_outcome(teacher, observation, *, selected_teacher_override=None):
         'paired_scores_sha256': decision['evidence_sha256'],
         'source_cohort_sha256': context['rubric_sha256'],
     }
+    # Preserve the replay semantics of previously signed v1 observations.
+    # New observations carry the raw correct-answer loss to inherited feedback.
+    if observation['schema'] == SCHEMA:
+        causal['worst_protected_loss'] = max(
+            (max(0, before - after) for name, before, after, _ in observation['scores']
+             if name in protected), default=0)
     feedback = learning_experiment.observe_context(
         selected, capability=cap, phase=context['phase'], policy_key=key,
         decision=causal, local_gain=deltas[cap],
