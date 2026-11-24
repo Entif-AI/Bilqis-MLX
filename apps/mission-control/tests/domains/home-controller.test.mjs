@@ -48,7 +48,7 @@ test("CP04 event families refresh only their owning CP03 family", () => {
   assert.equal(isNotificationEvent({ event_family: "candidate.retained" }), false);
 });
 
-test("live home uses one family query per CP04 event rather than polling the full view", async () => {
+test("live home refreshes affected families and verifies the accepted anchor", async () => {
   const calls = [];
   let active = true;
   let listener = null;
@@ -73,10 +73,13 @@ test("live home uses one family query per CP04 event rather than polling the ful
   assert.equal(controller.currentModel().runtime.running, false);
   assert.equal(calls.length, baseline);
   await listener({ event_family: "capability.changed" });
-  assert.equal(calls.length, baseline + 1);
-  assert.equal(calls.at(-1), "capability");
+  assert.deepEqual(calls.slice(baseline), ["capability", "run"]);
+  const graduation = calls.length;
   await listener({ event_family: "capability.graduated" });
-  assert.equal(calls.length, baseline + 1 + HOME_FAMILIES.length + 1);
+  assert.deepEqual(calls.slice(graduation), ["capability", "notification", "school", "run"]);
+  const warning = calls.length;
+  await listener({ event_family: "warning.failure" });
+  assert.deepEqual(calls.slice(warning), ["notification", "run"]);
   await controller.deactivate();
 });
 
@@ -256,7 +259,7 @@ test("historical home never opens a live CP04 subscription", async () => {
   assert.equal(subscriptions, 0);
 });
 
-test("failed CP04 startup is retried without restarting the CP01 query lifecycle", async () => {
+test("failed CP04 startup is retried with a complete snapshot to recover missed events", async () => {
   const calls = [];
   let subscriptions = 0;
   let scheduled = null;
@@ -287,8 +290,8 @@ test("failed CP04 startup is retried without restarting the CP01 query lifecycle
   const baselineCalls = calls.length;
   await scheduled();
   assert.equal(subscriptions, 2);
-  assert.equal(calls.length, baselineCalls + 2);
-  assert.deepEqual(calls.slice(-2), ["run", "notification"]);
+  assert.equal(calls.length, baselineCalls + HOME_FAMILIES.length + 1);
+  assert.deepEqual(new Set(calls.slice(baselineCalls)), new Set(HOME_FAMILIES));
 
   await controller.deactivate();
 });

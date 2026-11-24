@@ -74,3 +74,12 @@ test("live snapshot gaps and stale records cross IPC as availability, while inva
   records = [operatorView];
   assert.deepEqual(await snapshot(), operatorView);
 });
+
+test("event stream loss is a bounded transport state, not a fabricated CP04 event", async () => {
+  const { assertOperatorView } = await import("../../renderer/shell-state.mjs");
+  const validate = createAcceptedValidators(assertOperatorView).event;
+  const disconnected = { schemaVersion: "bamf.gui20.event-stream-state/v1", state: "DISCONNECTED" };
+  assert.deepEqual(validate(disconnected), disconnected);
+  assert.throws(() => validate({ ...disconnected, state: "UNKNOWN" }), /EVENT_ENVELOPE/);
+  assert.throws(() => validate({ ...disconnected, unexpected: true }), /EVENT_ENVELOPE/);
+});

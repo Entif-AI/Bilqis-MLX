@@ -48,6 +48,24 @@ export function isNotificationEvent(event) {
   return NOTIFICATION_EVENT_FAMILIES.has(String(event?.event_family ?? ""));
 }
 
+export function familiesForEvent(event) {
+  const name = event?.event_family;
+  if (name === "operator.action.state") return ["status"];
+  const families = new Set();
+  const family = familyForEvent(event);
+  if (family) families.add(family);
+  if (isNotificationEvent(event)) families.add("notification");
+  if (name === "capability.graduated" || name === "grade.promoted" ||
+      name === "semantic.release.changed" || name === "qualification.gate.changed") {
+    families.add("school");
+    families.add("capability");
+  }
+  if (name === "graph.materialized") families.add("semantic");
+  if (name === "resource.health.sample") families.add("neural");
+  if (name === "blocker.changed" || name === "drift.detected") families.add("correction");
+  return [...families];
+}
+
 function value(record, field) {
   const datum = record?.[field];
   return datum?.state === PRESENT ? datum.value : null;
