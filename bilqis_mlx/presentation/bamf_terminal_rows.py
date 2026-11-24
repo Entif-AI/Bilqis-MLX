@@ -6,6 +6,8 @@ from bilqis_mlx.presentation.teacher_vnext import teacher_fields
 
 
 MARKER = "_bamf_terminal_observed"
+NOT_MEASURED = "N/M"
+PENDING = "PEND"
 
 
 def number(value):
@@ -14,7 +16,7 @@ def number(value):
 
 def seconds(value):
     value = number(value)
-    return "-" if value is None or value < 0 else f"{value:.1f}s"
+    return NOT_MEASURED if value is None or value < 0 else f"{value:.1f}s"
 
 
 def gib(value):
@@ -24,11 +26,11 @@ def gib(value):
 
 def score(visit):
     evidence = visit.get("visit_evidence")
-    if not isinstance(evidence, dict):
-        return None
-    target = evidence.get("learning_target")
+    target = evidence.get("learning_target") if isinstance(evidence, dict) else None
     if not isinstance(target, dict) or target.get("state") != "MEASURED":
-        target = evidence.get("target")
+        target = evidence.get("target") if isinstance(evidence, dict) else None
+    if not isinstance(target, dict) or target.get("state") != "MEASURED":
+        target = visit.get("retention_target")
     if not isinstance(target, dict) or target.get("state") != "MEASURED":
         return None
     before, after, total = (
@@ -54,6 +56,8 @@ def grade(visit):
 def policy(visit):
     evidence = visit.get("visit_evidence")
     value = evidence.get("teacher_policy_key") if isinstance(evidence, dict) else None
+    if not value:
+        value = visit.get("selected_policy_key")
     return str(value)[:10] if value else "-"
 
 
@@ -64,28 +68,30 @@ def selected_policy(visit):
 
 def reason(visit):
     evidence = visit.get("visit_evidence")
-    if not isinstance(evidence, dict):
-        return "-"
-    return str(evidence.get("human_reason") or evidence.get("reason") or "-")
+    if isinstance(evidence, dict):
+        value = evidence.get("human_reason") or evidence.get("reason")
+        if value:
+            return str(value)
+    return str(visit.get("retention_reason") or "-")
 
 
 def warnings(visit):
     health = visit.get("learning_health")
     if not isinstance(health, dict):
-        return "-"
+        return NOT_MEASURED
     active = [
         str(item.get("signal"))
         for item in health.get("warnings", ())
         if isinstance(item, dict) and
         str(item.get("status", "")).startswith("OBSERVED")
     ]
-    return ",".join(active) if active else "-"
+    return ",".join(active) if active else "NONE"
 
 
 def health(visit):
     value = visit.get("learning_health")
     if not isinstance(value, dict):
-        return "-"
+        return NOT_MEASURED
     return str(value.get("qualification_state") or value.get("state") or "-")
 
 
@@ -106,18 +112,20 @@ def candidate_row(visit):
     strategy = selected_policy(visit)
     score_line = (
         f"{measured[0]}/-/{measured[1]}/{measured[2]}"
-        if measured is not None else "-")
+        if measured is not None else
+        PENDING if visit.get("retention_decision") is None else NOT_MEASURED)
+    loss = (
+        number(visit.get("loss_total"))
+        if number(visit.get("loss_total")) is not None
+        else latest_step_number(visit, "loss_total"))
     return {
         MARKER: True, "grade": grade(visit),
         "capability": visit.get("capability_id") or "-",
         "attempt": visit.get("visit_index", "-"), "strategy": policy(visit),
         "lr": _scaled_lr(strategy.get("lr")),
-        "score_line": score_line, "reward": "-",
-        "loss": _display(
-            number(visit.get("loss_total"))
-            if number(visit.get("loss_total")) is not None
-            else latest_step_number(visit, "loss_total")),
-        "gradient": "-", "method": "BAMF", "old": _whole(strategy.get("old")),
+        "score_line": score_line, "reward": NOT_MEASURED,
+        "loss": _display(loss) if loss is not None else NOT_MEASURED,
+        "gradient": NOT_MEASURED, "method": "BAMF", "old": _whole(strategy.get("old")),
         "result": str(visit.get("outcome") or "-"),
         "reason": reason(visit), "warnings": warnings(visit),
     }
@@ -129,9 +137,15 @@ def retention_row(visit):
     evidence = evidence if isinstance(evidence, dict) else {}
     target = (
         f"{measured[0]}>{measured[1]}/{measured[2]}"
-        if measured is not None else "-")
+        if measured is not None else
+        PENDING if visit.get("retention_decision") is None else NOT_MEASURED)
     delta = measured[1] - measured[0] if measured is not None else None
-    decision = str(evidence.get("decision") or visit.get("outcome") or "-")
+    decision = str(
+        evidence.get("decision")
+        or visit.get("retention_decision")
+        or visit.get("outcome")
+        or "-"
+    )
     completed, total = visit.get("retention_completed"), visit.get("retention_total")
     progress = (
         f"{completed}/{total}" if type(completed) is int and type(total) is int
@@ -140,14 +154,18 @@ def retention_row(visit):
     protected = (
         str(len(protected_capabilities))
         if isinstance(protected_capabilities, (list, tuple)) else
+        str(visit.get("retention_protected_count"))
+        if type(visit.get("retention_protected_count")) is int else
         str(evidence.get("protected_scope_state") or "-")[:3].upper())
     return {
         MARKER: True, "grade": grade(visit),
         "capability": visit.get("capability_id") or "-",
         "attempt": visit.get("visit_index", "-"), "target": target,
-        "target_delta": f"{delta:+d}" if type(delta) is int else "-",
+        "target_delta": (
+            f"{delta:+d}" if type(delta) is int else
+            PENDING if visit.get("retention_decision") is None else NOT_MEASURED),
         "protected": protected,
-        "worst": "-", "decision": decision, "result": decision,
+        "worst": NOT_MEASURED, "decision": decision, "result": decision,
         "evidence": f"{progress} | {reason(visit)}",
     }
 
@@ -160,8 +178,14 @@ def teacher_row(visit, history=None):
     policy_key = policy(visit)
     projected = (
         teacher_fields({
+            "grade": grade(visit),
             "capability": capability,
             "teacher_policy": policy_key,
+            "teacher_selection_reason": visit.get("teacher_selection_reason"),
+            "teacher_selection_policy": visit.get("teacher_selection_policy"),
+            "teacher_policy_evidence_before": visit.get("teacher_policy_evidence_before"),
+            "vnext_canary": visit.get("vnext_canary"),
+            "actual_authority_changed": visit.get("actual_authority_changed"),
             "candidate_retention": {
                 "phase": retention_phase,
                 "decision": retention_decision,
@@ -172,7 +196,10 @@ def teacher_row(visit, history=None):
             and retention_decision in {"PROVISIONAL", "REJECT"})
         else {}
     )
-    projected_health = projected.get("health") or health(visit)
+    retention_pending = retention_decision not in {"PROVISIONAL", "REJECT"}
+    projected_health = (
+        projected.get("health")
+        or (PENDING if retention_pending else health(visit)))
     return {
         MARKER: True, "grade": grade(visit),
         "capability": visit.get("capability_id") or "-",
@@ -183,7 +210,8 @@ def teacher_row(visit, history=None):
         "old": _whole(strategy.get("old")),
         "preview": _display(strategy.get("preview")),
         "distill": _display(strategy.get("distill")),
-        "credit": "-", "p_ret": projected.get("p_ret", "-"),
+        "credit": NOT_MEASURED,
+        "p_ret": projected.get("p_ret", PENDING if retention_pending else NOT_MEASURED),
         "health": projected_health,
     }
 
@@ -212,8 +240,9 @@ def mastery_rows(visits):
         MARKER: True, "grade": owner, "visit": visit.get("visit_index", "-"),
         "step": visit.get("candidate_optimizer_step", "-"),
         "attempt": visit.get("visit_index", "-"),
-        "start": "-", "latest": "-", "best": "-", "to100": "-",
-        "right_pct": "-", "outcome": "OBSERVED BAMF",
+        "start": NOT_MEASURED, "latest": NOT_MEASURED,
+        "best": NOT_MEASURED, "to100": NOT_MEASURED,
+        "right_pct": NOT_MEASURED, "outcome": "OBSERVED BAMF",
     } for owner, visit in grades.items()]
     return summaries, families
 
@@ -223,7 +252,8 @@ def system_rows(current, visits):
     step = steps[-1] if isinstance(steps, list) and steps else {}
     activity = str(current.get("activity") or current.get("phase") or "-")
     elapsed = number(current.get("activity_elapsed_ms"))
-    activity_time = f"{elapsed / 1000:.1f}s" if elapsed is not None else "-"
+    activity_time = (
+        f"{elapsed / 1000:.1f}s" if elapsed is not None else NOT_MEASURED)
     progress = (
         f"{current.get('candidate_step', '-')} / "
         f"{current.get('candidate_horizon', '-')}")

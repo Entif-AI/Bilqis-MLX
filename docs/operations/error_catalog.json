@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 299,
-  "legacy_raw_raise_count": 2086,
+  "legacy_raw_file_count": 303,
+  "legacy_raw_raise_count": 2093,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BOOLEAN_ASSOCIATION_B_GRADE_OWNERSHIP_DRIFT",
@@ -11210,6 +11210,20 @@
       "path": "bilqis_mlx/runtime/tests/capability/factory/owner/c16_2c_resource_preflight.py"
     },
     {
+      "code_hint": "learning-first revalidated feature context",
+      "count": 3,
+      "exception": "AssertionError",
+      "expression": "'learning-first revalidated feature context'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/owner/compiled_evaluation/test_compiled_evaluation_instrument_reuse.py"
+    },
+    {
+      "code_hint": "ordinary C05 revalidated feature context",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'ordinary C05 revalidated feature context'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/owner/compiled_evaluation/test_compiled_evaluation_learning_first.py"
+    },
+    {
       "code_hint": "C05 fixed diagnostic Factory release drift",
       "count": 1,
       "exception": "AssertionError",
@@ -11504,11 +11518,32 @@
       "path": "bilqis_mlx/runtime/tests/capability/factory/retention/next_step/factory_retention_next_step_witness.py"
     },
     {
+      "code_hint": "learning-first compiled reference-only baseline row",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'learning-first compiled reference-only baseline row'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/retention/test_target_first_retention_short_circuit.py"
+    },
+    {
       "code_hint": "malformed decoder payload",
       "count": 1,
       "exception": "ValueError",
       "expression": "'malformed decoder payload'",
-      "path": "bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver.py"
+      "path": "bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver_guards.py"
+    },
+    {
+      "code_hint": "learning-first DAG rehashed source binding",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'learning-first DAG rehashed source binding'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver_learning_first.py"
+    },
+    {
+      "code_hint": "learning-first solver rehashed source binding",
+      "count": 1,
+      "exception": "AssertionError",
+      "expression": "'learning-first solver rehashed source binding'",
+      "path": "bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver_learning_first.py"
     },
     {
       "code_hint": "exact cached route must preempt neural",

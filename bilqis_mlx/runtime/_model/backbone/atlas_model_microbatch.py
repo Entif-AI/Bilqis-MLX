@@ -20,6 +20,7 @@ from .atlas_model_forward_validation import (
 from .atlas_model_training import (
     _gradient_execution_rebinder, _require_finite_tensor_tree, loss_bearing_bamf,
 )
+from .atlas_model_participation import _learning_first_parameter_names
 from .microbatch.refinement_kernel import (
     batched_refine_hidden_with_routing,
     batched_refinement_routing_loss, prepare_refinement_selections,
@@ -96,7 +97,7 @@ def _gradient_path(
 def _materialize_gradient(
         objective, params, route_vectorized, holder, backend, row_batches,
         answer_plans, targets, masks, salience_supervision, rebind_execution,
-        refinement_selections):
+        refinement_selections, *, compact_learning_first=False):
     timings = {
         "b11_autodiff_dispatch_wall_seconds": 0.0,
         "b11_autodiff_materialization_wall_seconds": 0.0,
@@ -105,9 +106,19 @@ def _materialize_gradient(
         "b11_host_readback_count": 0,
     }
     autodiff_params = mlx_autodiff_parameter_tree(params)
+    transformed_objective = objective
+    if compact_learning_first:
+        names = _learning_first_parameter_names(params, row_batches, answer_plans)
+        frozen = dict(params)
+        autodiff_params = {name: params[name] for name in names}
+
+        def transformed_objective(current):
+            full = dict(frozen)
+            full.update(current)
+            return objective(full)
     if not route_vectorized:
         started = time.perf_counter()
-        mean_loss, gradients = mx.value_and_grad(objective)(autodiff_params)
+        mean_loss, gradients = mx.value_and_grad(transformed_objective)(autodiff_params)
         timings["b11_autodiff_dispatch_wall_seconds"] = time.perf_counter() - started
         _attach_dispatch_timings(timings, holder)
         finite_witness = _finite_gradient_witness(mean_loss, gradients)
@@ -120,17 +131,25 @@ def _materialize_gradient(
             finite_witness, timings,
         )
     started = time.perf_counter()
-    (mean_loss, route_hidden, route_trajectory, route_logits,
-     refinement_route_logits), gradients = mx.value_and_grad(
-        objective)(autodiff_params)
+    if compact_learning_first:
+        (mean_loss, route_trajectory), gradients = mx.value_and_grad(
+            transformed_objective)(autodiff_params)
+        route_hidden = route_logits = refinement_route_logits = None
+    else:
+        (mean_loss, route_hidden, route_trajectory, route_logits,
+         refinement_route_logits), gradients = mx.value_and_grad(
+            transformed_objective)(autodiff_params)
     timings["b11_autodiff_dispatch_wall_seconds"] = time.perf_counter() - started
     _attach_dispatch_timings(timings, holder)
     finite_witness = _finite_gradient_witness(mean_loss, gradients)
     trajectory_indices = mx.stack(route_trajectory)
     started = time.perf_counter()
-    mx.eval(
-        mean_loss, gradients, route_hidden, trajectory_indices, route_logits,
-        refinement_route_logits, finite_witness)
+    if compact_learning_first:
+        mx.eval(mean_loss, gradients, trajectory_indices, finite_witness)
+    else:
+        mx.eval(
+            mean_loss, gradients, route_hidden, trajectory_indices, route_logits,
+            refinement_route_logits, finite_witness)
     timings["b11_autodiff_materialization_wall_seconds"] = (
         time.perf_counter() - started)
     started = time.perf_counter()
@@ -140,11 +159,18 @@ def _materialize_gradient(
         _invalid("B11_MICROBATCH_EXECUTION_MISSING")
     producer, accepted_cache, _trace_binding = route_context
     execution_binding = rebind_execution(params)
-    executions = microbatch_trace_from_route(
-        backend, params, row_batches, answer_plans, targets, masks,
-        producer, route_hidden, accepted_cache, execution_binding,
-        salience_supervision, refinement_selections, trajectory_indices, route_logits,
-        refinement_route_logits)
+    if compact_learning_first:
+        from .microbatch.route_evidence import microbatch_participation_from_route
+        executions = microbatch_participation_from_route(
+            backend, params, row_batches, answer_plans, targets, masks,
+            producer, accepted_cache, execution_binding, refinement_selections,
+            trajectory_indices)
+    else:
+        executions = microbatch_trace_from_route(
+            backend, params, row_batches, answer_plans, targets, masks,
+            producer, route_hidden, accepted_cache, execution_binding,
+            salience_supervision, refinement_selections, trajectory_indices, route_logits,
+            refinement_route_logits)
     timings["b11_host_readback_count"] = 1
     timings["b11_route_evidence_wall_seconds"] = time.perf_counter() - started
     return (
@@ -153,11 +179,33 @@ def _materialize_gradient(
     )
 
 
+def _scalar_microbatch_objective(
+        backend, current, row_batches, answer_plans, targets, masks, producer,
+        hidden, accepted_cache, execution_binding, preflight_executions,
+        salience_supervision, holder):
+    executions = []
+    total = mx.array(0.0, dtype=mx.float32)
+    for index, (row_batch, plan, row_targets, mask) in enumerate(zip(
+            row_batches, answer_plans, targets, masks)):
+        output = _decode_bamf_producer_row(
+            backend, current, row_batch, plan, producer, hidden, index,
+            accepted_cache, execution_binding, refinement_training=True,
+            trace=True, replay_output=preflight_executions[index].output)
+        execution = loss_bearing_bamf(
+            output, row_targets, mask,
+            salience_supervision=salience_supervision,
+            validate_finite=False)
+        executions.append(execution)
+        total = total + execution.loss.total
+    holder["executions"] = tuple(executions)
+    return total / len(row_batches)
+
+
 def _microbatch_objective(
         backend, batch, row_batches, answer_plans, targets, masks, cache,
         generation, snapshot, rebind_execution, route_vectorized,
         preflight_executions, refinement_selections, route_kernel,
-        salience_supervision, holder, compiled_route=None):
+        salience_supervision, holder, compiled_route=None, compact_learning_first=False):
     dispatch_timings = {key: 0.0 for key in _DISPATCH_CHILD_FIELDS}
     holder["dispatch_timings"] = dispatch_timings
 
@@ -182,22 +230,10 @@ def _microbatch_objective(
             if hidden.shape[0] != len(row_batches):
                 _invalid("B11_MICROBATCH_HIDDEN_BATCH_MISMATCH")
             if not route_vectorized:
-                executions = []
-                total = mx.array(0.0, dtype=mx.float32)
-                for index, (row_batch, plan, row_targets, mask) in enumerate(zip(
-                        row_batches, answer_plans, targets, masks)):
-                    output = _decode_bamf_producer_row(
-                        backend, current, row_batch, plan, producer, hidden, index,
-                        accepted_cache, execution_binding, refinement_training=True,
-                        trace=True, replay_output=preflight_executions[index].output)
-                    execution = loss_bearing_bamf(
-                        output, row_targets, mask,
-                        salience_supervision=salience_supervision,
-                        validate_finite=False)
-                    executions.append(execution)
-                    total = total + execution.loss.total
-                holder["executions"] = tuple(executions)
-                return total / len(row_batches)
+                return _scalar_microbatch_objective(
+                    backend, current, row_batches, answer_plans, targets, masks,
+                    producer, hidden, accepted_cache, execution_binding,
+                    preflight_executions, salience_supervision, holder)
             holder["route_context"] = (producer, accepted_cache, execution_binding)
             salience_hidden = hidden
             started = time.perf_counter()
@@ -209,19 +245,31 @@ def _microbatch_objective(
                 time.perf_counter() - started)
             started = time.perf_counter()
             if compiled_route is None:
-                mean_loss, trajectory, route_logits = route_microbatch_loss_and_trajectory(
+                route_result = route_microbatch_loss_and_trajectory(
                     current, refined, route_kernel, salience_hidden=salience_hidden,
                     refinement_routing_loss=refinement_routing_loss,
-                    return_logits=True)
+                    return_logits=not compact_learning_first)
+                if compact_learning_first:
+                    mean_loss, trajectory = route_result
+                    route_logits = ()
+                else:
+                    mean_loss, trajectory, route_logits = route_result
             else:
                 # The learning-first compiled boundary is qualified only while
                 # refinement selections are empty, so salience_hidden == refined
                 # and no refinement-routing loss is omitted here.
                 if refinement_routing:
                     _invalid("B11_COMPILED_ROUTE_REFINEMENT_UNSUPPORTED")
-                mean_loss, trajectory, route_logits = compiled_route(current, refined)
+                route_result = compiled_route(current, refined)
+                if compact_learning_first:
+                    mean_loss, trajectory = route_result
+                    route_logits = ()
+                else:
+                    mean_loss, trajectory, route_logits = route_result
             dispatch_timings["b11_autodiff_dispatch_route_graph_wall_seconds"] += (
                 time.perf_counter() - started)
+            if compact_learning_first:
+                return mean_loss, trajectory
             return (
                 mean_loss, hidden, trajectory, route_logits,
                 tuple(item[0] for item in refinement_routing))

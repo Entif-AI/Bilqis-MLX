@@ -19,6 +19,9 @@ from bilqis_mlx.runtime.atlas_model_training import (
     _require_finite_tensor_tree,
 )
 from bilqis_mlx.runtime.model_topology_v2 import GenerationExtents
+from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
+import bilqis_mlx.runtime.compiled_batch as compiled_batch_module
+import bilqis_mlx.runtime.atlas_model_contracts as active_rows_module
 from bilqis_mlx.runtime.tests.model.execution.active_semantic_rows_support import active_semantic_rows
 from bilqis_mlx.semantics.atlas.snapshot import AtlasArtifactSelection
 from bilqis_mlx.semantics.atlas_features import FeatureSchema
@@ -33,6 +36,28 @@ class BamfCompiledBatchOwnerTests(unittest.TestCase):
             _require_finite_tensor_tree(
                 {"a": mx.array([1.0, float("nan")], dtype=mx.float32)},
                 "B11_PARAMETER_NONFINITE")
+
+    def test_learning_first_batch_skips_training_evidence_revalidation(self):
+        provenance = SimpleNamespace(
+            __post_init__=lambda: (_ for _ in ()).throw(
+                AssertionError("learning-first revalidated visit provenance")))
+        batch = SimpleNamespace(
+            training_authority=object(), visit_provenance=provenance)
+        with evidence_mode(strict=False):
+            compiled_batch_module._validate_training_context(batch)
+
+    def test_learning_first_active_row_issue_skips_reproof(self):
+        fixture = FrameEncoderTests()
+        fixture.setUp()
+        compiled, _vectors, _ast = fixture.compiled_inputs()
+        indices = (11, 12)
+        with patch.object(
+                active_rows_module.BamfActiveSemanticRows, "__post_init__",
+                side_effect=AssertionError("learning-first rehashed active rows")):
+            rows = active_rows_module._issue_bamf_active_semantic_rows(
+                "run", 1, compiled.extents, compiled.features, indices,
+                validate=False)
+        self.assertEqual(rows.active_indices, indices)
 
     def test_extracted_contracts_preserve_public_type_identity(self):
         self.assertEqual(

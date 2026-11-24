@@ -45,6 +45,7 @@ def _foundation_owner_fixture():
     object.__setattr__(candidate, "training_authorities", (
         SimpleNamespace(delivery_capability=target, release_sha256=release_sha),
     ))
+    object.__setattr__(candidate, "_parent_identity_sha256", "d" * 64)
     fixed = SimpleNamespace(rows=({"id": "fixed"},), seed=7)
     fresh = Mock(return_value=SimpleNamespace(
         seed=13, rows=({"id": "fresh", "capability": target},)))
@@ -152,7 +153,9 @@ def _evaluate_foundation_owner(source, candidate, target, fixed, fresh,
             ), patch.multiple(
                 owner_screen,
                 candidate_identity_for_canonical_consumer=Mock(return_value="d" * 64),
-                candidate_identity_binding_for_state=Mock(return_value=None)):
+                candidate_identity_binding_for_state=Mock(return_value=None),
+                current_learning_first_step_authority_for_parameters=Mock(
+                    return_value="d" * 64)):
         return evaluate_factory_retention_candidate(
             source, candidate, "artifact", target, run_dir=Path("unused"))
 

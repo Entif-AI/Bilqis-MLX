@@ -18,6 +18,7 @@ from bilqis_mlx.runtime.block_attnres import (
     _DepthFeatureValues, _depth_components, _group_boundary_numerical,
     depth_parameter_view, depth_select, _numerical_depth_select,
 )
+import bilqis_mlx.runtime.depth_contracts as depth_contracts
 from bilqis_mlx.runtime.backbone_identity import (
     LearningFirstExecutionGenerationBinding,
 )
@@ -35,6 +36,29 @@ from bilqis_mlx.runtime.tests.depth.depth_helpers import (
 )
 
 class DepthSelectionTests(unittest.TestCase):
+    def test_learning_first_prevalidated_depth_view_skips_full_tree_revalidation(self):
+        spec = ModelTopologySpecV2()
+        extents = GenerationExtents(1, 1, "a" * 64, "b" * 64, "c" * 64)
+        parameters = {
+            item.name: mx.zeros(item.shape, dtype=mx.float32)
+            for item in expected_bamf_shapes(spec, extents)
+        }
+        with (
+            patch.object(
+                depth_contracts, "validate_bamf_parameters",
+                side_effect=AssertionError("learning-first depth tree revalidation")),
+            patch.object(
+                depth_contracts, "require_execution_generation_binding",
+                side_effect=AssertionError("learning-first depth binding revalidation")),
+        ):
+            view = depth_contracts._prevalidated_depth_parameter_view(
+                parameters, spec=spec, extents=extents, boundary_group=2)
+
+        for name in ("norm", "query", "key", "value", "output"):
+            self.assertIs(view[name], parameters[f"depth.{name}"])
+        self.assertIs(view["gate_vector"], parameters["depth.gate.1.vector"])
+        self.assertIs(view["gate_bias"], parameters["depth.gate.1.bias"])
+
     def test_learning_first_view_preserves_binding_owned_parameter_mapping(self):
         spec = ModelTopologySpecV2()
         extents = GenerationExtents(1, 1, "a" * 64, "b" * 64, "c" * 64)

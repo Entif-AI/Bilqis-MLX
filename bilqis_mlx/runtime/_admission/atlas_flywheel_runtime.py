@@ -50,6 +50,7 @@ from bilqis_mlx.runtime.atlas_flywheel_runtime_parts.planning import (
     _accepted_checkpoint,
     _accepted_selection,
     _candidate_frontier,
+    _candidate_frontier_from_trust_identity,
     _candidate_frontier_trust_identity,
     _persist_ready_realizations,
     _replay_current_graph,

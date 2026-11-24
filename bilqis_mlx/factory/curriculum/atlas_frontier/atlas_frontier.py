@@ -179,6 +179,7 @@ def _build_snapshot(
     retained_debt_source_sha256: str | None = None,
     teacher_epoch: int = 0, qualification_epoch: int = 0,
     grade_labels: tuple[str, ...] = (),
+    _verify_result: bool = True,
 ) -> CurriculumSnapshot:
     """Pure source ledger construction; no authority is conferred."""
     _validate_snapshot_inputs(
@@ -200,7 +201,8 @@ def _build_snapshot(
         teacher_epoch=teacher_epoch, qualification_epoch=qualification_epoch,
         grade_labels=grade_labels)
     result = replace(initial, snapshot_sha256=initial.expected_digest())
-    result.verify()
+    if _verify_result:
+        result.verify()
     return result
 
 

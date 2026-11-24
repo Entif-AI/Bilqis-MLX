@@ -78,7 +78,6 @@ def _resolution_authority(run_dir, wrapper, source_context, selection, assessmen
 
     if (not isinstance(wrapper, dict)
             or not isinstance(wrapper.get("weakness"), dict)
-            or not isinstance(wrapper.get("candidate_evidence"), dict)
             or not weakness_is_current(wrapper, source_context, selection)
             or type(assessment) is not Assessment
             or assessment.cohort.kind not in {
@@ -90,11 +89,16 @@ def _resolution_authority(run_dir, wrapper, source_context, selection, assessmen
     weakness = WeaknessClassId.from_record(weakness_record["weakness_class"])
     capability = weakness_record["capability_id"]
     execution, adapter, admitted = _provider_for_context(source_context, capability)
-    historical = read_candidate_horizon_evidence(run_dir, wrapper["candidate_evidence"])
-    historical_ids = {
-        row.get("id") for row in historical.get("source_objects", {}).values()
-        if isinstance(row, dict) and row.get("capability") == capability
-    }
+    historical_ids = set(weakness_record.get("historical_source_ids") or ())
+    if not historical_ids:
+        candidate_evidence = wrapper.get("candidate_evidence")
+        if not isinstance(candidate_evidence, dict):
+            _invalid("BAMF_WEAKNESS_RESOLUTION_INVALID")
+        historical = read_candidate_horizon_evidence(run_dir, candidate_evidence)
+        historical_ids = {
+            row.get("id") for row in historical.get("source_objects", {}).values()
+            if isinstance(row, dict) and row.get("capability") == capability
+        }
     return weakness_record, weakness, capability, execution, adapter, admitted, historical_ids
 
 

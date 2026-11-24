@@ -48,6 +48,15 @@ class _LearningSourceHandoff:
             invalid("BAMF_SOURCE_ATOM_INPUT_INVALID")
 
 
+@dataclass(frozen=True)
+class _LearningSourceEmbeddingContext:
+    """Batch-local structural parameter view for ordinary learning rows."""
+
+    spec: ModelTopologySpecV2
+    owned: dict[str, mx.array]
+    active_indices: tuple[int, ...]
+
+
 def _resolve_source_embedding_authority(
     compiled, config, source, features, feature_schema, artifact_owner,
     snapshot, source_execution_authority,
@@ -132,6 +141,17 @@ def _source_embedding_parameters(
     return spec, owned
 
 
+def _prepare_learning_source_embedding_context(
+    parameters, source, features, extents, banks, snapshot,
+):
+    spec, owned = _source_embedding_parameters(
+        parameters, source, features, extents, banks, snapshot)
+    active_indices = tuple(
+        bank.bank_index * spec.semantic_bank_rows + row
+        for bank in banks for row in bank.active_rows)
+    return _LearningSourceEmbeddingContext(spec, owned, active_indices)
+
+
 def _source_binding_feature_row(
     binding, config, features, snapshot, banks, spec,
 ):
@@ -186,16 +206,19 @@ def _source_binding_vectors(
 
 
 def _learning_first_source_vectors(
-        parameters, compiled, config, source, features, extents, banks, snapshot):
+        parameters, compiled, config, source, features, extents, banks, snapshot,
+        prepared=None):
     indices = source.learning_abi_indices
     if (type(indices) is not tuple or len(indices) != compiled.visible_end
             or snapshot is None):
         invalid("BAMF_SOURCE_ATOM_INPUT_INVALID")
-    spec, owned = _source_embedding_parameters(
-        parameters, source, features, extents, banks, snapshot)
-    active_indices = tuple(
-        bank.bank_index * spec.semantic_bank_rows + row
-        for bank in banks for row in bank.active_rows)
+    if prepared is None:
+        prepared = _prepare_learning_source_embedding_context(
+            parameters, source, features, extents, banks, snapshot)
+    if type(prepared) is not _LearningSourceEmbeddingContext:
+        invalid("BAMF_SOURCE_ATOM_INPUT_INVALID")
+    spec, owned, active_indices = (
+        prepared.spec, prepared.owned, prepared.active_indices)
     vectors = []
     for abi_index in indices:
         entry = snapshot.abi(abi_index)
@@ -220,6 +243,7 @@ def _learning_first_source_vectors(
 def source_atom_vectors(
     parameters, compiled, config, source, features, feature_schema, extents,
     banks, artifact_owner, *, snapshot=None, source_execution_authority=None,
+    learning_context=None,
 ):
     """Recheck source/rights before gathering any identity tensor.
 
@@ -229,7 +253,8 @@ def source_atom_vectors(
     """
     if source.learning_abi_indices is not None:
         vectors, handoff = _learning_first_source_vectors(
-            parameters, compiled, config, source, features, extents, banks, snapshot)
+            parameters, compiled, config, source, features, extents, banks, snapshot,
+            prepared=learning_context)
         return vectors, banks, handoff
     snapshot, handoff = _resolve_source_embedding_authority(
         compiled, config, source, features, feature_schema, artifact_owner,

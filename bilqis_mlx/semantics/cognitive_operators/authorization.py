@@ -86,13 +86,20 @@ def _authorize_inputs(
         _invalid("BAMF_OPERATOR_OPERAND_NOT_ADMITTED")
 
 
-def _number_domain(binding: OperatorBinding) -> FiniteDomain | None:
+def _validated_number_domain(binding: OperatorBinding) -> FiniteDomain | None:
     domain = binding.numeric_domain
     if domain is None:
         return None
     if (domain.type_name != "Number" or not domain.closed
             or domain.codec is not ValueCodec.DECIMAL_INTEGER_TEXT):
         _invalid("BAMF_OPERATOR_NUMERIC_DOMAIN_INVALID")
+    return domain
+
+
+def _number_domain(binding: OperatorBinding) -> FiniteDomain | None:
+    domain = _validated_number_domain(binding)
+    if domain is None:
+        return None
     _check_grant(
         binding.numeric_source_handle,
         numeric_domain_digest(domain, binding.task.semantic_release),
@@ -112,6 +119,8 @@ def _independent_applicability(
     spec: CognitiveOperatorSpec,
     inputs: tuple[TypedValue | None, ...],
     binding: OperatorBinding,
+    *,
+    source_prevalidated: bool = False,
 ) -> bool | None:
     """Source-visible preconditions only; never evaluate a candidate answer.
 
@@ -123,7 +132,10 @@ def _independent_applicability(
     if any(value.state is not ValueState.VALUE for value in known):
         return False
     if spec.applicability == "FINITE_NUMBER":
-        domain = _number_domain(binding)
+        domain = (
+            _validated_number_domain(binding)
+            if source_prevalidated else _number_domain(binding)
+        )
         if domain is None:
             return False
         allowed = {int(item.value) for item in domain.values}

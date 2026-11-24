@@ -105,10 +105,16 @@ def _issue_result(status, option_id, offer, visit, policy, metadata, grade, hold
             ('_lawful_frontier', lawful_frontier),
             ('_cadence_authorization', cadence_authorization)):
         object.__setattr__(result, name, value)
-    visit_digest = None if visit is None else _digest(_json(visit.identity.to_record()))
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    strict = strict_mode_enabled()
+    visit_digest = (
+        None if visit is None else
+        _digest(_json(visit.identity.to_record())) if strict else id(visit.identity))
     _ISSUED[result] = (
         status, option_id, id(offer), id(visit), visit_digest,
-        None if policy_json is None else _digest(policy_json),
+        None if policy_json is None else (_digest(policy_json) if strict else policy_json),
         metadata_json, ranking_evidence_json,
         source_materialization_wall_seconds, planning_offer_fanout_wall_seconds,
         grade, tuple(holds), str(run_dir),
@@ -119,10 +125,17 @@ def _issue_result(status, option_id, offer, visit, policy, metadata, grade, hold
 def _require_issued(result):
     if type(result) is not PriorityVisitResult or result not in _ISSUED:
         _invalid('BAMF_PRIORITY_RESULT_NOT_ISSUED')
-    visit_digest = None if result.visit is None else _digest(_json(result.visit.identity.to_record()))
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    strict = strict_mode_enabled()
+    visit_digest = (
+        None if result.visit is None else
+        _digest(_json(result.visit.identity.to_record())) if strict else id(result.visit.identity))
     actual = (
         result.status, result.option_id, id(result.offer), id(result.visit), visit_digest,
-        None if result._policy_json is None else _digest(result._policy_json),
+        None if result._policy_json is None else (
+            _digest(result._policy_json) if strict else result._policy_json),
         result._metadata_json, result._ranking_evidence_json,
         result._source_materialization_wall_seconds,
         result._planning_offer_fanout_wall_seconds, result.lesson_grade,

@@ -75,17 +75,38 @@ def capture_realized_delivery(batch, source_context, capture, capability, step, 
                               enrichment, guidance, controls, seed, cost, prior=(),
                               fresh_support=(), mentors=None):
     """Forward actual delivery and measured cost to the existing #333 owner."""
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    strict = strict_evidence_enabled()
+    if not strict:
+        if (type(step) is not int or step < 1
+                or not isinstance(controls, dict)
+                or 'realized_cost' in controls):
+            _invalid('OBSERVATION_DELIVERY_INVALID')
+        capture.delivery(
+            source_context.release, capability, step, rows,
+            option_rows=option_rows, priority=priority, preservation=preservation,
+            support=support, enrichment=enrichment, guidance=guidance,
+            controls=controls, seed=seed, prior=prior,
+            fresh_support=fresh_support, mentors=mentors)
+        return
+    delivered_content_sha256 = None
     from bilqis_mlx.factory.teaching import content_digest
     require_current_release(batch, source_context, generation_binding=generation_binding)
-    if (type(step) is not int or step < 1 or content_digest(rows) != batch.delivered_content_sha256
-            or tuple(row.get('id') for row in rows) != tuple(row.provenance.row_id for row in batch.rows)
+    delivered_content_sha256 = content_digest(rows)
+    if (type(step) is not int or step < 1
+            or delivered_content_sha256 != batch.delivered_content_sha256
+            or tuple(row.get('id') for row in rows)
+                != tuple(row.provenance.row_id for row in batch.rows)
             or not isinstance(controls, dict) or 'realized_cost' in controls
             or not isinstance(cost, dict) or not cost):
         _invalid('OBSERVATION_DELIVERY_INVALID')
+    realized_controls = {**controls, 'realized_cost': cost}
+    realized_controls['delivered_content_sha256'] = delivered_content_sha256
     capture.delivery(source_context.release, capability, step, rows, option_rows=option_rows,
         priority=priority, preservation=preservation, support=support, enrichment=enrichment,
-        guidance=guidance, controls={**controls, 'realized_cost': cost,
-                                    'delivered_content_sha256': content_digest(rows)},
+        guidance=guidance, controls=realized_controls,
         seed=seed, prior=prior, fresh_support=fresh_support, mentors=mentors)
 
 

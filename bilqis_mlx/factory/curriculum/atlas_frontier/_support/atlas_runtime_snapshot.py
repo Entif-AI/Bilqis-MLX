@@ -3,7 +3,10 @@ from __future__ import annotations
 
 from .atlas_frontier import _build_snapshot
 from .atlas_frontier_contracts import PlannerBudget, _fail
-from .atlas_delta_adapter import bind_realized_snapshot
+from .atlas_delta_adapter import (
+    bind_realized_snapshot,
+    bind_realized_snapshot_prevalidated,
+)
 from .candidate_frontier import CandidateFrontierRelease
 from .candidate_staging import StagedCandidate
 from .executable_release import ExecutableFactoryRelease
@@ -29,6 +32,46 @@ def build_accepted_executable_snapshot(
     caller must already possess accepted B13/C07 facts; this function only
     validates and projects them for planning and never stages or admits work.
     """
+    return _build_accepted_executable_snapshot(
+        candidate, source_frontier, policy, candidate_frontier,
+        current_release, staged_candidates, budget=budget,
+        admission_receipt_sha256=admission_receipt_sha256,
+        grade_labels=grade_labels, prevalidated=False)
+
+
+def build_accepted_executable_snapshot_prevalidated(
+    candidate: CurriculumCandidateSet,
+    source_frontier: SourceFrontier,
+    policy: ContextPolicy,
+    candidate_frontier: CandidateFrontierRelease,
+    current_release: ExecutableFactoryRelease,
+    staged_candidates: tuple[StagedCandidate, ...],
+    *,
+    budget: PlannerBudget,
+    admission_receipt_sha256: str | None = None,
+    grade_labels: tuple[str, ...] = (),
+):
+    """Build from exact process-owned inputs already proven in this planning epoch."""
+    return _build_accepted_executable_snapshot(
+        candidate, source_frontier, policy, candidate_frontier,
+        current_release, staged_candidates, budget=budget,
+        admission_receipt_sha256=admission_receipt_sha256,
+        grade_labels=grade_labels, prevalidated=True)
+
+
+def _build_accepted_executable_snapshot(
+    candidate,
+    source_frontier,
+    policy,
+    candidate_frontier,
+    current_release,
+    staged_candidates,
+    *,
+    budget,
+    admission_receipt_sha256,
+    grade_labels,
+    prevalidated,
+):
     if (type(candidate) is not CurriculumCandidateSet
             or type(source_frontier) is not SourceFrontier
             or type(policy) is not ContextPolicy
@@ -38,10 +81,11 @@ def build_accepted_executable_snapshot(
             or any(type(item) is not StagedCandidate for item in staged_candidates)
             or type(budget) is not PlannerBudget):
         _fail("BAMF_PLANNER_ACCEPTED_RUNTIME_INPUT_INVALID")
-    current_release.verify()
-    candidate_frontier.verify()
-    for staged in staged_candidates:
-        staged.verify(candidate_frontier, current_release)
+    if not prevalidated:
+        current_release.verify()
+        candidate_frontier.verify()
+        for staged in staged_candidates:
+            staged.verify(candidate_frontier, current_release)
     snapshot = _build_snapshot(
         candidate, source_frontier, policy,
         budget=budget,
@@ -51,7 +95,10 @@ def build_accepted_executable_snapshot(
         admitted_release_sha256=current_release.release_sha256,
         admission_receipt_sha256=admission_receipt_sha256,
         grade_labels=grade_labels,
+        _verify_result=not prevalidated,
     )
-    return bind_realized_snapshot(
-        snapshot, candidate, candidate_frontier,
-        current_release, staged_candidates)
+    binder = (
+        bind_realized_snapshot_prevalidated if prevalidated
+        else bind_realized_snapshot)
+    return binder(
+        snapshot, candidate, candidate_frontier, current_release, staged_candidates)

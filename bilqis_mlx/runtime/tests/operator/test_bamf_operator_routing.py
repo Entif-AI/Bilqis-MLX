@@ -40,6 +40,18 @@ def _rejection_routing_fixture():
         to_record=lambda: {"visit_id": "visit:beta"})
     selection = SimpleNamespace(
         status="TEACHER_SELECTED", option_id="capability:beta",
+        metadata={
+            "selection_reason": "FRESH_MUTATED_CHALLENGER",
+            "selection_policy": "fixture-selection/v1",
+            "teacher_policy_evidence_before": {
+                "schema": "bilqis.bamf.teacher-policy-evidence/v1",
+                "evidence_level": "EXACT_CONTEXT",
+                "effective_policy_key": "effective:beta",
+                "trials": 1, "retained": 0,
+            },
+            "vnext_canary": {"status": "BYPASSED_BESPOKE_EXPLORATION"},
+            "actual_authority_changed": False,
+        },
         visit=SimpleNamespace(
             identity=identity,
             projection=SimpleNamespace(teacher_state={
@@ -63,7 +75,16 @@ def _rejection_routing_fixture():
             release=object(),
             _accepted_runtime_host=SimpleNamespace(_accepted_cache=cache)),
         selection=selection, step=step, decision=decision,
-        capture=SimpleNamespace(finalize=lambda **_kwargs: _evidence_receipt()),
+        capture=SimpleNamespace(
+            finalize=lambda **_kwargs: _evidence_receipt(),
+            summary=lambda: {
+                "attempt_id": "routing-fixture",
+                "candidate_steps": 1,
+                "batch_size": 1,
+                "policy_controls": ({},),
+                "guidance_applied_steps": 0,
+                "enrichment_examples": 0,
+            }),
         cache=cache,
         evaluation=SimpleNamespace(
             candidate_state=object(), parent_state=parent.retained_state))
@@ -72,6 +93,12 @@ def _rejection_routing_fixture():
 def _run_rejection_routing_fixture(case):
     prefix = "bilqis_mlx.runtime.bamf_operator.session."
     native = "bilqis_mlx.runtime.bamf_operator.session_parts.native_session."
+    def execute_candidate(*_args, observation=None, **_kwargs):
+        observation.capture.delivery(
+            None, None, observation.step, observation.option_rows,
+            controls=observation.controls, guidance=observation.guidance,
+            enrichment=observation.enrichment)
+        return case.step
     patches = (
         (prefix + "_execution_context",
          {"return_value": (case.parent, case.context, "atlas", "feature")}),
@@ -80,15 +107,12 @@ def _run_rejection_routing_fixture(case):
         (prefix + "select_foundation_priority_visit", {"return_value": case.selection}),
         (native + "bind_accepted_execution_cache", {
             "side_effect": AssertionError("learning-first routing must use session cache")}),
-        ("bilqis_mlx.runtime.bamf_operator.session_parts.prepare_visit."
-         "bind_current_retention_protection_plan", {"return_value": "plan"}),
-        (native + "bind_current_retention_source_rows", {"return_value": "rows"}),
+        (native + "bind_current_retention_protection_plan", {"return_value": "plan"}),
         (native + "rejection_attempt_ordinals", {"return_value": (1, 1)}),
         (native + "candidate_step_horizon", {"return_value": 1}),
         (native + "prepare_candidate_evidence_root", {}),
         (native + "_Capture", {"return_value": case.capture}),
-        (native + "FactoryDeliveryObservation", {"return_value": "observation"}),
-        (native + "execute_learning_first_priority_candidate", {"return_value": case.step}),
+        (native + "execute_learning_first_priority_candidate", {"side_effect": execute_candidate}),
         (native + "evaluate_factory_retention_candidate", {"return_value": case.evaluation}),
         (native + "issue_factory_retention_decision", {"return_value": case.decision}),
     )
@@ -186,11 +210,16 @@ class BamfOperatorRoutingContinuationTests(unittest.TestCase):
         self.assertEqual(evidence["visit_id"], "visit:beta")
         self.assertEqual(evidence["selected_option_id"], "capability:beta")
         self.assertEqual(evidence["selected_policy_key"], "policy:beta")
+        self.assertEqual(evidence["teacher_selection_reason"], "FRESH_MUTATED_CHALLENGER")
+        self.assertEqual(evidence["teacher_selection_policy"], "fixture-selection/v1")
+        self.assertEqual(evidence["teacher_policy_evidence_before"]["trials"], 1)
+        self.assertEqual(evidence["vnext_canary"]["status"], "BYPASSED_BESPOKE_EXPLORATION")
+        self.assertFalse(evidence["actual_authority_changed"])
         self.assertEqual(evidence["candidate_optimizer_step"], 12)
         self.assertEqual(evidence["retained_optimizer_step"], 11)
         self.assertEqual(evidence["retention_reason"], "retention_gate")
-        self.assertEqual(evidence["candidate_evidence"], _evidence_receipt())
-        _assert_rejected_resource(self, evidence["resource"])
+        self.assertIsNone(evidence["candidate_evidence"])
+        self.assertIsNone(evidence["resource"])
         self.assertEqual(case.parent.retained_state.optimizer_step, 11)
 
     def test_operator_executes_c03_selection_without_reading_factory_release_order(self):

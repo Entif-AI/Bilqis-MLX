@@ -4,6 +4,7 @@ from __future__ import annotations
 from collections import OrderedDict, deque
 import json
 from pathlib import Path
+import threading
 
 
 MAX_OBSERVATION_BYTES = 64 * 1024
@@ -12,6 +13,20 @@ MAX_HISTORY_VISITS = 64
 SCHEMAS = frozenset(
     f"bilqis.bamf.trainer-observed/v{version}" for version in range(1, 8))
 _DURABLE_EVENTS = frozenset({"BAMF_C16_3_ACCEPTED", "BAMF_CANDIDATE_REJECTED"})
+_DURABLE_EVENT_MARKERS = tuple(name.encode() for name in _DURABLE_EVENTS)
+
+
+class _DurableHistoryCache:
+    def __init__(self):
+        self.entries = dict()
+        self.lock = threading.Lock()
+
+    def clear(self):
+        with self.lock:
+            self.entries.clear()
+
+
+_DURABLE_HISTORY = _DurableHistoryCache()
 
 
 def _measured_target(how: dict, capability: str):
@@ -102,6 +117,11 @@ def _durable_visit(event: dict, run_id: str):
         "loss_total": resource.get("loss_total"),
         "selected_policy": selected_policy,
         "realized_action": realized_action,
+        "teacher_selection_reason": envelope.get("teacher_selection_reason"),
+        "teacher_selection_policy": envelope.get("teacher_selection_policy"),
+        "teacher_policy_evidence_before": envelope.get("teacher_policy_evidence_before"),
+        "vnext_canary": envelope.get("vnext_canary"),
+        "actual_authority_changed": envelope.get("actual_authority_changed"),
         "protected_capabilities": protected_capabilities,
         "visit_evidence": evidence,
         "candidate_steps": [],
@@ -109,13 +129,26 @@ def _durable_visit(event: dict, run_id: str):
     }
 
 
-def _read_durable_history(run_dir: Path, run_id: str):
-    path = run_dir / "events.jsonl"
-    recent = deque(maxlen=MAX_HISTORY_VISITS)
+def _scan_durable_append(path: Path, run_id: str, offset: int, recent):
+    """Consume only complete newly appended JSONL records from ``offset``."""
+    next_offset = offset
     try:
         with path.open("rb") as stream:
-            for raw in stream:
-                if not any(name.encode() in raw for name in _DURABLE_EVENTS):
+            stream.seek(offset)
+            while True:
+                start = stream.tell()
+                raw = stream.readline()
+                if not raw:
+                    next_offset = stream.tell()
+                    break
+                if not raw.endswith(b"\n"):
+                    # The trainer may be between write() calls.  Re-read this
+                    # record after the next append instead of permanently
+                    # skipping a temporarily incomplete event.
+                    next_offset = start
+                    break
+                next_offset = stream.tell()
+                if not any(marker in raw for marker in _DURABLE_EVENT_MARKERS):
                     continue
                 try:
                     event = json.loads(raw)
@@ -125,8 +158,55 @@ def _read_durable_history(run_dir: Path, run_id: str):
                 if visit is not None:
                     recent.append(visit)
     except OSError:
-        pass
-    return tuple(recent)
+        return offset
+    return next_offset
+
+
+def _read_durable_history(run_dir: Path, run_id: str):
+    """Incrementally tail the append-only event log instead of rescanning it."""
+    path = run_dir / "events.jsonl"
+    key = (str(path), run_id)
+    try:
+        stat = path.stat()
+    except OSError:
+        with _DURABLE_HISTORY.lock:
+            _DURABLE_HISTORY.entries.pop(key, None)
+        return ()
+    identity = (stat.st_dev, stat.st_ino)
+    with _DURABLE_HISTORY.lock:
+        cached = _DURABLE_HISTORY.entries.get(key)
+        reset = (
+            not isinstance(cached, dict)
+            or cached.get("identity") != identity
+            or stat.st_size < cached.get("observed_size", 0)
+            or (
+                stat.st_size == cached.get("observed_size")
+                and stat.st_mtime_ns != cached.get("mtime_ns")
+            )
+        )
+        if reset:
+            recent = deque(maxlen=MAX_HISTORY_VISITS)
+            offset = 0
+        else:
+            recent = cached["recent"]
+            offset = cached["offset"]
+            if (stat.st_size == cached["observed_size"]
+                    and stat.st_mtime_ns == cached["mtime_ns"]
+                    and cached["offset"] == stat.st_size):
+                return tuple(recent)
+        offset = _scan_durable_append(path, run_id, offset, recent)
+        try:
+            observed = path.stat()
+        except OSError:
+            observed = stat
+        _DURABLE_HISTORY.entries[key] = {
+            "identity": identity,
+            "offset": offset,
+            "observed_size": observed.st_size,
+            "mtime_ns": observed.st_mtime_ns,
+            "recent": recent,
+        }
+        return tuple(recent)
 
 
 def _read_live_observation(run_dir: Path, run_id: str):

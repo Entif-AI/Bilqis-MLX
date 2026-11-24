@@ -5,17 +5,23 @@ from itertools import product
 
 from ..cognitive_operators.authorization import (
     _approved_frames, _authorize_inputs, _check_grant,
-    _independent_applicability, _number_domain,
+    _independent_applicability, _number_domain, _validated_number_domain,
 )
 from ..cognitive_operators.registry import OperatorBinding, operator_grant_digest
 from .contracts import DAGNode, DAGOperand, RefKind, MAX_DAG_BINDING_CHECKS, _invalid
 from .goals import TaskGoal
 from .topology import _topological, _visible_source
 
-def _prepare(goal: TaskGoal, binding: OperatorBinding):
+def _prepare(
+    goal: TaskGoal,
+    binding: OperatorBinding,
+    *,
+    prevalidated_source_authority: bool = False,
+):
     """Validate the entire typed dependency graph before any computation."""
     if (not isinstance(goal, TaskGoal)
-            or not isinstance(binding, OperatorBinding)):
+            or not isinstance(binding, OperatorBinding)
+            or type(prevalidated_source_authority) is not bool):
         _invalid("BAMF_DAG_EXECUTION_INPUT_INVALID")
     program = goal.expression_or_holes
     budget = goal.budget
@@ -28,8 +34,12 @@ def _prepare(goal: TaskGoal, binding: OperatorBinding):
         _invalid("BAMF_DAG_SCOPE_MISMATCH")
     order = _topological(program, budget)
     by_id = {node.node_id: node for node in program.nodes}
-    approved = _approved_frames(binding)
-    _authorize_inputs((), binding)
+    approved = (
+        {item.frame_handle: item for item in binding.frames}
+        if prevalidated_source_authority else _approved_frames(binding)
+    )
+    if not prevalidated_source_authority:
+        _authorize_inputs((), binding)
     prepared = {}
     visible = {}
     selected = []
@@ -53,7 +63,9 @@ def _prepare(goal: TaskGoal, binding: OperatorBinding):
             visible[ref.identity]
             if ref is not None and ref.kind is not RefKind.RESULT
             else None for ref in refs)
-        return _independent_applicability(spec, values, binding)
+        return _independent_applicability(
+            spec, values, binding,
+            source_prevalidated=prevalidated_source_authority)
 
     def hole_candidate_viable(spec, node: DAGNode) -> bool:
         for index, ref in enumerate(node.operands):
@@ -82,10 +94,11 @@ def _prepare(goal: TaskGoal, binding: OperatorBinding):
         # Every proposed choice must be source-granted, not merely the
         # eventual unique binding. An unauthorized alternative must never
         # manufacture ambiguity that suppresses an otherwise legal answer.
-        for spec in candidates:
-            _check_grant(
-                "source:operator:" + spec.operator_id,
-                operator_grant_digest(spec), binding)
+        if not prevalidated_source_authority:
+            for spec in candidates:
+                _check_grant(
+                    "source:operator:" + spec.operator_id,
+                    operator_grant_digest(spec), binding)
         for index, ref in enumerate(node.operands):
             if ref is not None:
                 validate_ref(ref)
@@ -159,11 +172,16 @@ def _prepare(goal: TaskGoal, binding: OperatorBinding):
         selected.append((
             node.node_id, matches[0].operator_id,
             tuple(ref.identity for ref in node.operands)))
-    _authorize_inputs(tuple(visible.values()), binding)
+    if not prevalidated_source_authority:
+        _authorize_inputs(tuple(visible.values()), binding)
     for spec, _ in prepared.values():
-        _check_grant(
-            "source:operator:" + spec.operator_id,
-            operator_grant_digest(spec), binding)
+        if not prevalidated_source_authority:
+            _check_grant(
+                "source:operator:" + spec.operator_id,
+                operator_grant_digest(spec), binding)
         if spec.applicability == "FINITE_NUMBER":
-            _number_domain(binding)
+            if prevalidated_source_authority:
+                _validated_number_domain(binding)
+            else:
+                _number_domain(binding)
     return order, prepared, visible, tuple(selected), unresolved

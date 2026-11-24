@@ -13,6 +13,8 @@ _OWNER_GROUPS = (
     "_batch/training", "_admission/v2", "_admission/jit", "_admission/lease",
     "_admission/generated_grade_runtime",
     "_capability/factory",
+    "_capability/factory/_solver", "_capability/factory/_evaluation",
+    "_capability/factory/_task", "_model/optimizer",
     "_model/cache", "_model/backbone", "_correction/owners",
     "_correction/accepted", "_correction/weakness",
 )

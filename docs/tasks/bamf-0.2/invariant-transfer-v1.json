@@ -120,10 +120,10 @@
       "predecessor_proofs": [
         {"path": "bilqis_mlx/runtime/tests/test_typed_answer_training.py", "test": "test_whole_predecessor_batch_trains_typed_without_collapsing_five_states"}
       ],
-      "bamf_owner": {"path": "bilqis_mlx/runtime/_capability/factory/factory_evaluation_batching.py"},
+      "bamf_owner": {"path": "bilqis_mlx/runtime/_capability/factory/_evaluation/factory_evaluation_batching.py"},
       "successor_evidence": [
-        {"kind": "independent_authority", "path": "bilqis_mlx/runtime/tests/capability/factory/test_factory_evaluation_batching.py", "test": "test_fixed_school_batch_matches_scalar_and_reduces_backbone_launches"},
-        {"kind": "independent_authority", "path": "bilqis_mlx/runtime/tests/capability/factory/test_factory_evaluation_batching.py", "test": "test_assessment_and_work_disposition_are_scalar_batch_identical"}
+        {"kind": "independent_authority", "path": "bilqis_mlx/runtime/tests/capability/factory/evaluation_batching/test_numerical.py", "test": "test_fixed_school_batch_matches_scalar_and_reduces_backbone_launches"},
+        {"kind": "independent_authority", "path": "bilqis_mlx/runtime/tests/capability/factory/evaluation_batching/test_numerical.py", "test": "test_assessment_and_work_disposition_are_scalar_batch_identical"}
       ]
     },
     {

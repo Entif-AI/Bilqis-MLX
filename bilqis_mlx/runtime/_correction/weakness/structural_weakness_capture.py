@@ -79,8 +79,9 @@ def derive_rejected_weaknesses(
         source_context, capability)
     if admitted.weakness_classifier_id is None:
         return ()
+    selected_rows = _selected_rows(payload, capability)
     classes = {}
-    for row in _selected_rows(payload, capability):
+    for row in selected_rows:
         if adapter.check(
                 row, source_root=source_context.source_root,
                 graph=source_context.graph,
@@ -108,6 +109,61 @@ def derive_rejected_weaknesses(
             "weakness_class": weakness.to_record(),
             "context": context,
             "candidate_evidence_sha256": candidate_sha256,
+            "outcome_sha256": outcome_sha256,
+            "retention_reason": rejection_reason,
+        }
+        record["weakness_evidence_sha256"] = _digest(record)
+        result.append(record)
+    return tuple(result)
+
+
+def derive_live_rejected_weaknesses(
+        source_context, selection, rows, *, rejection_reason: str,
+        outcome_sha256: str) -> tuple[dict, ...]:
+    """Compile learning-relevant weakness debt directly from the rejected lesson."""
+    from bilqis_mlx.runtime.source_execution import SourceExecutionContext
+
+    if not isinstance(source_context, SourceExecutionContext):
+        return ()
+    context = issue_weakness_context(selection)
+    capability = context["capability_id"]
+    execution, adapter, admitted = _provider_for_context(source_context, capability)
+    if admitted.weakness_classifier_id is None:
+        return ()
+    selected_rows = tuple(
+        row for row in rows
+        if isinstance(row, dict) and row.get("capability") == capability)
+    classes = {}
+    for row in selected_rows:
+        if adapter.check(
+                row, source_root=source_context.source_root,
+                graph=source_context.graph,
+                course=source_context.release.curriculum) is not True:
+            _invalid("BAMF_WEAKNESS_SOURCE_VALIDATION_FAILED")
+        weakness = classify_weakness(
+            adapter, execution, row, provider_descriptor=admitted)
+        if weakness is not None:
+            classes[weakness.class_sha256] = weakness
+    if classes and (not isinstance(outcome_sha256, str)
+                    or len(outcome_sha256) != SHA256_LENGTH
+                    or not isinstance(rejection_reason, str)
+                    or not rejection_reason):
+        _invalid("BAMF_WEAKNESS_EVIDENCE_PROVENANCE_INVALID")
+    historical_ids = sorted({
+        row["id"] for row in selected_rows
+        if isinstance(row.get("id"), str) and row["id"]
+    })
+    result = []
+    for weakness in sorted(classes.values(), key=lambda item: item.class_sha256):
+        record = {
+            "schema": EVIDENCE_SCHEMA,
+            "state": "UNRESOLVED",
+            "freshness": "FRESH_EQUIVALENT_REQUIRED",
+            "capability_id": capability,
+            "weakness_class": weakness.to_record(),
+            "context": context,
+            "candidate_evidence_sha256": None,
+            "historical_source_ids": historical_ids,
             "outcome_sha256": outcome_sha256,
             "retention_reason": rejection_reason,
         }
@@ -146,4 +202,7 @@ def weakness_is_current(wrapper: dict, source_context, selection) -> bool:
     )
 
 
-__all__ = ("derive_rejected_weaknesses", "weakness_is_current")
+__all__ = (
+    "derive_live_rejected_weaknesses", "derive_rejected_weaknesses",
+    "weakness_is_current",
+)

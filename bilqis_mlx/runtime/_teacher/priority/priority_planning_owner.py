@@ -20,9 +20,15 @@ from bilqis_mlx.runtime.priority_planning_parts.epoch import (
 def priority_planning_from_epoch(epoch, *, progress=None, planning_cache=None):
     """Project C03 planning from one already-derived accepted A09 epoch."""
     from bilqis_mlx.factory import candidate_realizations
-    from bilqis_mlx.factory.atlas_frontier_progress import plan_frontier_progress
+    from bilqis_mlx.factory.atlas_frontier_progress import (
+        plan_frontier_progress,
+        plan_frontier_progress_prevalidated,
+    )
     from bilqis_mlx.factory.atlas_frontier_selection import (
-        ranked_frontier_target, select_frontier_delta_for_projection,
+        ranked_frontier_target,
+        ranked_frontier_target_prevalidated,
+        select_frontier_delta_for_projection,
+        select_frontier_delta_for_projection_prevalidated,
     )
     from bilqis_mlx.runtime.priority_qualification import (
         _issue_internal_priority_planning,
@@ -47,10 +53,17 @@ def priority_planning_from_epoch(epoch, *, progress=None, planning_cache=None):
     snapshot = epoch.snapshot
     closure = epoch.closure
     requested = epoch.requested_keys
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    learning_first = not strict_mode_enabled()
     selected = projection = None
     _emit_progress(progress, "planner: ranking next bounded target")
     try:
-        semantic_id, rows = ranked_frontier_target(snapshot, closure, requested)
+        rank = (
+            ranked_frontier_target_prevalidated
+            if learning_first else ranked_frontier_target)
+        semantic_id, rows = rank(snapshot, closure, requested)
     except BilqisError as error:
         if error.context.get("reason") != "BAMF_PLANNER_NO_BOUNDED_READY_DELTA":
             raise
@@ -60,8 +73,12 @@ def priority_planning_from_epoch(epoch, *, progress=None, planning_cache=None):
                 semantic_id, current, rows)
         except ValueError:
             _invalid("BAMF_PRIORITY_A09_REALIZATION_MISSING")
-        selected = select_frontier_delta_for_projection(
-            snapshot, closure, current, projection, requested)
+        if learning_first:
+            selected = select_frontier_delta_for_projection_prevalidated(
+                snapshot, closure, current, projection, semantic_id, rows, requested)
+        else:
+            selected = select_frontier_delta_for_projection(
+                snapshot, closure, current, projection, requested)
     if selected is None and epoch.accepted_credit is not None:
         from bilqis_mlx.factory.atlas_delta_adapter import (
             plan_frontier_progress_with_accepted_credit,
@@ -69,13 +86,18 @@ def priority_planning_from_epoch(epoch, *, progress=None, planning_cache=None):
         planning_progress = plan_frontier_progress_with_accepted_credit(
             snapshot, closure, epoch.accepted_credit)
     else:
-        planning_progress = plan_frontier_progress(
-            snapshot, closure, selected,
-            current_release=current if selected is not None else None,
-            selected_projection=projection)
+        if learning_first:
+            planning_progress = plan_frontier_progress_prevalidated(
+                snapshot, closure, selected)
+        else:
+            planning_progress = plan_frontier_progress(
+                snapshot, closure, selected,
+                current_release=current if selected is not None else None,
+                selected_projection=projection)
     _emit_progress(progress, "planner: candidate frontier ready")
     planning = _issue_internal_priority_planning(
-        planning_progress, closure, selected, projection)
+        planning_progress, closure, selected, projection,
+        release=current if learning_first else None)
     if planning_cache is not None:
         planning_cache._planning_key = key
         planning_cache._planning = planning

@@ -69,6 +69,7 @@ class PreparedPrioritySourceOffer:
     source_binding_digest: str
     _rows_json: str = field(repr=False)
     _rows_sha256: str = field(repr=False)
+    _rows_direct: tuple | None = field(repr=False, compare=False)
     _run_dir: Path = field(repr=False)
     _materialized: dict = field(repr=False, compare=False)
     _materialization_cache: object = field(repr=False, compare=False)
@@ -83,7 +84,6 @@ class PreparedPrioritySourceOffer:
     def _validate(self):
         if (getattr(self, '_issuance', None) is not _ISSUER
                 or type(self.source_authority) is not SourceBatchAuthority
-                or hashlib.sha256(self._rows_json.encode('utf-8')).hexdigest() != self._rows_sha256
                 or self.source_authority.release_sha256 != self.release_sha256
                 or self.source_authority.capability_id != self.capability_id
                 or self.source_authority.seed != self.source_seed
@@ -97,16 +97,28 @@ class PreparedPrioritySourceOffer:
                 or type(self._planning_generation) is not PriorityPlanningGeneration
                 or getattr(self._planning_generation, '_issuance', None) is not _PLANNING_ISSUER):
             _invalid_source_batch('BAMF_PRIORITY_SOURCE_OFFER_INVALID')
+        if self._learning_first:
+            if (type(self._rows_direct) is not tuple
+                    or len(self._rows_direct) != self.source_each
+                    or any(type(row) is not dict for row in self._rows_direct)):
+                _invalid_source_batch('BAMF_PRIORITY_SOURCE_OFFER_INVALID')
+        elif (self._rows_direct is not None
+                or hashlib.sha256(self._rows_json.encode('utf-8')).hexdigest()
+                != self._rows_sha256):
+            _invalid_source_batch('BAMF_PRIORITY_SOURCE_OFFER_INVALID')
         if self._materialization_cache is not None:
             from .priority_source_materialization_cache import (
                 PrioritySourceMaterializationCache,
             )
             if type(self._materialization_cache) is not PrioritySourceMaterializationCache:
                 _invalid_source_batch('BAMF_PRIORITY_SOURCE_OFFER_INVALID')
-        self.source_authority.__post_init__()
+        if not self._learning_first:
+            self.source_authority.__post_init__()
 
     def rows(self):
         self._validate()
+        if self._learning_first:
+            return self._rows_direct
         return _decode_rows(self._rows_json)
 
     def require_current_parent(self, source_context):
@@ -124,14 +136,26 @@ class PreparedPrioritySourceOffer:
 
     def require_qualified_current(self, source_context, parent, *, prepared_rows=None):
         """Verify source qualification/currentness without rebuilding source content."""
-        stage_started = time.perf_counter()
-        self._validate()
-        offer_validate_seconds = time.perf_counter() - stage_started
-        stage_started = time.perf_counter()
         from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
             strict_mode_enabled,
         )
         strict = strict_mode_enabled()
+        if not strict:
+            self._validate()
+            cache, _authenticated = _require_planning_generation_identity(
+                self._planning_generation, source_context, parent)
+            if (Path(source_context.run_dir).resolve() != self._run_dir
+                    or cache.accepted_manifest_sha256 != self.accepted_manifest_sha256
+                    or cache.generation_binding != self.generation_binding
+                    or source_context.release.release_sha256 != self.release_sha256
+                    or self.capability_id
+                    not in source_context.release.execution_plan.capability_map):
+                _invalid_source_batch('BAMF_PRIORITY_SOURCE_OFFER_STALE')
+            return self.rows() if prepared_rows is None else tuple(prepared_rows)
+        stage_started = time.perf_counter()
+        self._validate()
+        offer_validate_seconds = time.perf_counter() - stage_started
+        stage_started = time.perf_counter()
         require_generation = (
             _require_planning_generation
             if strict else _require_planning_generation_identity)
@@ -151,21 +175,6 @@ class PreparedPrioritySourceOffer:
         stage_started = time.perf_counter()
         rows = self.rows() if prepared_rows is None else tuple(prepared_rows)
         row_decode_seconds = time.perf_counter() - stage_started
-        if not strict:
-            object.__setattr__(self, "_performance_observation", {
-                "source_currentness_offer_validate_wall_seconds": float(
-                    offer_validate_seconds),
-                "source_currentness_planning_generation_wall_seconds": float(
-                    planning_generation_seconds),
-                "source_currentness_static_binding_wall_seconds": float(
-                    static_binding_seconds),
-                "source_currentness_row_decode_wall_seconds": float(
-                    row_decode_seconds),
-                "source_currentness_row_authority_wall_seconds": 0.0,
-                "source_currentness_row_canonical_wall_seconds": 0.0,
-                "source_currentness_qualification_owner_wall_seconds": 0.0,
-            })
-            return rows
         stage_started = time.perf_counter()
         source_context.require_bound_rows(rows, self.source_authority)
         row_authority_seconds = time.perf_counter() - stage_started
@@ -228,16 +237,22 @@ def prepare_priority_source_offer(source_context, parent, atlas_artifact_path, *
         _invalid_source_batch('BAMF_PRIORITY_SOURCE_OFFER_INPUT_INVALID')
     rows, authority = source_context.draw_bound_rows(
         seed=source_seed, capability=capability, each=source_each)
-    wire = _canonical_rows(rows)
     if len(rows) != source_each:
         _invalid_source_batch('BAMF_PRIORITY_SOURCE_ROWS_INVALID')
     if authenticated.receipt.generation_manifest_sha256 != cache.accepted_manifest_sha256:
         _invalid_source_batch('BAMF_PRIORITY_SOURCE_ACCEPTED_GENERATION_DRIFT')
     qualification_owner = None
     if strict:
+        wire = _canonical_rows(rows)
+        rows_sha256 = hashlib.sha256(wire.encode('utf-8')).hexdigest()
+        rows_direct = None
         from bilqis_mlx.runtime.salience_evidence_owner import SalienceEvidenceArtifactOwner
         qualification_owner = SalienceEvidenceArtifactOwner.for_source_qualification(
             authority, rows, authenticated.features.semantic_release)
+    else:
+        wire = ''
+        rows_sha256 = ''
+        rows_direct = tuple(rows)
     offer = object.__new__(PreparedPrioritySourceOffer)
     for name, value in (
         ('source_authority', authority), ('accepted_manifest_sha256', cache.accepted_manifest_sha256),
@@ -245,7 +260,8 @@ def prepare_priority_source_offer(source_context, parent, atlas_artifact_path, *
         ('capability_id', capability), ('source_seed', source_seed), ('source_each', source_each),
         ('source_family_id', authority.source_family_id),
         ('source_binding_digest', contract_digest(source_context.release.source_bindings.by_capability[capability])),
-        ('_rows_json', wire), ('_rows_sha256', hashlib.sha256(wire.encode('utf-8')).hexdigest()),
+        ('_rows_json', wire), ('_rows_sha256', rows_sha256),
+        ('_rows_direct', rows_direct),
         ('_run_dir', Path(source_context.run_dir).resolve()), ('_materialized', {}),
         ('_materialization_cache', materialization_cache),
         ('_qualification_owner', qualification_owner),

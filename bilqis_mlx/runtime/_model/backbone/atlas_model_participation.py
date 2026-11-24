@@ -8,6 +8,7 @@ from bilqis_mlx.runtime.bamf_bundle.execution_cache import bind_motif_artifact_o
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2, expected_bamf_shapes
 from bilqis_mlx.semantics.cognitive_dependencies import DependencyKind
 from bilqis_mlx.semantics.atlas_features import generation_feature_row
+from bilqis_mlx.semantics.frame_schema import ConceptRef
 
 from .atlas_model_contracts import BamfCompiledBatch, _ForwardRecord, _invalid
 
@@ -54,13 +55,20 @@ def _active_banks(parameters, batch: BamfCompiledBatch, plan: AnswerPlan):
         batch.active_semantic_rows.active_indices)
 
 
-def _executed_readout_parameters(plan, output):
+def _executed_readout_parameters(plan, output=None, *, executed_decision_ids=()):
     dense = {
         "readout.state_norm", "readout.output_norm", "readout.query",
         "readout.key", "readout.value", "readout.output",
     }
-    executed_ids = {decision.decision_id for decision in output.decisions}
-    kinds = {decision.kind for decision in output.decisions}
+    if output is not None:
+        executed_ids = {decision.decision_id for decision in output.decisions}
+        kinds = {decision.kind for decision in output.decisions}
+    else:
+        executed_ids = set(executed_decision_ids)
+        kinds = {
+            decision.kind for decision in plan.decisions
+            if decision.decision_id in executed_ids
+        }
     if DecisionKind.CONTROL in kinds:
         dense.update(("readout.control", "readout.control_bias"))
     if DecisionKind.ROLE in kinds:
@@ -73,6 +81,48 @@ def _executed_readout_parameters(plan, output):
     ):
         dense.add("readout.feedback")
     return dense
+
+
+def _learning_first_parameter_names(parameters, row_batches, answer_plans):
+    """Return the parameter leaves ordinary vector training is allowed to update.
+
+    This mirrors the learning-first participation contract before autodiff so MLX
+    never manufactures gradients for leaves the optimizer policy cannot consume.
+    Ordinary vector training has no retained-motif cache and no refinement
+    selection, so motif/refinement/frame/salience-only leaves are intentionally
+    absent here.
+    """
+    if (type(row_batches) is not tuple or type(answer_plans) is not tuple
+            or len(row_batches) != len(answer_plans) or not row_batches):
+        _invalid("B11_LEARNING_FIRST_PARAMETER_SCOPE_INVALID")
+    names = {
+        "features.type", "features.role", "features.schema",
+        "features.gates", "features.project_type", "features.project_role",
+        "features.project_schema", "features.project_graph",
+        "features.local_slot", "features.norm",
+    }
+    for item in expected_bamf_shapes(
+            ModelTopologySpecV2(), row_batches[0].compiled.extents):
+        if item.name.startswith(("blocks.", "depth.", "plastic.group.")):
+            names.add(item.name)
+    for batch, plan in zip(row_batches, answer_plans):
+        snapshot = _bound_snapshot(batch, plan)
+        row = batch.compiled.compiled.rows[0]
+        source = batch.sources[0]
+        for abi_index in tuple(source.source_row.get("tokens", ()))[:row.visible_end]:
+            entry = snapshot.abi(abi_index)
+            names.add(f"identity.bank.{entry.bank}")
+        for decision in plan.decisions:
+            for value in decision.legal_values:
+                if type(value) is ConceptRef:
+                    bank, _row = divmod(
+                        value.abi_index, ModelTopologySpecV2.semantic_bank_rows)
+                    names.add(f"identity.bank.{bank}")
+        names.update(_executed_readout_parameters(
+            plan, executed_decision_ids=tuple(plan.execution_order)))
+    if not names <= set(parameters):
+        _invalid("B11_LEARNING_FIRST_PARAMETER_SCOPE_INVALID")
+    return tuple(sorted(names))
 
 
 def _execution_dependencies(batch, producer_or_reads, accepted_cache):
@@ -105,7 +155,7 @@ def _execution_dependencies(batch, producer_or_reads, accepted_cache):
 def _forward_participation(
     params, batch, plan, output, producer, accepted_cache,
     refinement_roles=(), refinement_executed=False, refinement_routing=False,
-    producer_row_index=0,
+    producer_row_index=0, executed_decision_ids=(),
 ):
     source = batch.sources[0]
     snapshot = _bound_snapshot(batch, plan)
@@ -138,7 +188,8 @@ def _forward_participation(
         "features.gates", "features.project_type", "features.project_role",
         "features.project_schema", "features.project_graph", "features.norm",
     ))
-    dense.update(_executed_readout_parameters(plan, output))
+    dense.update(_executed_readout_parameters(
+        plan, output, executed_decision_ids=executed_decision_ids))
     for site_index, read in enumerate(motif_reads):
         if read.participating_slots:
             dense.update((
@@ -181,4 +232,6 @@ def _forward_participation(
     )
 
 
-__all__ = ("_active_banks", "_forward_participation")
+__all__ = (
+    "_active_banks", "_forward_participation", "_learning_first_parameter_names",
+)

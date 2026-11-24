@@ -90,6 +90,24 @@ def compile_autonomy_plan(
     consumers remain explicitly blocked instead of being silently omitted.
     """
     release.verify()
+    return compile_autonomy_plan_prevalidated(
+        release,
+        composition_report,
+        projection_evidence=projection_evidence,
+        projection_coverage_debt=projection_coverage_debt,
+        supplemental_evidence=supplemental_evidence,
+        remediation_failure_limit=remediation_failure_limit,
+    )
+
+
+def compile_autonomy_plan_prevalidated(
+    release: FactoryRelease, composition_report: dict | None = None,
+    *, projection_evidence: tuple[ProjectionEvidenceSpec, ...] = (),
+    projection_coverage_debt: tuple[str, ...] = (),
+    supplemental_evidence: tuple[SupplementalEvidenceSpec, ...] = (),
+    remediation_failure_limit: int = 3,
+) -> AutonomyPlan:
+    """Construct a plan from a release whose authority was proven by its owner."""
     capability_ids = tuple(item.capability_id for item in release_capabilities(release))
     _validate_plan_inputs(
         capability_ids, projection_evidence, projection_coverage_debt,

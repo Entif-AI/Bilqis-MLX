@@ -116,10 +116,38 @@ def bind_realized_snapshot(
     staged_candidates: tuple[StagedCandidate, ...],
 ) -> CurriculumSnapshot:
     """Overlay A09.5 realization evidence without changing the frozen A08 census."""
+    return _bind_realized_snapshot(
+        snapshot, curriculum_candidate, candidate_frontier,
+        current_release, staged_candidates, prevalidated=False)
+
+
+def bind_realized_snapshot_prevalidated(
+    snapshot: CurriculumSnapshot,
+    curriculum_candidate,
+    candidate_frontier: CandidateFrontierRelease,
+    current_release: ExecutableFactoryRelease,
+    staged_candidates: tuple[StagedCandidate, ...],
+) -> CurriculumSnapshot:
+    """Overlay realization rows from exact objects already proven by the owner."""
+    return _bind_realized_snapshot(
+        snapshot, curriculum_candidate, candidate_frontier,
+        current_release, staged_candidates, prevalidated=True)
+
+
+def _bind_realized_snapshot(
+    snapshot: CurriculumSnapshot,
+    curriculum_candidate,
+    candidate_frontier: CandidateFrontierRelease,
+    current_release: ExecutableFactoryRelease,
+    staged_candidates: tuple[StagedCandidate, ...],
+    *,
+    prevalidated: bool,
+) -> CurriculumSnapshot:
     if (type(snapshot) is not CurriculumSnapshot
-            or snapshot.frozen_census_sha256 != curriculum_candidate.census.digest
             or snapshot.candidate_frontier_sha256 != candidate_frontier.release_sha256
-            or snapshot.admitted_factory_release_sha256 != current_release.release_sha256):
+            or snapshot.admitted_factory_release_sha256 != current_release.release_sha256
+            or (not prevalidated
+                and snapshot.frozen_census_sha256 != curriculum_candidate.census.digest)):
         _fail("BAMF_PLANNER_REALIZATION_BRIDGE_INPUT_INVALID")
     coverage = candidate_realizations.realized_coverage_rows(
         curriculum_candidate, candidate_frontier, current_release, staged_candidates)
@@ -135,7 +163,8 @@ def bind_realized_snapshot(
         snapshot_sha256="0" * 64,
     )
     result = replace(draft, snapshot_sha256=draft.expected_digest())
-    result.verify()
+    if not prevalidated:
+        result.verify()
     return result
 
 

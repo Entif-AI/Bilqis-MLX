@@ -195,7 +195,7 @@ class AdamWCountsTests(unittest.TestCase):
             np.testing.assert_array_equal(np.asarray(getattr(actual, field)["fixture.bank"]),
                                           np.asarray(getattr(expected, field)["fixture.bank"]))
 
-    def test_one_clipped_step_has_one_parent_and_one_child_full_validation(self):
+    def test_one_clipped_step_folds_parent_validation_into_preflight(self):
         parent = self.state()
         original_validate = AdamWStateTree.validate
         calls = []
@@ -214,9 +214,8 @@ class AdamWCountsTests(unittest.TestCase):
                 max_norm=1.,
             )
         self.assertIsNot(actual, parent)
-        self.assertEqual(len(calls), 2)
-        self.assertIs(calls[0], parent)
-        self.assertIs(calls[1], actual)
+        self.assertEqual(len(calls), 1)
+        self.assertIs(calls[0], actual)
 
     def test_stale_parent_witness_cannot_bypass_numerical_validation(self):
         parent = self.state()
@@ -265,10 +264,10 @@ class AdamWCountsTests(unittest.TestCase):
     def test_realistic_214_leaf_step_has_constant_validation_boundaries(self):
         report = realistic_step_report()
         self.assertEqual(report.leaf_count, 214)
-        self.assertEqual(report.full_state_validations, 2)
+        self.assertEqual(report.full_state_validations, 1)
         self.assertEqual(report.numpy_mask_readbacks, 0)
         self.assertEqual(report.optimizer_instances, 0)
-        self.assertEqual(report.explicit_eval_batches, 4)
+        self.assertEqual(report.explicit_eval_batches, 2)
         self.assertGreater(report.wall_seconds, 0.)
 
     def test_clipping_rejects_nonfinite_norm_and_invalid_limit(self):

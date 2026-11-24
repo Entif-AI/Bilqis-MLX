@@ -84,7 +84,7 @@ class FactoryDeliveryObservation:
                 or not callable(getattr(capture, "delivery", None))
                 or any(not isinstance(getattr(capture, name, None), str)
                        or not getattr(capture, name)
-                       for name in ("attempt_id", "proposal_id", "selected_option"))):
+                       for name in ("attempt_id", "selected_option"))):
             _invalid("FACTORY_TRAINING_OBSERVATION_INVALID")
 
 

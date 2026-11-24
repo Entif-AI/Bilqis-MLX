@@ -100,10 +100,11 @@ class TrainingDeliveryTests(AtlasTrainingAdapterTest):
             capture_realized_delivery(batch, self.context, capture, 'Z.C0', 1, self.rows,
                 generation_binding=batch.generation_binding, option_rows=self.rows, priority=(),
                 preservation=(), support=(), enrichment=(), guidance=None, controls={}, seed=42,
-                cost={'wall_seconds': 0.25})
+                cost={'wall_seconds': 0.25}, fresh_support=self.rows)
             payload = read_sidecar(root, capture.steps[0])
             self.assertEqual(payload['controls']['realized_cost'], {'wall_seconds': 0.25})
             self.assertEqual(read_sidecar(root, payload['positions'][0]['row']), self.rows[0])
+            self.assertIn('fresh_support', payload['positions'][0]['roles'])
             envelope = store_sidecar(root, {'attempt_id': capture.attempt_id, 'proposal_id': capture.proposal_id,
                 'proposal': proposal_ref, 'steps': capture.steps})
             observed = read_observation(root, {'teacher_observation': {'attempt_id': capture.attempt_id,
@@ -117,6 +118,27 @@ class TrainingDeliveryTests(AtlasTrainingAdapterTest):
                     guidance=None, controls={}, seed=42, cost={'wall_seconds': 0.25})
             self.assertEqual(
                 caught.exception.context["reason"], "OBSERVATION_DELIVERY_INVALID")
+
+    def test_learning_first_delivery_skips_release_and_content_proof(self):
+        from unittest.mock import Mock, patch
+        from bilqis_mlx.runtime.atlas_training_adapter import capture_realized_delivery
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
+
+        batch = self.compile(self.rows)
+        capture = Mock()
+        with evidence_mode(strict=False), patch(
+                "bilqis_mlx.runtime.atlas_training_delivery.require_current_release",
+                side_effect=AssertionError("hot step replayed release proof")), patch(
+                "bilqis_mlx.factory.teaching.content_digest",
+                side_effect=AssertionError("hot step hashed delivery")):
+            capture_realized_delivery(
+                batch, self.context, capture, 'Z.C0', 1, self.rows,
+                generation_binding=batch.generation_binding, option_rows=self.rows,
+                priority=(), preservation=(), support=(), enrichment=(), guidance=None,
+                controls={}, seed=42, cost={'wall_seconds': 0.25})
+        controls = capture.delivery.call_args.kwargs['controls']
+        self.assertEqual(controls['realized_cost'], {'wall_seconds': 0.25})
+        self.assertNotIn('delivered_content_sha256', controls)
 
     def test_observation_capture_accepts_exact_rehearsal_batch_and_rejects_reordering(self):
         import tempfile

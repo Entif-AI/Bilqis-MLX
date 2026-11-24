@@ -26,7 +26,7 @@ from bilqis_mlx.runtime.training_objective import REFINEMENT_ROUTING_WEIGHT
 from .atlas_model_contracts import (
     BamfCompiledBatch, BamfGradientExecution, BamfLossExecution,
     _FORWARD_ISSUANCE, _LOSS_EXECUTION_ISSUER, _invalid,
-    _issue_loss_execution,
+    _issue_learning_participation_execution, _issue_loss_execution,
 )
 from .atlas_model_forward import _forward_bamf_impl
 from bilqis_mlx.runtime.autodiff_trace import defer_host_tensor_validation
@@ -163,6 +163,28 @@ def loss_bearing_bamf(
         output, loss, record, _loss_participation(output, targets, mask, record),
         salience_heads=heads, salience_dependencies=dependencies,
         salience_artifact_nodes=artifact_nodes)
+
+
+def learning_participation_bamf(output, targets, mask):
+    """Issue only the loss ancestry needed by the proofless optimizer path."""
+    record = _FORWARD_ISSUANCE.require(output)
+    if (
+        type(targets) is not tuple
+        or not targets
+        or not isinstance(mask, dict)
+        or not any(mask.values())
+    ):
+        _invalid("B11_LOSS_TARGET_REQUIRED")
+    labelled = {target.decision_id for target in targets}
+    required = {
+        decision_id for decision_id, enabled in mask.items()
+        if enabled and decision_id in labelled
+    }
+    executed = {item.decision_id for item in output.decisions}
+    if not required or not required.issubset(executed):
+        _invalid("B11_LOSS_TARGET_NOT_EXECUTED")
+    return _issue_learning_participation_execution(
+        record, _loss_participation(output, targets, mask, record))
 
 
 from .training.gradient import (

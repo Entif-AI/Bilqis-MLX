@@ -43,6 +43,19 @@ def ranked_frontier_target(
     return identity, rows
 
 
+def ranked_frontier_target_prevalidated(
+    snapshot: CurriculumSnapshot, closure: FrontierClosure,
+    requested_obligation_keys: tuple[tuple[str, str], ...] = (),
+) -> tuple[str, tuple[CandidateClosure, ...]]:
+    """Rank one exact owner-derived snapshot/closure pair without proof replay."""
+    _, ranked = _ranked_ready_targets(
+        snapshot, closure, requested_obligation_keys)
+    if not ranked:
+        _fail("BAMF_PLANNER_NO_BOUNDED_READY_DELTA")
+    _, _, _, identity, rows = min(ranked)
+    return identity, rows
+
+
 def validate_frontier_selection(
     snapshot: CurriculumSnapshot,
     closure: FrontierClosure,
@@ -173,6 +186,59 @@ def select_frontier_delta_for_projection(
     result = replace(provisional, selection_sha256=provisional.expected_digest())
     result.verify()
     return result
+
+
+def select_frontier_delta_for_projection_prevalidated(
+    snapshot: CurriculumSnapshot,
+    closure: FrontierClosure,
+    current_release: ExecutableFactoryRelease,
+    projection: TargetDeltaProjection,
+    identity: str,
+    rows: tuple[CandidateClosure, ...],
+    requested_obligation_keys: tuple[tuple[str, str], ...] = (),
+) -> FrontierDeltaSelection:
+    """Construct the owner-selected delta without reranking or recursive proof."""
+    capability_limit = min(9, snapshot.budget.max_candidates)
+    identity_limit = snapshot.budget.max_identity_rows
+    if capability_limit < 1:
+        _fail("BAMF_PLANNER_DELTA_BUDGET_EXHAUSTED")
+    if projection.semantic_id != identity:
+        _fail("BAMF_PLANNER_SELECTION_INVALID")
+    graph = _graph(closure)
+    groups = _grouped(closure)
+    slope = len(_ancestors(identity, graph))
+    neg_unlocks = -_marginal_unlocks(identity, groups)
+    capabilities = projection.added_capability_ids
+    introduced = projection.introduced_semantic_ids
+    if len(capabilities) > capability_limit or len(introduced) > identity_limit:
+        _fail("BAMF_PLANNER_CONSTITUENT_SPLIT_REQUIRED")
+    selected_keys = {(item.semantic_id, item.family_id) for item in rows}
+    deferred = tuple(sorted(DeferredClosure(
+        item.semantic_id,
+        item.family_id,
+        item.status,
+        item.reasons,
+    ) for item in closure.candidates
+        if (item.semantic_id, item.family_id) not in selected_keys))
+    provisional = FrontierDeltaSelection(
+        snapshot.snapshot_sha256,
+        closure.closure_sha256,
+        current_release.release_sha256,
+        snapshot.policy_epoch,
+        snapshot.cursor,
+        identity,
+        rows,
+        capabilities,
+        introduced,
+        slope,
+        -neg_unlocks,
+        deferred,
+        requested_obligation_keys,
+        _candidate_signature(identity, rows, capabilities, introduced),
+        "0" * 64,
+    )
+    return replace(
+        provisional, selection_sha256=provisional.expected_digest())
 
 
 def select_frontier_delta(

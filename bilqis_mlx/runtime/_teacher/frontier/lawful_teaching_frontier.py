@@ -18,6 +18,7 @@ from bilqis_mlx.runtime.lawful_teaching_frontier_projection import (
 
 from .lawful_teaching_frontier_issue import (
     _issue_lawful_teaching_frontier_from_epoch,
+    _validate_learning_first_epoch,
     issue_lawful_teaching_frontier,
 )
 from .lawful_teaching_frontier_validation import (

@@ -4,7 +4,10 @@ from copy import deepcopy
 from bilqis_mlx.compatibility import historical_teacher_policy
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning import learning_experiment, plasticity_escape
-from bilqis_mlx.learning.teacher_strategy_population import effective_policy_key
+from bilqis_mlx.learning.teacher_strategy_population import (
+    LEGACY_CHECKPOINT_RETIREMENT_POLICY,
+    effective_policy_key,
+)
 from bilqis_mlx.runtime.state import _fingerprint
 
 SCHEMA = 'bilqis.bamf.teacher-outcome/v1'
@@ -122,7 +125,9 @@ def _apply_outcome(teacher, observation, *, selected_teacher_override=None):
         curriculum_scope=context['curriculum_scope'], diagnostics=context['diagnostics'],
         realized_action=observation['realized_action'],
         student_checkpoint_sha256=visit['student_sha256'], lesson_grade=context['grade'],
-        diagnostic_context_key=context.get('diagnostic_context_key'))
+        diagnostic_context_key=context.get('diagnostic_context_key'),
+        checkpoint_retirement_policy=context.get(
+            'checkpoint_retirement_policy', LEGACY_CHECKPOINT_RETIREMENT_POLICY))
     credit = learning_experiment.selection_credit(deltas[cap], causal, feedback)
     historical_teacher_policy.observe(selected, context['grade'], key, credit)
     plasticity_escape.record_school_visit(selected, retained=retained)

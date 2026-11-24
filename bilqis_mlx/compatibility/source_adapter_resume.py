@@ -40,13 +40,6 @@ _GRADE_A_BASE_VARIATION_AXES = (
 _GRADE_A_1324082_VARIATION_AXES = (
     *_GRADE_A_BASE_VARIATION_AXES, "generalization-only-source-context-v3",
 )
-_BOOLEAN_IDENTIFICATION_ADAPTER_ID = "source.micro.boolean-identification/v1"
-_BOOLEAN_IDENTIFICATION_ACCEPTED_IMPLEMENTATION = (
-    "6399dae052a289d46063df0e897e14f1392e2f1b99e90c2ae791fda9a8246743")
-_BOOLEAN_IDENTIFICATION_PRE_R15_IMPLEMENTATION = (
-    "1404c511d7b5eab19025726d5c4c98073250cc0c75cf37b185344da92060edee")
-_BOOLEAN_IDENTIFICATION_CURRENT_IMPLEMENTATION = (
-    "811ed2ad7708e6a7ce3a72fb20d92ea8fcc1df51aae45afc01e711fea07d18c6")
 _NUMERIC_STAIRCASE_RELEASE = "bilqis.mlx.numeric-staircase/20261017-v1"
 _PRE_ADR106_NUMERIC_STAIRCASE_DIGEST = (
     "ec3b5338fc1604a6250a847ee99eae09956b5a5bb269a63f3ac8372205133e74")
@@ -149,43 +142,6 @@ def _cohort_bound_implementation_pair(
     return migrated == current or _weakness_classifier_metadata_pair(migrated, current)
 
 
-def _accepted_school_provider_pair(admitted, current) -> bool:
-    return (
-        _grade_a_1324082_pair(admitted, current)
-        or
-        _cohort_bound_implementation_pair(
-            admitted, current,
-            adapter_id=_GRADE_A_ADAPTER_ID,
-            admitted_sha256=_GRADE_A_ACCEPTED_IMPLEMENTATION,
-            current_sha256=_GRADE_A_CURRENT_IMPLEMENTATION,
-        )
-        or _cohort_bound_implementation_pair(
-            admitted, current,
-            adapter_id=_GRADE_A_ADAPTER_ID,
-            admitted_sha256=_GRADE_A_ACCEPTED_IMPLEMENTATION,
-            current_sha256=_GRADE_A_PROVENANCE_IMPLEMENTATION,
-        )
-        or _cohort_bound_implementation_pair(
-            admitted, current,
-            adapter_id=_GRADE_A_ADAPTER_ID,
-            admitted_sha256=_GRADE_A_CURRENT_IMPLEMENTATION,
-            current_sha256=_GRADE_A_PROVENANCE_IMPLEMENTATION,
-        )
-        or _cohort_bound_implementation_pair(
-            admitted, current,
-            adapter_id=_BOOLEAN_IDENTIFICATION_ADAPTER_ID,
-            admitted_sha256=_BOOLEAN_IDENTIFICATION_ACCEPTED_IMPLEMENTATION,
-            current_sha256=_BOOLEAN_IDENTIFICATION_CURRENT_IMPLEMENTATION,
-        )
-        or _cohort_bound_implementation_pair(
-            admitted, current,
-            adapter_id=_BOOLEAN_IDENTIFICATION_ADAPTER_ID,
-            admitted_sha256=_BOOLEAN_IDENTIFICATION_PRE_R15_IMPLEMENTATION,
-            current_sha256=_BOOLEAN_IDENTIFICATION_CURRENT_IMPLEMENTATION,
-        )
-    )
-
-
 def _grade_a_1324082_pair(admitted, current) -> bool:
     """Compose the exact ADR-099 rollback identity through the current provider."""
     if (admitted is None
@@ -239,7 +195,11 @@ def resume_adapter_compatible(admitted, current) -> bool:
     for edge in matches:
         if edge.rule == "grade-a-1324082" and _grade_a_1324082_pair(admitted, current):
             return True
-        if edge.rule == "cohort-bound" and _accepted_school_provider_pair(admitted, current):
+        if edge.rule == "cohort-bound" and _cohort_bound_implementation_pair(
+                admitted, current,
+                adapter_id=edge.adapter_id,
+                admitted_sha256=edge.admitted_implementation_sha256,
+                current_sha256=edge.current_implementation_sha256):
             return True
         if edge.rule == "numeric-modular" and _numeric_modular_pair(admitted, current):
             return True

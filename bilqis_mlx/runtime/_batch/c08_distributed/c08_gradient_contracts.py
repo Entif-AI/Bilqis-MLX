@@ -119,9 +119,10 @@ def require_logical_batch_gradient_execution(value):
 def _sum_tree(total, gradients):
     if total is None:
         return {name: value for name, value in gradients.items()}
-    if set(total) != set(gradients):
-        _invalid("C08_LOGICAL_BATCH_GRADIENT_TREE_DRIFT")
-    return {name: total[name] + gradients[name] for name in total}
+    result = dict(total)
+    for name, value in gradients.items():
+        result[name] = result[name] + value if name in result else value
+    return result
 
 
 def _scale_tree(gradients, scale: float):

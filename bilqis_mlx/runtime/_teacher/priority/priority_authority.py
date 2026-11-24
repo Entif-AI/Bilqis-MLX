@@ -114,28 +114,38 @@ def _priority_offers(source_context, parent, atlas_artifact_path, next_seed,
         for capability in capabilities)
 
 
-def _bind_lawful_priority_epoch(
-        run_dir, source_context, parent, atlas_artifact_path, progress,
-        planning_cache=None):
-    if progress is not None:
-        progress("teacher: binding accepted planning generation")
+def _planning_generation_for_epoch(
+        source_context, parent, atlas_artifact_path, planning_cache):
     from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
         strict_mode_enabled,
     )
+    strict = strict_mode_enabled()
     planning_generation = None
     learning_first_key = None
-    if planning_cache is not None and not strict_mode_enabled():
+    authority_key = None
+    if planning_cache is not None and not strict:
         host = getattr(source_context, '_accepted_runtime_host', None)
         accepted_cache = getattr(host, '_accepted_cache', None)
         authenticated = getattr(source_context, '_accepted_feature_context', None)
         receipt = getattr(authenticated, 'receipt', None)
+        authority_key = (
+            source_context.release.release_sha256,
+            contract_digest(parent.correction_frontier),
+            getattr(receipt, 'semantic_release', None),
+            getattr(receipt, 'active_set_sha256', None),
+            getattr(receipt, 'feature_sha256', None),
+            getattr(receipt, 'compiler_sha256', None),
+            getattr(receipt, 'implementation_sha256', None),
+            getattr(receipt, 'source_atlas_bundle_id', None),
+            getattr(receipt, 'source_release_sha256', None),
+            getattr(receipt, 'source_source_bundle_id', None),
+            str(atlas_artifact_path),
+        )
         learning_first_key = (
             id(source_context), id(parent), id(accepted_cache),
             getattr(accepted_cache, 'accepted_manifest_sha256', None),
             getattr(accepted_cache, 'generation_binding', None),
-            source_context.release.release_sha256,
-            contract_digest(parent.correction_frontier),
-            getattr(receipt, 'digest', None), str(atlas_artifact_path),
+            authority_key,
         )
         if (planning_cache._planning_generation_key == learning_first_key
                 and planning_cache._planning_generation is not None):
@@ -147,19 +157,55 @@ def _bind_lawful_priority_epoch(
                 source_context, parent, atlas_artifact_path)
             planning_cache._planning_generation_key = learning_first_key
             planning_cache._planning_generation = planning_generation
-            planning_cache._learning_first_epoch_key = None
-            planning_cache._learning_first_epoch = None
-            planning_cache._learning_first_planning = None
-            planning_cache._learning_first_lawful_frontier = None
     if planning_generation is None:
         planning_generation = bind_priority_planning_generation(
             source_context, parent, atlas_artifact_path)
     require_generation = (
-        _require_planning_generation
-        if strict_mode_enabled() else _require_planning_generation_identity)
-    cache, _authenticated = require_generation(
+        _require_planning_generation if strict
+        else _require_planning_generation_identity)
+    cache, authenticated = require_generation(
         planning_generation, source_context, parent)
-    if (planning_cache is not None and not strict_mode_enabled()
+    return (
+        planning_generation, cache, authenticated,
+        learning_first_key, authority_key, strict)
+
+
+def _bind_lawful_priority_epoch(
+        run_dir, source_context, parent, atlas_artifact_path, progress,
+        planning_cache=None):
+    if progress is not None:
+        progress("teacher: binding accepted planning generation")
+    (planning_generation, cache, _authenticated, learning_first_key,
+     authority_key, strict) = _planning_generation_for_epoch(
+        source_context, parent, atlas_artifact_path, planning_cache)
+    if (planning_cache is not None and not strict
+            and planning_cache._learning_first_epoch_key != learning_first_key
+            and getattr(planning_cache, '_learning_first_authority_key', None)
+                == authority_key
+            and planning_cache._learning_first_epoch is not None
+            and planning_cache._learning_first_planning is not None
+            and planning_cache._learning_first_lawful_frontier is not None):
+        from bilqis_mlx.runtime._learning_first.priority_frontier import (
+            can_reuse_learning_first_phase_authority,
+        )
+        if can_reuse_learning_first_phase_authority(
+                run_dir, planning_cache._learning_first_lawful_frontier):
+            from bilqis_mlx.runtime.lawful_teaching_frontier import (
+                _issue_lawful_teaching_frontier_from_epoch,
+            )
+            lawful_frontier = _issue_lawful_teaching_frontier_from_epoch(
+                planning_cache._learning_first_epoch, source_context, parent,
+                planning_generation, planning_cache=planning_cache)
+            planning_cache.learning_first_epoch_hits += 1
+            planning_cache.learning_first_publication_reuses += 1
+            planning_cache._learning_first_epoch_key = learning_first_key
+            planning_cache._learning_first_lawful_frontier = lawful_frontier
+            return (
+                planning_generation, cache, planning_cache._learning_first_epoch,
+                planning_cache._learning_first_planning,
+                lawful_frontier,
+            )
+    if (planning_cache is not None and not strict
             and planning_cache._learning_first_epoch_key == learning_first_key
             and planning_cache._learning_first_epoch is not None
             and planning_cache._learning_first_planning is not None
@@ -172,21 +218,23 @@ def _bind_lawful_priority_epoch(
             planning_cache._learning_first_planning,
             planning_cache._learning_first_lawful_frontier,
         )
-    if planning_cache is not None and not strict_mode_enabled():
+    if planning_cache is not None and not strict:
         planning_cache.learning_first_epoch_misses += 1
     from bilqis_mlx.runtime.lawful_teaching_frontier import (
         _issue_lawful_teaching_frontier_from_epoch,
     )
     planning_epoch = _build_priority_planning_epoch(
         run_dir, source_context, atlas_artifact_path, progress,
-        authenticated_features=_authenticated, planning_cache=planning_cache)
+        authenticated_features=_authenticated, planning_cache=planning_cache,
+        planning_generation=planning_generation)
     planning = _priority_planning_from_epoch(
         planning_epoch, progress=progress, planning_cache=planning_cache)
     lawful_frontier = _issue_lawful_teaching_frontier_from_epoch(
         planning_epoch, source_context, parent, planning_generation,
         planning_cache=planning_cache)
-    if planning_cache is not None and not strict_mode_enabled():
+    if planning_cache is not None and not strict:
         planning_cache._learning_first_epoch_key = learning_first_key
+        planning_cache._learning_first_authority_key = authority_key
         planning_cache._learning_first_epoch = planning_epoch
         planning_cache._learning_first_planning = planning
         planning_cache._learning_first_lawful_frontier = lawful_frontier
@@ -230,14 +278,18 @@ def issue_foundation_priority_authority(
             if strict_mode_enabled()
             else "teacher: preparing metadata-only learning-first intents for "
                  f"{len(capabilities)} lawful capabilities")
-    offer_fanout_started = time.perf_counter()
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    strict = strict_mode_enabled()
+    offer_fanout_started = time.perf_counter() if strict else None
     capabilities, offers = _priority_offers(
         source_context, parent, atlas_artifact_path, next_seed,
         planning_generation, lawful_frontier, ready_capabilities,
         planning_source_each,
         planning_cache=planning_cache)
-    planning_offer_fanout_wall_seconds = max(
-        0.0, time.perf_counter() - offer_fanout_started)
+    planning_offer_fanout_wall_seconds = (
+        max(0.0, time.perf_counter() - offer_fanout_started) if strict else None)
     if progress is not None:
         progress("teacher: ranking priority options")
     rejection_count, rejection_positions = _rejection_recency(run_dir, parent, cache)
@@ -247,10 +299,7 @@ def issue_foundation_priority_authority(
         for capability, position in rejection_positions.items()
         if capability in option_ids
     }
-    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
-        strict_mode_enabled,
-    )
-    if not strict_mode_enabled():
+    if not strict:
         now, frontier = learning_first_priority_frontier(
             source_context.release.release_sha256, offers, planning,
             counter, last_selected, rejection_count, rejection_positions)

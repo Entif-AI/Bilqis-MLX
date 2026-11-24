@@ -2090,7 +2090,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **2086** raw raises across **299** files. The baseline gate permits only reduction.
+Current production scan: **2093** raw raises across **303** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -3982,12 +3982,17 @@ Current production scan: **2086** raw raises across **299** files. The baseline 
 | `generation-zero sidecars are owner-derived` | 1 | `bilqis_mlx/runtime/tests/custody/bamf_bundle/helpers.py` |
 | `held` | 2 | `bilqis_mlx/runtime/tests/teacher/priority/test_priority_execution.py`, `bilqis_mlx/runtime/tests/teacher/priority/test_priority_qualification.py` |
 | `lacks U7C pattern` | 1 | `bilqis_mlx/source_adapters/tests/boolean/test_grade_b_u7c_causal_cells.py` |
-| `malformed decoder payload` | 1 | `bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver.py` |
+| `learning-first DAG rehashed source binding` | 1 | `bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver_learning_first.py` |
+| `learning-first compiled reference-only baseline row` | 1 | `bilqis_mlx/runtime/tests/capability/factory/retention/test_target_first_retention_short_circuit.py` |
+| `learning-first revalidated feature context` | 3 | `bilqis_mlx/runtime/tests/capability/factory/owner/compiled_evaluation/test_compiled_evaluation_instrument_reuse.py` |
+| `learning-first solver rehashed source binding` | 1 | `bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver_learning_first.py` |
+| `malformed decoder payload` | 1 | `bilqis_mlx/runtime/tests/capability/factory/test_cognitive_solver_guards.py` |
 | `malformed translated score` | 1 | `bilqis_mlx/runtime/tests/capability/test_capability_evidence_history.py` |
 | `missing` | 1 | `bilqis_mlx/runtime/tests/custody/bamf_bundle/authority/test_planning_currentness.py` |
 | `missing source manifest` | 1 | `bilqis_mlx/runtime/tests/capability/test_capability_authority.py` |
 | `model-input planning entered before A06 authority rejection` | 1 | `bilqis_mlx/runtime/tests/batch/training/test_atlas_training_real_source.py` |
 | `non-finite JSON literal` | 1 | `bilqis_mlx/semantics/atlas/feature_io_contracts.py` |
+| `ordinary C05 revalidated feature context` | 1 | `bilqis_mlx/runtime/tests/capability/factory/owner/compiled_evaluation/test_compiled_evaluation_learning_first.py` |
 | `pointer interrupted` | 1 | `bilqis_mlx/runtime/tests/custody/state_dag/test_persistence.py` |
 | `post-append` | 1 | `bilqis_mlx/runtime/tests/teacher/outcomes/test_outcome_recovery.py` |
 | `post-pointer` | 1 | `bilqis_mlx/runtime/tests/teacher/outcomes/test_outcome_recovery.py` |

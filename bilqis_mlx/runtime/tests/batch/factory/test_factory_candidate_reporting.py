@@ -163,13 +163,18 @@ class FactoryCandidateReportingTests(unittest.TestCase):
     def test_realized_cost_projects_stage_and_b11_observation_without_device_work(self):
         (prepared, resource, budget, transaction, feature_context,
          gradient, stage) = _reporting_fixture()
-        loss = SimpleNamespace(item=lambda: 1.5)
+        loss = SimpleNamespace(item=Mock(side_effect=AssertionError(
+            "learning-first reporting synchronized scalar loss")))
         with patch(
+                "bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode."
+                "strict_evidence_enabled", return_value=False), patch(
                 "bilqis_mlx.runtime.factory_candidate_training.time.perf_counter",
                 return_value=2.0):
             cost = _realized_candidate_cost(
                 1.0, 0.75, loss, prepared, resource, budget, transaction,
                 feature_context, True, (2, 1, 1, 0, 0.8), stage, gradient)
+        self.assertNotIn("loss_total", cost)
+        loss.item.assert_not_called()
         self.assertEqual(cost["candidate_step_wall_seconds"], 1.25)
         self.assertEqual(cost["b11_preflight_wall_seconds"], 0.2)
         self.assertEqual(cost["b11_refinement_selection_wall_seconds"], 0.03)
@@ -199,6 +204,8 @@ class FactoryCandidateReportingTests(unittest.TestCase):
             "candidate_terminal_step": True,
         }
         with patch(
+                "bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode."
+                "strict_evidence_enabled", return_value=False), patch(
                 "bilqis_mlx.runtime.factory_candidate_training.time.perf_counter",
                 return_value=2.0):
             terminal = _realized_candidate_cost(

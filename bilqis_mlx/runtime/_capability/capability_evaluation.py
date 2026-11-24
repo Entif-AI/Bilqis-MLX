@@ -135,7 +135,8 @@ class CompleteSolver:
         if not isinstance(context, SolveContext):
             _invalid("BAMF_SOLVER_SOURCE_CONTEXT_INVALID")
         binding = GenerationBinding(
-            generation, goal.semantic_release, contract_digest(context.binding))
+            generation, goal.semantic_release,
+            context.source_binding_digest or contract_digest(context.binding))
         result = solve_task(goal, context, binding, self.budget)
         tools = contract_digest({
             "budget": self.budget, "routes": context.route_registry,

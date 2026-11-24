@@ -6,6 +6,7 @@ from pathlib import Path
 import random
 
 from bilqis_mlx.learning.teacher_visit_identity import TeacherVisitIdentity, require_teacher_visit_receipt
+from bilqis_mlx.learning.teacher_strategy_population import LEGACY_CHECKPOINT_RETIREMENT_POLICY
 from bilqis_mlx.runtime.bamf_operator.evidence_parts.validation import read_candidate_horizon_evidence
 from bilqis_mlx.runtime.priority_rejection_replay import current_rejection_outcomes
 from bilqis_mlx.runtime.state import _fingerprint
@@ -76,6 +77,8 @@ def _recover_mutated_selected_teacher(run_dir, teacher, observation):
     channel, diagnostic_key = _recorded_diagnostic_context(
         selected, observation)
     context, visit = observation["context"], observation["teacher_visit"]
+    checkpoint_retirement_policy = context.get(
+        "checkpoint_retirement_policy", LEGACY_CHECKPOINT_RETIREMENT_POLICY)
     capability = visit["capability_id"]
     phase = context["phase"]
     scope_name = context["curriculum_scope"]
@@ -88,7 +91,8 @@ def _recover_mutated_selected_teacher(run_dir, teacher, observation):
         curriculum_scope=scope_name, scope=scope, channel=channel,
         context_key=context_key,
         student_checkpoint_sha256=visit["student_sha256"],
-        total_capabilities=total_capabilities)
+        total_capabilities=total_capabilities,
+        checkpoint_retirement_policy=checkpoint_retirement_policy)
     active_set = set(active)
     effective_scope = {
         key: record
@@ -125,7 +129,8 @@ def _recover_mutated_selected_teacher(run_dir, teacher, observation):
         inventory=inventory)
     population.checkpoint_active_effective_strategy_keys(
         selected, grade, scope, channel, context_key, active, inventory,
-        visit["student_sha256"])
+        visit["student_sha256"],
+        checkpoint_retirement_policy=checkpoint_retirement_policy)
 
     if (key != visit["policy_key"]
             or policy != observation["selected_policy"]
@@ -142,6 +147,8 @@ def _recover_checkpointed_selected_teacher(run_dir, teacher, observation):
 
     selected = deepcopy(teacher)
     context, visit = observation["context"], observation["teacher_visit"]
+    checkpoint_retirement_policy = context.get(
+        "checkpoint_retirement_policy", LEGACY_CHECKPOINT_RETIREMENT_POLICY)
     capability = visit["capability_id"]
     scope_name = context["curriculum_scope"]
     grade = context["grade"]
@@ -157,7 +164,8 @@ def _recover_checkpointed_selected_teacher(run_dir, teacher, observation):
         inventory=inventory)
     population.checkpoint_active_effective_strategy_keys(
         selected, grade, scope, channel, context_key, active, inventory,
-        visit["student_sha256"])
+        visit["student_sha256"],
+        checkpoint_retirement_policy=checkpoint_retirement_policy)
     if (_fingerprint(selected) == observation.get("selected_teacher_sha256")
             and selected.get("strategies", {}).get(visit["policy_key"])
             == observation.get("selected_policy")):
@@ -196,30 +204,42 @@ def replay_rejected_outcomes(run_dir, parent, cache, teacher):
         visit = TeacherVisitIdentity.from_record(observation['teacher_visit'])
         if evidence.get(_PORTABLE_TEACHER_AUTHORITY) is not True:
             require_teacher_visit_receipt(visit)
-        payload = read_candidate_horizon_evidence(run_dir, evidence['candidate_evidence'])
-        proposal = payload['proposal']
         decision = observation['decision']
-        selected_teacher_matches = (
-            observation.get('selected_teacher') == proposal.get('selected_teacher')
-            if 'selected_teacher' in observation or 'selected_teacher' in proposal
-            else observation.get('selected_teacher_sha256')
-                 == proposal.get('selected_teacher_sha256'))
-        if (observation['attempt_id'] != payload['attempt_id']
+        candidate_evidence = evidence.get('candidate_evidence')
+        if candidate_evidence is None:
+            attempted = (
+                evidence.get('candidate_optimizer_step', 0)
+                - evidence.get('retained_optimizer_step', 0))
+            invalid_record = (
+                observation.get('candidate_evidence') is not None
+                or observation.get('proposal_id') is not None
+                or observation.get('attempted_steps') != attempted)
+        else:
+            payload = read_candidate_horizon_evidence(run_dir, candidate_evidence)
+            proposal = payload['proposal']
+            selected_teacher_matches = (
+                observation.get('selected_teacher') == proposal.get('selected_teacher')
+                if 'selected_teacher' in observation or 'selected_teacher' in proposal
+                else observation.get('selected_teacher_sha256')
+                     == proposal.get('selected_teacher_sha256'))
+            invalid_record = (
+                observation['attempt_id'] != payload['attempt_id']
                 or observation['proposal_id'] != payload['proposal_id']
-                or observation['candidate_evidence'] != evidence['candidate_evidence']['object']
+                or observation['candidate_evidence'] != candidate_evidence['object']
                 or observation['context'] != proposal.get('how_context')
                 or not selected_teacher_matches
                 or observation['selected_policy'] != proposal['policy']
                 or observation['teacher_visit'] != proposal['teacher_visit']
                 or observation['context']['factory_release_sha256'] != proposal['factory_release_sha256']
+                or payload['outcome'] != {'accepted': False, 'decision': decision}
+                or proposal['candidate_attempt_ordinal'] != evidence['rejection_journal_ordinal']
+                or observation['attempted_steps'] != len(payload['steps']))
+        if (invalid_record
                 or visit.generation != cache.generation
                 or visit.accepted_manifest_sha256 != cache.accepted_manifest_sha256
                 or visit.capability_id != capability or visit.visit_id != visit_id
                 or decision != evidence['decision']
                 or decision['decision'] != 'REJECT' or decision['reason'] != reason
-                or payload['outcome'] != {'accepted': False, 'decision': decision}
-                or proposal['candidate_attempt_ordinal'] != evidence['rejection_journal_ordinal']
-                or observation['attempted_steps'] != len(payload['steps'])
                 or observation['retained_steps'] != 0):
             invalid()
         teacher = apply_outcome(

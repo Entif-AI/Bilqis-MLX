@@ -38,8 +38,12 @@ def _validate_compiled_batch_shape(batch):
             and batch.visit_provenance is None)
     ):
         _invalid("B11_COMPILED_BATCH_INVALID")
-    batch.compiled.__post_init__()
-    batch.active_semantic_rows.__post_init__()
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if strict_evidence_enabled():
+        batch.compiled.__post_init__()
+        batch.active_semantic_rows.__post_init__()
 
 
 def _validate_active_semantic_rows(batch):
@@ -59,6 +63,11 @@ def _validate_active_semantic_rows(batch):
 
 def _validate_bound_source_authority(batch):
     if batch.source_execution_authority is None:
+        return
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if not strict_evidence_enabled():
         return
     from bilqis_mlx.runtime.b11_source_execution_authority import (
         require_b11_source_execution_authority,
@@ -81,7 +90,11 @@ def _validate_task_authority(batch):
     from bilqis_mlx.runtime.factory_task_authority import FactoryTaskAuthority
     if type(batch.task_authority) is not FactoryTaskAuthority:
         _invalid("B11_FACTORY_TASK_AUTHORITY_INVALID")
-    batch.task_authority.__post_init__()
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if strict_evidence_enabled():
+        batch.task_authority.__post_init__()
     training = batch.training_authority
     if (
         batch.task_authority.source_row_id
@@ -101,7 +114,7 @@ def _validate_training_context(batch):
     from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
         strict_evidence_enabled,
     )
-    if not strict_evidence_enabled() and batch.training_authority is None:
+    if not strict_evidence_enabled():
         return
     if batch.visit_provenance is not None:
         batch.visit_provenance.__post_init__()

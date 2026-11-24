@@ -12,6 +12,7 @@ from .local_evaluation import (
 )
 from .local_screen_stages import protected_stage, target_stage
 from .local_screen_support import elapsed, foundation_policy
+from ..capability_evaluation import _invalid
 
 
 def foundation_local_retention_screen(
@@ -19,8 +20,16 @@ def foundation_local_retention_screen(
         release, plan, target_plan, training, cached_rows, cache, *,
         observer=None, mastery_debt_min_utility=0.05):
     """Resolve a fresh target pair before any protected candidate inference."""
-    authenticated = authenticate_bamf_execution_feature_context(
-        candidate_bundle, artifact_path, source_context.run_dir)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if strict_evidence_enabled():
+        authenticated = authenticate_bamf_execution_feature_context(
+            candidate_bundle, artifact_path, source_context.run_dir)
+    else:
+        authenticated = getattr(source_context, "_accepted_feature_context", None)
+        if authenticated is None:
+            _invalid("BAMF_C05_LEARNING_FIRST_FEATURE_CONTEXT_REQUIRED")
     (
         target, protected_rows, target_instruments, target_pair,
         target_coverage, comparison, decision,
@@ -30,7 +39,7 @@ def foundation_local_retention_screen(
         authenticated=authenticated,
         mastery_debt_min_utility=mastery_debt_min_utility)
     if decision is not None:
-        return decision, parent, candidate_bundle, None, comparison, None, None
+        return decision, parent, candidate_bundle, cache, comparison, None, None
 
     protected_pair, parent_cache, protected_instruments, coverage = protected_stage(
         source_context, parent, candidate_bundle, artifact_path,
@@ -49,7 +58,7 @@ def foundation_local_retention_screen(
         rubric_sha256=plan.rubric_sha256,
         scope_sha256=target_plan.evaluation_scope_sha256,
         source_sha256=plan.source_sha256)
-    started = time.perf_counter()
+    started = time.perf_counter() if observer is not None else None
     decision = finalize_target_first_local_candidate(
         target, policy, cohort, target_pair, protected_pair,
         retention_protection_plan_sha256=plan.digest,

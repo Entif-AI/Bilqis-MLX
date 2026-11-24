@@ -8,7 +8,8 @@ import numpy as np
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime.backbone_group_numerical import (
-    BackboneGroupTrace, UnadmittedGroupNumerical, UnadmittedBackboneSession,
+    BackboneGroupTrace, BackboneTraceSession, UnadmittedGroupNumerical,
+    UnadmittedBackboneSession,
     run_backbone_group_numerical, run_backbone_group_trace,
 )
 from bilqis_mlx.runtime import backbone_group_numerical as backbone_numerical
@@ -210,6 +211,25 @@ class BackboneGroupNumericalTests(unittest.TestCase):
         with self.assertRaises(BilqisError):
             session.advance()
         self.assertEqual(len(session.results),1)
+
+    def test_trace_session_checks_generation_once_at_construction(self):
+        params = _params()
+        hidden = mx.zeros((1, 4, SPEC.width), dtype=mx.float32)
+        owned = type("Owned", (), {"generation_digest": "d" * 64})()
+        with patch(
+            "bilqis_mlx.runtime.backbone_group_trace.require_execution_generation_binding",
+            return_value=owned,
+        ) as require:
+            session = BackboneTraceSession(
+                hidden, params, spec=SPEC, extents=EXTENTS,
+                scope_ids=mx.zeros((1, 4), dtype=mx.int32),
+                valid=mx.ones((1, 4), dtype=mx.bool_),
+                generation="d" * 64, prefix_digest="e" * 64,
+                execution_binding=object())
+            self.assertEqual(require.call_count, 1)
+            require.reset_mock()
+            session.advance()
+            require.assert_not_called()
 
 
 

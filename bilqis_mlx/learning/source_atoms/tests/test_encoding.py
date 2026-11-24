@@ -7,6 +7,8 @@ from unittest.mock import patch
 
 import mlx.core as mx
 import numpy as np
+import bilqis_mlx.learning.source_atoms.embedding as source_embedding
+import bilqis_mlx.learning.source_atoms.encoding as source_encoding
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.frame_encoder import CompiledEncoderInput
@@ -41,6 +43,142 @@ from bilqis_mlx.source_adapters.tests.atoms.helpers import REAL_BUNDLE, source_c
 
 
 class SourceEmbeddingBoundaryTests(TestCase):
+    def test_learning_first_multirow_encoding_prepares_source_parameters_once(self):
+        row_count = 6
+        compiled = object.__new__(CompiledEncoderInput)
+        rows = tuple(
+            SimpleNamespace(visible_end=1, source_instance_id=f"row-{index}")
+            for index in range(row_count))
+        object.__setattr__(compiled, "compiled", SimpleNamespace(rows=rows))
+        object.__setattr__(
+            compiled, "compiler_configs",
+            tuple(SimpleNamespace(task=SimpleNamespace(scope="task:scope"))
+                  for _ in rows))
+        object.__setattr__(compiled, "features", object())
+        object.__setattr__(compiled, "extents", object())
+        object.__setattr__(compiled, "member_requests", tuple(() for _ in rows))
+        object.__setattr__(compiled, "atomic_handles", tuple(() for _ in rows))
+        sources = tuple(
+            SourceAtomRow(
+                object(), {}, {}, Path("."), index, 1,
+                learning_abi_indices=(0,))
+            for index in range(row_count))
+        banks = (SimpleNamespace(
+            bank_index=0,
+            active_rows=(0,),
+            weights=mx.ones((1, 2), dtype=mx.float32),
+        ),)
+        spec = SimpleNamespace(
+            semantic_bank_rows=1,
+            rms_norm_epsilon=1e-6,
+        )
+        owned = {
+            "features.local_slot": mx.zeros((1, 2), dtype=mx.float32),
+            "features.norm": mx.ones((2,), dtype=mx.float32),
+        }
+        snapshot = SimpleNamespace(
+            abi=lambda _index: SimpleNamespace(semantic_id="urn:test"))
+        feature = SimpleNamespace()
+        encoded = object()
+
+        with (
+            patch.object(CompiledEncoderInput, "__post_init__", return_value=None),
+            patch.object(
+                source_embedding, "_source_embedding_parameters",
+                return_value=(spec, owned)) as prepare,
+            patch.object(
+                source_embedding, "generation_feature_row",
+                return_value=feature),
+            patch.object(
+                source_embedding, "_released_factor_terms",
+                return_value=()),
+            patch.object(
+                source_encoding, "_atomic_source_embeddings",
+                return_value=tuple(() for _ in rows)),
+            patch.object(
+                source_encoding, "CompiledEmbeddingVectors",
+                return_value=object()),
+            patch.object(source_encoding, "encode_frames", return_value=encoded),
+        ):
+            actual, handoffs = source_encoding.encode_source_compiled_with_handoffs(
+                compiled, object(), sources, object(), banks, object(),
+                snapshot=snapshot)
+
+        self.assertIs(actual, encoded)
+        self.assertEqual(len(handoffs), row_count)
+        self.assertEqual(prepare.call_count, 1)
+
+    def test_learning_first_source_row_skips_source_handoff_authority(self):
+        source = SourceAtomRow(
+            object(), {}, {}, Path("."), 0, 1,
+            learning_abi_indices=(3, 7))
+        vectors = object()
+        handoff = object()
+        banks = object()
+        with (
+            patch.object(
+                source_embedding, "_learning_first_source_vectors",
+                return_value=(vectors, handoff)) as learning,
+            patch.object(
+                source_embedding, "_resolve_source_embedding_authority",
+                side_effect=AssertionError("learning-first resolved source authority")),
+            patch.object(
+                source_embedding, "_bind_source_embedding_handoff",
+                side_effect=AssertionError("learning-first rebuilt source handoff")),
+        ):
+            actual = source_embedding.source_atom_vectors(
+                object(), object(), object(), source, object(), object(), object(),
+                banks, object(), snapshot=object())
+
+        self.assertEqual(actual, (vectors, banks, handoff))
+        learning.assert_called_once()
+
+    def test_learning_first_prepared_source_context_is_numerically_exact(self):
+        source = SourceAtomRow(
+            object(), {}, {}, Path("."), 0, 1,
+            learning_abi_indices=(0,))
+        compiled = SimpleNamespace(visible_end=1, source_instance_id="row")
+        config = SimpleNamespace(task=SimpleNamespace(scope="task:scope"))
+        banks = (SimpleNamespace(
+            bank_index=0,
+            active_rows=(0,),
+            weights=mx.array([[1.0, 2.0]], dtype=mx.float32),
+        ),)
+        spec = SimpleNamespace(
+            semantic_bank_rows=1,
+            rms_norm_epsilon=1e-6,
+        )
+        owned = {
+            "features.local_slot": mx.array([[0.25, -0.5]], dtype=mx.float32),
+            "features.norm": mx.array([1.5, 0.75], dtype=mx.float32),
+        }
+        snapshot = SimpleNamespace(
+            abi=lambda _index: SimpleNamespace(semantic_id="urn:test"))
+        feature = SimpleNamespace()
+
+        with (
+            patch.object(
+                source_embedding, "_source_embedding_parameters",
+                return_value=(spec, owned)),
+            patch.object(
+                source_embedding, "generation_feature_row",
+                return_value=feature),
+            patch.object(
+                source_embedding, "_released_factor_terms",
+                return_value=(mx.array([0.5, 0.125], dtype=mx.float32),)),
+        ):
+            direct, _ = source_embedding._learning_first_source_vectors(
+                object(), compiled, config, source, object(), object(),
+                banks, snapshot)
+            prepared = source_embedding._prepare_learning_source_embedding_context(
+                object(), source, object(), object(), banks, snapshot)
+            reused, _ = source_embedding._learning_first_source_vectors(
+                object(), compiled, config, source, object(), object(),
+                banks, snapshot, prepared=prepared)
+            mx.eval(direct, reused)
+
+        np.testing.assert_array_equal(np.asarray(direct), np.asarray(reused))
+
     def test_generation_drift_precedes_owner_and_source_handoff_work(self):
         release = "a" * 64
         selection = SimpleNamespace(

@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 
 import mlx.core as mx
 import numpy as np
@@ -9,8 +11,9 @@ import numpy as np
 from bilqis_mlx.runtime.atlas_refinement import _refine_frame, masked_routing_loss
 from bilqis_mlx.runtime.autodiff_trace import defer_host_tensor_validation
 from bilqis_mlx.runtime.microbatch.refinement_kernel import (
-    _batched_refine_slot, batched_refinement_routing_loss,
+    _batched_refine_slot, batched_refine_hidden, batched_refinement_routing_loss,
 )
+import bilqis_mlx.runtime.microbatch.refinement_kernel as refinement_kernel
 from bilqis_mlx.runtime.model_topology_v2 import ModelTopologySpecV2
 
 
@@ -37,7 +40,8 @@ class MicrobatchRefinementKernelTests(unittest.TestCase):
         width, member_width = ModelTopologySpecV2.width, 3
         state = (mx.arange(3 * width, dtype=mx.float32)
                  .reshape(3, width) / 10000.0)
-        seeds = mx.flip(state, axis=1) * 0.25
+        reverse = mx.array(tuple(range(width - 1, -1, -1)), dtype=mx.int32)
+        seeds = mx.take(state, reverse, axis=1) * 0.25
         role = mx.ones((3, width), dtype=mx.float32) * 0.02
         members = (mx.arange(3 * member_width * width, dtype=mx.float32)
                    .reshape(3, member_width, width) / 20000.0)
@@ -100,6 +104,25 @@ class MicrobatchRefinementKernelTests(unittest.TestCase):
         ))
         np.testing.assert_allclose(
             np.asarray(observed), np.asarray(expected), atol=FP32_ATOL, rtol=FP32_RTOL)
+
+    def test_inference_refinement_skips_zero_pass_routing_work(self):
+        hidden = mx.zeros((2, 1, 4), dtype=mx.float32)
+        selection = (
+            SimpleNamespace(requested_roles=()),
+            (SimpleNamespace(passes=0),),
+        )
+        with (
+            patch.object(
+                refinement_kernel, "_role_batch",
+                side_effect=AssertionError("zero-pass inference built refinement roles")),
+            patch.object(
+                refinement_kernel, "_slot_inputs",
+                side_effect=AssertionError("zero-pass inference built refinement tensors")),
+        ):
+            observed = batched_refine_hidden(
+                {}, (object(), object()), object(), hidden,
+                (selection, selection))
+        self.assertIs(observed, hidden)
 
 
 if __name__ == "__main__":

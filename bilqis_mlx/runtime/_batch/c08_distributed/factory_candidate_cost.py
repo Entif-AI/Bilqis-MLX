@@ -150,7 +150,6 @@ def realized_candidate_cost(
         "c08_microbatch_count": len(resource_plan.groups),
         "compiled_positions": sum(
             len(item.compiled.compiled.rows[0].positions) for item in prepared.compiled_rows),
-        "loss_total": float(loss_total.item()),
         "c08_estimated_peak_bytes": resource_plan.estimated_peak_bytes,
         "c08_memory_budget_bytes": memory_budget.allocation_bytes,
         "c08_gradient_launches": gradient_launches,
@@ -183,6 +182,8 @@ def realized_candidate_cost(
         "b11_source_authority_free_rows": authority_free_rows,
         "b11_source_cold_requalification_rows": cold_requalification_rows,
     }
+    if strict:
+        cost["loss_total"] = float(loss_total.item())
     cost.update(_stage_timing_cost(stage_metrics))
     cost.update(_b11_timing_cost(b11))
     cost.update(_distributed_cost(

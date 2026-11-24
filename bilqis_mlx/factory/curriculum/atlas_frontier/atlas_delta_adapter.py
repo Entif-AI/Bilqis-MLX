@@ -34,6 +34,7 @@ from . import candidate_realizations
 from .atlas_delta_adapter_support import (
     AcceptedObligationCredit, AtlasCoverageEpoch, AtlasLearnerEvidence,
     _issue_accepted_obligation_credit, bind_realized_snapshot,
+    bind_realized_snapshot_prevalidated,
     plan_frontier_progress_with_accepted_credit,
 )
 

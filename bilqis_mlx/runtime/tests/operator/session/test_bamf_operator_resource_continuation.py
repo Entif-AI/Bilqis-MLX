@@ -205,3 +205,24 @@ def test_instruction_history_does_not_hide_stale_execution_cache(monkeypatch):
         )
 
     assert caught.value.context["reason"] == "B13_EXECUTION_CACHE_STALE"
+
+
+def test_instruction_event_uses_selected_teacher_projection(monkeypatch):
+    selected_teacher = {"schema": "selected-c03"}
+    history = Mock(return_value=("COMPLETE", ("A.IDENTITY",)))
+    monkeypatch.setattr(
+        "bilqis_mlx.learning.teacher_lineage.instruction_history", history)
+    monkeypatch.setattr(
+        "bilqis_mlx.runtime.priority_rejection_replay.rejection_recency",
+        lambda *_: (None, ()))
+
+    event = _instruction_event(
+        object(),
+        SimpleNamespace(teacher_state={"schema": "raw-genesis"}),
+        object(),
+        "A.EDGE",
+        teacher_state=selected_teacher,
+    )
+
+    history.assert_called_once_with(selected_teacher)
+    assert event["capability_ids"] == ["A.EDGE", "A.IDENTITY"]

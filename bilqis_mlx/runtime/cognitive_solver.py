@@ -33,7 +33,13 @@ def solve_task(
             or not isinstance(budget, SolveBudget)):
         _invalid("BAMF_C04_SOLVE_ARGUMENT_INVALID")
     binding = context.binding
-    source_digest = contract_digest(binding)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    prevalidated_source_authority = (
+        context.prevalidated_source_authority and not strict_evidence_enabled()
+    )
+    source_digest = context.source_binding_digest or contract_digest(binding)
     if (task.semantic_release != binding.task.semantic_release
             or task.scope != binding.task.scope
             or generation.semantic_release != task.semantic_release
@@ -52,7 +58,9 @@ def solve_task(
         try:
             evaluated = execute_dag(
                 goal, binding, memo=context.memo,
-                operation_limit=min(remaining_operations, goal.budget.max_operations))
+                operation_limit=min(remaining_operations, goal.budget.max_operations),
+                source_binding_digest=source_digest,
+                prevalidated_source_authority=prevalidated_source_authority)
         except BilqisError:
             # A failed executor has no cost receipt; reserve all remaining compute.
             reserved_operations += remaining_operations
@@ -60,6 +68,20 @@ def solve_task(
             raise
         remaining_operations -= evaluated.receipt.operation_count
         receipts.append(evaluated.receipt)
+        return evaluated
+
+    def prevalidated_exact():
+        goal = context.prevalidated_exact_goal
+        evaluated = context.prevalidated_exact_result
+        if goal is not task or evaluated is None:
+            return None
+        if strict_evidence_enabled():
+            return None
+        receipt = evaluated.receipt
+        if (receipt.source_binding_digest != source_digest
+                or receipt.semantic_release != task.semantic_release
+                or receipt.operation_count > remaining_operations):
+            _invalid("BAMF_C04_PREVALIDATED_EXACT_RESULT_INVALID")
         return evaluated
 
     def decode(callback, *args):
@@ -100,6 +122,8 @@ def solve_task(
             and _goal_allowed(cached.goal, task, budget))
 
     def retain_validated(proposal: NeuralProposal) -> None:
+        if not context.retain_validated_compositions:
+            return
         composition = QualifiedComposition(
             proposal.goal,
             source_digest,
@@ -152,7 +176,12 @@ def solve_task(
     neural_calls = 0
     for route in context.route_registry.specs:
         if route.kind is RouteKind.EXACT:
-            exact = evaluate(task)
+            exact = prevalidated_exact()
+            if exact is None:
+                exact = evaluate(task)
+            else:
+                remaining_operations -= exact.receipt.operation_count
+                receipts.append(exact.receipt)
             if exact.answer.state is ValueState.VALUE:
                 return result(exact.answer, RouteKind.EXACT, 0)
             unresolved_answer = exact.answer

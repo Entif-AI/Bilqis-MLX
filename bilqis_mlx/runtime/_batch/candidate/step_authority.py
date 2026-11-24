@@ -4,7 +4,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import hashlib
 from threading import RLock
-from time import perf_counter
 import weakref
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
@@ -140,7 +139,6 @@ def _token_for(*, cache, parent, candidate, optimizer, release_sha256: str, epoc
 
 def issue_learning_first_step_authority(cache, parent, candidate, source_context) -> str:
     """Issue one opaque current-step token without reading model tensor bytes."""
-    started = perf_counter()
     from bilqis_mlx.runtime.bamf_bundle.execution_cache import require_accepted_execution_cache
     from bilqis_mlx.learning._atlas_candidate.transaction import CandidateTransaction
     from bilqis_mlx.runtime.bamf_bundle.records import CompleteStudent
@@ -198,9 +196,6 @@ def issue_learning_first_step_authority(cache, parent, candidate, source_context
                 lambda ref, key=id(candidate): _cleanup_candidate(key, ref),
             )
             _CANDIDATE_TOKENS[id(candidate)] = (reference, token)
-        _METRICS["learning_first_step_token_issues"] += 1
-        _METRICS["learning_first_step_token_issue_wall_seconds"] += (
-            perf_counter() - started)
     return token
 
 
@@ -240,65 +235,56 @@ def require_learning_first_step_authority(token: str, *, parameters=None,
                                           extents_digest: str | None = None
                                           ) -> LearningFirstStepAuthority:
     """Require the latest token for its exact optimizer tree in O(1)."""
-    started = perf_counter()
-    try:
-        with _LOCK:
-            authority = _TOKENS.get(token)
-            if authority is None:
-                _METRICS["learning_first_step_token_misses"] += 1
-                _invalid("LEARNING_FIRST_STEP_AUTHORITY_MISSING_OR_STALE")
-            owner = _OWNERS.get(authority.cache_id)
-            cache = authority.cache_ref()
-            parent = authority.parent_ref()
-            candidate = (
-                None if authority.candidate_ref is None
-                else authority.candidate_ref()
-            )
-            if (owner is None or owner.cache_ref() is not authority.cache_ref()
-                    or owner.token != token or owner.epoch != authority.epoch
-                    or cache is None
-                    or parent is None
-                    or (authority.candidate_ref is not None
-                        and candidate is None)
-                    or cache.run_id != authority.accepted_run_id
-                    or cache.generation != authority.accepted_generation
-                    or cache.accepted_manifest_sha256
-                       != authority.accepted_manifest_sha256
-                    or cache.generation_binding
-                       != authority.accepted_generation_binding
-                    or getattr(cache, "_candidate_identity_sha256", None)
-                       != authority.accepted_candidate_identity_sha256
-                    or cache.source_authority_registry_sha256
-                       != authority.source_authority_registry_sha256
-                    or authority.source_context.release.release_sha256
-                       != authority.release_sha256
-                    or parent.topology.digest != authority.topology_digest
-                    or parent.extents.digest != authority.extents_digest
-                    or (candidate is None
-                        and (parent.retained_state.optimizer is not authority.optimizer
-                             or parent.retained_state.optimizer_step
-                             != authority.optimizer_step))
-                    or (candidate is not None
-                        and (candidate.parent is not parent.retained_state
-                             or candidate.optimizer is not authority.optimizer
-                             or candidate.update_steps != authority.candidate_step
-                             or parent.retained_state.optimizer_step
-                                + candidate.update_steps
-                                != authority.optimizer_step))
-                    or authority.optimizer.parameters is not authority.parameters
-                    or (parameters is not None and parameters is not authority.parameters)
-                    or (topology_digest is not None
-                        and topology_digest != authority.topology_digest)
-                    or (extents_digest is not None
-                        and extents_digest != authority.extents_digest)):
-                _METRICS["learning_first_step_token_misses"] += 1
-                _invalid("LEARNING_FIRST_STEP_AUTHORITY_DRIFT")
-            _METRICS["learning_first_step_token_hits"] += 1
-            return authority
-    finally:
-        with _LOCK:
-            _METRICS["learning_first_step_token_require_wall_seconds"] += (
-                perf_counter() - started)
+    with _LOCK:
+        authority = _TOKENS.get(token)
+        if authority is None:
+            _invalid("LEARNING_FIRST_STEP_AUTHORITY_MISSING_OR_STALE")
+        owner = _OWNERS.get(authority.cache_id)
+        cache = authority.cache_ref()
+        parent = authority.parent_ref()
+        candidate = (
+            None if authority.candidate_ref is None
+            else authority.candidate_ref()
+        )
+        if (owner is None or owner.cache_ref() is not authority.cache_ref()
+                or owner.token != token or owner.epoch != authority.epoch
+                or cache is None
+                or parent is None
+                or (authority.candidate_ref is not None
+                    and candidate is None)
+                or cache.run_id != authority.accepted_run_id
+                or cache.generation != authority.accepted_generation
+                or cache.accepted_manifest_sha256
+                   != authority.accepted_manifest_sha256
+                or cache.generation_binding
+                   != authority.accepted_generation_binding
+                or getattr(cache, "_candidate_identity_sha256", None)
+                   != authority.accepted_candidate_identity_sha256
+                or cache.source_authority_registry_sha256
+                   != authority.source_authority_registry_sha256
+                or authority.source_context.release.release_sha256
+                   != authority.release_sha256
+                or parent.topology.digest != authority.topology_digest
+                or parent.extents.digest != authority.extents_digest
+                or (candidate is None
+                    and (parent.retained_state.optimizer is not authority.optimizer
+                         or parent.retained_state.optimizer_step
+                         != authority.optimizer_step))
+                or (candidate is not None
+                    and (candidate.parent is not parent.retained_state
+                         or candidate.optimizer is not authority.optimizer
+                         or candidate.update_steps != authority.candidate_step
+                         or parent.retained_state.optimizer_step
+                            + candidate.update_steps
+                            != authority.optimizer_step))
+                or authority.optimizer.parameters is not authority.parameters
+                or (parameters is not None and parameters is not authority.parameters)
+                or (topology_digest is not None
+                    and topology_digest != authority.topology_digest)
+                or (extents_digest is not None
+                    and extents_digest != authority.extents_digest)):
+            _invalid("LEARNING_FIRST_STEP_AUTHORITY_DRIFT")
+        return authority
 
 
 def learning_first_step_authority_exists(token: str) -> bool:
@@ -307,8 +293,7 @@ def learning_first_step_authority_exists(token: str) -> bool:
 
 
 def record_learning_first_full_proof_fallback() -> None:
-    with _LOCK:
-        _METRICS["learning_first_step_full_proof_fallbacks"] += 1
+    return None
 
 
 def learning_first_step_authority_metrics_snapshot() -> dict:

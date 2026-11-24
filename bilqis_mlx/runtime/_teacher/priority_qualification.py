@@ -1,168 +1,27 @@
 """Qualify signed C06 priorities against admitted source offers and A09 planning."""
-from dataclasses import dataclass, field
-from bilqis_mlx.errors import ErrorBus, SCHOOL
-
-from bilqis_mlx.factory.atlas_frontier_selection import FrontierDeltaSelection, validate_frontier_selection
-from bilqis_mlx.factory.atlas_frontier_selection_validation import TargetDeltaProjection, validate_closure_structure
-from bilqis_mlx.factory.atlas_frontier_progress_contracts import FrontierProgress
-from bilqis_mlx.factory.atlas_frontier_closure import FrontierClosure
+from dataclasses import dataclass
 from bilqis_mlx.factory import candidate_realizations
-from bilqis_mlx.learning.atlas_salience import derive_salience, rank_attention_options, verify_salience_inputs
+from bilqis_mlx.learning.atlas_salience import (
+    derive_salience, rank_attention_options, verify_salience_inputs,
+)
 from bilqis_mlx.learning.salience_contracts import ActionKind
 from bilqis_mlx.learning.salience_history import completed_windows
 from bilqis_mlx.runtime.bamf_bundle.accepted_runtime import _accepted_correction_registry
 from bilqis_mlx.semantics.domains import contract_digest
+from .priority_qualification_planning import (
+    _PLANNING_OWNER,
+    PriorityPlanningInput, _has_current_planning_verification,
+    _issue_internal_priority_planning, _mint_planning_verification,
+    _invalid, _planning, _planning_fingerprint,
+)
 
 PRIORITY_OFFER_PAIR_WIDTH = 2
-_PLANNING_OWNER = object()
-_PLANNING_VERIFICATION_ISSUER = object()
-
-
-def _invalid(reason):
-    ErrorBus.Raise(SCHOOL.BAMF_CURRICULUM.INVALID, reason=reason)
-
-
-@dataclass(frozen=True)
-class PriorityPlanningInput:
-    progress: object
-    closure: object
-    selection: object | None
-    selected_projection: object | None
-    _owner: object | None = field(default=None, init=False, repr=False, compare=False)
-    _verification: object | None = field(
-        default=None, init=False, repr=False, compare=False)
-
-
-@dataclass(frozen=True, init=False, eq=False)
-class _PlanningVerification:
-    planning: PriorityPlanningInput = field(repr=False, compare=False)
-    release: object = field(repr=False, compare=False)
-    fingerprint: tuple = field(repr=False, compare=False)
-    _issuance: object = field(repr=False, compare=False)
-
-    def __init__(self, *args, **kwargs):
-        _invalid('BAMF_PRIORITY_PLANNING_VERIFICATION_CALLER_CONSTRUCTION_FORBIDDEN')
-
 
 @dataclass(frozen=True)
 class QualifiedPriority:
     ranked: object
     offers: tuple
     holds: tuple
-
-
-def _planning(planning, release):
-    if type(planning) is not PriorityPlanningInput:
-        _invalid('BAMF_PRIORITY_PLANNING_INVALID')
-    progress, closure = planning.progress, planning.closure
-    if (type(progress) is not FrontierProgress or type(closure) is not FrontierClosure
-            or (planning.selection is not None and type(planning.selection) is not FrontierDeltaSelection)
-            or (planning.selected_projection is not None and type(planning.selected_projection) is not TargetDeltaProjection)):
-        _invalid('BAMF_PRIORITY_PLANNING_INVALID')
-    progress.verify()
-    closure.verify()
-    snapshot = progress.input_snapshot
-    if (closure.snapshot_sha256 != progress.input_snapshot_sha256
-            or snapshot.admitted_factory_release_sha256 != release.release_sha256):
-        _invalid('BAMF_PRIORITY_PLANNING_DRIFT')
-    validate_closure_structure(snapshot, closure)
-    selection, projection = planning.selection, planning.selected_projection
-    if (selection is None) != (projection is None):
-        _invalid('BAMF_PRIORITY_PLANNING_SELECTION_REQUIRED')
-    if selection is not None:
-        validate_frontier_selection(snapshot, closure, selection, release, projection)
-        if progress.proposal_selection_sha256 != selection.selection_sha256:
-            _invalid('BAMF_PRIORITY_PLANNING_SELECTION_DRIFT')
-    elif progress.proposal_selection_sha256 is not None:
-        _invalid('BAMF_PRIORITY_PLANNING_SELECTION_REQUIRED')
-
-
-def _issue_internal_priority_planning(
-        progress, closure, selection, selected_projection):
-    """Mark one owner-derived A09 projection as eligible for process-live proof reuse."""
-    planning = PriorityPlanningInput(
-        progress, closure, selection, selected_projection)
-    object.__setattr__(planning, '_owner', _PLANNING_OWNER)
-    return planning
-
-
-def _planning_fingerprint(planning, release):
-    """Cheap tamper-evident identity for fields consumed after full A09 verification."""
-    progress = planning.progress
-    closure = planning.closure
-    selection = planning.selection
-    projection = planning.selected_projection
-    release_digest = release.expected_digest()
-    return (
-        id(planning),
-        id(progress),
-        progress.progress_sha256,
-        id(progress.input_snapshot),
-        progress.input_snapshot_sha256,
-        progress.proposal_selection_sha256,
-        progress.status,
-        id(closure),
-        closure.closure_sha256,
-        closure.snapshot_sha256,
-        None if selection is None else (
-            id(selection),
-            selection.selection_sha256,
-            selection.snapshot_sha256,
-            selection.closure_sha256,
-            selection.admitted_release_sha256,
-            selection.selected_semantic_id,
-            selection.downstream_unlocks,
-        ),
-        None if projection is None else (
-            id(projection),
-            projection.projection_sha256,
-            projection.semantic_id,
-            projection.current_release_sha256,
-            projection.current_semantic_catalog_sha256,
-            projection.projected_semantic_catalog_sha256,
-        ),
-        id(release),
-        release.release_sha256,
-        release_digest,
-        id(release.execution_plan),
-        release.execution_plan.digest(),
-        id(release.curriculum),
-        release.curriculum.digest(),
-        id(release.source_bindings),
-        release.source_bindings.digest(),
-    )
-
-
-def _mint_planning_verification(planning, release):
-    release.verify()
-    fingerprint = _planning_fingerprint(planning, release)
-    witness = object.__new__(_PlanningVerification)
-    for name, value in (
-        ('planning', planning),
-        ('release', release),
-        ('fingerprint', fingerprint),
-        ('_issuance', _PLANNING_VERIFICATION_ISSUER),
-    ):
-        object.__setattr__(witness, name, value)
-    object.__setattr__(planning, '_verification', witness)
-
-
-def _has_current_planning_verification(planning, release):
-    if (type(planning) is not PriorityPlanningInput
-            or getattr(planning, '_owner', None) is not _PLANNING_OWNER):
-        return False
-    witness = getattr(planning, '_verification', None)
-    if (type(witness) is not _PlanningVerification
-            or getattr(witness, '_issuance', None)
-               is not _PLANNING_VERIFICATION_ISSUER
-            or witness.planning is not planning
-            or witness.release is not release):
-        return False
-    try:
-        fingerprint = _planning_fingerprint(planning, release)
-    except Exception:
-        return False
-    return fingerprint == witness.fingerprint
 
 
 def _planning_hold(option, selection):
@@ -184,6 +43,32 @@ def _grade(program, school, capability):
 
 def _verify_planning(planning, release, observer):
     def verify():
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_mode_enabled,
+        )
+        if (not strict_mode_enabled()
+                and type(planning) is PriorityPlanningInput
+                and getattr(planning, '_owner', None) is _PLANNING_OWNER):
+            progress = planning.progress
+            closure = planning.closure
+            selection = planning.selection
+            projection = planning.selected_projection
+            expected = (
+                id(planning),
+                id(progress),
+                id(progress.input_snapshot),
+                progress.input_snapshot_sha256,
+                id(closure),
+                closure.closure_sha256,
+                release.release_sha256,
+                None if selection is None else (
+                    id(selection), selection.selection_sha256),
+                None if projection is None else (
+                    id(projection), projection.projection_sha256),
+            )
+            if getattr(planning, '_verification', None) != expected:
+                _invalid('BAMF_PRIORITY_PLANNING_VERIFICATION_INVALID')
+            return
         if _has_current_planning_verification(planning, release):
             return
         _planning(planning, release)
@@ -210,12 +95,32 @@ def _lawful_priority_context(
         source_context.require_accepted_runtime(run_dir)
         cache, registry = _accepted_correction_registry(run_dir)
     else:
-        from bilqis_mlx.runtime.priority_source_offer import _require_planning_generation
-        cache, _authenticated = _require_planning_generation(
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_mode_enabled,
+        )
+        from bilqis_mlx.runtime.priority_source_offer import (
+            _require_planning_generation,
+            _require_planning_generation_identity,
+        )
+        require_generation = (
+            _require_planning_generation
+            if strict_mode_enabled() else _require_planning_generation_identity)
+        cache, _authenticated = require_generation(
             planning_generation, source_context, parent)
         registry = cache._correction_registry
         if getattr(lawful_frontier, "_planning_generation", None) is not planning_generation:
             _invalid('BAMF_PRIORITY_LAWFUL_FRONTIER_BINDING_DRIFT')
+        if not strict_mode_enabled():
+            if (getattr(lawful_frontier, '_source_context', None) is not source_context
+                    or getattr(lawful_frontier, '_parent', None) is not parent
+                    or lawful_frontier.accepted_manifest_sha256
+                       != planning_generation.accepted_manifest_sha256
+                    or lawful_frontier.candidate_identity_sha256
+                       != planning_generation.parent_candidate_identity_sha256
+                    or lawful_frontier.admitted_release_sha256
+                       != source_context.release.release_sha256):
+                _invalid('BAMF_PRIORITY_LAWFUL_FRONTIER_BINDING_DRIFT')
+            return cache, registry, set(lawful_frontier.ready_capability_ids)
         from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (
             refresh_accepted_currentness,
         )

@@ -20,6 +20,7 @@ from bilqis_mlx.runtime.lawful_teaching_frontier import (
     issue_lawful_teaching_frontier,
     require_current_lawful_teaching_frontier,
 )
+from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
 from bilqis_mlx.runtime.tests.admission.atlas.v2.mixed_witness_support import (
     MixedWitnessSupport,
 )
@@ -121,7 +122,7 @@ class LawfulTeachingFrontierRuntimeTests(MixedWitnessSupport, unittest.TestCase)
         return stack, selection
 
     def test_exact_accepted_frontier_reissues_after_cold_read_and_stales_on_new_evidence(self):
-        with shape_patch():
+        with shape_patch(), evidence_mode(strict=True):
             snapshot, candidate, schema, features = self.common_atlas()
             self.publish_matching_genesis(snapshot, schema, features)
             stack, selection = self._runtime_patches(

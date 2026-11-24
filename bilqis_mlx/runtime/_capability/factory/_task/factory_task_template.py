@@ -53,16 +53,19 @@ class FactoryTaskTemplate:
                     self.source_row_sha256, self.source_binding_sha256,
                     self.source_family_id, self.episode_id, self.lowerer_sha256))
                 or self.goal.goal_id != self.source_row_id
-                or self.goal.semantic_release != self.binding.task.semantic_release
-                or contract_digest(self.binding) != self.source_binding_sha256):
+                or self.goal.semantic_release != self.binding.task.semantic_release):
+            _invalid("BAMF_C04_FACTORY_TASK_TEMPLATE_INVALID")
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            strict_evidence_enabled,
+        )
+        if (strict_evidence_enabled()
+                and contract_digest(self.binding) != self.source_binding_sha256):
             _invalid("BAMF_C04_FACTORY_TASK_TEMPLATE_INVALID")
 
 
-def _owner(source_context, compiled_batch):
-    source = compiled_batch.sources[0]
-    row = source.source_row
+def _source_task_owner(source_context, row, training=None):
+    """Resolve one gold-blind C04 source owner without compiling neural input."""
     row_id, capability_id = row.get("id"), row.get("capability")
-    row_sha256 = source_content_digest((_source_view(row),))
     execution = source_context.release.execution_plan.capability_map.get(capability_id)
     if execution is None:
         _invalid("BAMF_C04_FACTORY_TASK_CAPABILITY_MISSING")
@@ -76,7 +79,6 @@ def _owner(source_context, compiled_batch):
             execution.provider_id, adapter.descriptor.implementation_sha256)
     except ValueError:
         _invalid("BAMF_C04_SOURCE_TASK_LOWERER_REQUIRED")
-    training = compiled_batch.training_authority
     family = None if training is None else training.source_family_id
     episode = None if training is None else training.episode_id
     if not isinstance(family, str) or not family:
@@ -92,6 +94,15 @@ def _owner(source_context, compiled_batch):
         episode = row.get("episode_id")
     if not isinstance(episode, str) or not episode:
         episode = row_id
+    return row_id, capability_id, execution, lowerer, family, episode
+
+
+def _owner(source_context, compiled_batch):
+    source = compiled_batch.sources[0]
+    row = source.source_row
+    row_sha256 = source_content_digest((_source_view(row),))
+    row_id, capability_id, execution, lowerer, family, episode = (
+        _source_task_owner(source_context, row, compiled_batch.training_authority))
     return row, row_id, capability_id, row_sha256, execution, lowerer, family, episode
 
 

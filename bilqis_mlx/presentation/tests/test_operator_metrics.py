@@ -173,6 +173,38 @@ class OperatorMetricsTests(unittest.TestCase):
         self.assertEqual(fields["p_ret"], "37.5%")
         self.assertEqual(fields["health"], "PRODUCTIVE")
 
+    def test_authoritative_policy_evidence_replaces_neutral_dashboard_fallback(self):
+        supported = teacher_fields({
+            "capability": "A.EDGE",
+            "teacher_policy": "policy-supported",
+            "teacher_policy_evidence_before": {
+                "schema": "bilqis.bamf.teacher-policy-evidence/v1",
+                "evidence_level": "EXACT_CONTEXT",
+                "effective_policy_key": "effective-supported",
+                "trials": 12,
+                "retained": 3,
+                "retention_probability": .25,
+            },
+            "candidate_retention": {"phase": "MAIN", "decision": "REJECT"},
+        }, {})
+        self.assertEqual(supported["p_ret"], "25.0%")
+        self.assertEqual(supported["health"], "PRODUCTIVE")
+
+        underpowered = teacher_fields({
+            "capability": "A.PARENT",
+            "teacher_policy": "policy-newborn",
+            "teacher_policy_evidence_before": {
+                "schema": "bilqis.bamf.teacher-policy-evidence/v1",
+                "evidence_level": "EXACT_CONTEXT",
+                "effective_policy_key": "effective-newborn",
+                "trials": 1,
+                "retained": 0,
+            },
+            "candidate_retention": {"phase": "MAIN", "decision": "REJECT"},
+        }, {})
+        self.assertNotIn("p_ret", underpowered)
+        self.assertEqual(underpowered["health"], "UNCERTAIN")
+
     def test_graduation_projection_tracks_current_and_lifetime_attempts(self):
         from bilqis_mlx.presentation.progression_projection import GraduationProjection
 

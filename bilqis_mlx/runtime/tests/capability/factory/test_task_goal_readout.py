@@ -2,6 +2,7 @@
 from copy import deepcopy
 from dataclasses import replace
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.learning.atlas_readout import DecisionKind, predict_typed
@@ -89,6 +90,25 @@ class TaskGoalReadoutTests(unittest.TestCase):
             "route": tuple((key, committed[key]) for key in sorted(committed)),
         })
         self.assertEqual(proposal.proposal_receipt_sha256, expected)
+
+    def test_learning_first_route_uses_live_identity_without_attestation(self):
+        goal, _, request, memory, context, plan, semantics, parameters = self._case()
+        augmented = augment_answer_plan_for_task_goal(plan, goal)
+        output = predict_typed(memory, context, augmented, semantics, parameters)
+
+        with (
+            evidence_mode(strict=False),
+            patch('bilqis_mlx.runtime.task_goal_readout.live_issued_output',
+                  wraps=__import__(
+                      'bilqis_mlx.runtime.task_goal_readout', fromlist=['live_issued_output']
+                  ).live_issued_output) as live,
+            patch('bilqis_mlx.learning.atlas_readout.decoder.prediction_issuance._logit_fingerprint',
+                  side_effect=AssertionError('ordinary proposal fingerprinted logits')),
+        ):
+            proposal = proposal_from_task_goal_output(goal, request, output)
+
+        self.assertEqual(proposal.generation_digest, CANDIDATE)
+        live.assert_called_once_with(output)
 
     def test_strict_route_receipt_preserves_full_evidence_identity(self):
         goal, _, request, memory, context, plan, semantics, parameters = self._case()

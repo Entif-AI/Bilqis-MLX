@@ -75,9 +75,11 @@ BamfActiveSemanticRows.__module__ = "bilqis_mlx.runtime.atlas_model_contracts"
 
 def _issue_bamf_active_semantic_rows(
         run_id: str, generation: int, extents: GenerationExtents,
-        features: AtlasFeatures, active_indices: tuple[int, ...]) -> BamfActiveSemanticRows:
+        features: AtlasFeatures, active_indices: tuple[int, ...], *,
+        validate: bool = True) -> BamfActiveSemanticRows:
     """Issue the numerical B02 view after an owner has established generation custody."""
-    if (type(extents) is not GenerationExtents or type(features) is not AtlasFeatures
+    if (type(validate) is not bool
+            or type(extents) is not GenerationExtents or type(features) is not AtlasFeatures
             or extents.factor_map_digest != features.digest):
         _invalid("B02_ACTIVE_SEMANTIC_ROWS_OWNER_INPUT_INVALID")
     record = object.__new__(BamfActiveSemanticRows)
@@ -91,7 +93,8 @@ def _issue_bamf_active_semantic_rows(
         ("_issuance", _ACTIVE_SEMANTIC_ROWS_ISSUER),
     ):
         object.__setattr__(record, name, value)
-    record.__post_init__()
+    if validate:
+        record.__post_init__()
     return record
 
 
@@ -103,9 +106,16 @@ def bind_candidate_active_semantic_rows(candidate, authenticated) -> BamfActiveS
         BamfBundleCandidate, CompleteStudent,
     )
 
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    strict = strict_evidence_enabled()
     candidate_context = (
         type(candidate) is BamfBundleCandidate
-        and type(authenticated) is AuthenticatedCandidateFeatureContext)
+        and (type(authenticated) is AuthenticatedCandidateFeatureContext
+             or (not strict
+                 and hasattr(authenticated, "features")
+                 and hasattr(authenticated, "snapshot"))))
     accepted_context = (
         type(candidate) is CompleteStudent
         and is_authenticated_generation_feature_context(authenticated))
@@ -114,9 +124,10 @@ def bind_candidate_active_semantic_rows(candidate, authenticated) -> BamfActiveS
             or type(candidate.retained_state) is not RetainedCandidateState
             or type(authenticated.features) is not AtlasFeatures):
         _invalid("B02_ACTIVE_SEMANTIC_ROWS_OWNER_INPUT_INVALID")
-    candidate.retained_state.__post_init__()
-    authenticated.__post_init__()
-    if accepted_context and (
+    if strict:
+        candidate.retained_state.__post_init__()
+        authenticated.__post_init__()
+    if strict and accepted_context and (
             authenticated.receipt.run_id != candidate.run_id
             or authenticated.receipt.generation != candidate.generation
             or authenticated.receipt.active_set_sha256
@@ -131,13 +142,14 @@ def bind_candidate_active_semantic_rows(candidate, authenticated) -> BamfActiveS
             != candidate.extents.active_semantic_digest
             or any(index >= candidate.extents.semantic_bank_count
                    * ModelTopologySpecV2.semantic_bank_rows for index in indices)
-            or any(index >= len(authenticated.snapshot.abi_entries)
-                   or authenticated.snapshot.abi_entries[index].index != index
-                   for index in indices)):
+            or (strict and any(
+                index >= len(authenticated.snapshot.abi_entries)
+                or authenticated.snapshot.abi_entries[index].index != index
+                for index in indices))):
         _invalid("B02_ACTIVE_SEMANTIC_ROWS_OWNER_DRIFT")
     return _issue_bamf_active_semantic_rows(
         candidate.run_id, candidate.generation, candidate.extents,
-        authenticated.features, indices)
+        authenticated.features, indices, validate=strict)
 
 
 __all__ = (

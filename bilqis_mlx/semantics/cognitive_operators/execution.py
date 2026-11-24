@@ -1,6 +1,8 @@
 """Public pure operator entrypoint and result-state propagation."""
 from __future__ import annotations
-from .authorization import _authorize_inputs, _check_grant, _number_domain
+from .authorization import (
+    _authorize_inputs, _check_grant, _number_domain, _validated_number_domain,
+)
 from .common import _invalid
 from .compute import _compute, _NONE, _UNKNOWN, _UNSUPPORTED
 from .registry import CognitiveOperatorSpec, OperatorBinding, operator_grant_digest
@@ -32,6 +34,8 @@ def _compute_after_authorization(
     spec: CognitiveOperatorSpec,
     typed_inputs: tuple[TypedValue, ...],
     binding: OperatorBinding,
+    *,
+    source_prevalidated: bool = False,
 ) -> TypedValue:
     """Pure computation after a caller has proved source and operator grants."""
     release = binding.task.semantic_release
@@ -44,7 +48,10 @@ def _compute_after_authorization(
         return unresolved(ValueState.UNSUPPORTED)
     domain = None
     if spec.applicability == "FINITE_NUMBER":
-        domain = _number_domain(binding)
+        domain = (
+            _validated_number_domain(binding)
+            if source_prevalidated else _number_domain(binding)
+        )
         if domain is None:
             return unresolved(ValueState.UNSUPPORTED)
         for item in typed_inputs:

@@ -27,7 +27,8 @@ class TeacherStrategyCooldownTests(unittest.TestCase):
                 channel["capability_stagnation"][capability_key]["total_rejections"] += 1
                 record_checkpoint_policy_outcome(
                     channel, context, strong, sha,
-                    no_target_gain=True, retained=False)
+                    no_target_gain=True, target_failure=True,
+                    target_positive=False, retained=False)
             status = durable_policy_cooldown_status(
                 channel, "C.ADD", "factory/7", strong)
             if sha.startswith("a"):
@@ -52,9 +53,97 @@ class TeacherStrategyCooldownTests(unittest.TestCase):
         channel["capability_stagnation"][capability_key]["total_retained"] += 1
         record_checkpoint_policy_outcome(
             channel, context, strong, "c" * 64,
-            no_target_gain=False, retained=True)
+            no_target_gain=False, target_failure=False,
+            target_positive=True, retained=True)
         self.assertFalse(durable_policy_cooldown_status(
             channel, "C.ADD", "factory/7", strong)["active"])
+
+    def test_checkpoint_target_failure_suppresses_after_two_without_changing_unretained_fallback(self):
+        teacher, strong, _weak = teacher_fixture()
+        channel = teacher["causal_experiment"]
+        context = "C.ADD|RECOVERY_1|factory/7"
+        checkpoint = "a" * 64
+        inventory = effective_strategy_inventory(teacher)
+        active = tuple(inventory)
+
+        record_checkpoint_policy_outcome(
+            channel, context, strong, checkpoint,
+            no_target_gain=True, target_failure=True,
+            target_positive=False, retained=False)
+        eligible, retired = checkpoint_active_effective_strategy_keys(
+            teacher, "C", {}, channel, context, active, inventory, checkpoint)
+        self.assertNotIn(strong, retired)
+        self.assertIn(strong, eligible)
+
+        record_checkpoint_policy_outcome(
+            channel, context, strong, checkpoint,
+            no_target_gain=True, target_failure=True,
+            target_positive=False, retained=False)
+        eligible, retired = checkpoint_active_effective_strategy_keys(
+            teacher, "C", {}, channel, context, active, inventory, checkpoint)
+        self.assertIn(strong, retired)
+        self.assertNotIn(strong, eligible)
+        self.assertEqual(
+            channel["student_policy_epoch"]["unretained_contexts"][context][strong], 2)
+
+    def test_target_positive_clears_target_failures_but_protected_reject_does_not_count(self):
+        teacher, strong, _weak = teacher_fixture()
+        channel = teacher["causal_experiment"]
+        context = "C.ADD|MAIN|factory/7"
+        checkpoint = "a" * 64
+        inventory = effective_strategy_inventory(teacher)
+
+        record_checkpoint_policy_outcome(
+            channel, context, strong, checkpoint,
+            no_target_gain=True, target_failure=True,
+            target_positive=False, retained=False)
+        record_checkpoint_policy_outcome(
+            channel, context, strong, checkpoint,
+            no_target_gain=False, target_failure=False,
+            target_positive=True, retained=False)
+        record_checkpoint_policy_outcome(
+            channel, context, strong, checkpoint,
+            no_target_gain=False, target_failure=False,
+            target_positive=True, retained=False)
+        eligible, retired = checkpoint_active_effective_strategy_keys(
+            teacher, "C", {}, channel, context,
+            tuple(inventory), inventory, checkpoint)
+        self.assertNotIn(strong, retired)
+        self.assertIn(strong, eligible)
+        self.assertNotIn(
+            strong, channel["student_policy_epoch"]["target_failure_contexts"][context])
+
+    def test_new_checkpoint_starts_fresh_target_failure_epoch(self):
+        teacher, strong, _weak = teacher_fixture()
+        channel = teacher["causal_experiment"]
+        context = "C.ADD|MAIN|factory/7"
+        for _ in range(2):
+            record_checkpoint_policy_outcome(
+                channel, context, strong, "a" * 64,
+                no_target_gain=True, target_failure=True,
+                target_positive=False, retained=False)
+        inventory = effective_strategy_inventory(teacher)
+        eligible, retired = checkpoint_active_effective_strategy_keys(
+            teacher, "C", {}, channel, context,
+            tuple(inventory), inventory, "b" * 64)
+        self.assertNotIn(strong, retired)
+        self.assertIn(strong, eligible)
+
+    def test_four_generic_unretained_attempts_still_retire_without_target_failure(self):
+        teacher, strong, _weak = teacher_fixture()
+        channel = teacher["causal_experiment"]
+        context = "C.ADD|MAIN|factory/7"
+        checkpoint = "a" * 64
+        inventory = effective_strategy_inventory(teacher)
+        for attempt in range(4):
+            record_checkpoint_policy_outcome(
+                channel, context, strong, checkpoint,
+                no_target_gain=False, target_failure=False,
+                target_positive=True, retained=False)
+            _eligible, retired = checkpoint_active_effective_strategy_keys(
+                teacher, "C", {}, channel, context,
+                tuple(inventory), inventory, checkpoint)
+            self.assertEqual(strong in retired, attempt == 3)
 
 
 

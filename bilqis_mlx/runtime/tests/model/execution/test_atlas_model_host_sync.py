@@ -96,7 +96,7 @@ def test_strict_vectorized_finalization_rejects_materialized_route_drift():
     assert caught.value.context["reason"] == "B11_MICROBATCH_TRAJECTORY_DRIFT"
 
 
-def test_learning_first_real_owners_report_one_barrier_two_readbacks_no_validation_sync():
+def test_learning_first_real_owners_report_one_barrier_one_readback_no_validation_sync():
     params = {"x": mx.array(1.0, dtype=mx.float32)}
     holder = {"route_context": (object(), None, object())}
     row = SimpleNamespace(positions=(0,))
@@ -115,10 +115,8 @@ def test_learning_first_real_owners_report_one_barrier_two_readbacks_no_validati
         logits = (mx.zeros((2, 2), dtype=mx.float32) + current["x"] * 0,)
         return loss, hidden, trajectory, logits, ()
 
-    def loss_execution(output, *_args, **_kwargs):
-        return SimpleNamespace(
-            output=output,
-            loss=SimpleNamespace(total=mx.array(1.0, dtype=mx.float32)))
+    def learning_execution(output, *_args, **_kwargs):
+        return SimpleNamespace(output=output)
 
     with patch.object(mx, "eval", wraps=mx.eval) as evaluate, patch.object(
             route_evidence.np, "asarray", wraps=route_evidence.np.asarray) as asarray, patch(
@@ -132,8 +130,11 @@ def test_learning_first_real_owners_report_one_barrier_two_readbacks_no_validati
                                 generation_binding="generation")), patch(
                                     "bilqis_mlx.runtime.atlas_model_participation._forward_participation",
                                     return_value=object()), patch(
-                                        "bilqis_mlx.runtime.atlas_model_training.loss_bearing_bamf",
-                                        side_effect=loss_execution), patch(
+                                        "bilqis_mlx.runtime.atlas_model_training.learning_participation_bamf",
+                                        side_effect=learning_execution), patch(
+                                            "bilqis_mlx.runtime.atlas_model_training.loss_bearing_bamf",
+                                            side_effect=AssertionError(
+                                                "learning-first postflight rebuilt numerical row loss")), patch(
                                             "dataclasses.replace",
                                             side_effect=lambda value, **_kwargs: value), patch.object(
                                                 route_evidence, "_FORWARD_ISSUANCE",
@@ -148,7 +149,7 @@ def test_learning_first_real_owners_report_one_barrier_two_readbacks_no_validati
         batch = SimpleNamespace(compiled=SimpleNamespace(extents=object()))
         with patch(
                 "bilqis_mlx.learning.atlas_readout.decoder.prediction.attest_issued_outputs",
-                return_value=True), patch.object(
+                side_effect=AssertionError("learning-first output attestation read logits")) as attest, patch.object(
                     forward_validation, "validate_bamf_parameters"), patch.object(
                         forward_validation.BamfMicrobatchGradientExecution,
                         "__post_init__", return_value=None):
@@ -156,6 +157,7 @@ def test_learning_first_real_owners_report_one_barrier_two_readbacks_no_validati
                 SimpleNamespace(topology=object()), batch, rows, None, executions,
                 mean_loss, gradients, answer_plans=plans, route_trajectory=trajectory,
                 learning_first=True, numerical_finite_attested=True)
+        attest.assert_not_called()
 
     observation = microbatch_execution._microbatch_performance_observation(
         result, {"provider_draws": 0, "atlas_reloads": 0},
@@ -167,5 +169,5 @@ def test_learning_first_real_owners_report_one_barrier_two_readbacks_no_validati
     assert evaluate.call_count == 1
     assert asarray.call_count == 1
     assert observation["b11_materialization_barrier_count"] == 1
-    assert observation["b11_host_readback_count"] == 2
+    assert observation["b11_host_readback_count"] == 1
     assert observation["b11_validation_sync_count"] == 0

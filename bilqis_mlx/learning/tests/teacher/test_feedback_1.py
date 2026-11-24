@@ -167,3 +167,71 @@ class Feedback1Tests(CausalTeacherExperimentTests):
         self.assertEqual(
             ecology[first_action["key"]]["effective_policy_keys"],
             [_effective_policy_key(teacher["strategies"]["variable"])])
+
+    def test_checkpoint_target_failures_include_baseline_regression_and_positive_target_clears(self):
+        from copy import deepcopy
+        teacher = {"strategies": {"p": {"lr": .0001}}, "global_stats": {}}
+        checkpoint = "a" * 64
+        context = "C.ADD|MAIN|scope"
+        effective = _effective_policy_key(teacher["strategies"]["p"])
+        no_gain = decide({
+            "C.ADD": {"before": 3, "after": 3, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected=set(),
+            settings=Settings())
+
+        observe_context(
+            teacher, capability="C.ADD", phase="MAIN", policy_key="p",
+            decision=no_gain, local_gain=0., curriculum_scope="scope",
+            student_checkpoint_sha256=checkpoint)
+        epoch = teacher["causal_experiment"]["student_policy_epoch"]
+        self.assertEqual(epoch["target_failure_contexts"][context][effective], 1)
+        self.assertEqual(epoch["unretained_contexts"][context][effective], 1)
+
+        baseline_regression = deepcopy(no_gain)
+        baseline_regression["reason"] = "TARGET_BASELINE_REGRESSION"
+        baseline_regression["deltas"]["C.ADD"] = -1
+        observe_context(
+            teacher, capability="C.ADD", phase="MAIN", policy_key="p",
+            decision=baseline_regression, local_gain=-1., curriculum_scope="scope",
+            student_checkpoint_sha256=checkpoint)
+        self.assertEqual(epoch["target_failure_contexts"][context][effective], 2)
+        self.assertEqual(epoch["unretained_contexts"][context][effective], 2)
+
+        protected_regression = deepcopy(no_gain)
+        protected_regression["reason"] = "PROTECTED_CAPABILITY_REGRESSION"
+        protected_regression["deltas"]["C.ADD"] = 1
+        observe_context(
+            teacher, capability="C.ADD", phase="MAIN", policy_key="p",
+            decision=protected_regression, local_gain=1., curriculum_scope="scope",
+            student_checkpoint_sha256=checkpoint)
+        self.assertNotIn(effective, epoch["target_failure_contexts"][context])
+        self.assertEqual(epoch["unretained_contexts"][context][effective], 3)
+
+    def test_legacy_checkpoint_policy_does_not_reinterpret_baseline_regression(self):
+        from copy import deepcopy
+        teacher = {"strategies": {"p": {"lr": .0001}}, "global_stats": {}}
+        checkpoint = "a" * 64
+        context = "C.ADD|MAIN|scope"
+        effective = _effective_policy_key(teacher["strategies"]["p"])
+        no_gain = decide({
+            "C.ADD": {"before": 3, "after": 3, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected=set(),
+            settings=Settings())
+        observe_context(
+            teacher, capability="C.ADD", phase="MAIN", policy_key="p",
+            decision=no_gain, local_gain=0., curriculum_scope="scope",
+            student_checkpoint_sha256=checkpoint,
+            checkpoint_retirement_policy="bilqis.bamf.checkpoint-retirement/no-target-gain-v1")
+        epoch = teacher["causal_experiment"]["student_policy_epoch"]
+        self.assertEqual(epoch["contexts"][context][effective], 1)
+
+        baseline_regression = deepcopy(no_gain)
+        baseline_regression["reason"] = "TARGET_BASELINE_REGRESSION"
+        baseline_regression["deltas"]["C.ADD"] = -1
+        observe_context(
+            teacher, capability="C.ADD", phase="MAIN", policy_key="p",
+            decision=baseline_regression, local_gain=-1., curriculum_scope="scope",
+            student_checkpoint_sha256=checkpoint,
+            checkpoint_retirement_policy="bilqis.bamf.checkpoint-retirement/no-target-gain-v1")
+        self.assertNotIn(effective, epoch["contexts"][context])
+        self.assertNotIn("target_failure_contexts", epoch)

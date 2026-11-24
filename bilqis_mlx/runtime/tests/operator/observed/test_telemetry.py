@@ -1,6 +1,8 @@
 import json
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import threading
 import time
 import unittest
 import unittest.mock
@@ -26,7 +28,12 @@ class TrainerObservationTests(unittest.TestCase):
                     obs.finish('HELD')
             data = json.loads((root / 'trainer-observed.json').read_text())
             self.assertEqual(data['schema'], 'bilqis.bamf.trainer-observed/v7')
-            self.assertEqual(len(data['visits']), 8)
+            # The visit window is bounded by both the nominal recent-history
+            # limit and the 64 KiB snapshot ceiling.  As observation records
+            # gain fields, the oldest visit may be trimmed before eight fit.
+            self.assertGreaterEqual(len(data['visits']), 1)
+            self.assertLessEqual(len(data['visits']), 8)
+            self.assertEqual(data['visits'][-1]['visit_index'], 9)
             self.assertEqual(data['visits'][-1]['outcome'], 'HELD')
             self.assertGreater(data['visits'][-1]['revision'], 3)
             self.assertEqual(data['visits'][-1]['candidate_step'], 1)
@@ -120,6 +127,49 @@ class TrainerObservationTests(unittest.TestCase):
             persist.assert_not_called()
             self.assertEqual(obs.record['candidate_step'], 1)
             self.assertEqual(obs.record['candidate_steps'][-1]['candidate_step'], 1)
+
+    def test_snapshot_flush_does_not_hold_stage_lock_during_filesystem_write(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            obs = TrainerObservation(root, 1, heartbeat_seconds=60)
+            entered = threading.Event()
+            release = threading.Event()
+            original_replace = os.replace
+
+            def blocked_replace(source, destination):
+                entered.set()
+                release.wait(timeout=2)
+                return original_replace(source, destination)
+
+            writer = threading.Thread(target=obs.update)
+            with unittest.mock.patch(
+                    'bilqis_mlx.runtime.bamf_operator.telemetry.os.replace',
+                    side_effect=blocked_replace):
+                writer.start()
+                self.assertTrue(entered.wait(timeout=1))
+                started = time.perf_counter()
+                obs.stage(phase='TRAINING', candidate_step=1)
+                elapsed = time.perf_counter() - started
+                release.set()
+                writer.join(timeout=2)
+            self.assertFalse(writer.is_alive())
+            self.assertLess(elapsed, 0.1)
+            self.assertEqual(obs.record['phase'], 'TRAINING')
+            self.assertEqual(obs.record['candidate_step'], 1)
+
+    def test_older_concurrent_snapshot_cannot_overwrite_newer_revision(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            obs = TrainerObservation(root, 1, heartbeat_seconds=60)
+            older = dict(obs.record)
+            older.update(revision=1, phase='SELECTING', observed_at=1, elapsed_ms=1)
+            newer = dict(older)
+            newer.update(revision=2, phase='TRAINING')
+            obs._persist_snapshot(newer, [], {})
+            obs._persist_snapshot(older, [], {})
+            current = json.loads((root / 'trainer-observed.json').read_text())
+            self.assertEqual(current['visits'][-1]['revision'], 2)
+            self.assertEqual(current['visits'][-1]['phase'], 'TRAINING')
 
     def test_snapshot_trims_old_step_detail_before_disabling_live_observation(self):
         with TemporaryDirectory() as tmp:

@@ -1,8 +1,13 @@
 """Private Factory-owned C05 screening and baseline issuance."""
 from dataclasses import replace
 
+from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 from bilqis_mlx.learning._atlas_candidate.identity_binding import (
-    candidate_identity_binding_for_state, candidate_identity_for_canonical_consumer,
+    bind_candidate_identity_or_fallback, candidate_identity_binding_for_state,
+    candidate_identity_for_canonical_consumer,
+)
+from bilqis_mlx.runtime.candidate.step_authority import (
+    current_learning_first_step_authority_for_parameters,
 )
 from bilqis_mlx.runtime.capability_retention import (
     DecisionStatus, EvidenceKind, case_census_digest, evaluate_retention_candidate,
@@ -15,7 +20,8 @@ from bilqis_mlx.runtime.capability_retention_foundation import (
     mastery_debt_utility_margin_units,
 )
 from bilqis_mlx.runtime._factory_parent_assessment_cache import (
-    factory_parent_assessment_identity, use_parent_assessment,
+    ParentAssessmentCacheReceipt, factory_parent_assessment_identity,
+    use_parent_assessment,
 )
 from bilqis_mlx.runtime._factory_retention_support import (
     C05_FRESH_LESSON_SEED_OFFSET, C05_FRESH_TARGET_SEED_OFFSET,
@@ -31,6 +37,7 @@ from bilqis_mlx.runtime.baseline.currentness import (
     BaselineComparisonEpoch,
     baseline_coverage,
 )
+from bilqis_mlx.semantics.domains import contract_digest
 from bilqis_mlx.runtime.factory_complete_solver import factory_complete_solver
 from bilqis_mlx.semantics.domains import contract_digest
 
@@ -123,7 +130,19 @@ def adaptive_retention_screen(
     fixed_instruments, cache, evidence_stage, *, protected_capabilities=None,
     retention_protection_plan_sha256=None, observer=None, plasticity_escape=None,
 ):
-    candidate_sha256 = candidate_identity_for_canonical_consumer(candidate_state)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    candidate_sha256 = (
+        candidate_identity_for_canonical_consumer(candidate_state)
+        if strict_mode_enabled() else contract_digest((
+            "bilqis.bamf.learning-first-retention-seed/v1",
+            candidate_bundle.run_id,
+            candidate_bundle.generation,
+            candidate_state.optimizer_step,
+            candidate_bundle.topology.digest,
+            candidate_bundle.extents.digest,
+        )))
     fresh_seed = _owner_seed(release.release_sha256, cache, target_capability, candidate_sha256)
     target_draw = _fresh_rows(
         source_context, (target_capability,), seed=fresh_seed + C05_FRESH_TARGET_SEED_OFFSET,
@@ -172,52 +191,103 @@ def adaptive_retention_screen(
     )
 
 
+def _issue_factory_evaluation(
+        raw_issue, result, *, parent_identity_sha256=None):
+    from bilqis_mlx.runtime.bamf_bundle.genesis.records import (
+        successor_candidate_identity_digest,
+    )
+    from bilqis_mlx.runtime.bamf_bundle.motif.transition import (
+        is_motif_allocation_transition,
+    )
+    (decision, parent, candidate, cache, comparison,
+     championship_cohort, championship_assessment) = result
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    strict = strict_mode_enabled()
+    accepted = decision.status is DecisionStatus.ELIGIBLE
+    generation_authority = (
+        successor_candidate_identity_digest(candidate)
+        if (strict or accepted)
+        and is_motif_allocation_transition(getattr(candidate, "transition", {}))
+        else None)
+    if strict:
+        parent_identity = candidate_identity_for_canonical_consumer(parent.retained_state)
+    else:
+        cached_parent_identity = getattr(cache, "_candidate_identity_sha256", None)
+        if (isinstance(parent_identity_sha256, str)
+                and isinstance(cached_parent_identity, str)
+                and parent_identity_sha256 != cached_parent_identity):
+            _invalid("BAMF_C05_PARENT_IDENTITY_DRIFT")
+        parent_identity = (
+            parent_identity_sha256
+            if isinstance(parent_identity_sha256, str)
+            else cached_parent_identity)
+    if (not isinstance(parent_identity, str)
+            or len(parent_identity) != SHA256_HEX_LENGTH):
+        _invalid("BAMF_C05_PARENT_IDENTITY_REQUIRED")
+    if strict:
+        candidate_identity = candidate_identity_for_canonical_consumer(
+            candidate.retained_state)
+        parent_binding = candidate_identity_binding_for_state(parent.retained_state)
+        candidate_binding = candidate_identity_binding_for_state(candidate.retained_state)
+    elif accepted:
+        candidate_identity = bind_candidate_identity_or_fallback(
+            candidate.retained_state, candidate.topology.digest, candidate.extents.digest)
+        parent_binding = None
+        candidate_binding = candidate_identity_binding_for_state(candidate.retained_state)
+    else:
+        parameters = candidate.retained_state.optimizer.parameters
+        candidate_identity = current_learning_first_step_authority_for_parameters(
+            parameters)
+        if candidate_identity is None:
+            _invalid("BAMF_C05_LEARNING_FIRST_STEP_AUTHORITY_REQUIRED")
+        parent_binding = None
+        candidate_binding = None
+    baseline = BaselineLedger.from_optional_record(parent.baseline_evidence)
+    baseline_transition = None
+    if accepted and comparison is not None:
+        baseline_transition = _issue_factory_baseline_transition(
+            comparison, run_id=parent.run_id, accepted_generation=parent.generation + 1,
+            accepted_parent_manifest_sha256=candidate.parent_manifest_sha256,
+            accepted_candidate_sha256=candidate_identity,
+            decision_evidence_sha256=decision.evidence_sha256,
+            parent_ledger_sha256=baseline.digest)
+        baseline = apply_factory_baseline_transition(baseline, baseline_transition)
+    parent_assessment_cache = (
+        cache if type(cache) is ParentAssessmentCacheReceipt else None)
+    return raw_issue(
+        decision, parent_identity, candidate_identity,
+        generation_authority, parent_assessment_cache, parent_state=parent.retained_state,
+        candidate_state=candidate.retained_state,
+        parent_binding=parent_binding, candidate_binding=candidate_binding,
+        baseline_transition=baseline_transition, baseline_ledger=baseline,
+        championship_cohort=championship_cohort,
+        championship_assessment=championship_assessment)
+
+
 def bind_factory_evaluation_issuer(raw_issue, evidence_stage):
     """Bind issuance to Factory-owned screens without exporting a mint."""
-    def issue(result):
-        from bilqis_mlx.runtime.bamf_bundle.genesis.records import (
-            successor_candidate_identity_digest,
-        )
-        from bilqis_mlx.runtime.bamf_bundle.motif.transition import (
-            is_motif_allocation_transition,
-        )
-        (decision, parent, candidate, cache, comparison,
-         championship_cohort, championship_assessment) = result
-        generation_authority = (
-            successor_candidate_identity_digest(candidate)
-            if is_motif_allocation_transition(getattr(candidate, "transition", {})) else None)
-        baseline = BaselineLedger.from_optional_record(parent.baseline_evidence)
-        baseline_transition = None
-        if decision.status is DecisionStatus.ELIGIBLE and comparison is not None:
-            baseline_transition = _issue_factory_baseline_transition(
-                comparison, run_id=parent.run_id, accepted_generation=parent.generation + 1,
-                accepted_parent_manifest_sha256=candidate.parent_manifest_sha256,
-                accepted_candidate_sha256=candidate_identity_for_canonical_consumer(
-                    candidate.retained_state),
-                decision_evidence_sha256=decision.evidence_sha256,
-                parent_ledger_sha256=baseline.digest)
-            baseline = apply_factory_baseline_transition(baseline, baseline_transition)
-        return raw_issue(
-            decision, candidate_identity_for_canonical_consumer(parent.retained_state),
-            candidate_identity_for_canonical_consumer(candidate.retained_state),
-            generation_authority, cache, parent_state=parent.retained_state,
-            candidate_state=candidate.retained_state,
-            parent_binding=candidate_identity_binding_for_state(parent.retained_state),
-            candidate_binding=candidate_identity_binding_for_state(candidate.retained_state),
-            baseline_transition=baseline_transition, baseline_ledger=baseline,
-            championship_cohort=championship_cohort,
-            championship_assessment=championship_assessment)
+    def issue(result, *, parent_identity_sha256=None):
+        return _issue_factory_evaluation(
+            raw_issue, result, parent_identity_sha256=parent_identity_sha256)
 
-    def foundation(*args, **kwargs):
-        return issue(foundation_local_retention_screen(*args, **kwargs))
+    def foundation(*args, parent_identity_sha256=None, **kwargs):
+        return issue(
+            foundation_local_retention_screen(*args, **kwargs),
+            parent_identity_sha256=parent_identity_sha256)
 
-    def adaptive(*args, **kwargs):
-        return issue(adaptive_retention_screen(
-            *args, evidence_stage=evidence_stage, **kwargs))
+    def adaptive(*args, parent_identity_sha256=None, **kwargs):
+        return issue(
+            adaptive_retention_screen(
+                *args, evidence_stage=evidence_stage, **kwargs),
+            parent_identity_sha256=parent_identity_sha256)
 
-    def broad_foundation(*args, **kwargs):
-        return issue(broad_foundation_retention_screen(
-            *args, evidence_stage=evidence_stage, **kwargs))
+    def broad_foundation(*args, parent_identity_sha256=None, **kwargs):
+        return issue(
+            broad_foundation_retention_screen(
+                *args, evidence_stage=evidence_stage, **kwargs),
+            parent_identity_sha256=parent_identity_sha256)
 
     return foundation, adaptive, broad_foundation
 

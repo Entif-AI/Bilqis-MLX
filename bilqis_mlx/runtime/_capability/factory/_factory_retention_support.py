@@ -22,6 +22,9 @@ from bilqis_mlx.runtime.bamf_bundle.admission import (
 from bilqis_mlx.runtime.capability_retention import (
     EvidenceStage, EvaluationCohort, case_census_digest,
 )
+from bilqis_mlx.runtime.candidate.step_authority import (
+    current_learning_first_step_authority_for_candidate,
+)
 from bilqis_mlx.runtime.source_execution import _source_family
 from bilqis_mlx.semantics.domains import contract_digest
 from bilqis_mlx.factory.assessment import assessment_scope_contract
@@ -108,9 +111,22 @@ def _candidate_from_bound_parent(
         canonical_identity_required: bool = True):
     """Bind one speculative B12 transaction to an already authenticated B13 parent."""
     custody = transaction.parent.custody
-    if (transaction.update_steps < 1 or custody is None
-            or candidate_identity_for_canonical_consumer(transaction.parent)
-            != candidate_identity_for_canonical_consumer(parent.retained_state)
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    strict = strict_mode_enabled()
+    if strict or not getattr(transaction, "learning_first", False):
+        parent_matches = (
+            candidate_identity_for_canonical_consumer(transaction.parent)
+            == candidate_identity_for_canonical_consumer(parent.retained_state))
+    else:
+        token = current_learning_first_step_authority_for_candidate(transaction)
+        parent_matches = (
+            token is not None
+            and transaction.parent is parent.retained_state
+            and getattr(transaction, "_parent_identity_sha256", None)
+                == getattr(cache, "_candidate_identity_sha256", None))
+    if (transaction.update_steps < 1 or custody is None or not parent_matches
             or custody.run_id != cache.run_id
             or custody.generation != cache.generation
             or custody.manifest_sha256 != cache.accepted_manifest_sha256
@@ -119,7 +135,7 @@ def _candidate_from_bound_parent(
         _invalid("BAMF_C05_CANDIDATE_PARENT_CUSTODY_MISMATCH")
     preview = resolve_candidate(transaction, accepted=True)
     if transaction.motif_transition is None:
-        if canonical_identity_required:
+        if canonical_identity_required and strict:
             bind_candidate_identity_or_fallback(
                 preview, parent.topology.digest, parent.extents.digest)
         successor = derive_successor_bundle(
@@ -169,7 +185,10 @@ def _instruments(
         source_context, candidate, artifact_path, rows, *, seed, each=None,
         release_prevalidated=False, authenticated=None):
     source_cohort_sha256 = None
-    if each is None:
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
+    if each is None and (strict_evidence_enabled() or not release_prevalidated):
         measured = {row.get("capability") for row in rows}
         capabilities = tuple(
             item.capability_id for item in source_context.release.execution_plan.capabilities

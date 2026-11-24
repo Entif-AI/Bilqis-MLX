@@ -8,6 +8,7 @@ import mlx.core as mx
 
 import bilqis_mlx.runtime.atlas_model_microbatch as microbatch
 import bilqis_mlx.runtime.microbatch.execution as microbatch_execution
+import bilqis_mlx.runtime.microbatch.route_evidence as route_evidence
 
 def test_route_gradient_launch_executes_one_source_backbone_and_no_preflight():
     rows = (object(),) * 4
@@ -48,8 +49,9 @@ def test_route_gradient_launch_executes_one_source_backbone_and_no_preflight():
                                                                 current["x"] * 2,
                                                                 (mx.zeros((4,), dtype=mx.uint32),),
                                                                 (mx.zeros((4, 1), dtype=mx.float32),))), patch.object(
-                                                                    microbatch, "microbatch_trace_from_route",
-                                                                    return_value=(object(),) * 4) as postflight, patch.object(
+                                                            route_evidence,
+                                                            "microbatch_participation_from_route",
+                                                            return_value=(object(),) * 4) as postflight, patch.object(
                                                                         microbatch, "microbatch_trace_from_hidden",
                                                                         side_effect=AssertionError(
                                                                             "vector route replayed scalar postflight")) as legacy_postflight, patch.object(
@@ -120,7 +122,8 @@ def test_route_gradient_with_refinement_supervision_stays_vectorized():
                                                             current["x"] * 2,
                                                             (mx.zeros((4,), dtype=mx.uint32),),
                                                             (mx.zeros((4, 1), dtype=mx.float32),))), patch.object(
-                                                                microbatch, "microbatch_trace_from_route",
+                                                                route_evidence,
+                                                                "microbatch_participation_from_route",
                                                                 return_value=(object(),) * 4), patch.object(
                                                                     microbatch_execution, "finalize_microbatch_gradient",
                                                                     return_value="done"):
@@ -149,7 +152,7 @@ def test_route_postflight_rebinds_execution_identity_to_original_parameters():
         return tuple(id(current[name]) for name in params)
 
     def postflight(*args):
-        execution_binding = args[-6]
+        execution_binding = args[-3]
         assert execution_binding == original_binding
         return (object(),) * 4
 
@@ -173,7 +176,8 @@ def test_route_postflight_rebinds_execution_identity_to_original_parameters():
                                                     current["x"] * 2,
                                                     (mx.zeros((4,), dtype=mx.uint32),),
                                                     (mx.zeros((4, 1), dtype=mx.float32),))), patch.object(
-                                                        microbatch, "microbatch_trace_from_route",
+                                                        route_evidence,
+                                                        "microbatch_participation_from_route",
                                                         side_effect=postflight), patch.object(
                                                             microbatch_execution, "finalize_microbatch_gradient",
                                                             return_value="done"):
@@ -230,8 +234,5 @@ def test_learning_first_ignores_accepted_cache_for_gradient_identity():
 
     assert result == "done"
     assert rebind.call_args.args[1] is None
-    observation = observe.call_args.args[1]
-    assert observation["b11_materialization_barrier_count"] == 1
-    assert observation["b11_host_readback_count"] == 2
-    assert observation["b11_validation_sync_count"] == 0
+    observe.assert_not_called()
 
