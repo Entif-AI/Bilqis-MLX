@@ -208,3 +208,40 @@ def test_recovery_rotates_equally_weak_members_after_rejected_attempts():
                             recovery_attempt_counts=((WEAK, 2),))
     assert recovery_members(state, MEMBERS, {WEAK: 99}, MEMBERS, scores) == (
         PERFECT, MEDIUM, UNMEASURED)
+
+
+def test_explicit_fixed_reference_for_target_overrides_fresh_sample_priority():
+    fixture = _fixture()
+    rejected = _rejection(fixture, WEAK,
+                          [(WEAK, 6, 6, 6), (MEDIUM, 5, 5, 6)],
+                          fixed_reference_scores=[(WEAK, 2, 4, 6), (MEDIUM, 5, 5, 6)],
+                          fixed_reference_cohort_sha256=SHA)
+    competence = _project(fixture, (rejected,))
+    assert competence[WEAK].reference.correct == 2
+    assert competence[WEAK].target.correct == 6
+    assert competence[MEDIUM].reference.correct == 5
+    assert competence[WEAK].priority < competence[MEDIUM].priority
+
+
+def test_incomplete_explicit_reference_cannot_fall_back_to_inferred_peers():
+    fixture = _fixture()
+    rejected = _rejection(fixture, WEAK,
+                          [(WEAK, 3, 6, 6), (MEDIUM, 5, 5, 6)],
+                          fixed_reference_scores=[(WEAK, 2, 4, 6), (MEDIUM, 6, 6, 6)],
+                          fixed_reference_cohort_sha256=SHA)
+    competence = _project(fixture, (rejected,))
+    assert competence[WEAK].reference is None
+    assert competence[WEAK].target.correct == 3
+    assert competence[MEDIUM].reference is None
+
+
+def test_accepted_target_reference_uses_successor_score_not_fresh_or_parent():
+    fixture = _accepted_fixture()
+    parent, _, _, _ = fixture
+    observation = parent.outbox[0]["how_outcome"]
+    observation["fixed_reference_scores"] = [
+        (MEDIUM, 2, 3, 6), (PERFECT, 5, 6, 6), (WEAK, 3, 2, 6)]
+    observation["fixed_reference_cohort_sha256"] = SHA
+    competence = _project(fixture)
+    assert competence[MEDIUM].reference.correct == 3
+    assert competence[MEDIUM].target.correct == 5

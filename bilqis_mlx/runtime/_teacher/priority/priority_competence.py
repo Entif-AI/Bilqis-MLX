@@ -3,6 +3,7 @@ from dataclasses import asdict, dataclass
 from fractions import Fraction
 
 from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
+from bilqis_mlx.learning.teacher_lineage_records import valid_hex
 from bilqis_mlx.runtime.outcomes.observations import SCORE_FIELDS
 from bilqis_mlx.runtime.state import _fingerprint
 
@@ -80,40 +81,60 @@ def instructional_members(ready, competence):
     return active or ready
 
 
-def _score_rows(observation, target, accepted, members):
-    scores = observation.get("scores")
-    protected = observation.get("protected_capabilities")
-    digest = observation.get("outcome_sha256")
-    if (not isinstance(scores, (list, tuple))
-            or not isinstance(protected, (list, tuple))
-            or not isinstance(digest, str) or len(digest) != SHA256_HEX_LENGTH):
-        return ()
-    result, seen = [], set()
+def _validated_scores(scores):
+    if not isinstance(scores, (list, tuple)):
+        return None
+    result = {}
     for row in scores:
         if not isinstance(row, (tuple, list)) or len(row) != len(SCORE_FIELDS):
-            return ()
+            return None
         cap, before, after, total = row
-        if (not isinstance(cap, str) or cap in seen
+        if (not isinstance(cap, str) or cap in result
                 or any(type(value) is not int for value in (before, after, total))
                 or total <= 0 or not 0 <= before <= total or not 0 <= after <= total):
-            return ()
-        seen.add(cap)
-        if cap not in members:
-            continue
-        if cap == target:
-            kind = "TARGET_SAMPLE"
-        elif (cap in protected and "candidate_evidence" in observation
-              and observation["candidate_evidence"] is None
-              and observation.get("proposal_id") is None
-              and isinstance(observation["decision"].get(
-                  "retention_protection_plan_sha256"), str)):
-            # Ordinary C05 uses deterministic run/release/capability peers.
-            # Its independently drawn target is not a fixed reference.
-            kind = "FIXED_REFERENCE"
-        else:
-            continue
-        result.append((cap, CompetenceScore(
-            after if accepted else before, total, kind, digest)))
+            return None
+        result[cap] = (before, after, total)
+    return result
+
+
+def _reference_rows(observation, scores, target):
+    decision = observation["decision"]
+    if not valid_hex(decision.get("retention_protection_plan_sha256"), SHA256_HEX_LENGTH):
+        return {}
+    if ("fixed_reference_scores" in observation
+            or "fixed_reference_cohort_sha256" in observation):
+        reference = _validated_scores(observation.get("fixed_reference_scores"))
+        if (reference is None
+                or not valid_hex(observation.get("fixed_reference_cohort_sha256"),
+                                 SHA256_HEX_LENGTH)
+                or target not in reference or reference.keys() != scores.keys()
+                or any(reference[cap] != row for cap, row in scores.items() if cap != target)):
+            return {}
+        return reference
+    # Legacy ordinary C05 signed deterministic peer references, but never
+    # the fixed reference of the independently sampled target itself.
+    protected = observation.get("protected_capabilities")
+    if (not isinstance(protected, (list, tuple))
+            or "candidate_evidence" not in observation
+            or observation["candidate_evidence"] is not None
+            or observation.get("proposal_id") is not None):
+        return {}
+    return {cap: row for cap, row in scores.items() if cap != target and cap in protected}
+
+
+def _score_rows(observation, target, accepted, members):
+    scores = _validated_scores(observation.get("scores"))
+    digest = observation.get("outcome_sha256")
+    if scores is None or not valid_hex(digest, SHA256_HEX_LENGTH):
+        return ()
+    target_rows = {target: scores[target]} if target in scores else {}
+    result = []
+    for kind, rows in (("TARGET_SAMPLE", target_rows),
+                       ("FIXED_REFERENCE", _reference_rows(observation, scores, target))):
+        for cap, (before, after, total) in rows.items():
+            if cap in members:
+                result.append((cap, CompetenceScore(
+                    after if accepted else before, total, kind, digest)))
     return tuple(result)
 
 
