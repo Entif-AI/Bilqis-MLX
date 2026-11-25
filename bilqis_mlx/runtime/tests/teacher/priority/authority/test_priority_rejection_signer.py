@@ -22,6 +22,7 @@ from bilqis_mlx.runtime.atlas_source_authority import (
 )
 from bilqis_mlx.runtime.bamf_bundle._darwin_salience_signer import HostSourceAuthoritySigner
 from bilqis_mlx.runtime.bamf_bundle.records import canonical
+from bilqis_mlx.runtime.bamf_bundle.feature.historical_custody import HistoricalBamfBundle
 from bilqis_mlx.runtime.bamf_rejection import (
     issue_portable_rejection_authority, portable_rejection_receipt,
     try_issue_portable_rejection_authority,
@@ -174,10 +175,35 @@ def test_raw_rejection_journal_cannot_change_priority_without_b13_authority():
         assert failure.value.context["reason"] == "BAMF_PRIORITY_REJECTION_OUTBOX_INVALID"
 
 
-def test_portable_rejection_replay_uses_signed_authority_without_shared_objects():
+def _historical_parent():
+    return HistoricalBamfBundle(
+        manifest={"run_id": "run", "generation": 2, "optimizer": {"step": 11}},
+        topology=None, extents=None, provenance=None, records={},
+        optimizer_hyperparameters=None, run_identity=None)
+
+
+def test_historical_rejection_replay_keeps_legacy_custody_checks(tmp_path):
+    _, event, receipt_sha, plane = _rejection_custody(tmp_path)
+    parent = _historical_parent()
+    cache = SimpleNamespace(
+        run_id="run", generation=2, accepted_manifest_sha256="f" * 64)
+    try:
+        with patch.object(rejection_replay, "data_plane", return_value=plane):
+            assert rejection_replay._validated_rejection(event, parent, cache)[0] == receipt_sha
+            with pytest.raises(BilqisError) as failure:
+                rejection_replay._validated_rejection(
+                    dict(event, optimizer_step=12), parent, cache)
+            assert failure.value.context["reason"] == "BAMF_PRIORITY_REJECTION_IDENTITY_DRIFT"
+    finally:
+        plane.events.close()
+
+
+@pytest.mark.parametrize("historical", (False, True))
+def test_portable_rejection_replay_uses_signed_authority_without_shared_objects(historical):
     registry = _registry()
     signer = HostSourceAuthoritySigner("owner:c06", "44" * 32, registry)
-    parent = SimpleNamespace(retained_state=SimpleNamespace(optimizer_step=11))
+    parent = (_historical_parent() if historical else
+              SimpleNamespace(retained_state=SimpleNamespace(optimizer_step=11)))
     cache = SimpleNamespace(
         generation=2, accepted_manifest_sha256="f" * 64, run_id="run",
         _correction_registry=registry)
