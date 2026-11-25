@@ -13,6 +13,7 @@ from scripts.bamf.profiling.issue1645.dynamics.displacement_analysis import writ
 
 class AuthenticDynamics(unittest.TestCase):
     def test_actual_update_and_epsilon_matrix(self):
+        self.addCleanup(mx.set_default_device, mx.default_device())
         mx.set_default_device(mx.cpu)
         names = ("readout.control", "identity.bank.0")
         def tree(first, second, dtype=mx.float32):
@@ -48,6 +49,33 @@ class AuthenticDynamics(unittest.TestCase):
                                    sum(pair["all"][key] for key in
                                        ("old_moment_dot", "decay_dot", "current_gradient_and_rounding_dot")))
         np.testing.assert_array_equal(np.asarray(parent.parameters[names[1]]), [[1.], [2.]])
+
+    def test_native_sparse_gradient_only_omits_frozen_leaves(self):
+        self.addCleanup(mx.set_default_device, mx.default_device())
+        mx.set_default_device(mx.cpu)
+        names = ("readout.control", "identity.bank.0")
+        parameters = {names[0]: mx.array([1.]), names[1]: mx.array([[2.]])}
+        zeros = {name: mx.zeros_like(value) for name, value in parameters.items()}
+        counts = {names[0]: mx.array(1, dtype=mx.uint64),
+                  names[1]: mx.array([1], dtype=mx.uint64)}
+        parent = AdamWStateTree(parameters, zeros, zeros, counts)
+        gradients = {names[0]: mx.array([.1])}
+        masks = {names[0]: mx.array(True), names[1]: mx.array([False])}
+        authority = {names[0]: (True, ()), names[1]: (False, ())}
+        hp = AdamWHyperparameters(.0007, (.88, .97), 1e-7, .03)
+        with TemporaryDirectory() as root:
+            destination = Path(root) / "sparse"
+            receipt = write_update(destination, parent, gradients, masks,
+                                   dict.fromkeys(names, True), authority, hp, max_norm=1.)
+            self.assertEqual(receipt["omitted_frozen_gradient_leaves"], [names[1]])
+            tensors = mx.load(str(destination / "update.safetensors"))
+            for key in ("raw/", "clipped/", "delta/"):
+                np.testing.assert_array_equal(np.asarray(tensors[key + names[1]]), [[0.]])
+            masks[names[1]] = mx.array([True])
+            authority[names[1]] = (False, (0,))
+            with self.assertRaisesRegex(ValueError, "missing participating gradient"):
+                write_update(Path(root) / "invalid", parent, gradients, masks,
+                             dict.fromkeys(names, True), authority, hp, max_norm=1.)
 
     def test_seed_does_not_depend_on_score(self):
         self.assertEqual(probe_seed("m", "A.PARENT", "target"), probe_seed("m", "A.PARENT", "target"))

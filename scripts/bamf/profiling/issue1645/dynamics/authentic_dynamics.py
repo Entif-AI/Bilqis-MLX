@@ -34,10 +34,25 @@ def custody(run):
             for name in ("bamf-state.json", "events.jsonl")}
 
 
+def reject_symlinks(root):
+    require(not root.is_symlink(), "symbolic link in diagnostic custody")
+    if root.is_dir():
+        for base, dirs, files in os.walk(root, followlinks=False):
+            require(not any((Path(base) / name).is_symlink()
+                            for name in (*dirs, *files)),
+                    "symbolic link in diagnostic custody")
+
+
 def isolated_copy(source, plane, destination):
     require(not destination.exists(), "destination must be new")
     require(not destination.is_relative_to(source), "destination inside source")
     require(not source.is_relative_to(destination), "source inside destination")
+    companions = tuple(Path(str(plane) + suffix) for suffix in (".objects", ".archive"))
+    for original in (source, plane, *companions):
+        require(not destination.is_relative_to(original)
+                and not original.is_relative_to(destination),
+                "overlapping diagnostic custody")
+        reject_symlinks(original)
     before = custody(source)
     destination.mkdir(parents=True)
     run = destination / "run"
@@ -62,15 +77,13 @@ def probe_seed(manifest, capability, label):
     ).digest()[:8], "big")
 
 
-def source_gradient(parent, context, cache, capability, seed, each):
-    """Use B11's actual scalar correctness path, without invented visit authority."""
-    import mlx.core as mx
+def compiled_source_probe(parent, context, capability, seed, each):
+    """Prepare the exact source-owned diagnostic rows, without a visit."""
+
     from bilqis_mlx.runtime.learning_first_source import prepare_learning_first_source_rows
     from bilqis_mlx.runtime.factory_training_source import (
         _prepare_learning_first_model_sources, _bind_learning_first_rows,
     )
-    from bilqis_mlx.runtime.candidate.step_authority import bind_learning_first_step_authority
-    from bilqis_mlx.runtime.factory_candidate_microbatch import execute_factory_training_row
 
     rows, authority = context.draw_bound_rows(seed=seed, capability=capability, each=each)
     authenticated = context._accepted_feature_context
@@ -85,6 +98,17 @@ def source_gradient(parent, context, cache, capability, seed, each):
     compiled = _bind_learning_first_rows(
         context, parent, authenticated, training, source_rows, None,
         source_seed=seed, source_each=each)
+    return compiled, authority
+
+
+def source_gradient(parent, context, cache, capability, seed, each):
+    """Use B11's actual scalar correctness path, without invented visit authority."""
+    import mlx.core as mx
+    from bilqis_mlx.runtime.candidate.step_authority import bind_learning_first_step_authority
+    from bilqis_mlx.runtime.factory_candidate_microbatch import execute_factory_training_row
+
+    compiled, authority = compiled_source_probe(parent, context, capability, seed, each)
+    authenticated = context._accepted_feature_context
     generation = bind_learning_first_step_authority(cache, parent, None, context)
     parameters = parent.retained_state.optimizer.parameters
     total, executions, losses = None, [], []

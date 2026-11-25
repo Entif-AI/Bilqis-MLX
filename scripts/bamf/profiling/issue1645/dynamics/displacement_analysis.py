@@ -73,8 +73,13 @@ def check_leaf(parent, result, name, expected, mask):
 
 
 def write_update(destination, parent, gradients, masks, decay, authority, hp, *, max_norm):
+    require(bool(gradients) and set(gradients) <= set(parent.parameters) == set(masks)
+            == set(authority) == set(decay), "parameter basis mismatch")
+    omitted = sorted(set(parent.parameters) - set(gradients))
+    for name in omitted:
+        require(authority[name] == (False, ()) and not bool(mx.any(masks[name]).item()),
+                f"missing participating gradient: {name}")
     destination.mkdir()
-    require(set(gradients) == set(parent.parameters) == set(masks), "parameter basis mismatch")
     clipped, norm = _masked_clipped_gradients(parent, gradients, masks, max_norm=max_norm)
     result = _adamw_update(parent, gradients, masks, hp, decay=decay, max_norm=max_norm,
                            participation_authority=authority, learning_first=True)
@@ -86,19 +91,23 @@ def write_update(destination, parent, gradients, masks, decay, authority, hp, *,
     for name, weight in parent.parameters.items():
         mask = masks[name]
         host_mask = np.asarray(mask)
-        reference = leaf(parent, name, clipped[name], mask, hp, decay[name], hp.eps)
+        # Native learning-first gradients may omit completely frozen leaves.
+        # Zero extension is for the common diagnostic coordinate basis only.
+        raw = gradients[name] if name in gradients else mx.zeros_like(weight)
+        effective = clipped[name] if name in clipped else mx.zeros_like(weight)
+        reference = leaf(parent, name, effective, mask, hp, decay[name], hp.eps)
         mx.eval(*reference)
         errors = check_leaf(parent, result, name, reference, host_mask)
         for field, error in errors.items():
             equivalence[field] = max(equivalence[field], error)
         delta = result.parameters[name] - weight
-        old, decay_step = components(parent, name, clipped[name], mask, hp, decay[name])
-        arrays.update({f"raw/{name}": gradients[name], f"clipped/{name}": clipped[name],
+        old, decay_step = components(parent, name, effective, mask, hp, decay[name])
+        arrays.update({f"raw/{name}": raw, f"clipped/{name}": effective,
                        f"delta/{name}": delta, f"old_moment/{name}": old,
                        f"decay/{name}": decay_step, f"mask/{name}": mask})
         for eps in EPSILON_CANDIDATES:
             if name in OUTPUT_LEAVES:
-                alternate = leaf(parent, name, clipped[name], mask, hp, decay[name], eps,
+                alternate = leaf(parent, name, effective, mask, hp, decay[name], eps,
                                  authority[name][1])
                 mx.eval(*alternate)
                 for field, value in zip(("m", "v", "update_counts"), alternate[1:], strict=True):
@@ -114,7 +123,8 @@ def write_update(destination, parent, gradients, masks, decay, authority, hp, *,
     mx.save_safetensors(str(destination / "update.safetensors"), arrays)
     return {"masked_unclipped_norm": float(norm.item()), "max_norm": max_norm,
             "selected_full_mask_max_abs_error": dict(equivalence),
-            "leaves": records, "epsilon_candidates": list(EPSILON_CANDIDATES)}
+            "leaves": records, "epsilon_candidates": list(EPSILON_CANDIDATES),
+            "omitted_frozen_gradient_leaves": omitted}
 
 
 def finalize(acc):
