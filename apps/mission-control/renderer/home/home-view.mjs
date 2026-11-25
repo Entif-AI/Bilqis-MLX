@@ -153,7 +153,7 @@ function currentWork(model, { nowMs, locale } = {}) {
     ["home.current.assessmentPosture", assessment],
   ];
   const inspect = current.recordId
-    ? `<button type="button" class="home-link" data-home-target-kind="episode" data-home-target-id="${esc(current.recordId)}" ${testIdAttribute("home", "current", "inspect")}>${esc(t("home.current.inspect"))}</button>` : "";
+    ? `<button type="button" class="home-link" data-home-target-kind="episode" data-home-target-id="${esc(current.recordId)}" ${testIdAttribute("home", "current", "inspect")}>${esc(t(active ? "home.current.inspect" : "home.current.inspectRecorded"))}</button>` : "";
   const observedTime = temporalMarkup({
     unixSeconds: current.observedAt,
     nowMs,
