@@ -265,6 +265,7 @@ test("Partial Factory summary does not label unprojected facts as none", () => {
   const host = { innerHTML: "", querySelectorAll: () => [] };
   renderFactoryCockpitView(host, { rows: [record], coverage: "PARTIAL", loadLineagePage: () => {} });
   assert.match(host.innerHTML, /Bounded lineage summary/);
-  assert.match(host.innerHTML, /data-factory-lineage-open/);
+  assert.ok(host.innerHTML.includes(`data-test-id="factory-lineage-open-${record.subject_sha256}"`));
+  assert.match(host.innerHTML, /data-test-id="factory-lineage-page"/);
   assert.doesNotMatch(host.innerHTML, />None</);
 });

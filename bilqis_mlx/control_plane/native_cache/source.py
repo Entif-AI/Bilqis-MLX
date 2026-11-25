@@ -13,6 +13,7 @@ from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.mission_control import MissionControlQueryCatalog
 from bilqis_mlx.mission_control.query_selection import is_live_overlay
 from ..observed.school import ObservedSchoolProjection
+from ..projection.school import admitted_release_identity
 from .rejections import LEDGER_CHANGED
 
 
@@ -56,6 +57,7 @@ class _NativeQueryCache:
         self.material = None
         self.school_projection = None
         self.live_deadline = None
+        self.release_identity = None
 
     def query(self, request=None):
         return self.snapshot(request)[0]
@@ -75,6 +77,9 @@ class _NativeQueryCache:
 
     def _current(self):
         before = _source_token(self.root)
+        if (self.history and self.pointer_token == before[0]
+                and self.release_identity != admitted_release_identity(self.root, self.history)):
+            self._clear_base()
         if (self.catalog is not None and self.token == before
                 and (self.live_deadline is None or time.time() < self.live_deadline)):
             return self.catalog
@@ -104,6 +109,9 @@ class _NativeQueryCache:
             school_projection=self.school_projection)
         catalog = self.base_catalog.with_records(observed)
         after = _source_token(self.root)
+        if self.release_identity != admitted_release_identity(self.root, self.history):
+            self._clear_base()
+            return MissionControlQueryCatalog.unavailable()
         if _base_source_token(after) != base:
             return None
         if after == before:
@@ -125,6 +133,7 @@ class _NativeQueryCache:
             history = self._accepted_history(before)
             if history is None:
                 return MissionControlQueryCatalog.unavailable()
+            release_before = admitted_release_identity(self.root, history)
             material = self.materialize_history(
                 self.root, history, include_live_rejections=True)
         except BilqisError as error:
@@ -154,6 +163,10 @@ class _NativeQueryCache:
             self._clear_base()
             return MissionControlQueryCatalog.unavailable()
         self.history, self.pointer_token = history, before[0]
+        if admitted_release_identity(self.root, history) != release_before:
+            self._clear_base()
+            return MissionControlQueryCatalog.unavailable()
+        self.release_identity = release_before
         self.material = material
         if _base_source_token(after) != _base_source_token(before):
             self._clear_base()
@@ -181,6 +194,9 @@ class _NativeQueryCache:
             self.history, self.pointer_token = (), None
             self._clear_base()
             return MissionControlQueryCatalog.unavailable()
+        if self.release_identity != admitted_release_identity(self.root, self.history):
+            self._clear_base()
+            return MissionControlQueryCatalog.unavailable()
         if _base_source_token(final) == self.base_token and final == after:
             self._remember_catalog(final, catalog)
         else:
@@ -193,6 +209,7 @@ class _NativeQueryCache:
         self.base_catalog = None
         self.accepted_health = {}
         self.school_projection = None
+        self.release_identity = None
 
 
 def build_native_query_source(

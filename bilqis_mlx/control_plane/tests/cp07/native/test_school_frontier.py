@@ -77,6 +77,26 @@ class SchoolFrontierTests(NativeSourceFixture, unittest.TestCase):
             write({**issued, "ready": [held]})
             self.assertEqual(frontier().meta.coverage.value, "PARTIAL")
 
+    def test_release_availability_refreshes_without_pointer_change(self):
+        self.parent()
+        self.publish_successor()
+        generation = authenticated_history(self.run)[-1]
+        run = run_ref(generation)
+        path = self.run / "factory-releases" / f"{run.factory_release_sha256}.json"
+        original = path.read_bytes()
+        source = native_query_source(self.run)
+        request = QueryRequest(QueryFamily.SCHOOL, run_id=run.run_id)
+
+        self.assertEqual(source().query(request).state.value, "PARTIAL")
+        path.unlink()
+        self.assertEqual(source().query(request).state.value, "UNAVAILABLE")
+        path.write_bytes(original)
+        self.assertEqual(source().query(request).state.value, "PARTIAL")
+        path.write_bytes(b"{}")
+        self.assertEqual(source().query(request).state.value, "UNAVAILABLE")
+        path.write_bytes(original)
+        self.assertEqual(source().query(request).state.value, "PARTIAL")
+
     def test_admission_summary_budget(self):
         names = tuple("a" * 400 + str(i) for i in range(200))
         bounded = _bounded_names(names)
@@ -84,6 +104,30 @@ class SchoolFrontierTests(NativeSourceFixture, unittest.TestCase):
         self.assertLess(len(bounded), len(names))
         self.assertLess(len(json.dumps(bounded).encode()), 12_000)
         self.assertEqual(bounded, names[:len(bounded)])
+
+    def test_release_removed_during_heartbeat_overlay_is_not_reported_as_admitted(self):
+        from bilqis_mlx.control_plane.native_source import observed_records
+
+        self.parent()
+        self.publish_successor()
+        generation = authenticated_history(self.run)[-1]
+        run = run_ref(generation)
+        path = self.run / "factory-releases" / f"{run.factory_release_sha256}.json"
+        heartbeat = self.run / "trainer-observed.json"
+        request = QueryRequest(QueryFamily.SCHOOL, run_id=run.run_id)
+        remove = False
+
+        def observe(*args, **kwargs):
+            if remove:
+                path.unlink()
+            return observed_records(*args, **kwargs)
+
+        with patch("bilqis_mlx.control_plane.native_source.observed_records", side_effect=observe):
+            source = native_query_source(self.run)
+            self.assertEqual(source().query(request).state.value, "PARTIAL")
+            heartbeat.write_text("{}")
+            remove = True
+            self.assertEqual(source().query(request).state.value, "UNAVAILABLE")
 
     def test_signed_salience_fixture_projects_original_event_and_unknown_axis(self):
         from bilqis_mlx.learning._salience.tests.test_salience_history import (
@@ -98,3 +142,37 @@ class SchoolFrontierTests(NativeSourceFixture, unittest.TestCase):
             "capability_id": "capability:one", "kind": "OBSERVATION",
             "impact": "LOW", "exigency": "LOW", "novelty": "UNKNOWN",
         },))
+        from bilqis_mlx.mission_control.contracts.events import SalienceEventV2
+        self.parent()
+        self.publish_successor()
+        generation = authenticated_history(self.run)[-1]
+        run = run_ref(generation)
+        release = read_admitted_release(self.run, generation)
+        ready = release.execution_plan.capabilities[0].capability_id
+        issued = dict(schema=SCHEMA, run_id=run.run_id, generation=run.generation,
+                      manifest_sha256=run.generation_manifest_sha256,
+                      release_sha256=run.factory_release_sha256,
+                      frontier_sha256="a"*64, active_grade_sha256="b"*64,
+                      ready=[ready], held=[], source_offer=None,
+                      salience_events=issued_salience_observations(history))
+        row = visit(run_id=run.run_id,
+                    parent_manifest_sha256=run.generation_manifest_sha256,
+                    observed_at=int(time.time()*1000), school_frontier=issued)
+        (self.run / "trainer-observed.json").write_text(json.dumps({
+            "schema": "bilqis.bamf.trainer-observed/v1", "visits": [row]}))
+        source = native_query_source(self.run)
+        with patch("bilqis_mlx.control_plane.observed.source.process_exists",
+                   return_value=True):
+            page = source().query(QueryRequest(QueryFamily.SALIENCE, run_id=run.run_id))
+            record = next(r for r in page.records if isinstance(r, SalienceEventV2))
+            self.assertEqual(record.event_kind, "OBSERVATION")
+            self.assertEqual(record.action_kind, "UNKNOWN")
+            self.assertEqual(record.novelty.state.value, "UNKNOWN")
+            self.assertEqual(record.meta.evidence_refs,
+                             (f"c06-salience-event:{event.digest()}",))
+            self.assertEqual(record.meta.receipt_refs,
+                             (f"c06-source-receipt:{event.source_receipt_sha256}",))
+            historical = source().query(QueryRequest(
+                QueryFamily.SALIENCE, mode=QueryMode.HISTORICAL,
+                run_id=run.run_id, generation=run.generation))
+            self.assertFalse(any(isinstance(r, SalienceEventV2) for r in historical.records))

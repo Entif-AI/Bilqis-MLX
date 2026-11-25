@@ -43,9 +43,15 @@ def issued_school_observation(selection):
             "content_sha256": offer.source_authority.content_sha256,
         }
     from ..session_parts.evidence_mode import strict_mode_enabled
-    if strict_mode_enabled():
-        ranking = selection.ranking_evidence or {}
-        result["salience_events"] = ranking.get("salience_events", ())
     if len(json.dumps(result, ensure_ascii=True).encode()) > MAX_SCHOOL_OBSERVATION_BYTES:
         return None
+    if strict_mode_enabled():
+        ranking = selection.ranking_evidence or {}
+        events = ranking.get("salience_events", ())
+        for start in range(max(0, len(events) - 8), len(events)):
+            result["salience_events"] = events[start:]
+            if len(json.dumps(result, ensure_ascii=True).encode()) <= MAX_SCHOOL_OBSERVATION_BYTES:
+                break
+        else:
+            result.pop("salience_events", None)
     return result

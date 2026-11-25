@@ -34,6 +34,7 @@ export function createSalienceController(api, { fixtureSupport = null } = {}) {
       relations: [],
       details: {
         [t("salience.inspector.capability")]: event.capabilityId,
+        [t("salience.observations.event")]: event.eventKind ?? t("salience.value.unavailable"),
         [t("salience.inspector.action")]: event.actionKind,
         [t("salience.inspector.time")]: event.observedAt ?? t("salience.value.unavailable"),
         [t("salience.production.materialized")]: event.materializedAt ?? t("salience.value.unavailable"),

@@ -284,14 +284,20 @@ def _select_strict_priority_visit(
             plasticity_escape, priority_features, cadence_authorization,
             planning_offer, materialization_wall,
             planning_offer_fanout_wall_seconds, salience_history=history)
+    from bilqis_mlx.runtime.bamf_operator.evidence_parts.salience import (
+        issued_salience_observations,
+    )
+    ranking_evidence = {'salience_events': issued_salience_observations(history)}
     if action_required_option_id is not None:
         return _issue_result(
             'ACTION_REQUIRED', action_required_option_id, None, None, None,
             cadence_metadata, None, sorted(holds), run_dir, lawful_frontier,
+            ranking_evidence=ranking_evidence,
             cadence_authorization=cadence_authorization)
     return _issue_result(
         'NO_ADMISSIBLE_TEACHING', None, None, None, None, cadence_metadata,
         None, sorted(holds), run_dir, lawful_frontier,
+        ranking_evidence=ranking_evidence,
         cadence_authorization=cadence_authorization)
 
 

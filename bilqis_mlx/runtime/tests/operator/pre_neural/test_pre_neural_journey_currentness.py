@@ -75,6 +75,19 @@ class PreNeuralJourneyCurrentnessTests(PreNeuralJourneySupport, unittest.TestCas
         self.assertEqual(len(context.release.execution_plan.capabilities), 21)
         self.assertEqual(selected.status, "TEACHER_SELECTED")
         self.assertEqual(calls, 1)
+        from bilqis_mlx.runtime.bamf_operator.evidence_parts.school import (
+            issued_school_observation,
+        )
+        issued = issued_school_observation(selected)
+        self.assertEqual(issued["release_sha256"], context.release.release_sha256)
+        self.assertEqual(issued["frontier_sha256"], selected._lawful_frontier.frontier_sha256)
+        self.assertEqual(set(issued["ready"]),
+                         set(selected._lawful_frontier.ready_capability_ids))
+        self.assertEqual(issued["source_offer"], {
+            "capability_id": selected.offer.capability_id,
+            "family_id": selected.offer.source_family_id,
+            "content_sha256": selected.offer.source_authority.content_sha256,
+        })
 
     def test_21_capability_16_step_currentness_cost_is_bounded(self):
         from bilqis_mlx.runtime.bamf_bundle.currentness_transaction import (

@@ -11,7 +11,29 @@ from bilqis_mlx.mission_control.contracts.snapshots import (
     CapabilitySnapshot, CurriculumFrontier, SchoolSnapshot,
 )
 
-from ..native_contracts import data_value, missing_value, record_meta, run_ref
+from ..native_contracts import (
+    AuthenticatedGeneration, data_value, missing_value, record_meta, run_ref,
+)
+
+
+def admitted_release_identity(run_dir, history):
+    """Cheap identity of the exact admitted metadata artifact, including absence."""
+    if not history or not isinstance(history[-1], AuthenticatedGeneration):
+        return ()
+    digest = run_ref(history[-1]).factory_release_sha256
+    directory = Path(run_dir) / "factory-releases"
+    result = []
+    for path in (directory, directory / f"{digest}.json"):
+        try:
+            stat = path.lstat()
+        except FileNotFoundError:
+            result.append(None)
+        except OSError as error:
+            result.append(("unreadable", error.errno))
+        else:
+            result.append((stat.st_dev, stat.st_ino, stat.st_mode,
+                           stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns))
+    return tuple(result)
 
 
 def read_admitted_release(run_dir, generation):

@@ -9,6 +9,7 @@ from bilqis_mlx.mission_control.events import (
     CandidateDecision, CandidateOutcome, CorrectionEvent, CorrectionFrontierSnapshot, FrameCompileReceipt,
     LearningEpisode, SalienceEvent,
 )
+from bilqis_mlx.mission_control.contracts.events import SalienceEventV2
 from bilqis_mlx.mission_control.model import (
     AuthorityClass, CoverageState, DataValue, RecordMeta, RunRef,
     ValueOrigin, ValueState,
@@ -124,6 +125,10 @@ BASE_SAMPLES = (
                   value(3, "ordinal", ValueOrigin.SOURCE_AUTHORITATIVE),
                   value(2, "ordinal", ValueOrigin.DERIVED),
                   value(4, "ordinal", ValueOrigin.INFERRED), "TEACHING"),
+    SalienceEventV2(meta("salience-c06"), "salience-2", "B.EXAMPLE",
+                    value("LOW", "ordinal", ValueOrigin.DERIVED),
+                    value("HIGH", "ordinal", ValueOrigin.DERIVED),
+                    DataValue(ValueState.UNKNOWN, None, None), "UNKNOWN", "FOLLOWUP"),
     CorrectionEvent(meta("correction"), "correction-1", 4, "source:a", D1, D2,
                     "REQUALIFICATION_REQUIRED"),
     GenerationManifest(meta("generation"), D1, D2, D3, D4, "ACCEPTED"),

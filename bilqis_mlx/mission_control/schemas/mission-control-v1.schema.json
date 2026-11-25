@@ -11267,6 +11267,582 @@
       "type": "object",
       "x-bilqis-runtime-validator": "bilqis_mlx.mission_control.codec.decode_record"
     },
+    "bilqis.bamf.mission-control.salience-event/v2": {
+      "$id": "bilqis.bamf.mission-control.salience-event/v2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "action_kind": {
+          "minLength": 1,
+          "not": {
+            "pattern": "\\n"
+          },
+          "pattern": "\\S",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        },
+        "capability_id": {
+          "minLength": 1,
+          "not": {
+            "pattern": "\\n"
+          },
+          "pattern": "\\S",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        },
+        "event_kind": {
+          "minLength": 1,
+          "not": {
+            "pattern": "\\n"
+          },
+          "pattern": "\\S",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        },
+        "exigency": {
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "else": {
+                "properties": {
+                  "origin": {
+                    "type": "null"
+                  },
+                  "value": {
+                    "type": "null"
+                  }
+                }
+              },
+              "if": {
+                "properties": {
+                  "state": {
+                    "const": "PRESENT"
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "origin": {
+                    "not": {
+                      "type": "null"
+                    }
+                  },
+                  "value": {
+                    "not": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "impact": {
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "else": {
+                "properties": {
+                  "origin": {
+                    "type": "null"
+                  },
+                  "value": {
+                    "type": "null"
+                  }
+                }
+              },
+              "if": {
+                "properties": {
+                  "state": {
+                    "const": "PRESENT"
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "origin": {
+                    "not": {
+                      "type": "null"
+                    }
+                  },
+                  "value": {
+                    "not": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "as_of": {
+              "anyOf": [
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "enum": [
+                "SOURCE_AUTHORITATIVE",
+                "MEASURED",
+                "DERIVED",
+                "INFERRED"
+              ],
+              "type": "string"
+            },
+            "coverage": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            "evidence_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            },
+            "materialized_at": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            },
+            "record_id": {
+              "minLength": 1,
+              "not": {
+                "pattern": "\\n"
+              },
+              "pattern": "\\S",
+              "type": "string",
+              "x-bilqis-unicode-domain": "scalar-values"
+            },
+            "run": {
+              "additionalProperties": false,
+              "properties": {
+                "candidate_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "factory_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "generation": {
+                  "maximum": 9007199254740991,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generation_manifest_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_id": {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "run_identity_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "semantic_release_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                "topology_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                }
+              },
+              "required": [
+                "run_id",
+                "run_identity_sha256",
+                "generation",
+                "generation_manifest_sha256",
+                "candidate_identity_sha256",
+                "factory_release_sha256",
+                "semantic_release_sha256",
+                "topology_sha256"
+              ],
+              "type": "object"
+            },
+            "source_refs": {
+              "items": {
+                "minLength": 1,
+                "not": {
+                  "pattern": "\\n"
+                },
+                "pattern": "\\S",
+                "type": "string",
+                "x-bilqis-unicode-domain": "scalar-values"
+              },
+              "type": "array",
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "record_id",
+            "run",
+            "materialized_at",
+            "observed_at",
+            "as_of",
+            "coverage",
+            "authority",
+            "source_refs",
+            "evidence_refs",
+            "receipt_refs"
+          ],
+          "type": "object"
+        },
+        "novelty": {
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "else": {
+                "properties": {
+                  "origin": {
+                    "type": "null"
+                  },
+                  "value": {
+                    "type": "null"
+                  }
+                }
+              },
+              "if": {
+                "properties": {
+                  "state": {
+                    "const": "PRESENT"
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "origin": {
+                    "not": {
+                      "type": "null"
+                    }
+                  },
+                  "value": {
+                    "not": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "origin": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "SOURCE_AUTHORITATIVE",
+                    "MEASURED",
+                    "DERIVED",
+                    "INFERRED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "enum": [
+                "PRESENT",
+                "MISSING",
+                "UNKNOWN",
+                "DENIED",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "anyOf": [
+                {
+                  "minLength": 1,
+                  "not": {
+                    "pattern": "\\n"
+                  },
+                  "pattern": "\\S",
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "x-bilqis-unicode-domain": "scalar-values"
+                },
+                {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "origin",
+            "value",
+            "units"
+          ],
+          "type": "object"
+        },
+        "salience_id": {
+          "minLength": 1,
+          "not": {
+            "pattern": "\\n"
+          },
+          "pattern": "\\S",
+          "type": "string",
+          "x-bilqis-unicode-domain": "scalar-values"
+        },
+        "schema_version": {
+          "const": "bilqis.bamf.mission-control.salience-event/v2",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "meta",
+        "salience_id",
+        "capability_id",
+        "impact",
+        "exigency",
+        "novelty",
+        "action_kind",
+        "event_kind"
+      ],
+      "title": "SalienceEventV2",
+      "type": "object",
+      "x-bilqis-runtime-validator": "bilqis_mlx.mission_control.codec.decode_record"
+    },
     "bilqis.bamf.mission-control.school-snapshot/v1": {
       "$id": "bilqis.bamf.mission-control.school-snapshot/v1",
       "$schema": "https://json-schema.org/draft/2020-12/schema",

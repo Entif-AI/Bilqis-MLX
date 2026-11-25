@@ -6,7 +6,7 @@ from .contracts.envelopes import (
 )
 from .contracts.events import (
     CandidateDecision, CandidateOutcome, CorrectionEvent, CorrectionFrontierSnapshot, FrameCompileReceipt,
-    LearningEpisode, LearningHistorySummary, SalienceEvent,
+    LearningEpisode, LearningHistorySummary, SalienceEvent, SalienceEventV2,
 )
 from .contracts.factory import (
     FactoryAdmissionAuthority, FactoryBlocker, FactoryCockpitSnapshot,
@@ -70,7 +70,7 @@ __all__ = (
     "NeuralRuntimeSample", "OperatorActionReceipt", "OperatorActionReceiptV2",
     "OperatorActionRequest", "OperatorActionRequestV2",
     "OperatorView", "PartialEnvelope", "RECORD_BY_SCHEMA", "RecordMeta",
-    "ResourceSample", "RunContext", "RunRef", "SalienceEvent",
+    "ResourceSample", "RunContext", "RunRef", "SalienceEvent", "SalienceEventV2",
     "DEFAULT_PAGE_SIZE", "MAX_PAGE_SIZE", "QUERY_PAGE_SCHEMA",
     "QUERY_REQUEST_SCHEMA", "QueryFamily", "QueryLink", "QueryMode",
     "QueryPage", "QueryRequest", "QueryState",

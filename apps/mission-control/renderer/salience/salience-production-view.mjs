@@ -58,7 +58,7 @@ function observationRows(events, selectedId, temporal) {
   return events.map((event) => {
     const id = event.recordId.replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
     return `<tr class="salience-observation-row" data-selected="${event.recordId === selectedId}" ${testIdAttribute("salience", "production", "observation", id)}>
-      <th scope="row" data-sticky="identity"><span class="salience-observation-kind">${esc(event.actionKind)}</span><code>${esc(event.salienceId)}</code></th>
+      <th scope="row" data-sticky="identity"><span class="salience-observation-kind">${esc(event.eventKind ?? t("salience.value.unavailable"))}</span><code>${esc(event.salienceId)}</code></th>
       <td class="machine-value">${esc(event.capabilityId)}</td>
       <td>${axisReading(event.axes.impact)}</td><td>${axisReading(event.axes.exigency)}</td><td>${axisReading(event.axes.novelty)}</td>
       <td>${esc(event.actionKind)}</td>

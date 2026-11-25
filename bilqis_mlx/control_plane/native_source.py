@@ -21,7 +21,9 @@ from .observed import observed_records, publish_observed_events
 from .observed.school import ObservedSchoolProjection
 from .observed.salience import unavailable_salience
 from .projection.memory import accepted_memory_records
-from .projection.school import admitted_school_records, read_admitted_release
+from .projection.school import (
+    admitted_release_identity, admitted_school_records, read_admitted_release,
+)
 from .projection.correction_frontier import accepted_correction_frontier
 from .projection.learning_history import LearningHistoryProjection, learning_history_summary
 from .projection.capability_dossier import (
@@ -103,7 +105,8 @@ class _AcceptedBaseCache:
         self.semantic_projection = AcceptedSemanticProjection()
 
     def __call__(self, run_dir, history):
-        outbox_token = _source_token(run_dir)[3:]
+        outbox_token = (_source_token(run_dir)[3:],
+                        admitted_release_identity(run_dir, history))
         if self.history is not history or self.outbox_token != outbox_token:
             material = _project_accepted_base(
                 run_dir, history, semantic_projection=self.semantic_projection)

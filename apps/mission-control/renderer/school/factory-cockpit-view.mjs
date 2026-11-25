@@ -49,11 +49,11 @@ function lineage(record) {
 
 function lineagePageMarkup(page, record, canGoBack) {
   return `<p role="status">${esc(t("school.factory.lineage.page", { state: page.state, count: page.total ?? "?", coverage: page.coverage ?? "UNKNOWN", release: short(record.factory_release_sha256) }))}</p>
-    ${page.rows.map((item) => `<div class="factory-lineage">g${esc(item.meta.run.generation)} · ${esc(item.meta.run.run_id)}
+    ${page.rows.map((item) => `<div class="factory-lineage" ${testIdAttribute("factory", "lineage", "generation", item.meta.run.generation)}>g${esc(item.meta.run.generation)} · ${esc(item.meta.run.run_id)}
       <br><small>${esc(item.meta.run.generation_manifest_sha256)} · ${esc(item.checkpoint_sha256)}</small>
       <br><small>${esc(item.meta.run.topology_sha256)} · ${list(item.meta.receipt_refs, item)}</small></div>`).join("")}
-    ${canGoBack ? `<button type="button" data-factory-lineage-previous>${esc(t("school.factory.lineage.previous"))}</button>` : ""}
-    ${page.nextCursor ? `<button type="button" data-factory-lineage-next>${esc(t("school.factory.lineage.next"))}</button>` : ""}`;
+    ${canGoBack ? `<button type="button" data-factory-lineage-previous ${testIdAttribute("factory", "lineage", "previous")}>${esc(t("school.factory.lineage.previous"))}</button>` : ""}
+    ${page.nextCursor ? `<button type="button" data-factory-lineage-next ${testIdAttribute("factory", "lineage", "next")}>${esc(t("school.factory.lineage.next"))}</button>` : ""}`;
 }
 
 export function renderFactoryCockpitView(container, { rows = [], state = "EMPTY", coverage = "UNKNOWN", onInspect = null, loadLineagePage = null } = {}) {
@@ -65,7 +65,7 @@ export function renderFactoryCockpitView(container, { rows = [], state = "EMPTY"
       <td>${frontier(record)}</td>
       <td>${blockers(record)}</td>
       <td>${record.meta?.coverage === "PARTIAL" ? `<small>${esc(t("school.factory.lineage.summary"))}</small>` : ""}${lineage(record)}
-      ${loadLineagePage && record.subject_kind === "FACTORY_RELEASE" && record.factory_release_sha256 && record.lineage?.length ? `<button type="button" data-factory-lineage-open="${esc(record.subject_sha256)}">${esc(t("school.factory.lineage.open"))}</button>` : ""}</td>
+      ${loadLineagePage && record.subject_kind === "FACTORY_RELEASE" && record.factory_release_sha256 && record.lineage?.length ? `<button type="button" data-factory-lineage-open="${esc(record.subject_sha256)}" ${testIdAttribute("factory", "lineage", "open", record.subject_sha256)}>${esc(t("school.factory.lineage.open"))}</button>` : ""}</td>
       <td>${topology(record.lineage)}</td>
       <td>${record.receipt_refs?.length ?? 0}<br><small>${esc(t("school.factory.receipt.qualification"))} ${esc(short(record.qualification_receipt_sha256))}</small><br><small>${esc(t("school.factory.receipt.admission"))} ${esc(short(record.admission_receipt_sha256))}</small></td>
     </tr>`).join("") : `<tr><td colspan="8">${esc(t("school.factory.empty", { state }))}</td></tr>`;
@@ -77,7 +77,7 @@ export function renderFactoryCockpitView(container, { rows = [], state = "EMPTY"
     <div class="matrix-scroll"><table class="school-matrix factory-table"><caption>${esc(t("school.factory.caption"))}</caption><thead><tr>
       <th>${esc(t("school.factory.column.subject"))}</th><th>${esc(t("school.factory.column.status"))}</th><th>${esc(t("school.factory.column.currency"))}</th><th>${esc(t("school.factory.column.frontier"))}</th><th>${esc(t("school.factory.column.blockers"))}</th><th>${esc(t("school.factory.column.lineage"))}</th><th>${esc(t("school.factory.column.topology"))}</th><th>${esc(t("school.factory.column.receipts"))}</th>
     </tr></thead><tbody>${body}</tbody></table></div>
-    <div data-factory-lineage-page></div>
+    <div data-factory-lineage-page ${testIdAttribute("factory", "lineage", "page")}></div>
   </section>`;
 
   let requestEpoch = 0;

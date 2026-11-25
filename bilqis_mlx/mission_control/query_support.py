@@ -17,7 +17,7 @@ from .contracts.envelopes import (
 )
 from .contracts.events import (
     CandidateDecision, CorrectionEvent, FrameCompileReceipt, LearningEpisode,
-    SalienceEvent,
+    SalienceEvent, SalienceEventV2,
 )
 from .contracts.model import CoverageState, WireRecord, is_wire_integer, require
 from .contracts.registry import ALL_RECORD_TYPES
@@ -61,7 +61,7 @@ FAMILY_TYPES = MappingProxyType({
     QueryFamily.NEURAL: (NeuralRuntimeSample,),
     QueryFamily.MEMORY: (MemorySnapshot, MemorySnapshotV2),
     QueryFamily.TEACHER: (TeacherSnapshot,),
-    QueryFamily.SALIENCE: (SalienceEvent,),
+    QueryFamily.SALIENCE: (SalienceEvent, SalienceEventV2),
     QueryFamily.CORRECTION: (CorrectionEvent,),
     QueryFamily.RESOURCE: (ResourceSample,),
     QueryFamily.FACTORY: (FactoryCockpitSnapshot,),

@@ -7,7 +7,7 @@ from .envelopes import (
 )
 from .events import (
     CandidateDecision, CorrectionEvent, CorrectionFrontierSnapshot, FrameCompileReceipt, LearningEpisode,
-    SalienceEvent, LearningHistorySummary,
+    SalienceEvent, SalienceEventV2, LearningHistorySummary,
 )
 from .observability import (
     GenerationManifest, GenerationManifestV2, MemorySnapshot, MemorySnapshotV2, NeuralRuntimeSample, ResourceSample,
@@ -69,6 +69,7 @@ ALL_RECORD_TYPES = (
     MemorySnapshotV2,
     TeacherSnapshot,
     SalienceEvent,
+    SalienceEventV2,
     CorrectionEvent,
     CorrectionFrontierSnapshot,
     GenerationManifest,

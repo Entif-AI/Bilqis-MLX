@@ -128,6 +128,19 @@ class SalienceEvent(WireRecord):
 
 
 @dataclass(frozen=True)
+class SalienceEventV2(SalienceEvent):
+    """Signed C06 lifecycle classification is not a teaching-action decision."""
+    SCHEMA = "bilqis.bamf.mission-control.salience-event/v2"
+    event_kind: str
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        require(self.event_kind in (
+            "OBSERVATION", "ACCEPTED_LESSON", "CORRECTION_APPLIED", "FOLLOWUP",
+        ), "SALIENCE_EVENT_KIND")
+
+
+@dataclass(frozen=True)
 class CorrectionEvent(WireRecord):
     SCHEMA = "bilqis.bamf.mission-control.correction-event/v1"
     meta: RecordMeta

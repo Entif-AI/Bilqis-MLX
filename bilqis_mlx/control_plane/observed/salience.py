@@ -1,7 +1,7 @@
 """Project genuine strict C06 events; absent evidence is unavailable, not zero."""
 from dataclasses import replace
 
-from bilqis_mlx.mission_control.contracts.events import SalienceEvent
+from bilqis_mlx.mission_control.contracts.events import SalienceEventV2
 from bilqis_mlx.mission_control.contracts.envelopes import (
     UnavailableEnvelope, UnavailableReason,
 )
@@ -21,7 +21,7 @@ def unavailable_salience(generation):
 
 
 def _axis(value):
-    if value not in {"LOW", "MODERATE", "HIGH", "CRITICAL"}:
+    if not isinstance(value, str) or value not in {"LOW", "MODERATE", "HIGH", "CRITICAL"}:
         return DataValue(ValueState.UNKNOWN, None, None)
     return DataValue(ValueState.PRESENT, ValueOrigin.DERIVED, value, "ordinal")
 
@@ -34,6 +34,7 @@ def observed_salience_records(observation, events):
         if (not isinstance(event, dict)
                 or not all(is_name(event.get(key)) and len(event[key]) <= 256
                            for key in ("event_id", "capability_id", "kind"))
+                or event["kind"] not in {"OBSERVATION", "ACCEPTED_LESSON", "CORRECTION_APPLIED", "FOLLOWUP"}
                 or not all(is_sha256(event.get(key))
                            for key in ("event_sha256", "receipt_sha256"))):
             continue
@@ -45,10 +46,13 @@ def observed_salience_records(observation, events):
             # The C06 issued-at counter is logical, not a Unix timestamp.
             observed_at=None,
             evidence_refs=(f"c06-salience-event:{event['event_sha256']}",),
-            receipt_refs=(f"bamf-rejection:{event['receipt_sha256']}",),
+            receipt_refs=(f"c06-source-receipt:{event['receipt_sha256']}",),
         )
-        result[event_id] = SalienceEvent(
+        record = SalienceEventV2(
             meta, event_id, event["capability_id"],
             *(_axis(event.get(axis)) for axis in ("impact", "exigency", "novelty")),
-            event["kind"])
+            "UNKNOWN", event["kind"])
+        if event_id in result and result[event_id] != record:
+            return ()
+        result[event_id] = record
     return tuple(result.values())
