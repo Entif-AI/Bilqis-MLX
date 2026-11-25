@@ -11,7 +11,7 @@ from bilqis_mlx.mission_control.contracts.dossier import (
 from bilqis_mlx.mission_control.contracts.snapshots import CurriculumFrontier, SchoolSnapshot
 from .salience import observed_salience_records
 from bilqis_mlx.runtime.bamf_operator.evidence_parts.school import (
-    MAX_SCHOOL_OBSERVATION_BYTES, SCHEMA,
+    MAX_SCHOOL_OBSERVATION_BYTES, MAX_SOURCE_FAMILY_ID_LENGTH, SCHEMA,
 )
 
 
@@ -68,7 +68,8 @@ class ObservedSchoolProjection:
         family = offer.get("family_id")
         content = offer.get("content_sha256")
         if (not isinstance(capability, str) or not isinstance(family, str)
-                or not 0 < len(family) <= 512 or not is_sha256(content)):
+                or not 0 < len(family) <= MAX_SOURCE_FAMILY_ID_LENGTH
+                or not is_sha256(content)):
             return None
         dossier = self.dossiers.get(capability)
         if dossier is None or dossier.meta.run != observation.meta.run:

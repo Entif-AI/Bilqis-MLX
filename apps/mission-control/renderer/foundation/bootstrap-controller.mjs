@@ -64,7 +64,6 @@ export function createBootstrapController({
 }) {
   const fixtureMode = launchMode === "fixtures";
   let reconnectToken = null;
-  let liveContext = null;
 
   function clearReconnect() {
     if (reconnectToken === null) return;
@@ -81,7 +80,6 @@ export function createBootstrapController({
   }
 
   function setVerified(context) {
-    liveContext = context;
     setVerifiedLiveContext(context);
   }
 
@@ -96,16 +94,23 @@ export function createBootstrapController({
       status.runId === context?.runId && status.generation === context?.generation;
   }
 
-  function armLiveCheck() {
+  function sameServicePosture(previous, next) {
+    return next?.serviceLive === true && [
+      "state", "serviceReady", "learnerReady", "learnerActive",
+      "learnerState", "runId", "generation", "failureCode",
+    ].every(key => previous[key] === next[key]);
+  }
+
+  function armServiceCheck(connection) {
     if (fixtureMode || typeof api.status !== "function" || reconnectToken !== null) return;
     reconnectToken = scheduleReconnect(async () => {
       reconnectToken = null;
       let status;
       try { status = await api.status(); } catch { status = null; }
-      if (!matchesStatus(status, liveContext)) {
+      if (!sameServicePosture(connection, status)) {
         return establishSnapshot({ preserveRoute: true, reuseConnection: status?.serviceLive === true });
       }
-      armLiveCheck();
+      armServiceCheck(status);
     }, Math.max(2000, reconnectDelayMs));
   }
 
@@ -250,8 +255,8 @@ export function createBootstrapController({
     });
     setBootstrap(Object.freeze({ phase: "ready", connection, error: null }));
     render();
-    if (snapshotSource !== "service" || connection?.serviceLive !== true || nextDefense.id !== "live") armReconnect();
-    else armLiveCheck();
+    if (snapshotSource !== "service" || connection?.serviceLive !== true) armReconnect();
+    else armServiceCheck(connection);
     announce(t(
       nextDefense.historical
         ? "foundation.bootstrap.announce.inspection"

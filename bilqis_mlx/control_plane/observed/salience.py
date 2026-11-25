@@ -9,6 +9,9 @@ from bilqis_mlx.mission_control.contracts.model import (
     CoverageState, DataValue, ValueOrigin, ValueState, is_name, is_sha256,
 )
 from ..native_contracts import record_meta, run_ref
+from bilqis_mlx.runtime.bamf_operator.evidence_parts.salience import (
+    MAX_OBSERVED_SALIENCE_EVENTS, MAX_OBSERVED_SALIENCE_ID_LENGTH,
+)
 
 
 def unavailable_salience(generation):
@@ -27,12 +30,13 @@ def _axis(value):
 
 
 def observed_salience_records(observation, events):
-    if not isinstance(events, list) or len(events) > 8:
+    if not isinstance(events, list) or len(events) > MAX_OBSERVED_SALIENCE_EVENTS:
         return ()
     result = {}
     for event in events:
         if (not isinstance(event, dict)
-                or not all(is_name(event.get(key)) and len(event[key]) <= 256
+                or not all(is_name(event.get(key))
+                           and len(event[key]) <= MAX_OBSERVED_SALIENCE_ID_LENGTH
                            for key in ("event_id", "capability_id", "kind"))
                 or event["kind"] not in {"OBSERVATION", "ACCEPTED_LESSON", "CORRECTION_APPLIED", "FOLLOWUP"}
                 or not all(is_sha256(event.get(key))

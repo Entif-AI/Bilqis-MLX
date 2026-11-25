@@ -11,6 +11,9 @@ from ..native_contracts import data_value, missing_value, record_meta, run_ref
 
 
 SCORE_FIELD_COUNT = 4
+MAX_DOSSIER_REFERENCE_LENGTH = 512
+MAX_RELEASE_DOSSIER_ENTRIES = 125
+MAX_RELEASE_DOSSIER_BYTES = 32 * 1024
 
 
 def _row(stats, capability):
@@ -92,15 +95,15 @@ def _release_entries(execution, run, release_ref):
             "Admitted prerequisite", run.generation, 0, (),
             refs, "capability", dependency)
           for dependency in execution.prerequisites
-          if len(f"prerequisite:{cap}:{dependency}") <= 512
-          and len(dependency) <= 512),
+          if len(f"prerequisite:{cap}:{dependency}") <= MAX_DOSSIER_REFERENCE_LENGTH
+          and len(dependency) <= MAX_DOSSIER_REFERENCE_LENGTH),
     )
     # Reserve room for accepted-history and strategy entries; truncation is
     # observable through prerequisite_count and the partial dossier coverage.
     bounded, size = [], 0
     for entry in entries:
         cost = len(json.dumps(asdict(entry), ensure_ascii=True).encode()) + 1
-        if len(bounded) >= 125 or size + cost > 32 * 1024:
+        if len(bounded) >= MAX_RELEASE_DOSSIER_ENTRIES or size + cost > MAX_RELEASE_DOSSIER_BYTES:
             break
         bounded.append(entry)
         size += cost

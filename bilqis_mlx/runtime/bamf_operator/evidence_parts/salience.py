@@ -2,6 +2,7 @@
 from bilqis_mlx.learning.salience_history import SalienceHistory
 
 MAX_OBSERVED_SALIENCE_EVENTS = 8
+MAX_OBSERVED_SALIENCE_ID_LENGTH = 256
 
 
 def issued_salience_observations(history):
