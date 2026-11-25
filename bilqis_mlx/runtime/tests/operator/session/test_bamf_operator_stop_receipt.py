@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from bilqis_mlx.runtime.bamf_operator.session_parts.session_execution import operate
+from bilqis_mlx.runtime.bamf_operator.source_prefetch import SourcePrefetchMetrics
 from bilqis_mlx.runtime.bamf_operator.session_parts.stop_receipt import (
     read_latest_run_stop_receipt, record_normal_stop_receipt,
 )
@@ -94,15 +95,14 @@ class NativeRunStopReceiptTests(unittest.TestCase):
             "estimated_write_bytes": 0, "sufficient": False,
         }
         recorded = Mock(return_value="c" * 64)
+        persisted = Mock(side_effect=AssertionError("optional cache must not spend reserve"))
         with TemporaryDirectory() as temporary:
             result = operate(
                 Path(temporary), minutes=1, max_visits=0, steps_per_visit=4,
                 reserve_gib=0.25, source_prefetch_workers=0, progress=None,
                 max_horizon=16, worker_counts=(0, 1, 2),
                 invalid=lambda reason: (_ for _ in ()).throw(ValueError(reason)),
-                metrics_type=lambda: SimpleNamespace(
-                    wait_seconds=0.0, overlap_seconds=0.0,
-                    prepared_steps=0, serial_steps=0),
+                metrics_type=SourcePrefetchMetrics,
                 source_pool_factory=lambda _workers: nullcontext(None),
                 null_context=nullcontext, operator_lock=lambda _run: nullcontext(),
                 visit_fn=Mock(side_effect=AssertionError("visit must not start")),
@@ -113,7 +113,8 @@ class NativeRunStopReceiptTests(unittest.TestCase):
                     "bilqis_mlx.runtime.bamf_operator.session_parts.session_support",
                     fromlist=["BamfOperatorResult"]).BamfOperatorResult,
                 resource_snapshot=lambda _run, _reserve: witness,
-                record_stop=recorded, elapsed_clock=Mock(side_effect=(5.0, 5.5)))
+                record_stop=recorded, before_stop=persisted,
+                elapsed_clock=Mock(side_effect=(5.0, 5.5)))
 
         self.assertEqual(result.status, "DISK_RESERVE_REACHED")
         self.assertEqual((result.visits, result.accepted, result.rejected), (0, 0, 0))
@@ -126,6 +127,10 @@ class NativeRunStopReceiptTests(unittest.TestCase):
         current = SimpleNamespace(
             generation=2, retained_state=SimpleNamespace(optimizer_step=5))
         recorded = Mock(return_value="d" * 64)
+        stopped = []
+        def record(*args, **kwargs):
+            self.assertEqual(stopped, ["catalog"])
+            return recorded(*args, **kwargs)
         observer = lambda *_args: nullcontext(SimpleNamespace(
             finish=lambda _outcome: None))
         with TemporaryDirectory() as temporary:
@@ -134,9 +139,7 @@ class NativeRunStopReceiptTests(unittest.TestCase):
                 reserve_gib=0.0, source_prefetch_workers=0, progress=None,
                 max_horizon=16, worker_counts=(0, 1, 2),
                 invalid=lambda reason: (_ for _ in ()).throw(ValueError(reason)),
-                metrics_type=lambda: SimpleNamespace(
-                    wait_seconds=0.0, overlap_seconds=0.0,
-                    prepared_steps=0, serial_steps=0),
+                metrics_type=SourcePrefetchMetrics,
                 source_pool_factory=lambda _workers: nullcontext(None),
                 null_context=nullcontext, operator_lock=lambda _run: nullcontext(),
                 visit_fn=Mock(return_value="ACCEPTED"), observer_type=observer,
@@ -149,7 +152,7 @@ class NativeRunStopReceiptTests(unittest.TestCase):
                 resource_snapshot=lambda _run, _reserve: {
                     "free_bytes": 10, "reserve_bytes": 0,
                     "estimated_write_bytes": 0, "sufficient": True,
-                }, record_stop=recorded,
+                }, record_stop=record, before_stop=lambda: stopped.append("catalog"),
                 elapsed_clock=Mock(side_effect=(5.0, 5.5)))
 
         self.assertEqual(result.status, "VISIT_LIMIT")
@@ -168,9 +171,7 @@ class NativeRunStopReceiptTests(unittest.TestCase):
                 reserve_gib=0.0, source_prefetch_workers=0, progress=None,
                 max_horizon=16, worker_counts=(0, 1, 2),
                 invalid=lambda reason: (_ for _ in ()).throw(ValueError(reason)),
-                metrics_type=lambda: SimpleNamespace(
-                    wait_seconds=0.0, overlap_seconds=0.0,
-                    prepared_steps=0, serial_steps=0),
+                metrics_type=SourcePrefetchMetrics,
                 source_pool_factory=lambda _workers: nullcontext(None),
                 null_context=nullcontext, operator_lock=lambda _run: nullcontext(),
                 visit_fn=Mock(side_effect=RuntimeError("candidate exploded")),

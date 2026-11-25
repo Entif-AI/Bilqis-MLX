@@ -160,6 +160,9 @@ def _validated_rejection(event, parent, cache):
     )
 
 def _current_projection(run_dir, parent, cache):
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_evidence_enabled,
+    )
     path_key = str(Path(run_dir).absolute())
     identity = (
         path_key,
@@ -175,6 +178,7 @@ def _current_projection(run_dir, parent, cache):
         data_plane(),
         lambda event: _validated_rejection(event, parent, cache),
         _invalid,
+        rejection_generation=None if strict_evidence_enabled() else cache.generation,
     )
     return projection
 

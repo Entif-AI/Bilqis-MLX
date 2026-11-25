@@ -115,12 +115,17 @@ class OperatorBinding:
             _invalid("BAMF_OPERATOR_BINDING_INVALID")
 
 
-def _implementation_digest(operator_id: str) -> str:
+def _implementation_source() -> bytes:
     module_files = sorted(Path(__file__).resolve().parent.glob("*.py"))
-    source = b"".join(
+    return b"".join(
         path.name.encode("utf-8") + b"\0" + path.read_bytes()
         for path in module_files
     )
+
+
+def _implementation_digest(operator_id: str, source: bytes | None = None) -> str:
+    if source is None:
+        source = _implementation_source()
     return hashlib.sha256(operator_id.encode("utf-8") + b"\0" + source).hexdigest()
 
 
@@ -188,12 +193,15 @@ _DECLARATIONS = (
 
 
 def default_registry(semantic_release: str) -> OperatorRegistry:
+    # All released operators bind the same package bytes. Read them once,
+    # while retaining each operator's exact independently prefixed digest.
+    source = _implementation_source()
     return OperatorRegistry(
         semantic_release,
         tuple(
             CognitiveOperatorSpec(
                 operator_id, Signature(inputs, output), applicability, "v1",
-                _implementation_digest(operator_id), semantic_release,
+                _implementation_digest(operator_id, source), semantic_release,
                 *_source_contract(operator_id, Signature(inputs, output), "v1"),
             )
             for operator_id, inputs, output, applicability in _DECLARATIONS

@@ -8,6 +8,8 @@ from threading import RLock
 from bilqis_mlx.runtime.state import _fingerprint
 from .replay_fold import PORTABLE_TEACHER_AUTHORITY
 
+_MAX_REPLAY_SNAPSHOTS = 4
+
 
 @dataclass
 class _Snapshot:
@@ -16,7 +18,7 @@ class _Snapshot:
     lock: object = field(default_factory=RLock, repr=False)
 
     def replay(self, base, rows, fold):
-        receipts = tuple(row[3] for row in rows)
+        receipts = tuple(receipt for _, _, _, receipt, _ in rows)
         with self.lock:
             prefix = len(self.receipts)
             if self.teacher is not None and receipts[:prefix] == self.receipts:
@@ -28,7 +30,7 @@ class _Snapshot:
             return result
 
 
-@lru_cache(maxsize=4)
+@lru_cache(maxsize=_MAX_REPLAY_SNAPSHOTS)
 def _snapshot(_binding):
     return _Snapshot()
 
@@ -41,8 +43,9 @@ def replay_ordinary(run_dir, cache, teacher, rows, fold):
     The caller never receives the cached mutable teacher object.
     """
     if not rows or any(
-            row[4].get(PORTABLE_TEACHER_AUTHORITY) is not True
-            or row[4].get("candidate_evidence") is not None for row in rows):
+            evidence.get(PORTABLE_TEACHER_AUTHORITY) is not True
+            or evidence.get("candidate_evidence") is not None
+            for _, _, _, _, evidence in rows):
         return fold(teacher, rows)
     binding = (
         str(Path(run_dir).absolute()), cache.generation,

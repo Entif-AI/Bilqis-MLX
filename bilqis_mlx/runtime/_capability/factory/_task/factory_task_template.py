@@ -133,6 +133,8 @@ def _factory_task_template_from_validated(
         graph=source_context.graph,
         release=source_context.release,
         capability=execution,
+        operator_registry=source_context.operator_registry_for(
+            compiled_batch.compiled.features.semantic_release),
     )
     if (not isinstance(lowered, tuple) or len(lowered) != _LOWERING_RESULT_WIDTH
             or type(lowered[0]) is not TaskGoal

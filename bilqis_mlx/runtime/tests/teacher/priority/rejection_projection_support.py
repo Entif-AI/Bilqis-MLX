@@ -27,8 +27,8 @@ class CountingPlane:
     def sync_event_ledger(self, run_dir):
         return self.events.sync_event_ledger(run_dir)
 
-    def indexed_event_tail(self, run_dir, after_byte=0):
-        result = self.events.indexed_event_tail(run_dir, after_byte)
+    def indexed_event_tail(self, run_dir, after_byte=0, **options):
+        result = self.events.indexed_event_tail(run_dir, after_byte, **options)
         self.tails.append(result)
         return result
 

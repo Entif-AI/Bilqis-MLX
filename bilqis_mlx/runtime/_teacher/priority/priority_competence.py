@@ -2,7 +2,11 @@
 from dataclasses import asdict, dataclass
 from fractions import Fraction
 
+from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
+from bilqis_mlx.runtime.outcomes.observations import SCORE_FIELDS
 from bilqis_mlx.runtime.state import _fingerprint
+
+_CERTIFICATION_DEBT_PRIORITY = 4
 
 
 @dataclass(frozen=True)
@@ -43,7 +47,7 @@ class CapabilityCompetence:
             return (1, deficit.accuracy) if deficit is not None else (2, Fraction(0))
         if deficit is not None:
             return 3, deficit.accuracy
-        return 4, Fraction(1)
+        return _CERTIFICATION_DEBT_PRIORITY, Fraction(1)
 
     def to_record(self):
         deficit = self.deficit
@@ -71,7 +75,8 @@ def instructional_members(ready, competence):
     """
     ready = tuple(ready)
     active = tuple(cap for cap in ready
-                   if competence.get(cap, UNKNOWN_COMPETENCE).priority[0] < 4)
+                   if competence.get(cap, UNKNOWN_COMPETENCE).priority[0]
+                   < _CERTIFICATION_DEBT_PRIORITY)
     return active or ready
 
 
@@ -81,11 +86,11 @@ def _score_rows(observation, target, accepted, members):
     digest = observation.get("outcome_sha256")
     if (not isinstance(scores, (list, tuple))
             or not isinstance(protected, (list, tuple))
-            or not isinstance(digest, str) or len(digest) != 64):
+            or not isinstance(digest, str) or len(digest) != SHA256_HEX_LENGTH):
         return ()
     result, seen = [], set()
     for row in scores:
-        if not isinstance(row, (tuple, list)) or len(row) != 4:
+        if not isinstance(row, (tuple, list)) or len(row) != len(SCORE_FIELDS):
             return ()
         cap, before, after, total = row
         if (not isinstance(cap, str) or cap in seen

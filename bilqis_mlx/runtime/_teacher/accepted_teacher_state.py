@@ -108,7 +108,6 @@ def _require_current_c03_lineage(parent: CompleteStudent, state: Mapping):
 def _c03_projection(parent: CompleteStudent, *, legacy_receipt, adaptation,
                     prior_region) -> TeacherCustodyProjection:
     state = dict(parent.teacher_state)
-    student = _student_reference(parent)
     if "c03_lineage" in state:
         if any(value is not None for value in (legacy_receipt, adaptation, prior_region)):
             invalid("TEACHER_BOOTSTRAP_ALREADY_COMPLETE")
@@ -122,7 +121,7 @@ def _c03_projection(parent: CompleteStudent, *, legacy_receipt, adaptation,
             or not isinstance(prior_region, str) or not prior_region):
         invalid("TEACHER_BOOTSTRAP_REQUIRED")
     return initialize_teacher_lineage(
-        legacy_receipt, student, adaptation, prior_region=prior_region,
+        legacy_receipt, _student_reference(parent), adaptation, prior_region=prior_region,
         next_seed=state["next_seed"], cursor=state["cursor"])
 
 
