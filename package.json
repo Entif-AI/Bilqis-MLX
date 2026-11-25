@@ -1,6 +1,6 @@
 {
   "name": "bilqis-mlx-private",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "private": true,
   "scripts": {
     "abi:verify": "python3 -B scripts/check_historical_abi.py",
@@ -18,7 +18,7 @@
     "bamf:memory:browser-test": "node apps/mission-control/tests/browser/memory-mode-check.cjs",
     "bamf:operate:browser-test": "node apps/mission-control/tests/browser/operate-mode-check.cjs",
     "bamf:production-boundary:test": "node apps/mission-control/scripts/check-production-imports.mjs",
-    "bamf:readiness": "python3 -B scripts/run_required_tests.py bilqis_mlx/presentation/operator_cli/tests/test_bootstrap_assets.py bilqis_mlx/source_adapters/tests/school/test_provider_compatibility.py bilqis_mlx/factory/tests/lifecycle/test_executable_consumers.py bilqis_mlx/runtime/tests/admission/test_jit_adoption.py bilqis_mlx/runtime/tests/operator/pre_neural/test_pre_neural_journey.py bilqis_mlx/runtime/tests/model/training_objective/test_contract.py bilqis_mlx/runtime/tests/model/training_objective/test_identity_bindings.py",
+    "bamf:readiness": "python3 -B scripts/run_required_tests.py --bamf-readiness",
     "bamf:bootstrap:check": "python3 -B scripts/bamf/build_bootstrap_assets.py --check",
     "bamf:resources:browser-test": "node apps/mission-control/tests/browser/resources-check.cjs",
     "bamf:salience:browser-test": "node apps/mission-control/tests/browser/salience-mode-check.cjs",
@@ -42,7 +42,7 @@
     "grade-a:verify": "python3 -B -m bilqis_mlx.grade_a_manifest --legacy-code-root vendor/legacy-v16 --champion-checkpoint vendor/legacy-v16/runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt --verify-manifest docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json",
     "learning:report": "python3 -B -m bilqis_mlx.diagnostics.learning_report",
     "mlx:qualify": "python3 -B -m bilqis_mlx.full_student_qualification --legacy-code-root vendor/legacy-v16 --checkpoint vendor/legacy-v16/runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt --grade-a-manifest docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json --verify-disposable-restart --device gpu",
-    "prepare": "husky",
+    "prepare": "husky && git config --local core.hooksPath .husky",
     "quality:changed": "npm run quality:structure && python3 -B scripts/code_smell_audit.py --changed-from \"${BILQIS_QUALITY_BASE_REF:-HEAD}\" --check-baseline docs/evidence/development/code_smell_baseline.json && npm run bamf:legacy-trainer && npm run bamf:legacy-trainer:test && npm run bamf:invariant-transfer && npm run bamf:invariant-transfer:test && npm run bamf:flow-control && npm run bamf:flow-control:test",
     "quality:check": "python3 -B scripts/quality/check_governance_integrity.py && python3 -B scripts/check_factory_architecture.py && python3 -B scripts/quality/check_docs.py && if [ -n \"${BILQIS_QUALITY_BASE_REF:-}\" ]; then python3 -B scripts/error_control_plane.py --check --base-ref \"$BILQIS_QUALITY_BASE_REF\" && python3 -B scripts/code_smell_audit.py --changed-from \"$BILQIS_QUALITY_BASE_REF\" --check-baseline docs/evidence/development/code_smell_baseline.json; else python3 -B scripts/error_control_plane.py --check && python3 -B scripts/code_smell_audit.py --check-baseline docs/evidence/development/code_smell_baseline.json; fi && npm run bamf:legacy-trainer && npm run bamf:legacy-trainer:test && npm run bamf:invariant-transfer && npm run bamf:invariant-transfer:test && npm run bamf:flow-control && npm run bamf:flow-control:test",
     "quality:report": "python3 -B scripts/code_smell_audit.py",

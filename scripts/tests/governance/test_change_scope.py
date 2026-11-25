@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 from pathlib import Path
+import os
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from scripts.quality import change_scope
 
@@ -15,6 +17,9 @@ def git(root: Path, *args: str) -> str:
 
 class ChangeScopeTests(unittest.TestCase):
     def setUp(self):
+        self.enterContext(patch.dict(os.environ, {
+            key: value for key, value in os.environ.items() if not key.startswith("GIT_")
+        }, clear=True))
         self.temp = tempfile.TemporaryDirectory(prefix="bilqis-change-scope-")
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()
@@ -58,6 +63,20 @@ class ChangeScopeTests(unittest.TestCase):
         self.assertEqual(change_scope.effective_base(self.root, main_head), main_head)
         _, scoped = change_scope.scoped_name_status(self.root, main_head)
         self.assertIn("feature.py", scoped)
+
+    def test_branch_inherits_governance_merged_into_main(self):
+        subprocess.run(["git", "switch", "-qc", "governance"], cwd=self.root, check=True)
+        adoption = self.commit_file("governance.txt", "rule\n", "governance")
+        change_scope.GOVERNANCE_ADOPTION_COMMIT = adoption
+        subprocess.run(["git", "switch", "-q", "main"], cwd=self.root, check=True)
+        subprocess.run(["git", "merge", "--no-ff", "-qm", "adopt governance", "governance"],
+                       cwd=self.root, check=True)
+        main_head = self.commit_file("base_only.py", "VALUE = 1\n", "main followup")
+        subprocess.run(["git", "switch", "-qc", "feature"], cwd=self.root, check=True)
+        self.commit_file("feature.py", "VALUE = 2\n", "feature")
+        boundary, scoped = change_scope.scoped_name_status(self.root, main_head)
+        self.assertEqual(boundary, main_head)
+        self.assertEqual(scoped, "A\tfeature.py\n")
 
     def test_synthetic_pr_merge_scopes_only_changes_after_requested_base(self):
         adoption = self.commit_file("governance.txt", "rule\n", "governance")

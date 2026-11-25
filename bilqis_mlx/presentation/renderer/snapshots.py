@@ -24,6 +24,8 @@ class SnapshotsView:
             return current_correct,current_total
         latest={}
         for row in self.rows.get("GRADES & MASTERY", ()):
+            if row.get('_bamf_terminal_observed') is True:
+                continue
             grade=row.get("grade")
             value=row.get("latest")
             if not grade or not isinstance(value,str) or "/" not in value:

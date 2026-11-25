@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+import hashlib
 
 from .teacher_lineage_records import (
     ADAPTATION_SCHEMA, HISTORICAL_REPLAY_HEAD, LINEAGE_SCHEMA, TEACHER_STATE_SCHEMA,
@@ -161,9 +162,14 @@ def restore_teacher_lineage(
             or not isinstance(lineage.get("current_region"), str)
             or lineage.get("prior_region") == lineage.get("current_region")
             or not isinstance(lineage.get("prior_teacher"), dict)
-            or not isinstance(lineage.get("current_teacher"), dict)
-            or lineage.get("prior_teacher_sha256") != digest(lineage["prior_teacher"])
-            or lineage.get("current_teacher_sha256") != digest(lineage["current_teacher"])):
+            or not isinstance(lineage.get("current_teacher"), dict)):
+        invalid("TEACHER_LINEAGE_INVALID")
+    # The epoch consumes the exact same canonical representation that custody
+    # hashes. Serialize each potentially large teacher only once per restore.
+    prior_json = canonical(lineage["prior_teacher"])
+    current_json = canonical(lineage["current_teacher"])
+    if (lineage.get("prior_teacher_sha256") != hashlib.sha256(prior_json.encode()).hexdigest()
+            or lineage.get("current_teacher_sha256") != hashlib.sha256(current_json.encode()).hexdigest()):
         invalid("TEACHER_LINEAGE_INVALID")
     authority = adaptation_ref(lineage.get("adaptation_authority"))
     if expected_adaptation is not None and authority != adaptation_ref(expected_adaptation):
@@ -187,13 +193,16 @@ def restore_teacher_lineage(
                 visit, teacher_state["last_visit_receipt"])
     return TeacherEpoch(
         lineage["prior_region"], lineage["current_region"], lineage["student_sha256"],
-        HISTORICAL_REPLAY_HEAD, canonical(lineage["prior_teacher"]),
-        canonical(lineage["current_teacher"]))
+        HISTORICAL_REPLAY_HEAD, prior_json, current_json)
 
 
 def priority_rotation_state(teacher_state: Mapping) -> tuple[int, dict[str, int]]:
     """Read C03's accepted grade-neutral fair-rotation clock."""
     restore_teacher_lineage(teacher_state)
+    return _validated_priority_rotation(teacher_state)
+
+
+def _validated_priority_rotation(teacher_state):
     return (teacher_state.get("priority_counter", 0),
             dict(teacher_state.get("priority_last_selected", {})))
 
@@ -215,12 +224,16 @@ def advance_priority_rotation(teacher_state: Mapping, capability_id: str) -> dic
 def instruction_history(teacher_state: Mapping) -> tuple[str, tuple[str, ...]]:
     """Read durable instruction coverage without treating selection as instruction."""
     restore_teacher_lineage(teacher_state)
+    return _validated_instruction_history(teacher_state)
+
+
+def _validated_instruction_history(teacher_state):
     if "instruction_history_state" in teacher_state:
         return (
             teacher_state["instruction_history_state"],
             tuple(teacher_state["instruction_seen_capabilities"]),
         )
-    counter, selected = priority_rotation_state(teacher_state)
+    counter, selected = _validated_priority_rotation(teacher_state)
     state = "COMPLETE" if counter == 0 and not selected else "PARTIAL"
     return state, tuple(sorted(selected))
 
@@ -275,13 +288,13 @@ def advance_teacher_lineage(
         next_seed=next_seed, cursor=cursor,
         last_visit=previous_state.get("last_visit"),
         last_visit_receipt=previous_state.get("last_visit_receipt"))
-    counter, selected = priority_rotation_state(previous_state)
+    counter, selected = _validated_priority_rotation(previous_state)
     if counter == 0 and not selected:
         return projected
     state = dict(projected.teacher_state)
     state["priority_counter"] = counter
     state["priority_last_selected"] = dict(sorted(selected.items()))
-    history_state, history_seen = instruction_history(previous_state)
+    history_state, history_seen = _validated_instruction_history(previous_state)
     state["instruction_history_state"] = history_state
     state["instruction_seen_capabilities"] = list(history_seen)
     restore_teacher_lineage(state)

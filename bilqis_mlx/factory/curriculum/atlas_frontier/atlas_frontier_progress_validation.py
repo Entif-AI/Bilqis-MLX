@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import replace
 import hashlib
 
-from .atlas_frontier_closure import ClosureStatus, FrontierClosure
+from .atlas_frontier_closure import CandidateClosure, ClosureStatus, FrontierClosure
 from .atlas_frontier_contracts import CurriculumSnapshot, _bytes, _fail
 from .atlas_frontier_progress_contracts import (
     FrontierProgress, StagedSelectionReceipt, _history_owner,
@@ -33,10 +33,17 @@ def obligation_digest(rows) -> str:
         for row in sorted(rows)))).hexdigest()
 
 
+def _obligations_by_semantic(closure: FrontierClosure) -> dict[str, list[CandidateClosure]]:
+    grouped: dict[str, list[CandidateClosure]] = {}
+    for row in closure.candidates:
+        grouped.setdefault(row.semantic_id, []).append(row)
+    return grouped
+
+
 def current_obligations(closure: FrontierClosure) -> dict[str, str]:
+    grouped = _obligations_by_semantic(closure)
     return {
-        identity: obligation_digest(tuple(
-            row for row in closure.candidates if row.semantic_id == identity))
+        identity: obligation_digest(grouped.get(identity, ()))
         for identity in closure.constituent_order
     }
 
@@ -193,9 +200,9 @@ def has_unrequested_ready(
     requested: set[tuple[str, str]],
     current: dict[str, str],
 ) -> bool:
+    grouped = _obligations_by_semantic(closure)
     for semantic_id in closure.constituent_order:
-        rows = tuple(
-            row for row in closure.candidates if row.semantic_id == semantic_id)
+        rows = grouped.get(semantic_id, ())
         if (rows and all(row.status is ClosureStatus.READY for row in rows)
                 and (semantic_id, current[semantic_id]) not in requested):
             return True

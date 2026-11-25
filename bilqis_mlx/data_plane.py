@@ -8,6 +8,7 @@ from ._data_plane.contracts import (
     SCHEMA_VERSION, SQLITE_BUSY_TIMEOUT_MS, SQLITE_MMAP_BYTES, SQLITE_CACHE_KIB,
     HASH_CHUNK_BYTES, SHA256_HEX_LENGTH, MIN_OPTIMIZER_STEP, MIN_DEDUPE_GROUP_SIZE,
     DataPlaneError, _error, _read_event_tail, default_path, event_payload_digest,
+    REBUILDABLE_OBJECT_REFERENCE_PREFIX,
 )
 from ._data_plane.store import DataPlaneStoreMixin
 from ._data_plane.accepted_authority import DataPlaneAcceptedAuthorityMixin

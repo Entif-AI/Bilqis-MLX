@@ -219,3 +219,26 @@ def test_unknown_grade_context_uses_admitted_projection_and_native_selector():
     key, policy, _ = select_visit_policy(engine, teacher, capability, school, random.Random(3),
         Settings(), 'factory/test', {}, 'Z', total_capabilities=1)
     assert teacher['strategies'][key] == policy
+
+
+@pytest.mark.parametrize("schema, protected_after, expected", [
+    ("bilqis.bamf.teacher-outcome/v1", 5, []),
+    ("bilqis.bamf.teacher-outcome/v2", 5, ["ACCEPTED_WITH_MEASURED_PROTECTED_LOSS"]),
+    ("bilqis.bamf.teacher-outcome/v2", 6, []),
+    ("bilqis.bamf.teacher-outcome/v2", 7, []),
+])
+def test_versioned_retained_protected_loss_is_negative_evidence(schema, protected_after, expected):
+    parent = teacher_fixture()
+    record = signed(outcome(parent, retained=True), schema=schema,
+        scores=[["opaque:next", 1, 2, 4], ["peer", 6, protected_after, 12],
+                ["unprotected", 7, 2, 12]], protected_capabilities=["peer"])
+    credited = apply_outcome(parent, record)
+    channel = credited["causal_experiment"]
+    assert [item["outcome"] for item in channel["negative_archetypes"]] == expected
+    assert channel["contexts"]["opaque:next|MAIN|factory/test"]["policy"]["retained"] == 1
+    assert apply_outcome(credited, record) == credited
+    assert parent == teacher_fixture()
+    if expected:
+        pattern = channel["negative_archetypes"][0]
+        assert pattern["delta"]["peer"] == -1 / 12
+        assert pattern["paired_scores_sha256"] == record["decision"]["evidence_sha256"]

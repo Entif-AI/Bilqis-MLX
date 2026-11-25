@@ -141,7 +141,7 @@ def _visit_numeric(
 
 
 def lower_numeric_task_goal(
-    row: dict, *, semantic_release: str, capability, release, **_,
+    row: dict, *, semantic_release: str, capability, release, operator_registry=None, **_,
 ):
     """Lower source-visible arithmetic while keeping the root operator neural."""
     if (not isinstance(row, dict) or "gold" in row
@@ -153,14 +153,14 @@ def lower_numeric_task_goal(
         from .answer_choice_task_goal import lower_answer_choice_task_goal
         return lower_answer_choice_task_goal(
             row, semantic_release=semantic_release, capability=capability,
-            release=release)
+            release=release, operator_registry=operator_registry)
     expression = decode(row["record"]["symbols"])
     declared = capability.capability_id.removeprefix("C.")
     if declared == "NUMBER" and isinstance(expression, Literal):
         from .answer_choice_task_goal import lower_answer_choice_task_goal
         return lower_answer_choice_task_goal(
             row, semantic_release=semantic_release, capability=capability,
-            release=release)
+            release=release, operator_registry=operator_registry)
     if (isinstance(expression, Apply)
             and expression.operator.symbol == "school.op.EQ"
             and declared != "EQ"):
@@ -190,7 +190,9 @@ def lower_numeric_task_goal(
         (_PURPOSE,), (PUBLIC_FORMAL,), (_JURISDICTION,),
         (capability.capability_id,), (PUBLIC_FORMAL,), (), (),
     )
-    registry = default_registry(semantic_release)
+    registry = operator_registry if operator_registry is not None else default_registry(semantic_release)
+    if registry.semantic_release != semantic_release:
+        _invalid("BAMF_C04_OPERATOR_REGISTRY_RELEASE_DRIFT")
     grants = [_grant(
         domain_handle, numeric_domain_digest(domain, semantic_release),
         semantic_release, capability.capability_id)]
@@ -238,16 +240,21 @@ def resolve_numeric_task_goal(
             release=release, **kwargs)
     source = dict(row)
     source.pop("gold", None)
-    goal, _binding = lower_numeric_task_goal(
+    goal, binding = lower_numeric_task_goal(
         source, semantic_release=semantic_release, capability=capability,
         release=release, **kwargs)
+    return _resolve_lowered_numeric(row, goal, binding, capability=capability)
+
+
+def _resolve_lowered_numeric(row, goal, binding, *, capability, **_):
+    if row.get("answer_kind") == "binary":
+        from .answer_choice_task_goal import _resolve_lowered_answer_choice
+        return _resolve_lowered_answer_choice(row, goal, binding, capability=capability)
     expression = decode(row["record"]["symbols"])
     declared = capability.capability_id.removeprefix("C.")
     if declared == "NUMBER" and isinstance(expression, Literal):
-        from .answer_choice_task_goal import resolve_answer_choice_task_goal
-        return resolve_answer_choice_task_goal(
-            row, semantic_release=semantic_release, capability=capability,
-            release=release, **kwargs)
+        from .answer_choice_task_goal import _resolve_lowered_answer_choice
+        return _resolve_lowered_answer_choice(row, goal, binding, capability=capability)
     if (isinstance(expression, Apply)
             and expression.operator.symbol == "school.op.EQ"
             and declared != "EQ"):

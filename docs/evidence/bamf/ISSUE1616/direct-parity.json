@@ -1,0 +1,241 @@
+{
+  "cases": [
+    {
+      "case": 1,
+      "compile": {
+        "dispatch_wall_seconds": 0.0038628748152405024,
+        "entries": 1,
+        "hits": 1,
+        "misses": 1,
+        "python_graph_traces": 2,
+        "python_trace_wall_seconds": 0.0012739170342683792
+      },
+      "losses": [
+        0.020947478711605072,
+        0.020947478711605072
+      ]
+    },
+    {
+      "case": 2,
+      "compile": {
+        "dispatch_wall_seconds": 0.005120706744492054,
+        "entries": 1,
+        "hits": 3,
+        "misses": 1,
+        "python_graph_traces": 3,
+        "python_trace_wall_seconds": 0.001952792052179575
+      },
+      "losses": [
+        63.23359680175781,
+        63.23359680175781
+      ]
+    },
+    {
+      "case": 3,
+      "compile": {
+        "dispatch_wall_seconds": 0.008114122785627842,
+        "entries": 2,
+        "hits": 4,
+        "misses": 2,
+        "python_graph_traces": 5,
+        "python_trace_wall_seconds": 0.00313858431763947
+      },
+      "losses": [
+        0.021017564460635185,
+        0.021017564460635185
+      ]
+    },
+    {
+      "case": 4,
+      "compile": {
+        "dispatch_wall_seconds": 0.011960039846599102,
+        "entries": 3,
+        "hits": 5,
+        "misses": 3,
+        "python_graph_traces": 7,
+        "python_trace_wall_seconds": 0.005086793331429362
+      },
+      "losses": [
+        0.019853394478559494,
+        0.019853394478559494
+      ]
+    },
+    {
+      "case": 5,
+      "compile": {
+        "dispatch_wall_seconds": 0.014878123067319393,
+        "entries": 4,
+        "hits": 6,
+        "misses": 4,
+        "python_graph_traces": 9,
+        "python_trace_wall_seconds": 0.006307876203209162
+      },
+      "losses": [
+        0.020856140181422234,
+        0.020856140181422234
+      ]
+    },
+    {
+      "case": 6,
+      "compile": {
+        "dispatch_wall_seconds": 0.003234792035073042,
+        "entries": 1,
+        "hits": 1,
+        "misses": 1,
+        "python_graph_traces": 2,
+        "python_trace_wall_seconds": 0.0014503749553114176
+      },
+      "losses": [
+        0.020775198936462402,
+        0.020775198936462402
+      ]
+    }
+  ],
+  "comparisons": {
+    "adamw_m": {
+      "exact": 264,
+      "max_absolute_error": 0.0,
+      "max_tolerance_fraction": 0.0,
+      "tensors": 264
+    },
+    "adamw_parameters": {
+      "exact": 264,
+      "max_absolute_error": 0.0,
+      "max_tolerance_fraction": 0.0,
+      "tensors": 264
+    },
+    "adamw_update_counts": {
+      "exact": 264,
+      "max_absolute_error": 0.0,
+      "max_tolerance_fraction": 0.0,
+      "tensors": 264
+    },
+    "adamw_v": {
+      "exact": 264,
+      "max_absolute_error": 0.0,
+      "max_tolerance_fraction": 0.0,
+      "tensors": 264
+    },
+    "cache": {
+      "exact": 216,
+      "max_absolute_error": 0.0,
+      "max_tolerance_fraction": 0.0,
+      "tensors": 216
+    },
+    "causal_prefix": {
+      "exact": 2,
+      "max_absolute_error": 0.0,
+      "max_tolerance_fraction": 0.0,
+      "tensors": 2
+    },
+    "hidden": {
+      "exact": 6,
+      "max_absolute_error": 0.0,
+      "max_tolerance_fraction": 0.0,
+      "tensors": 6
+    },
+    "hidden_gradient": {
+      "exact": 6,
+      "max_absolute_error": 0.0,
+      "max_tolerance_fraction": 0.0,
+      "tensors": 6
+    },
+    "loss": {
+      "exact": 6,
+      "max_absolute_error": 0.0,
+      "max_tolerance_fraction": 0.0,
+      "tensors": 6
+    },
+    "parameter_gradient": {
+      "exact": 264,
+      "max_absolute_error": 0.0,
+      "max_tolerance_fraction": 0.0,
+      "tensors": 264
+    },
+    "reset_suffix": {
+      "exact": 2,
+      "max_absolute_error": 0.0,
+      "max_tolerance_fraction": 0.0,
+      "tensors": 2
+    },
+    "standalone_vjp_hidden": {
+      "exact": 4,
+      "max_absolute_error": 0.0,
+      "max_tolerance_fraction": 0.0,
+      "tensors": 4
+    },
+    "standalone_vjp_loss": {
+      "exact": 4,
+      "max_absolute_error": 0.0,
+      "max_tolerance_fraction": 0.0,
+      "tensors": 4
+    },
+    "standalone_vjp_parameter": {
+      "exact": 176,
+      "max_absolute_error": 0.0,
+      "max_tolerance_fraction": 0.0,
+      "tensors": 176
+    }
+  },
+  "mlx": "0.32.4",
+  "schema": "bilqis.issue1616.direct-parity/v1",
+  "standalone_backward": {
+    "compiled": {
+      "cold_seconds": 3.569765250198543,
+      "peak_bytes": 1259544986,
+      "python_graph_traces": 1,
+      "warm_median_seconds": 0.008882583118975163,
+      "warm_seconds": [
+        0.013616415904834867,
+        0.008882583118975163,
+        0.008274333085864782
+      ]
+    },
+    "stock": {
+      "cold_seconds": 0.011854874901473522,
+      "peak_bytes": 900508792,
+      "python_graph_traces": 4,
+      "warm_median_seconds": 0.011292624985799193,
+      "warm_seconds": [
+        0.010337999789044261,
+        0.011292624985799193,
+        0.011668541934341192
+      ]
+    }
+  },
+  "timing": {
+    "compiled": {
+      "cold_seconds": 0.01631550001911819,
+      "compile": {
+        "dispatch_wall_seconds": 0.007812874857336283,
+        "entries": 1,
+        "hits": 3,
+        "misses": 1,
+        "python_graph_traces": 4,
+        "python_trace_wall_seconds": 0.007625082973390818
+      },
+      "peak_bytes": 271453700,
+      "warm_median_seconds": 0.01988449995405972,
+      "warm_seconds": [
+        0.014806583058089018,
+        0.01988449995405972,
+        0.02007162501104176
+      ]
+    },
+    "stock": {
+      "cold_seconds": 0.017853999976068735,
+      "compile": null,
+      "peak_bytes": 272018576,
+      "warm_median_seconds": 0.016887708101421595,
+      "warm_seconds": [
+        0.016887708101421595,
+        0.02032829192467034,
+        0.016381666995584965
+      ]
+    }
+  },
+  "tolerance": {
+    "atol": 1e-06,
+    "rtol": 0.0001
+  }
+}

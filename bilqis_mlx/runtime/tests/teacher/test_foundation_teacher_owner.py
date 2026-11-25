@@ -28,6 +28,37 @@ from bilqis_mlx.runtime.tests.custody.bamf_bundle.teacher_custody_fixtures impor
 
 
 class FoundationTeacherOwnerTests(unittest.TestCase):
+    def test_ordinary_mature_priority_defers_rejection_replay_to_policy_selection(self):
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
+        owner_module = __import__(
+            select_foundation_priority_visit.__module__, fromlist=["*"])
+        parent = SimpleNamespace(teacher_state={
+            "next_seed": 71, "c03_lineage": {"bootstrapped": True}})
+        cadence = SimpleNamespace(phase=SimpleNamespace(value="MAIN"))
+        authority = SimpleNamespace(
+            frontier="frontier", history=None, planning="planning",
+            lawful_frontier="lawful", offers=(), now=17,
+            planning_offer_fanout_wall_seconds=None,
+            planning_generation="planning-generation", cadence=cadence,
+            selection_cadence=cadence)
+        school = PrioritySchoolContext(
+            "a" * 64, ("descriptive",), PriorityStudentIdentity("b" * 64))
+        with evidence_mode(strict=False), patch.object(
+                owner_module, "current_foundation_teacher_projection",
+                side_effect=AssertionError("duplicate teacher replay")), patch(
+                "bilqis_mlx.runtime.priority_authority.issue_foundation_priority_authority",
+                return_value=authority) as issue, patch(
+                "bilqis_mlx.runtime.accepted_priority_visit.select_accepted_priority_visit",
+                return_value="selected"):
+            result = select_foundation_priority_visit(
+                Path("/run"), SimpleNamespace(release=SimpleNamespace(
+                    execution_plan=SimpleNamespace(capabilities=()))), "/atlas",
+                program="program", school=school, accepted_parent=parent,
+                accepted_cache=object())
+        self.assertEqual(result, "selected")
+        self.assertIs(issue.call_args.kwargs["teacher_state"], parent.teacher_state)
+        self.assertIsNone(issue.call_args.args[3])
+
     def test_caller_chosen_direct_selector_is_not_a_production_surface(self):
         owner_module = __import__(
             select_foundation_priority_visit.__module__, fromlist=["*"])

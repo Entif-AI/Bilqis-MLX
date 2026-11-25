@@ -10,7 +10,8 @@ from bilqis_mlx.learning.teacher_strategy_population import (
 )
 from bilqis_mlx.runtime.state import _fingerprint
 
-SCHEMA = 'bilqis.bamf.teacher-outcome/v1'
+LEGACY_SCHEMA = 'bilqis.bamf.teacher-outcome/v1'
+SCHEMA = 'bilqis.bamf.teacher-outcome/v2'
 SCORE_FIELDS = ('capability', 'before', 'after', 'total')
 
 
@@ -31,24 +32,27 @@ def ledger(teacher, manifest):
 
 
 def _compact_selected_teacher(teacher, context):
-    selected = deepcopy(teacher)
+    """Construct the compact selection with copy-on-write diagnostic metadata."""
     key = context.get('diagnostic_context_key')
     if key is None:
-        return selected
+        return teacher
     diagnostics = context.get('diagnostics')
     if not isinstance(key, str) or not key or not isinstance(diagnostics, dict):
         invalid()
-    channel = selected.get('causal_experiment')
+    channel = teacher.get('causal_experiment')
     if not isinstance(channel, dict):
         invalid()
-    contexts = channel.setdefault('diagnostic_contexts', {})
+    contexts = channel.get('diagnostic_contexts', {})
     if not isinstance(contexts, dict):
         invalid()
     existing = contexts.get(key)
     if existing is not None and existing != diagnostics:
         invalid()
-    contexts[key] = deepcopy(diagnostics)
-    return selected
+    if existing == diagnostics:
+        return teacher
+    return {**teacher, 'causal_experiment': {
+        **channel, 'diagnostic_contexts': {**contexts, key: deepcopy(diagnostics)},
+    }}
 
 
 def _deltas(observation):
@@ -66,9 +70,36 @@ def _deltas(observation):
     return deltas
 
 
-def _apply_outcome(teacher, observation, *, selected_teacher_override=None):
-    """Return a credited copy, or the unchanged copy for identical delivery."""
-    if (not isinstance(observation, dict) or observation.get('schema') != SCHEMA
+def _selected_teacher(teacher, observation, selected_teacher_override,
+                      recover_selected_teacher):
+    if 'selected_teacher' in observation:
+        if selected_teacher_override is not None:
+            invalid()
+        selected = deepcopy(observation['selected_teacher'])
+    else:
+        selected_sha256 = observation.get('selected_teacher_sha256')
+        if not isinstance(selected_sha256, str):
+            invalid()
+        selected = (
+            _compact_selected_teacher(teacher, observation['context'])
+            if selected_teacher_override is None
+            else selected_teacher_override
+        )
+        if selected_sha256 != _fingerprint(selected):
+            if recover_selected_teacher is None or selected_teacher_override is not None:
+                invalid()
+            selected = recover_selected_teacher(teacher, observation)
+            if selected_sha256 != _fingerprint(selected):
+                invalid()
+        if recover_selected_teacher is None:
+            selected = deepcopy(selected)
+    return selected
+
+
+def _apply_outcome(teacher, observation, *, selected_teacher_override=None,
+                   recover_selected_teacher=None):
+    """Credit a selection, reusing only a privately owned replay tree."""
+    if (not isinstance(observation, dict) or observation.get('schema') not in (LEGACY_SCHEMA, SCHEMA)
             or observation.get('outcome_sha256') != outcome_digest(observation)):
         invalid()
     visit, context = observation['teacher_visit'], observation['context']
@@ -78,21 +109,9 @@ def _apply_outcome(teacher, observation, *, selected_teacher_override=None):
     if attempt in prior['applied']:
         if prior['applied'][attempt] != digest:
             invalid()
-        return deepcopy(teacher)
-    if 'selected_teacher' in observation:
-        if selected_teacher_override is not None:
-            invalid()
-        selected = deepcopy(observation['selected_teacher'])
-    else:
-        selected_sha256 = observation.get('selected_teacher_sha256')
-        selected = (
-            _compact_selected_teacher(teacher, context)
-            if selected_teacher_override is None
-            else deepcopy(selected_teacher_override)
-        )
-        if (not isinstance(selected_sha256, str)
-                or selected_sha256 != _fingerprint(selected)):
-            invalid()
+        return teacher if recover_selected_teacher is not None else deepcopy(teacher)
+    selected = _selected_teacher(
+        teacher, observation, selected_teacher_override, recover_selected_teacher)
     if ledger(selected, manifest) != prior:
         invalid()
     key, cap = visit['policy_key'], visit['capability_id']
@@ -119,6 +138,12 @@ def _apply_outcome(teacher, observation, *, selected_teacher_override=None):
         'paired_scores_sha256': decision['evidence_sha256'],
         'source_cohort_sha256': context['rubric_sha256'],
     }
+    # Preserve the replay semantics of previously signed v1 observations.
+    # New observations carry the raw correct-answer loss to inherited feedback.
+    if observation['schema'] == SCHEMA:
+        causal['worst_protected_loss'] = max(
+            (max(0, before - after) for name, before, after, _ in observation['scores']
+             if name in protected), default=0)
     feedback = learning_experiment.observe_context(
         selected, capability=cap, phase=context['phase'], policy_key=key,
         decision=causal, local_gain=deltas[cap],
@@ -151,5 +176,15 @@ def apply_outcome(teacher, observation, *, selected_teacher_override=None):
         return _apply_outcome(
             teacher, observation,
             selected_teacher_override=selected_teacher_override)
+    except (KeyError, TypeError, ValueError, AttributeError):
+        invalid()
+
+
+def apply_replayed_outcome(owned_teacher, observation, recover_selected_teacher):
+    """Credit an authenticated row within an isolated fold; never publish partial state."""
+    try:
+        return _apply_outcome(
+            owned_teacher, observation,
+            recover_selected_teacher=recover_selected_teacher)
     except (KeyError, TypeError, ValueError, AttributeError):
         invalid()
