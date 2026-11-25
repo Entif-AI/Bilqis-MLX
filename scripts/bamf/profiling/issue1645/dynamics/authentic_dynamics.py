@@ -8,6 +8,7 @@ import argparse
 from dataclasses import asdict
 from hashlib import sha256
 import json
+import math
 import os
 from pathlib import Path
 import resource
@@ -111,17 +112,24 @@ def source_gradient(parent, context, cache, capability, seed, each):
     authenticated = context._accepted_feature_context
     generation = bind_learning_first_step_authority(cache, parent, None, context)
     parameters = parent.retained_state.optimizer.parameters
-    total, executions, losses = None, [], []
+    from scripts.bamf.profiling.issue1645.dynamics.displacement_analysis import checked_gradient_basis
+
+    total, executions, losses = {}, [], []
+    require(len(compiled) == each and each > 0, "incomplete source draw")
     for row in compiled:
         gradient, _, _ = execute_factory_training_row(
             parameters, row, context, authenticated.snapshot, generation, None)
-        losses.append(float(gradient.loss_total.item()))
+        loss = float(gradient.loss_total.item())
+        require(math.isfinite(loss), "nonfinite source loss")
+        losses.append(loss)
         executions.append(gradient.execution)
-        if total is None:
-            total = dict(gradient.gradients)
+        if set(gradient.gradients) != set(parameters):
+            row_mask, _, row_authority = optimizer_inputs(parent, cache, (gradient.execution,))
+            checked_gradient_basis(parameters, gradient.gradients, row_mask, row_authority)
         else:
-            total = {name: value + gradient.gradients[name]
-                     for name, value in total.items()}
+            checked_gradient_basis(parameters, gradient.gradients)
+        for name, value in gradient.gradients.items():
+            total[name] = total[name] + value if name in total else value
         mx.eval(*total.values())
     gradients = {name: value / each for name, value in total.items()}
     mx.eval(*gradients.values())
@@ -148,7 +156,9 @@ def optimizer_inputs(parent, cache, executions):
 def run_probes(parent, context, cache, destination, manifest, capabilities, each, lr):
     from dataclasses import replace
     import mlx.core as mx
-    from scripts.bamf.profiling.issue1645.dynamics.displacement_analysis import write_update
+    from scripts.bamf.profiling.issue1645.dynamics.displacement_analysis import (
+        complete_protected_gradient, write_update,
+    )
 
     receipts = {}
     hp = replace(parent.optimizer_hyperparameters, learning_rate=lr)
@@ -165,8 +175,18 @@ def run_probes(parent, context, cache, destination, manifest, capabilities, each
         # Separate protected probe seed, fixed before seeing scores.
         protected, executions, protection = source_gradient(
             parent, context, cache, capability, probe_seed(manifest, capability, "protected"), each)
-        mx.save_safetensors(str(destination / capability / "protected.safetensors"), protected)
-        del protected, executions
+        mask, _, authority = optimizer_inputs(parent, cache, executions)
+        protected, omitted = complete_protected_gradient(
+            parent.retained_state.optimizer.parameters, protected, mask, authority)
+        protected_path = destination / capability / "protected.safetensors"
+        mx.save_safetensors(str(protected_path), protected)
+        receipt["artifact_sha256"]["protected.safetensors"] = file_digest(protected_path)
+        protection["omitted_frozen_gradient_leaves"] = omitted
+        protection["target_episode_overlap"] = sorted(
+            set(protection["episode_ids"]) & set(evidence["episode_ids"]))
+        protection["same_source_family_as_target"] = (
+            protection["source_family_id"] == evidence["source_family_id"])
+        del protected, executions, mask
         receipt.update({"target": evidence, "protected": protection,
                         "hyperparameters": asdict(hp),
                         "wall_seconds": time.monotonic() - started,
@@ -199,7 +219,9 @@ def analyze(source, plane, destination, capabilities, each, lr, memory_gib):
         result = {
             "scope": "one-step numerical counterfactuals, no learner publication",
             "manifest_sha256": manifest, "source_custody": before,
-            "capabilities": receipts, "interference": interference_matrix(destination, capabilities),
+            "capabilities": receipts, "interference": interference_matrix(
+                destination, capabilities, basis={name: tuple(weight.shape) for name, weight
+                    in parent.retained_state.optimizer.parameters.items()}),
             "independent_learning_gain": None,
             "wall_seconds": time.monotonic() - started,
             "memory_limit_bytes": memory_gib * 1024**3,

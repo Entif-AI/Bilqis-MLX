@@ -11,9 +11,12 @@ import resource
 import time
 
 from scripts.bamf.profiling.issue1645.dynamics.authentic_dynamics import (
-    compiled_source_probe, custody, file_digest, isolated_copy,
+    compiled_source_probe, custody, isolated_copy,
 )
 from scripts.bamf.profiling.issue1645.reservation import CAPABILITIES, require
+from scripts.bamf.profiling.issue1645.dynamics.artifacts import (
+    add_legacy_arguments, admit_reference, reference_basis,
+)
 
 
 def probe_rows(parent, context, capability, receipt):
@@ -78,16 +81,16 @@ def displaced(parent, source, receipt):
         for name, weight in state.parameters.items():
             expected = mx.array(saved.get_tensor("delta/" + name))
             actual = result.parameters[name] - weight
-            error = max(error, float(mx.max(mx.abs(actual - expected)).item()))
+            leaf_error = float(mx.max(mx.abs(actual - expected)).item())
+            require(math.isfinite(leaf_error), "nonfinite saved native displacement")
+            error = max(error, leaf_error)
         require(error <= 1e-11, "saved native displacement mismatch")
         return result.parameters, error
 
 
-def analyze(evidence, destination, expected):
+def analyze(evidence, destination, expected, legacy_index=None, legacy_digest=None):
     started = time.monotonic()
-    result_path = evidence / "result.json"
-    require(file_digest(result_path) == expected, "result digest mismatch")
-    reference = json.loads(result_path.read_text())
+    reference, guard = admit_reference(evidence, expected, legacy_index, legacy_digest)
     source = evidence / "run"
     require(custody(source) == reference["source_custody"], "source custody drift")
     run, before = isolated_copy(source, evidence / "data-plane.sqlite3", destination)
@@ -106,6 +109,8 @@ def analyze(evidence, destination, expected):
         with evidence_mode(strict=False):
             parent, context, _, _ = _execution_context(run)
             parent_parameters = parent.retained_state.optimizer.parameters
+            require(reference_basis(reference) == {name: tuple(value.shape) for name, value
+                        in parent_parameters.items()}, "saved basis differs from authenticated parent")
 
             def binding(parameters):
                 return issue_execution_generation_binding(
@@ -141,9 +146,11 @@ def analyze(evidence, destination, expected):
                 del parameters, proposed_binding
                 mx.clear_cache()
                 print(json.dumps({"target": target, **replay[target]}), flush=True)
+        guard.require_current()
         result = {
             "scope": "controlled protected source loss, not an independent exam",
-            "source_result_sha256": expected, "source_custody": before,
+            "source_result_sha256": expected, "source_artifact_index_sha256": legacy_digest,
+            "source_custody": before,
             "manifest_sha256": reference["manifest_sha256"], "pairs": pairs,
             "native_replay": replay, "learning_gain": None,
             "wall_seconds": time.monotonic() - started,
@@ -152,6 +159,7 @@ def analyze(evidence, destination, expected):
         }
         (destination / "finite-loss.json").write_text(json.dumps(result, indent=2, allow_nan=False))
     finally:
+        guard.require_current()
         require(custody(run) == before == custody(source), "accepted custody changed")
 
 
@@ -160,8 +168,10 @@ def main():
     parser.add_argument("evidence", type=Path)
     parser.add_argument("destination", type=Path)
     parser.add_argument("--result-sha256", required=True)
+    add_legacy_arguments(parser)
     args = parser.parse_args()
-    analyze(args.evidence.resolve(), args.destination.resolve(), args.result_sha256)
+    analyze(args.evidence.absolute(), args.destination.resolve(), args.result_sha256,
+            args.legacy_artifact_index, args.legacy_artifact_index_sha256)
 
 
 if __name__ == "__main__":

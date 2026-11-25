@@ -11,8 +11,11 @@ import time
 import numpy as np
 from safetensors import safe_open
 
-from scripts.bamf.profiling.issue1645.dynamics.authentic_dynamics import custody, file_digest
+from scripts.bamf.profiling.issue1645.dynamics.authentic_dynamics import custody
 from scripts.bamf.profiling.issue1645.reservation import CAPABILITIES, require
+from scripts.bamf.profiling.issue1645.dynamics.artifacts import (
+    add_legacy_arguments, admit_reference, reference_basis,
+)
 
 
 def sensitivities(first, second, gradient, count, hp):
@@ -114,34 +117,38 @@ def analyze_target(target, update, parent, probes, receipt, result):
     }
 
 
-def analyze(evidence, expected_result):
+def analyze(evidence, expected_result, legacy_index=None, legacy_digest=None):
     started = time.monotonic()
     cpu = time.process_time()
-    result_path = evidence / "result.json"
-    require(file_digest(result_path) == expected_result, "result digest mismatch")
-    result = json.loads(result_path.read_text())
+    result, guard = admit_reference(evidence, expected_result, legacy_index, legacy_digest)
     run = evidence / "run"
     require(custody(run) == result["source_custody"], "source custody mismatch")
     manifest = run / "bamf-bundles" / result["manifest_sha256"] / "manifest.json"
-    require(file_digest(manifest) == result["manifest_sha256"], "manifest digest mismatch")
+    guard.admit(manifest, result["manifest_sha256"])
     tensor = json.loads(manifest.read_text())["tensors"]
     digest = tensor["object_sha256"]
     path = evidence / "data-plane.sqlite3.objects" / digest[:2] / (digest + ".safetensors")
-    require(file_digest(path) == tensor["sha256"] == digest, "tensor custody mismatch")
+    require(tensor["sha256"] == digest, "tensor custody mismatch")
+    guard.admit(path, digest)
     receipts = result["capabilities"]
     metrics = {}
     with ExitStack() as stack:
         def opened(path):
             return stack.enter_context(safe_open(str(path), framework="numpy"))
         parent = opened(path)
+        basis = {bytes.fromhex(key[1:-7]).decode(): tuple(parent.get_slice(key).get_shape())
+                 for key in parent.keys() if key.startswith("p") and key.endswith("_weight")}
+        require(basis == reference_basis(result), "saved basis differs from accepted tensor")
         probes = {cap: opened(evidence / cap / "protected.safetensors") for cap in CAPABILITIES}
         updates = {cap: opened(evidence / cap / "update.safetensors") for cap in CAPABILITIES}
         for target, update in updates.items():
             metrics[target] = analyze_target(
                 target, update, parent, probes, receipts[target], result)
+    guard.require_current()
     require(custody(run) == result["source_custody"], "source changed")
     return {"schema": "bilqis.research.moment-sensitivity/v1",
-            "source_result_sha256": expected_result, "parent_tensor_sha256": digest,
+            "source_result_sha256": expected_result, "source_artifact_index_sha256": legacy_digest,
+            "parent_tensor_sha256": digest,
             "manifest_sha256": result["manifest_sha256"], "targets": metrics,
             "scope": "first-order analytic sensitivities, no optimizer mutation or treatment",
             "wall_seconds": time.monotonic() - started, "cpu_seconds": time.process_time() - cpu,
@@ -153,8 +160,10 @@ def main():
     parser.add_argument("evidence", type=Path)
     parser.add_argument("destination", type=Path)
     parser.add_argument("--result-sha256", required=True)
+    add_legacy_arguments(parser)
     args = parser.parse_args()
-    result = analyze(args.evidence.resolve(), args.result_sha256)
+    result = analyze(args.evidence.absolute(), args.result_sha256,
+                     args.legacy_artifact_index, args.legacy_artifact_index_sha256)
     with args.destination.open("x") as output:
         json.dump(result, output, indent=2, allow_nan=False)
 

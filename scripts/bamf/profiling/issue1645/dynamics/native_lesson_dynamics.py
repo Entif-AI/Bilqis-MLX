@@ -6,8 +6,14 @@ import json
 import time
 from unittest.mock import patch
 
-from scripts.bamf.profiling.issue1645.dynamics.authentic_dynamics import custody, file_digest
+from scripts.bamf.profiling.issue1645.dynamics.authentic_dynamics import custody
 from scripts.bamf.profiling.issue1645.reservation import require
+from scripts.bamf.profiling.issue1645.dynamics.artifacts import (
+    add_legacy_arguments, admit_reference, reference_basis,
+)
+from scripts.bamf.profiling.issue1645.dynamics.delivery_observation import (
+    describe_delivery, observe_native_call,
+)
 
 
 class Captured(BaseException):
@@ -22,6 +28,7 @@ def capture_selected(run, parent, context, atlas, feature, selection, cache, des
     capability = selection.offer.capability_id
     captured = {}
     original_admit = execution._learning_first_admit
+    native_observation = {}
 
     def record_batch(parent, cache, candidate, gradient, teacher_hparams, max_norm, prepared):
         require(candidate is None, "not the first candidate update")
@@ -32,7 +39,9 @@ def capture_selected(run, parent, context, atlas, feature, selection, cache, des
                          training_source_coordinates, spec, extents, max_norm):
             # The actual admission owner has validated the row coordinates.
             rows = prepared.training_batch.rows
+            require("mentor_supervision" in native_observation, "missing native execution observation")
             captured["delivery"] = {
+                **describe_delivery(prepared, native_observation["mentor_supervision"]),
                 "selected_capability": capability,
                 "row_count": len(rows),
                 "rows_by_capability": dict(Counter(row.provenance.capability_id for row in rows)),
@@ -61,7 +70,11 @@ def capture_selected(run, parent, context, atlas, feature, selection, cache, des
     started = time.monotonic()
     mx.reset_peak_memory()
     try:
-        with patch.object(execution, "_learning_first_admit", record_batch):
+        with (patch.object(execution, "_learning_first_admit", record_batch),
+              patch.object(execution, "execute_factory_training_row", observe_native_call(
+                  execution.execute_factory_training_row, native_observation)),
+              patch.object(execution, "execute_factory_logical_batch", observe_native_call(
+                  execution.execute_factory_logical_batch, native_observation))):
             outcome = execute_selected_visit(
                 run, parent, context, atlas, feature, selection, cache, 1, 100,
                 None, 0, None, None, None, emit_progress=lambda *_: None,
@@ -130,13 +143,18 @@ def main():
     parser.add_argument("--protected", type=Path, required=True)
     parser.add_argument("--protected-result-sha256", required=True)
     parser.add_argument("--cadence-projection-root", type=Path)
+    parser.add_argument("--cadence-freeze-manifest", type=Path)
+    parser.add_argument("--cadence-freeze-sha256")
+    add_legacy_arguments(parser)
     parser.add_argument("--preflight-only", action="store_true")
     args = parser.parse_args()
     destination = args.destination.resolve()
-    result_path = args.protected / "result.json"
-    require(file_digest(result_path) == args.protected_result_sha256,
-            "protected result digest mismatch")
-    reference = json.loads(result_path.read_text())
+    freeze_flags = (args.cadence_projection_root, args.cadence_freeze_manifest,
+                    args.cadence_freeze_sha256)
+    require(all(value is None for value in freeze_flags) or all(value is not None for value in freeze_flags),
+            "cadence projection root and independent freeze pins must be supplied together")
+    reference, guard = admit_reference(args.protected.absolute(), args.protected_result_sha256,
+                                       args.legacy_artifact_index, args.legacy_artifact_index_sha256)
     require(reference["source_custody"] == custody(args.source),
             "protected probe source custody mismatch")
     require(reference["manifest_sha256"] ==
@@ -163,7 +181,8 @@ def main():
                     restore_disposable_projection,
                 )
                 cadence = restore_disposable_projection(
-                    args.cadence_projection_root.resolve(), run, destination / "data-plane.sqlite3")
+                    args.cadence_projection_root.absolute(), run, destination / "data-plane.sqlite3",
+                    args.cadence_freeze_manifest, args.cadence_freeze_sha256)
             authenticated_cadence_attempts(run)
             (destination / "cadence-preflight.json").write_text(json.dumps(cadence, indent=2))
             print(json.dumps({"cadence_preflight": cadence}), flush=True)
@@ -171,6 +190,8 @@ def main():
                 return
             parent, context, atlas, feature = _execution_context(run)
             cache = context._accepted_runtime_host._accepted_cache
+            basis = {name: tuple(value.shape) for name, value in parent.retained_state.optimizer.parameters.items()}
+            require(reference_basis(reference) == basis, "saved basis differs from authenticated parent")
             receipts = select_and_capture(run, parent, context, atlas, feature, cache,
                                           destination, tuple(args.capability or CAPABILITIES))
         from scripts.bamf.profiling.issue1645.dynamics.displacement_analysis import interference_matrix
@@ -178,14 +199,18 @@ def main():
         manifest = json.loads((run / "bamf-state.json").read_text())["manifest_sha256"]
         require(reference["manifest_sha256"] == manifest, "protected probe parent mismatch")
         require(reference["source_custody"] == before, "protected probe source custody mismatch")
-        matrix = interference_matrix(destination, targets, args.protected, CAPABILITIES)
+        matrix = interference_matrix(destination, targets, args.protected, CAPABILITIES, basis=basis)
+        guard.require_current()
         (destination/"mixed.json").write_text(json.dumps({
             "manifest_sha256":json.loads((run/"bamf-state.json").read_text())["manifest_sha256"],
-            "source_custody":before, "cadence":cadence, "native_lessons":receipts, "interference":matrix,
+            "source_custody":before, "cadence":cadence,
+            "source_result_sha256": args.protected_result_sha256,
+            "source_artifact_index_sha256": args.legacy_artifact_index_sha256, "native_lessons":receipts, "interference":matrix,
             "process_peak_rss_bytes":resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
             "learning_gain":None,
         },indent=2))
     finally:
+        guard.require_current()
         require(custody(run)==before==custody(args.source),"accepted custody changed")
 
 

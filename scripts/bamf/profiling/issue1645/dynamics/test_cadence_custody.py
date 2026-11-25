@@ -10,6 +10,7 @@ from scripts.bamf.profiling.issue1645.dynamics.cadence_custody import (
     KEY, SCHEMA, verified_projection,
 )
 from scripts.bamf.profiling.issue1645.dynamics.authentic_dynamics import isolated_copy
+from scripts.bamf.profiling.issue1645.dynamics.artifacts import sha256_file
 
 
 class CadenceCustody(unittest.TestCase):
@@ -55,8 +56,28 @@ class CadenceCustody(unittest.TestCase):
                        ("original", 1, 0, self.frontier, event["event_id"],
                         sha256(canonical).hexdigest(), canonical))
 
+        (self.root / "receipt.json").write_text('{"source_mutated": false}')
+        self.pin = self.root / "freeze-manifest.json"
+        self.expected = self.freeze_pin()
+
+    def freeze_pin(self):
+        self.pin.write_text(json.dumps({
+            "schema": "bilqis.research.cadence-freeze/v1",
+            "origin_receipt_sha256": sha256_file(self.root / "receipt.json"),
+            "projection_sha256": sha256_file(self.projection),
+            "pointer_sha256": sha256_file(self.frozen / "bamf-state.json"),
+            "prefix_sha256": sha256_file(self.frozen / "events.jsonl"),
+            "plane_sha256": sha256_file(self.plane),
+            "indexed_bytes": self.frontier, "indexed_records": 1,
+        }))
+        return sha256_file(self.pin)
+
+    def verify(self, *, repin=False):
+        return verified_projection(self.root, self.target, self.pin,
+                                   self.freeze_pin() if repin else self.expected)
+
     def test_exact_prefix_and_index_are_required(self):
-        _, receipt = verified_projection(self.root, self.target)
+        _, receipt = self.verify()
         self.assertEqual(receipt["unique_lines"], 1)
         self.assertEqual(receipt["prefix_sha256"], sha256(self.line).hexdigest())
         self.assertEqual(receipt["indexed_bytes"], self.frontier)
@@ -65,26 +86,58 @@ class CadenceCustody(unittest.TestCase):
     def test_changed_ledger_prefix_is_rejected(self):
         (self.target / "events.jsonl").write_bytes(self.line.replace(b'ACCEPTED', b'REJECTED'))
         with self.assertRaisesRegex(ValueError, "target ledger prefix mismatch"):
-            verified_projection(self.root, self.target)
+            self.verify()
 
     def test_caller_authored_projection_is_rejected(self):
         data = json.loads(self.projection.read_text())
         data["payload"]["attempts"].append(["fabricated"])
         self.projection.write_text(json.dumps(data))
-        with self.assertRaisesRegex(ValueError, "projection authority"):
-            verified_projection(self.root, self.target)
+        with self.assertRaisesRegex(ValueError, "artifact digest mismatch"):
+            self.verify()
 
     def test_index_gap_is_rejected(self):
         with sqlite3.connect(self.plane) as db:
             db.execute("DELETE FROM event_stream")
         with self.assertRaisesRegex(ValueError, "incomplete indexed ledger frontier"):
-            verified_projection(self.root, self.target)
+            self.verify(repin=True)
 
     def test_index_payload_drift_is_rejected(self):
         with sqlite3.connect(self.plane) as db:
             db.execute("UPDATE event_stream SET payload=?", (b"{}",))
         with self.assertRaisesRegex(ValueError, "indexed ledger payload mismatch"):
+            self.verify(repin=True)
+
+    def test_missing_external_pin_fails_closed(self):
+        with self.assertRaisesRegex(ValueError, "independently pinned"):
             verified_projection(self.root, self.target)
+
+    def test_matching_fabricated_projection_and_db_cannot_replace_pin(self):
+        data = json.loads(self.projection.read_text())
+        data["payload"]["attempts"].append(["fabricated"])
+        self.projection.write_text(json.dumps(data))
+        with sqlite3.connect(self.plane) as db:
+            db.execute("UPDATE event_projections SET payload=?", (json.dumps(data["payload"]),))
+        self.freeze_pin()  # A caller-generated matching manifest does not replace the external pin.
+        with self.assertRaisesRegex(ValueError, "artifact digest mismatch"):
+            self.verify()
+
+    def test_duplicate_index_range_rejected_even_when_pinned(self):
+        with sqlite3.connect(self.plane) as db:
+            db.execute("INSERT INTO event_stream SELECT run_dir,2,start_byte,end_byte,event_id,"
+                       "payload_sha256,payload FROM event_stream WHERE sequence=1")
+        with self.assertRaisesRegex(ValueError, "duplicate or incomplete"):
+            self.verify(repin=True)
+
+    def test_index_sequence_gap_rejected_even_when_pinned(self):
+        with sqlite3.connect(self.plane) as db:
+            db.execute("UPDATE event_stream SET sequence=2")
+        with self.assertRaisesRegex(ValueError, "noncontiguous index sequence"):
+            self.verify(repin=True)
+
+    def test_unpinned_wal_rejected(self):
+        Path(str(self.plane) + "-wal").write_bytes(b"unexpected bytes")
+        with self.assertRaisesRegex(ValueError, "unpinned WAL"):
+            self.verify()
 
     def test_symbolic_link_is_rejected_before_clone(self):
         (self.target / "link").symlink_to(self.frozen)

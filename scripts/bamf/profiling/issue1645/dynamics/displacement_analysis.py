@@ -12,6 +12,7 @@ from bilqis_mlx.runtime.atlas_optimizer_preflight import _masked_clipped_gradien
 from bilqis_mlx.runtime.optimizer_step import adamw_leaf_update, adamw_selected_rows_update
 from scripts.bamf.profiling.issue1645.frozen_displacement import OUTPUT_LEAVES, EPSILON_CANDIDATES
 from scripts.bamf.profiling.issue1645.reservation import require
+from scripts.bamf.profiling.issue1645.dynamics.artifacts import require_full_basis, sha256_file
 
 
 def group(name):
@@ -72,13 +73,32 @@ def check_leaf(parent, result, name, expected, mask):
     return maxima
 
 
-def write_update(destination, parent, gradients, masks, decay, authority, hp, *, max_norm):
-    require(bool(gradients) and set(gradients) <= set(parent.parameters) == set(masks)
-            == set(authority) == set(decay), "parameter basis mismatch")
-    omitted = sorted(set(parent.parameters) - set(gradients))
+def checked_gradient_basis(parameters, gradients, masks=None, authority=None):
+    require(bool(gradients) and set(gradients) <= set(parameters), "parameter basis mismatch")
+    if masks is not None or authority is not None:
+        require(set(parameters) == set(masks) == set(authority), "participation basis mismatch")
+    omitted = sorted(set(parameters) - set(gradients))
     for name in omitted:
-        require(authority[name] == (False, ()) and not bool(mx.any(masks[name]).item()),
+        require(masks is not None and authority is not None
+                and authority[name] == (False, ()) and not bool(mx.any(masks[name]).item()),
                 f"missing participating gradient: {name}")
+    for name, value in gradients.items():
+        require(value.shape == parameters[name].shape, "gradient shape mismatch")
+    finite = [mx.all(mx.isfinite(value)) for value in gradients.values()]
+    mx.eval(*finite)
+    require(all(bool(item.item()) for item in finite), "nonfinite gradient")
+    return omitted
+
+
+def complete_protected_gradient(parameters, gradients, masks, authority):
+    omitted = checked_gradient_basis(parameters, gradients, masks, authority)
+    return {name: gradients[name] if name in gradients else mx.zeros_like(weight)
+            for name, weight in parameters.items()}, omitted
+
+
+def write_update(destination, parent, gradients, masks, decay, authority, hp, *, max_norm):
+    require(set(parent.parameters) == set(decay), "decay basis mismatch")
+    omitted = checked_gradient_basis(parent.parameters, gradients, masks, authority)
     destination.mkdir()
     clipped, norm = _masked_clipped_gradients(parent, gradients, masks, max_norm=max_norm)
     result = _adamw_update(parent, gradients, masks, hp, decay=decay, max_norm=max_norm,
@@ -121,7 +141,8 @@ def write_update(destination, parent, gradients, masks, decay, authority, hp, *,
                          "selected_rows": list(authority[name][1]),
                          "whole_parameter": bool(authority[name][0]), "decay": bool(decay[name])}
     mx.save_safetensors(str(destination / "update.safetensors"), arrays)
-    return {"masked_unclipped_norm": float(norm.item()), "max_norm": max_norm,
+    return {"artifact_sha256": {"update.safetensors": sha256_file(destination / "update.safetensors")},
+            "masked_unclipped_norm": float(norm.item()), "max_norm": max_norm,
             "selected_full_mask_max_abs_error": dict(equivalence),
             "leaves": records, "epsilon_candidates": list(EPSILON_CANDIDATES),
             "omitted_frozen_gradient_leaves": omitted}
@@ -139,7 +160,7 @@ def finalize(acc):
 
 
 def interference_matrix(destination, capabilities, protected_destination=None,
-                        protected_capabilities=None):
+                        protected_capabilities=None, *, basis):
     """Read one leaf at a time, amortizing FP64 conversion over protected probes."""
     results = {}
     protected_destination = destination if protected_destination is None else protected_destination
@@ -153,12 +174,16 @@ def interference_matrix(destination, capabilities, protected_destination=None,
         protected = {cap: stack.enter_context(safe_open(
             str(protected_destination / cap / "protected.safetensors"), framework="numpy"))
                      for cap in protected_capabilities}
-        names = sorted(protected[protected_capabilities[0]].keys())
-        require(all(sorted(item.keys()) == names for item in protected.values()), "probe basis mismatch")
+        require(bool(basis) and bool(protected), "empty diagnostic basis")
+        for item in updates.values():
+            require_full_basis(item, basis, update=True)
+        for item in protected.values():
+            require_full_basis(item, basis)
+        names = sorted(basis)
         totals = {(a, b): defaultdict(lambda: defaultdict(float))
                   for a in capabilities for b in protected_capabilities}
         for name in names:
-            shape = tuple(protected[protected_capabilities[0]].get_slice(name).get_shape())
+            shape = tuple(basis[name])
             def coordinates(source, key):
                 value = source.get_tensor(key)
                 require(value.shape == shape, "parameter shape mismatch")
