@@ -53,6 +53,26 @@ def weakness_delivery_totals(facts):
     return dict(sorted(counts.items())), dict(sorted(unavailable.items()))
 
 
+def exact_miss_delivery_ids(control):
+    """Validate actual exact replay separately from classified preservation."""
+    if ("exact_miss_delivery_ids" not in control
+            and "exact_miss_replay_delivered" not in control):
+        return ()
+    ids = control.get("exact_miss_delivery_ids")
+    count = control.get("exact_miss_replay_delivered")
+    fragile = control.get("fragile_preservation_delivered")
+    if (not isinstance(ids, (tuple, list)) or not ids
+            or any(not isinstance(row, str) or not row for row in ids)
+            or len(set(ids)) != len(ids)
+            or type(count) is not int or count != len(ids)
+            or type(fragile) is not int or fragile < 0
+            or set(ids).intersection(
+                row for fact in weakness_delivery_facts((control,))
+                for rows in fact["matches"].values() for row in rows)):
+        raise ValueError(LearningExperimentError.POLICY_INVALID.value)
+    return tuple(ids)
+
+
 def describe(policy: dict, *, candidate_steps: int, batch_size: int,
              policy_controls, guidance_applied_steps: int,
              enrichment_examples: int) -> dict:
@@ -126,6 +146,9 @@ def describe(policy: dict, *, candidate_steps: int, batch_size: int,
         features["weakness_class_exposures"] = exposure
     if unavailable:
         features["weakness_unavailable_steps"] = unavailable
+    exact_count = sum(len(exact_miss_delivery_ids(control)) for control in controls)
+    if exact_count:
+        features["exact_miss_replay_delivered"] = exact_count
     key = hashlib.sha256(
         json.dumps(features, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()[:16]

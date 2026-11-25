@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import time
+from typing import TYPE_CHECKING
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.factory.teaching import optional_teaching_rows
@@ -18,6 +19,9 @@ from .session_parts.fresh_support import materialize_fresh_support
 from .source_prefetch_contracts import (
     REQUEST_SCHEMA, prepare_priority_source_packet, priority_source_request,
 )
+
+if TYPE_CHECKING:
+    from bilqis_mlx.runtime.retention.local_preflight import ExactMissInstruction
 
 
 SERIAL_SOURCE_WORKERS = 0
@@ -63,6 +67,7 @@ class CandidateLessonRows:
     weakness_unavailable: tuple[tuple[str, str], ...] = ()
     source_seed: int | None = None
     primary_lesson: object = None
+    exact_miss_instruction: ExactMissInstruction | None = None
 
     @property
     def delivered(self) -> tuple:
@@ -244,7 +249,8 @@ class CandidateSourceLane:
             tuple(fresh_support), fresh_binding, fresh_authority,
             fresh_reason, fresh_control, request["identity"],
             self.weakness_unavailable.pop(ordinal, ()), request["source_seed"],
-            self.primary_lessons.pop(ordinal, None))
+            self.primary_lessons.pop(ordinal, None),
+            getattr(self.rehearsal_plan, "exact_miss_instruction", None))
 
     def rows(self, ordinal: int):
         return self.lesson(ordinal).direct

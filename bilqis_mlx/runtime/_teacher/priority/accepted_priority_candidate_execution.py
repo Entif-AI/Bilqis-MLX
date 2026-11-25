@@ -66,7 +66,8 @@ def _candidate_delivery_inputs(
         rehearsal_authorities, observation, *, prepared_fresh_support_rows=(),
         fresh_support_by_id=None, fresh_support_binding=None,
         fresh_support_authority=None, fresh_support_unavailable_reason=None,
-        fresh_support_depth_control=None, prepared_primary_lesson=None):
+        fresh_support_depth_control=None, prepared_primary_lesson=None,
+        exact_miss_instruction=None):
     offer = selection.offer
     rows = offer.rows() if prepared_source_rows is None else tuple(prepared_source_rows)
     enrichment = tuple(prepared_enrichment_rows)
@@ -96,6 +97,15 @@ def _candidate_delivery_inputs(
         fresh_controls.pop("depth_control_unavailable_reason", None)
         fresh_controls.update(primary_lesson["controls"])
     capability = offer.capability_id
+    from bilqis_mlx.runtime.retention.local_preflight import require_exact_miss_delivery
+    exact_ids = require_exact_miss_delivery(
+        exact_miss_instruction, source_context, selection, observation,
+        rehearsal, role_bindings, binding_records, source_authorities,
+        reserved_rows=(*rows, *enrichment, *fresh_support))
+    exact_controls = ({
+        "exact_miss_delivery_ids": exact_ids,
+        "exact_miss_replay_delivered": len(exact_ids),
+    } if exact_ids else {})
     from bilqis_mlx.runtime.bamf_operator.session_parts.weakness_rehearsal import (
         delivered_weakness_controls,
     )
@@ -109,9 +119,9 @@ def _candidate_delivery_inputs(
         prior=prior, preservation=preservation, support=support,
         controls={
             **observation.controls,
-            "fragile_preservation_delivered": len(preservation),
+            "fragile_preservation_delivered": len(preservation) - len(exact_ids),
             "retention_support_delivered": len(support), **fresh_controls,
-            **weakness_controls,
+            **weakness_controls, **exact_controls,
         },
         **({"enrichment": enrichment} if enrichment else {}),
         **({"fresh_support": fresh_support} if fresh_support else {}))

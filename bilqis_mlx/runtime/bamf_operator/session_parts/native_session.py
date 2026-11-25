@@ -95,7 +95,8 @@ def candidate_horizon_execution(
         capability, host_cache, steps_per_visit, progress, source_prefetch_workers,
         source_prefetch_executor, source_prefetch_metrics, observer, adviser_pool,
         *, emit_progress, invalid,
-        distributed_profile=None, distributed_executor=None, attempt_ordinals=None):
+        distributed_profile=None, distributed_executor=None, attempt_ordinals=None,
+        preflight=None):
     from .evidence_mode import strict_mode_enabled
     strict = strict_mode_enabled()
     if host_cache is None and not strict:
@@ -110,8 +111,13 @@ def candidate_horizon_execution(
         if strict else execute_learning_first_priority_candidate)
     if type(cache) is AcceptedExecutionCache:
         bind_current_retention_protection_plan(context, parent, cache)
+    exact_kwargs = {}
+    if preflight is not None and not strict:
+        if type(cache) is not AcceptedExecutionCache or attempt_ordinals is None:
+            invalid("BAMF_C05_EXACT_MISS_AUTHORITY_DRIFT")
+        exact_kwargs = {"preflight": preflight, "journal_ordinal": attempt_ordinals[0]}
     rehearsal_plan = (
-        compile_rehearsal_plan(run_dir, parent, cache, context, selection)
+        compile_rehearsal_plan(run_dir, parent, cache, context, selection, **exact_kwargs)
         if type(cache) is AcceptedExecutionCache else None)
     return _candidate_horizon_execution_impl(
         run_dir, parent, context, atlas_path, feature_path, selection, rows,
@@ -240,7 +246,8 @@ def execute_selected_visit(
         emit_progress=emit_progress, invalid=invalid,
         distributed_profile=distributed_profile,
         distributed_executor=distributed_executor,
-        **({"attempt_ordinals": attempt_ordinals} if attempt_ordinals is not None else {}))
+        **({"attempt_ordinals": attempt_ordinals} if attempt_ordinals is not None else {}),
+        **({"preflight": preflight} if preflight is not None and not strict else {}))
     cache, steps, capture, journal_ordinal, attempt_ordinal, identity_before = horizon_state
     return retention_result(
         run_dir, parent, context, atlas_path, selection, capability, cache, steps,

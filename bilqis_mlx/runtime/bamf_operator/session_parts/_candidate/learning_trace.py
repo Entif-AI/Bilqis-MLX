@@ -13,6 +13,8 @@ _CONTROL_FIELDS = (
     "contrast_control",
     "effective_old_grade_examples",
     "fragile_preservation_delivered",
+    "exact_miss_delivery_ids",
+    "exact_miss_replay_delivered",
     "retention_support_delivered",
     "fresh_support_delivered",
     "weakness_targets_delivered",
@@ -55,6 +57,19 @@ class CandidateLearningTrace:
             delivered_ids = {row["id"] for row in rows}
             if not {row_id for ids in matches.values() for row_id in ids} <= delivered_ids:
                 _invalid("BAMF_LEARNING_TRACE_WEAKNESS_DELIVERY_DRIFT")
+        if ("exact_miss_delivery_ids" in controls
+                or "exact_miss_replay_delivered" in controls):
+            from bilqis_mlx.learning.teacher_realized_action import exact_miss_delivery_ids
+            try:
+                exact_ids = exact_miss_delivery_ids(controls)
+            except ValueError:
+                _invalid("BAMF_LEARNING_TRACE_EXACT_MISS_DELIVERY_DRIFT")
+            preservation = tuple(facts.get("preservation") or ())
+            if (not set(exact_ids) <= {row["id"] for row in rows}
+                    or not set(exact_ids) <= {row["id"] for row in preservation}
+                    or controls.get("fragile_preservation_delivered", 0) + len(exact_ids)
+                    != len(preservation)):
+                _invalid("BAMF_LEARNING_TRACE_EXACT_MISS_DELIVERY_DRIFT")
         self._policy_controls.append({
             key: controls[key] for key in _CONTROL_FIELDS if key in controls
         })

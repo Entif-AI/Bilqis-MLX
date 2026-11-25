@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 import hashlib
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.teacher_lineage_records import digest as teacher_digest
@@ -12,7 +13,7 @@ from .rehearsal_allocation import (
     PREDICATE_PAIR_ROWS, reserve_preservation as _reserve_preservation,
     scheduled_pairs, valid_allocation,
 )
-from .weakness_rehearsal import _draw_size, targeted_groups
+from .weakness_rehearsal import _draw_size, _occupied, targeted_groups
 from bilqis_mlx.source_adapters.lesson_geometry import (
     LessonGeometry, complete_groups, distinct_groups, geometry_for_adapter,
 )
@@ -20,6 +21,9 @@ from bilqis_mlx.runtime.factory_retention_owner import require_current_retention
 from bilqis_mlx.runtime.priority_rejection_replay import current_structural_weaknesses
 from bilqis_mlx.semantic_sampling import DEFAULT_BINARY_BALANCE
 from bilqis_mlx.semantics.domains import contract_digest
+
+if TYPE_CHECKING:
+    from bilqis_mlx.runtime.retention.local_preflight import ExactMissInstruction
 
 
 _SOURCE_DRAW_EACH = DEFAULT_BINARY_BALANCE.minimum_total
@@ -44,6 +48,8 @@ class RehearsalPlan:
     weakness_capacity: int = 0
     support_geometries: tuple[tuple[str, LessonGeometry | None], ...] = ()
     preservation_allocation: dict | None = None
+    schedule_identity: str | None = None
+    exact_miss_instruction: ExactMissInstruction | None = None
 
 
 @dataclass(frozen=True)
@@ -74,7 +80,7 @@ class RehearsalRows:
 
 def _seed(plan: RehearsalPlan, role: str, capability: str, ordinal: int) -> int:
     digest = hashlib.sha256(
-        f"{plan.identity}|{role}|{capability}|{ordinal}".encode("utf-8")).hexdigest()
+        f"{plan.schedule_identity or plan.identity}|{role}|{capability}|{ordinal}".encode("utf-8")).hexdigest()
     return int(digest[:16], 16)
 
 
@@ -104,7 +110,8 @@ def reserve_visit_preservation(source_context, parent, cache, offer, pool, teach
         protection.for_target(offer.capability_id), teacher, scope)
 
 
-def compile_rehearsal_plan(run_dir, parent, cache, source_context, selection) -> RehearsalPlan:
+def compile_rehearsal_plan(run_dir, parent, cache, source_context, selection, *,
+                           preflight=None, journal_ordinal=None) -> RehearsalPlan:
     """Compile WHAT to rehearse from R05/R13 authority without choosing curriculum."""
     capability = selection.offer.capability_id
     protection, target = require_current_retention_plan(
@@ -160,11 +167,21 @@ def compile_rehearsal_plan(run_dir, parent, cache, source_context, selection) ->
         "active_grade_definition_sha256": active.definition.definition_sha256,
         "active_grade_activation_sha256": active.activation_sha256,
     }
+    schedule = contract_digest(payload)
+    instruction = None
+    if preflight is not None:
+        from bilqis_mlx.runtime.retention.local_preflight import issue_exact_miss_instruction
+        instruction = issue_exact_miss_instruction(
+            preflight, source_context, parent, cache, selection, protection, target,
+            journal_ordinal)
+    identity = schedule if instruction is None else contract_digest(
+        (schedule, instruction.digest))
     return RehearsalPlan(
         capability, target.target_grade_id, prior, support, weakness_records,
         protection.digest, active.definition.definition_sha256,
-        active.activation_sha256, contract_digest(payload), exposures, capacity, geometries,
-        allocation)
+        active.activation_sha256, identity, exposures,
+        selection.offer.source_each if instruction is not None else capacity, geometries,
+        allocation, schedule if instruction is not None else None, instruction)
 
 
 def _binding(source_context, row, authority, *, role, capability, seed, each):
@@ -237,7 +254,8 @@ def materialize_rehearsal_rows(source_context, plan: RehearsalPlan, ordinal: int
         draws = dict.fromkeys((*plan.prior_capability_ids,
                                *plan.retention_support_capability_ids), 0)
     else:
-        draws = scheduled_pairs(allocation, ordinal, int(plan.identity[:16], 16))
+        draws = scheduled_pairs(
+            allocation, ordinal, int((plan.schedule_identity or plan.identity)[:16], 16))
     prior_pairs = tuple(item for cap in plan.prior_capability_ids if cap in draws
                         for item in _draw_rehearsal(
                             source_context, plan, "prior", cap, ordinal, pairs=draws[cap]))
@@ -266,6 +284,26 @@ def materialize_rehearsal_rows(source_context, plan: RehearsalPlan, ordinal: int
             preservation.append(row)
             bindings.append(binding)
             authorities.append((row["id"], authority))
+    instruction = plan.exact_miss_instruction
+    if instruction is not None:
+        from bilqis_mlx.runtime.retention.local_preflight import exact_miss_marker
+        used_ids, used_tokens = _occupied(
+            (*reserved_rows, *prior, *support, *preservation))
+        marker = exact_miss_marker(instruction.preflight)
+        for row, authority in instruction.pairs:
+            if len(preservation) >= plan.weakness_capacity:
+                break
+            row_id, tokens = row["id"], tuple(row["tokens"])
+            if row_id in used_ids or tokens in used_tokens:
+                continue
+            binding = _binding(
+                source_context, row, authority, role="preservation",
+                capability=plan.target_capability_id, seed=authority.seed, each=1)
+            preservation.append(row)
+            bindings.append({**binding, **marker})
+            authorities.append((row_id, authority))
+            used_ids.add(row_id)
+            used_tokens.add(tokens)
     rows = RehearsalRows(
         prior, tuple(preservation), support, tuple(bindings), tuple(authorities), unavailable)
     ids = [row["id"] for row in (*rows.prior, *rows.preservation, *rows.retention_support)]

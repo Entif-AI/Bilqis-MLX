@@ -16,7 +16,7 @@ def _learning_first_delivery(
         rehearsal_authorities, observation, teacher_hparams,
         prepared_fresh_support_rows, fresh_support_by_id, fresh_support_binding,
         fresh_support_authority, fresh_support_unavailable_reason,
-        fresh_support_depth_control, prepared_primary_lesson):
+        fresh_support_depth_control, prepared_primary_lesson, *, exact_miss_instruction=None):
     planning_generation = selection.offer._planning_generation
     parent = planning_generation._parent
     semantic_context = planning_generation._authenticated_features
@@ -30,7 +30,8 @@ def _learning_first_delivery(
         fresh_support_authority=fresh_support_authority,
         fresh_support_unavailable_reason=fresh_support_unavailable_reason,
         fresh_support_depth_control=fresh_support_depth_control,
-        prepared_primary_lesson=prepared_primary_lesson)
+        prepared_primary_lesson=prepared_primary_lesson,
+        exact_miss_instruction=exact_miss_instruction)
     return parent, semantic_context, policy, hparams, delivery_inputs, setup_seconds
 
 
@@ -76,7 +77,7 @@ def execute_learning_first_priority_candidate(
         pipeline_host_overlap_wall_seconds=0.0,
         pipeline_host_wait_wall_seconds=0.0,
         pipeline_accelerator_wait_for_host_wall_seconds=0.0,
-        distributed_profile=None, distributed_executor=None):
+        distributed_profile=None, distributed_executor=None, exact_miss_instruction=None):
     """Execute a selected lesson without strict source/custody ceremony."""
     _require_issued(selection)
     if selection.status != "TEACHER_SELECTED":
@@ -92,7 +93,8 @@ def execute_learning_first_priority_candidate(
         rehearsal_authorities, observation, teacher_hparams,
         prepared_fresh_support_rows, fresh_support_by_id, fresh_support_binding,
         fresh_support_authority, fresh_support_unavailable_reason,
-        fresh_support_depth_control, prepared_primary_lesson)
+        fresh_support_depth_control, prepared_primary_lesson,
+        exact_miss_instruction=exact_miss_instruction)
     (offer, rows, enrichment, rehearsal, rehearsal_by_id, rehearsal_bindings,
      rehearsal_authorities, fresh_support, fresh_support_by_id, capability, delivery,
      observation) = delivery_inputs
@@ -108,16 +110,13 @@ def execute_learning_first_priority_candidate(
         teacher_strategy=policy, teacher_hparams=hparams, max_norm=max_norm,
         observation=observation, memory_budget=memory_budget,
         rehearsal_by_id=rehearsal_by_id, rehearsal_bindings=rehearsal_bindings,
-        rehearsal_authorities=rehearsal_authorities,
-        fresh_support_by_id=fresh_support_by_id,
+        rehearsal_authorities=rehearsal_authorities, fresh_support_by_id=fresh_support_by_id,
         salience_provider=salience_provider, capture_diagnostics=capture_diagnostics,
         candidate=candidate, finalize_candidate=finalize_candidate,
-        currentness_transaction=None,
+        currentness_transaction=None, currentness_binding_wall_seconds=0.0,
         candidate_step_started_at=candidate_step_started_at,
-        currentness_binding_wall_seconds=0.0,
         upstream_pre_neural_source_compile_wall_seconds=(
-            float(source_prepare_wall_seconds)
-            + candidate_delivery_setup_wall_seconds),
+            float(source_prepare_wall_seconds) + candidate_delivery_setup_wall_seconds),
         source_lane_wait_wall_seconds=source_lane_wait_wall_seconds,
         source_lesson_materialization_wall_seconds=(
             source_lesson_materialization_wall_seconds),
@@ -126,18 +125,15 @@ def execute_learning_first_priority_candidate(
         observer_begin_step_wall_seconds=observer_begin_step_wall_seconds,
         candidate_delivery_setup_wall_seconds=candidate_delivery_setup_wall_seconds,
         semantic_context=semantic_context, prepared_source=None,
-        accepted_cache=accepted_cache, selected_source_authority=authority,
-        learning_first_cache=learning_first_cache,
+        accepted_cache=accepted_cache, learning_first_cache=learning_first_cache,
+        selected_source_authority=authority,
         prepared_learning_first_source_inputs=prepared_learning_first_source_inputs,
-        prepared_learning_first_source_identity=(
-            prepared_learning_first_source_identity),
+        prepared_learning_first_source_identity=prepared_learning_first_source_identity,
         pipeline_host_preparation_wall_seconds=pipeline_host_preparation_wall_seconds,
         pipeline_host_overlap_wall_seconds=pipeline_host_overlap_wall_seconds,
         pipeline_host_wait_wall_seconds=pipeline_host_wait_wall_seconds,
-        pipeline_accelerator_wait_for_host_wall_seconds=(
-            pipeline_accelerator_wait_for_host_wall_seconds),
-        distributed_profile=distributed_profile,
-        distributed_executor=distributed_executor)
+        pipeline_accelerator_wait_for_host_wall_seconds=pipeline_accelerator_wait_for_host_wall_seconds,
+        distributed_profile=distributed_profile, distributed_executor=distributed_executor)
 
 
 __all__ = ("execute_learning_first_priority_candidate",)

@@ -52,6 +52,8 @@ def _execute_horizon_step(
         pipeline_kwargs["prepared_source_seed"] = lesson.source_seed
     if not strict and getattr(lesson, "primary_lesson", None) is not None:
         pipeline_kwargs["prepared_primary_lesson"] = lesson.primary_lesson
+    if not strict and getattr(lesson, "exact_miss_instruction", None) is not None:
+        pipeline_kwargs["exact_miss_instruction"] = lesson.exact_miss_instruction
     step = execute_candidate(
         selection, context, atlas_path, feature_path,
         teacher_hparams=parent.optimizer_hyperparameters, observation=observation,
