@@ -5,8 +5,9 @@ from dataclasses import dataclass
 
 from bilqis_mlx.errors import BilqisError, SOURCE
 from bilqis_mlx.factory.generation import runtime_adapter_for_release
-from bilqis_mlx.learning.native_lesson_selection import select_group_lesson
+from bilqis_mlx.learning.native_lesson_selection import LessonSelectionError, select_group_lesson
 from bilqis_mlx.learning.source_selection import COMPOSITION_DEPTH_POLICY_THRESHOLD
+from bilqis_mlx.runtime.source_execution import _invalid_source_batch
 from bilqis_mlx.source_adapters.lesson_geometry import (
     complete_groups, distinct_groups, geometry_for_adapter,
 )
@@ -75,7 +76,7 @@ def prepare_lesson_pool(source_context, offer):
     if (not baseline
             or set(map(_key, baseline)) != set(map(_key, complete))
             or (geometry.layout != "numeric" and len(baseline) != len(complete))):
-        raise LessonShapeUnavailable("complete baseline unavailable")
+        raise LessonShapeUnavailable(LessonSelectionError.BASELINE_UNAVAILABLE.value)
     fallback = LessonPool(baseline, baseline, rows, offer.source_authority,
                           "baseline_only")
     count = geometry.expanded_count(offer.source_each)
@@ -91,7 +92,7 @@ def prepare_lesson_pool(source_context, offer):
     if any(getattr(authority, key) != getattr(offer.source_authority, key)
            for key in ("release_sha256", "capability_id", "provider_id",
                        "provider_implementation_sha256", "seed", "source_family_id")):
-        raise ValueError("BAMF_PRIORITY_LESSON_POOL_AUTHORITY_DRIFT")
+        _invalid_source_batch("BAMF_PRIORITY_LESSON_POOL_AUTHORITY_DRIFT")
     groups = distinct_groups(complete_groups(expanded_rows, geometry))
     if not _can_fill(baseline, groups):
         return fallback

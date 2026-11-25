@@ -1,10 +1,11 @@
 """Bounded, source-owned construction search for scored R13 debt."""
 from dataclasses import dataclass
 
+from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.factory._model.weakness import classify_weakness
 from bilqis_mlx.runtime.structural_weakness_ledger import _ledger_key
 from bilqis_mlx.source_adapters.lesson_geometry import (
-    complete_groups, distinct_groups, geometry_for_adapter,
+    NUMERIC_LESSON_GROUP_WIDTH, complete_groups, distinct_groups, geometry_for_adapter,
 )
 
 
@@ -100,7 +101,7 @@ def targeted_groups(source_context, plan, ordinal, seed_for, minimum, *,
         return (), tuple((key, "UNSUPPORTED_GEOMETRY") for key in ordered)
     capacity = plan.weakness_capacity
     each = _draw_size(geometry, minimum)
-    if capacity < (3 if geometry.layout == "numeric" else 1):
+    if capacity < (NUMERIC_LESSON_GROUP_WIDTH if geometry.layout == "numeric" else 1):
         return (), tuple((key, "CAPACITY_OR_COLLISION") for key in ordered)
     offers = []
     selected, served, remaining = (), set(), capacity
@@ -117,7 +118,7 @@ def targeted_groups(source_context, plan, ordinal, seed_for, minimum, *,
         rows = tuple(rows)
         if (len(rows) != each or any(
                 row.get("capability") != plan.target_capability_id for row in rows)):
-            raise ValueError("BAMF_REHEARSAL_SOURCE_DRAW_INVALID")
+            ErrorBus.raise_(SCHOOL.BAMF_CURRICULUM.INVALID, reason="BAMF_REHEARSAL_SOURCE_DRAW_INVALID")
         offers.extend(_group_offers(
             rows, authority, seed, geometry, execution, adapter, admitted, debts))
         selected, served, remaining = choose_groups(
@@ -153,7 +154,7 @@ def delivered_weakness_controls(source_context, capability, preservation, bindin
         if (not isinstance(key, str) or classified is None
                 or key.rsplit(":", 1)[-1] != classified.class_sha256
                 or row.get("capability") != capability):
-            raise ValueError("BAMF_WEAKNESS_DELIVERED_CLASS_DRIFT")
+            ErrorBus.raise_(SCHOOL.BAMF_CURRICULUM.INVALID, reason="BAMF_WEAKNESS_DELIVERED_CLASS_DRIFT")
         facts.setdefault(key, []).append(row["id"])
     count = sum(map(len, facts.values()))
     return {"weakness_class_matches": facts, "weakness_targets_delivered": count,
