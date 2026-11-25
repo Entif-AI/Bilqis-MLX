@@ -91,6 +91,14 @@ def authenticated_cadence_attempts(run_dir: Path):
     root = Path(run_dir).resolve()
     if not (root / "bamf-state.json").exists():
         return ()
+    from .active_grade_cadence_custody import read_current_cadence
+    return _authenticated_cadence_attempts(root, read_current_cadence(root))
+
+
+def _authenticated_cadence_attempts(root: Path, cadence_state):
+    """Project the unseen tail against the cadence tip verified by this operation."""
+    if not (root / "bamf-state.json").exists():
+        return ()
     from bilqis_mlx.data_plane import data_plane
 
     plane = data_plane()
@@ -99,8 +107,6 @@ def authenticated_cadence_attempts(run_dir: Path):
     offset = 0
     identity = None
     pointer, student = _current_accepted(root)
-    from .active_grade_cadence_custody import read_current_cadence
-    cadence_state = read_current_cadence(root)
     if state is None:
         legacy = plane.event_projection_state(
             root, _PROJECTION_KEY, _LEGACY_PROJECTION_SCHEMA)

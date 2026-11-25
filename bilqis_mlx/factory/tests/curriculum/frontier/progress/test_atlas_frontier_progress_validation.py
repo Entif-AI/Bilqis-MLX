@@ -258,3 +258,31 @@ class AtlasFrontierProjectionCustodyTests(ProjectionAuthorityFixture, unittest.T
             forged_snapshot)
         with self.assertRaises(BilqisError):
             forged_receipt.verify()
+
+
+class ObligationGroupingTests(unittest.TestCase):
+    def test_multiple_families_missing_identity_and_ready_status(self):
+        from bilqis_mlx.factory.atlas_frontier_closure import CandidateClosure, ClosureStatus
+        from bilqis_mlx.factory.atlas_frontier_progress_validation import (
+            current_obligations, has_unrequested_ready,
+        )
+
+        first = CandidateClosure("z.op.0", "a", "a" * 64, ClosureStatus.READY, (), ())
+        second = CandidateClosure("z.op.0", "b", "b" * 64, ClosureStatus.READY, ("root",), ())
+        held = CandidateClosure("z.op.1", "a", "c" * 64, ClosureStatus.SOURCE_HELD, (), ())
+        ignored = replace(first, semantic_id="outside")
+        closure = _closure(_snapshot(_ready()[0]), (second, held, first, ignored),
+                           order=("z.op.2", "z.op.1", "z.op.0"))
+        expected = {
+            "z.op.2": hashlib.sha256(_bytes(())).hexdigest(),
+            "z.op.1": hashlib.sha256(_bytes((("a", "c" * 64, ()),))).hexdigest(),
+            "z.op.0": hashlib.sha256(_bytes((("a", "a" * 64, ()),
+                                            ("b", "b" * 64, ("root",))))).hexdigest(),
+        }
+        actual = current_obligations(closure)
+        self.assertEqual(tuple(actual), tuple(expected))
+        self.assertEqual(actual, expected)
+        self.assertTrue(has_unrequested_ready(closure, set(), actual))
+        self.assertFalse(has_unrequested_ready(closure, {("z.op.0", expected["z.op.0"])}, actual))
+        mixed = replace(closure, candidates=(first, replace(second, status=ClosureStatus.SOURCE_HELD)))
+        self.assertFalse(has_unrequested_ready(mixed, set(), current_obligations(mixed)))

@@ -11,6 +11,7 @@ from .factory_training_source import (
 from .learning_first_source import prepare_learning_first_source_rows
 from .factory_training_preparation_cache import (
     LearningFirstPreparationCache, LearningFirstPreparedSourceInputs,
+    LearningFirstSourceRowCache,
     _prepared_ahead_matches as _prepared_ahead_matches_impl,
     prepare_learning_first_source_inputs_ahead as _prepare_ahead_impl,
 )
@@ -18,11 +19,11 @@ from .factory_training_preparation_cache import (
 
 def prepare_learning_first_source_inputs_ahead(
         source_context, authenticated, rows, *, source_seed: int, source_each: int,
-        source_identity: str | None = None):
+        source_identity: str | None = None, row_cache=None):
     return _prepare_ahead_impl(
         source_context, authenticated, rows, source_seed=source_seed,
         source_each=source_each, source_identity=source_identity,
-        content_digest_fn=content_digest)
+        content_digest_fn=content_digest, row_cache=row_cache)
 
 
 def _prepared_ahead_matches(
@@ -85,32 +86,22 @@ def _learning_first_source_inputs(
             if type(learning_first_cache) is not LearningFirstPreparationCache:
                 _invalid("LEARNING_FIRST_PREPARATION_CACHE_INVALID")
             learning_first_cache.bind(source_context, authenticated)
-            for row, source_row, model_source in zip(
-                    rows, source_rows, prepared_model_sources, strict=True):
-                learning_first_cache.put(
-                    row, source_row.projection.digest, model_source)
         return source_rows, prepared_model_sources, True, False
-    source_rows = prepare_learning_first_source_rows(
-        source_context, authenticated, rows,
-        source_seed=source_seed, source_each=source_each)
     if learning_first_cache is None:
+        source_rows = prepare_learning_first_source_rows(
+            source_context, authenticated, rows,
+            source_seed=source_seed, source_each=source_each)
         return (source_rows, _prepare_learning_first_model_sources(
             authenticated, source_rows), False, ahead_discarded)
     if type(learning_first_cache) is not LearningFirstPreparationCache:
         _invalid("LEARNING_FIRST_PREPARATION_CACHE_INVALID")
     learning_first_cache.bind(source_context, authenticated)
-    prepared_model_sources = []
-    for row, source_row in zip(rows, source_rows, strict=True):
-        eligibility_digest = source_row.projection.digest
-        model_source = learning_first_cache.get(row, eligibility_digest)
-        if model_source is None:
-            model_source = _prepare_learning_first_model_sources(
-                authenticated, (source_row,))[0]
-            if model_source.eligibility_digest != eligibility_digest:
-                _invalid("LEARNING_FIRST_PREPARATION_ELIGIBILITY_DRIFT")
-            learning_first_cache.put(row, eligibility_digest, model_source)
-        prepared_model_sources.append(model_source)
-    return source_rows, tuple(prepared_model_sources), False, ahead_discarded
+    source_rows, prepared_model_sources = learning_first_cache.source_rows.prepare(
+        source_context, authenticated, rows,
+        source_seed=source_seed, source_each=source_each,
+        prepare_rows=prepare_learning_first_source_rows,
+        prepare_models=_prepare_learning_first_model_sources)
+    return source_rows, prepared_model_sources, False, ahead_discarded
 
 
 def _selected_delivery_authority(source_context, rows, authority, delivery,

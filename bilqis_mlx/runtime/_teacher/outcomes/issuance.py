@@ -249,6 +249,9 @@ def context_for_selection(
     payload = teacher['causal_experiment']['diagnostic_contexts'][key]
     context = selection_context(release, program, grade, school.stage,
         option.context.scope, payload, option.context.capability_id)
+    competence = getattr(option, 'competence', None)
+    if competence is not None:
+        context['competence_priority'] = competence.to_record()
     return {
         **context,
         'diagnostic_context_key': key,

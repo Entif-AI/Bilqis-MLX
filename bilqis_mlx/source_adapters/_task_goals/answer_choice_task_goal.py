@@ -53,7 +53,7 @@ def _answer_family(capability, answer_kind=None):
 
 
 def lower_answer_choice_task_goal(
-    row: dict, *, semantic_release: str, capability, **_,
+    row: dict, *, semantic_release: str, capability, operator_registry=None, **_,
 ):
     """Expose only the admitted answer domain; evaluator gold stays private."""
     if (not isinstance(row, dict) or "gold" in row
@@ -73,7 +73,9 @@ def lower_answer_choice_task_goal(
         (_PURPOSE,), (PUBLIC_FORMAL,), (_JURISDICTION,),
         (scope,), (PUBLIC_FORMAL,), (), (),
     )
-    registry = default_registry(release)
+    registry = operator_registry if operator_registry is not None else default_registry(release)
+    if registry.semantic_release != semantic_release:
+        _invalid("BAMF_C04_OPERATOR_REGISTRY_RELEASE_DRIFT")
     spec = registry.resolve(operator_id)
     operands = []
     refs = []
@@ -118,9 +120,16 @@ def resolve_answer_choice_task_goal(
     if not isinstance(row, dict) or "gold" not in row:
         _invalid("BAMF_C04_ANSWER_CHOICE_TRAINING_TARGET_INVALID")
     source = dict(row)
-    gold = source.pop("gold")
+    source.pop("gold")
     goal, binding = lower_answer_choice_task_goal(
         source, semantic_release=semantic_release, capability=capability, **kwargs)
+    return _resolve_lowered_answer_choice(row, goal, binding, capability=capability)
+
+
+def _resolve_lowered_answer_choice(row, goal, binding, *, capability, **_):
+    if not isinstance(row, dict) or "gold" not in row:
+        _invalid("BAMF_C04_ANSWER_CHOICE_TRAINING_TARGET_INVALID")
+    gold = row["gold"]
     family = _answer_family(capability, row.get("answer_kind"))
     type_name, _operator_id = _SUPPORTED[family.kind]
     text = str(gold)

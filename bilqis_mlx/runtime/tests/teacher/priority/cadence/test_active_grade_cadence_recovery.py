@@ -36,7 +36,7 @@ def test_terminal_event_replay_heals_stale_cadence_before_reissue(tmp_path):
         issued = issue_active_grade_cadence(tmp_path, epoch, frontier)
         with patch(
                 "bilqis_mlx.runtime.active_grade_cadence_replay."
-                "authenticated_cadence_attempts",
+                "_authenticated_cadence_attempts",
                 return_value=((issued.to_record(), "A", "RETAINED"),)):
             cold = issue_active_grade_cadence(tmp_path, epoch, frontier)
     assert cold.authorized_capability_ids == ("B",)
@@ -55,7 +55,7 @@ def test_projection_rebuild_after_activation_change_replays_terminal_attempt(tmp
         shutil.rmtree(tmp_path / "active-grade-cadence")
         with patch(
                 "bilqis_mlx.runtime.active_grade_cadence_replay."
-                "authenticated_cadence_attempts", return_value=(terminal,)):
+                "_authenticated_cadence_attempts", return_value=(terminal,)):
             rebuilt = issue_active_grade_cadence(tmp_path, epoch, successor)
     assert rebuilt.phase is ActiveGradeCadencePhase.MAIN
     assert rebuilt.authorized_capability_ids == ("B",)
@@ -85,7 +85,7 @@ def test_projection_rebuild_inside_recovery_preserves_round_and_exposure(tmp_pat
         shutil.rmtree(tmp_path / "active-grade-cadence")
         with patch(
                 "bilqis_mlx.runtime.active_grade_cadence_replay."
-                "authenticated_cadence_attempts", return_value=tuple(history)):
+                "_authenticated_cadence_attempts", return_value=tuple(history)):
             rebuilt = issue_active_grade_cadence(tmp_path, epoch, frontier)
     assert rebuilt.phase is ActiveGradeCadencePhase.RECOVERY_2
     assert rebuilt.authorized_capability_ids == expected_remaining
@@ -119,7 +119,7 @@ def test_new_learner_evidence_reopens_exhausted_grade_main_cadence(tmp_path):
         shutil.rmtree(tmp_path / "active-grade-cadence")
         with patch(
                 "bilqis_mlx.runtime.active_grade_cadence_replay."
-                "authenticated_cadence_attempts", return_value=tuple(history)):
+                "_authenticated_cadence_attempts", return_value=tuple(history)):
             rebuilt = issue_active_grade_cadence(tmp_path, second_epoch, frontier)
     assert rebuilt.phase is ActiveGradeCadencePhase.MAIN
     assert rebuilt.disposition.value == "TEACHING"
@@ -179,7 +179,7 @@ def test_boundary_rebuild_ignores_orphaned_writer_temp(tmp_path):
         shutil.rmtree(tmp_path / "active-grade-cadence")
         with patch(
                 "bilqis_mlx.runtime.active_grade_cadence_replay."
-                "authenticated_cadence_attempts", return_value=tuple(history)):
+                "_authenticated_cadence_attempts", return_value=tuple(history)):
             rebuilt = issue_active_grade_cadence(tmp_path, epoch, frontier)
     assert rebuilt.phase is ActiveGradeCadencePhase.BOUNDARY
     assert rebuilt.disposition.value == "RECOVERY_EXHAUSTED"
@@ -212,3 +212,16 @@ def test_legacy_boundary_receipt_remains_valid_historical_evidence(tmp_path):
 
     assert cadence_boundary._latest_boundary(
         tmp_path, frontier, "3" * 64) is None
+
+
+def test_reissue_rejects_corruption_in_historical_cadence_record(tmp_path):
+    frontier = _frontier((_capability("A"), _capability("B")))
+    epoch = _epoch({"A": 1, "B": 1})
+    with _obligation_patch(epoch):
+        issued = issue_active_grade_cadence(tmp_path, epoch, frontier)
+        _record_attempt(tmp_path, issued, "A")
+        assert issue_active_grade_cadence(tmp_path, epoch, frontier).authorized_capability_ids == ("B",)
+        genesis = tmp_path / "active-grade-cadence" / "states" / (issued.state.cadence_sha256 + ".json")
+        genesis.write_text("{}\n", encoding="utf-8")
+        with pytest.raises(BilqisError):
+            issue_active_grade_cadence(tmp_path, epoch, frontier)
