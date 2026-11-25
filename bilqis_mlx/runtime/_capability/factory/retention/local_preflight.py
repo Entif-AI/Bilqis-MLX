@@ -19,6 +19,7 @@ from .local_screen_support import comparison_epoch, foundation_policy, split_cac
 
 
 _ISSUED = WeakKeyDictionary()
+_EXACT_MISS_PAIR_ARITY = 2  # Source row and its authenticated subset grant.
 
 
 def prospective_seed(release, identity, cadence, journal_ordinal, plan, target_plan):
@@ -283,7 +284,7 @@ def require_exact_miss_delivery(instruction, context, selection, observation,
         _invalid("BAMF_C05_EXACT_MISS_ATTEMPT_DRIFT")
     pairs = instruction.pairs
     if (not eligible or type(pairs) is not tuple or len(pairs) != len(eligible)
-            or any(type(pair) is not tuple or len(pair) != 2
+            or any(type(pair) is not tuple or len(pair) != _EXACT_MISS_PAIR_ARITY
                    or type(pair[1]) is not SourceBatchAuthority for pair in pairs)
             or tuple(row for row, _ in pairs) != eligible):
         _invalid("BAMF_C05_EXACT_MISS_CENSUS_DRIFT")
