@@ -2,6 +2,23 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [1.5.3](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.5.2...v1.5.3) (2026-11-25)
+
+
+### Bug Fixes
+
+* **bamf:** integrate qualified throughput and cadence compatibility ([#1656](https://github.com/Entif-AI/Bilqis-MLX/issues/1656)) ([2154df9](https://github.com/Entif-AI/Bilqis-MLX/commit/2154df99c8ff90d0f20d5b35a30b53ed15a28aa1))
+* **bamf:** release discarded C05 candidate state ([#1657](https://github.com/Entif-AI/Bilqis-MLX/issues/1657)) ([#1658](https://github.com/Entif-AI/Bilqis-MLX/issues/1658)) ([a01bf1c](https://github.com/Entif-AI/Bilqis-MLX/commit/a01bf1cccb3f45d9a59f6ede7d6e6611e660de18))
+* **presentation:** preserve curriculum beyond the visit window ([#1659](https://github.com/Entif-AI/Bilqis-MLX/issues/1659)) ([773654e](https://github.com/Entif-AI/Bilqis-MLX/commit/773654ee8b917c0b525a7eb13e5c70082caabf55))
+* **presentation:** restore truthful BAMF curriculum and retained growth telemetry ([#1611](https://github.com/Entif-AI/Bilqis-MLX/issues/1611)) ([83671fe](https://github.com/Entif-AI/Bilqis-MLX/commit/83671fea5420e13499d83c92b31ca96f44b2a4fc))
+* **teacher:** restore retained protected-loss negative archetypes ([#1612](https://github.com/Entif-AI/Bilqis-MLX/issues/1612)) ([b51c4a2](https://github.com/Entif-AI/Bilqis-MLX/commit/b51c4a2098d2dd1cbde219d347832dd5ac79f5a6))
+* **verification:** check canonical witness setup before detachment ([#1654](https://github.com/Entif-AI/Bilqis-MLX/issues/1654)) ([0686e64](https://github.com/Entif-AI/Bilqis-MLX/commit/0686e646f46c3e13ce7386ccb703ee6b611a6c6a))
+
+
+### Performance Improvements
+
+* **ci:** reuse content-addressed verification evidence ([#1655](https://github.com/Entif-AI/Bilqis-MLX/issues/1655)) ([52286a8](https://github.com/Entif-AI/Bilqis-MLX/commit/52286a8b1288d9a95422e9f7c96ef0e362047414))
+
 ## [1.5.2](https://github.com/Entif-AI/Bilqis-MLX/compare/v1.5.1...v1.5.2) (2026-11-24)
 
 
