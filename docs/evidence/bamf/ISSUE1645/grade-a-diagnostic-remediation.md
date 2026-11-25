@@ -122,3 +122,19 @@ dangling destination. The full scoped research suite now passes 44/44. No
 numerical premise changed, so the passing native delivery replay is retained.
 The independent drift review must cover the corrected implementation before
 integration admission.
+
+### Independent implementation-drift follow-up
+
+The independent EGM drift review at `f12062d818b6a1fd4e231d8ebb4dbd2c9ae91cd2`
+confirmed the symlink repair, the authenticated basis and custody boundaries,
+compiled delivery and supervision, and both production owner repairs. It found
+remaining implementation defects in zero-second-moment cohorts, undefined
+matched-norm directions, and loss of issued perfect-target skip evidence.
+The follow-up restores the approved design: null second-history fractions when
+no nonzero second coordinates exist, null unmatched counterfactual dots when
+only the observed direction has nonzero norm, lawful zero/decay-only cases,
+and the owner-issued read-only parent preflight evidence on skipped visits.
+Focused behavior tests cover selected zero moments, fully frozen cohorts,
+undefined norm matching and the actual issued preflight record without
+candidate delivery or update. Research regression suite: 47/47. No new
+learner execution, optimizer policy change, or independent acquisition claim.

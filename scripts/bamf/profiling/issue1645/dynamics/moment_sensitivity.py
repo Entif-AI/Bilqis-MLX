@@ -1,6 +1,5 @@
 """CPU-only sensitivity of saved AdamW displacements to actual retained moments."""
 import argparse
-from collections import defaultdict
 from contextlib import ExitStack
 import json
 import math
@@ -52,7 +51,7 @@ def finish_dots(target, result, dots, norms):
         for key in ("no_second_history", "uniform_denominator"):
             row[key + "_matched_norm"] = (
                 row[key] * norms["observed_adaptive"] / norms[key] + row["decay"]
-                if norms[key] else row["decay"])
+                if norms[key] else (row["decay"] if not norms["observed_adaptive"] else None))
         for key in ("analytic_native", "uncorrected"):
             row[key + "_with_decay"] = row[key] + row["decay"]
     return norms
@@ -60,8 +59,10 @@ def finish_dots(target, result, dots, norms):
 
 def analyze_target(target, update, parent, probes, receipt, result):
     hp = receipt["hyperparameters"]
-    dots = defaultdict(lambda: defaultdict(float))
-    norms = defaultdict(float)
+    keys = ("analytic_native", "uncorrected", "no_second_history", "uniform_denominator",
+            "observed_adaptive", "rounding_residual", "decay")
+    dots = {protected: dict.fromkeys(keys, 0.) for protected in probes}
+    norms = dict.fromkeys(keys, 0.)
     n = selected_clocks = 0
     old_sum = old_majority = old_dominant = 0.
     bias_min = [math.inf, math.inf]
@@ -108,10 +109,11 @@ def analyze_target(target, update, parent, probes, receipt, result):
     norms = finish_dots(target, result, dots, norms)
     return {
         "active_clocks": selected_clocks, "nonzero_second_coordinates": n,
-        "retained_second_fraction_mean": old_sum / n,
-        "retained_second_majority_fraction": old_majority / n,
-        "retained_second_at_least_90pct_fraction": old_dominant / n,
-        "bias_factors_min": bias_min, "bias_factors_max": bias_max,
+        "retained_second_fraction_mean": old_sum / n if n else None,
+        "retained_second_majority_fraction": old_majority / n if n else None,
+        "retained_second_at_least_90pct_fraction": old_dominant / n if n else None,
+        "bias_factors_min": bias_min if selected_clocks else None,
+        "bias_factors_max": bias_max if selected_clocks else None,
         "adaptive_l2": norms, "analytic_max_absolute_difference": max_error,
         "protected_dots": dots,
     }

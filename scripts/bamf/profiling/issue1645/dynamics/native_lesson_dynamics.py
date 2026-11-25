@@ -12,7 +12,7 @@ from scripts.bamf.profiling.issue1645.dynamics.artifacts import (
     add_legacy_arguments, admit_reference, reference_basis, require_no_symlink,
 )
 from scripts.bamf.profiling.issue1645.dynamics.delivery_observation import (
-    describe_delivery, observe_native_call,
+    describe_delivery, describe_perfect_target_skip, observe_native_call,
 )
 
 
@@ -79,8 +79,7 @@ def capture_selected(run, parent, context, atlas, feature, selection, cache, des
                 run, parent, context, atlas, feature, selection, cache, 1, 100,
                 None, 0, None, None, None, emit_progress=lambda *_: None,
                 invalid=lambda reason: require(False, reason))
-            captured["status"] = outcome.status
-            require(outcome.status == "PERFECT_TARGET_SKIPPED", "unexpected un-intercepted outcome")
+            captured.update(describe_perfect_target_skip(outcome))
     except Captured:
         captured["stopped_before_candidate_admission"] = True
     require(captured.get("stopped_before_candidate_admission") or

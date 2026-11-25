@@ -53,3 +53,18 @@ def observe_native_call(original, captured):
         captured["mentor_supervision"] = None if supervision is None else supervision.to_record()
         return result
     return execute
+
+
+def describe_perfect_target_skip(outcome):
+    """Use the owner's preflight evidence without publishing a neutral event."""
+    from bilqis_mlx.runtime.bamf_bundle.publication.preflight import (
+        PERFECT_TARGET_SKIPPED, _evidence,
+    )
+    from bilqis_mlx.runtime.retention.local_preflight import require_preflight
+
+    require(outcome.status == PERFECT_TARGET_SKIPPED, "unexpected un-intercepted outcome")
+    preflight = outcome.preflight
+    require_preflight(preflight)
+    require(preflight.skip, "missing perfect-target skip authority")
+    return {"status": outcome.status, "reason": PERFECT_TARGET_SKIPPED,
+            "preflight": _evidence(preflight)}

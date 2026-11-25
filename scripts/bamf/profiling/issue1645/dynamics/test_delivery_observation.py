@@ -53,3 +53,24 @@ class DeliveryObservation(unittest.TestCase):
         self.raw["id"] = "foreign"
         with self.assertRaisesRegex(ValueError, "prepared row identity drift"):
             describe_delivery(self.prepared, None)
+
+
+def test_native_skip_records_issued_parent_preflight(monkeypatch, tmp_path):
+    from bilqis_mlx.runtime.bamf_operator.session_parts import native_session
+    from bilqis_mlx.runtime.bamf_operator.session_parts.session_support import BamfPreparedVisit
+    from bilqis_mlx.runtime.tests.capability.factory.retention.test_local_preflight import _fixture
+    from scripts.bamf.profiling.issue1645.dynamics.native_lesson_dynamics import capture_selected
+
+    issued, parent, cache, *_ = _fixture(monkeypatch, True, True)
+    selection = SimpleNamespace(offer=SimpleNamespace(capability_id="target"),
+                                visit=SimpleNamespace(identity=issued.visit))
+    outcome = BamfPreparedVisit("PERFECT_TARGET_SKIPPED", parent, selection=selection,
+                                capability="target", preflight=issued)
+    monkeypatch.setattr(native_session, "execute_selected_visit", lambda *a, **kw: outcome)
+    receipt = capture_selected(tmp_path, parent, None, None, None, selection, cache, tmp_path / "skip")
+    assert receipt["status"] == receipt["reason"] == "PERFECT_TARGET_SKIPPED"
+    assert receipt["preflight"]["assessment_sha256"] == issued.assessment.digest()
+    assert receipt["preflight"]["teacher_visit"] == issued.visit.to_record()
+    assert receipt["preflight"]["parent_correct"] == receipt["preflight"]["total"] > 0
+    assert "update" not in receipt and "delivery" not in receipt
+    assert not (tmp_path / "skip" / "update.safetensors").exists()
