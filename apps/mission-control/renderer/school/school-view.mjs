@@ -11,7 +11,7 @@ import { escapeText as esc } from "../frames/frame-model.mjs";
 
 const ui = {
   filters: new Set(), sortKey: "id", direction: "asc", page: 1, pageSize: 50,
-  selectedId: null, groupByFamily: true, secondaryColumns: false,
+  selectedId: null, groupByFamily: false, secondaryColumns: false,
 };
 
 const slug = (value) => String(value).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -19,6 +19,12 @@ const present = (value) => value !== null && value !== undefined && value !== ""
 const text = (value, fallback = null) => present(value) ? String(value) : (fallback ?? t("school.common.notExposed"));
 const absence = (row, key) => row.absenceReasons?.[key]
   ? t(`school.absence.${row.absenceReasons[key]}`) : t("school.common.notExposed");
+function absenceMarkup(row, key) {
+  const reason = row.absenceReasons?.[key];
+  const label = reason?.endsWith("_NOT_MEASURED") ? "notMeasured"
+    : reason?.endsWith("_MISSING") ? "missing" : reason ? "unavailable" : "notExposed";
+  return `<span class="school-absence" title="${esc(absence(row, key))}" aria-label="${esc(absence(row, key))}">${esc(t(`school.common.${label}`))}</span>`;
+}
 const score = (value, total, fallback = null) => present(value) && present(total)
   ? t("school.matrix.score", { value, total })
   : (fallback ?? t("school.common.notExposed"));
@@ -47,8 +53,8 @@ function stateCue(row) {
 
 function statusCell(row, { nowMs, locale } = {}) {
   return `<div class="school-state-cell-body"><div class="school-state-stack">
-    <span data-school-state="${esc(row.sourceState ?? "NOT_EXPOSED")}">${esc(text(row.sourceState, absence(row, "sourceState")))}</span>
-    <span data-school-state="${esc(row.implementationState ?? "NOT_EXPOSED")}">${esc(text(row.implementationState, absence(row, "implementationState")))}</span>
+    <span data-school-state="${esc(row.sourceState ?? "NOT_EXPOSED")}">${present(row.sourceState) ? esc(row.sourceState) : absenceMarkup(row, "sourceState")}</span>
+    <span data-school-state="${esc(row.implementationState ?? "NOT_EXPOSED")}">${present(row.implementationState) ? esc(row.implementationState) : absenceMarkup(row, "implementationState")}</span>
     <span data-school-state="${esc(row.qualificationState ?? "NOT_EXPOSED")}">${esc(text(row.qualificationState))}</span>
   </div><div class="school-observed-time"><span>${esc(t("school.matrix.observed"))}</span>${temporalMarkup({ unixSeconds: row.observedAt, nowMs, locale, testId: `school-row-time-${slug(row.id)}` })}</div></div>`;
 }
@@ -57,13 +63,13 @@ function visibleColumns() {
   const core = [
     ["id", "school.matrix.column.capability", "text"],
     ["grade", "school.matrix.column.grade", "text"],
-    ["prerequisites", "school.matrix.column.prerequisites", "text"],
     ["was", "school.matrix.column.was", "num"], ["top", "school.matrix.column.top", "num"],
     ["now", "school.matrix.column.now", "num"], ["total", "school.matrix.column.all", "num"],
     ["growth", "school.matrix.column.growth", "num"], ["debt", "school.matrix.column.debt", "num"],
     ["pRet", "school.matrix.column.pret", "num"],
   ];
   const secondary = [
+    ["prerequisites", "school.matrix.column.prerequisites", "text"],
     ["visits", "school.matrix.column.visits", "num"], ["retainedSteps", "school.matrix.column.retainedSteps", "num"],
     ["lastGain", "school.matrix.column.lastGain", "text"], ["lastRegression", "school.matrix.column.lastRegression", "text"],
     ["strategy", "school.matrix.column.strategy", "text"], ["sourceFamilies", "school.matrix.column.sources", "text"],
@@ -74,15 +80,15 @@ function visibleColumns() {
 function cell(row, key, kind) {
   if (key === "id") return `<th class="capability-cell" scope="row"><button type="button" data-select-capability="${esc(row.id)}" data-focus-key="school:${esc(row.id)}" ${testIdAttribute("school", "matrix", "capability", slug(row.id))} title="${esc(t("school.matrix.inspect", { id: row.id }))}">${esc(row.id)}</button></th>`;
   if (key === "prerequisites") return `<td>${esc(row.prerequisites?.length ? row.prerequisites.join(", ") : row.absenceReasons?.prerequisites === null ? t("school.common.none") : absence(row, "prerequisites"))}</td>`;
-  if (["was", "top", "now"].includes(key)) return `<td class="num">${esc(score(row[key], row.total, absence(row, key)))}</td>`;
-  if (key === "total") return `<td class="num">${esc(text(row.total))}</td>`;
+  if (["was", "top", "now"].includes(key)) return `<td class="num">${present(row[key]) && present(row.total) ? esc(score(row[key], row.total)) : absenceMarkup(row, key)}</td>`;
+  if (key === "total") return `<td class="num">${present(row.total) ? esc(row.total) : absenceMarkup(row, key)}</td>`;
   if (key === "growth") {
-    if (!Number.isFinite(row.growth)) return `<td class="num">${esc(absence(row, "growth"))}</td>`;
+    if (!Number.isFinite(row.growth)) return `<td class="num">${absenceMarkup(row, "growth")}</td>`;
     return `<td class="num" data-delta="${Math.sign(row.growth)}">${row.growth >= 0 ? "+" : ""}${row.growth}</td>`;
   }
-  if (key === "pRet") return `<td class="num">${esc(Number.isFinite(row.pRet) ? row.pRet.toFixed(2) : absence(row, "pRet"))}</td>`;
+  if (key === "pRet") return `<td class="num">${Number.isFinite(row.pRet) ? esc(row.pRet.toFixed(2)) : absenceMarkup(row, "pRet")}</td>`;
   if (key === "sourceFamilies") return `<td>${esc(row.sourceFamilies?.length ? row.sourceFamilies.join(", ") + t("school.sourceFamilies.observedPartial") : absence(row, "sourceFamilies"))}</td>`;
-  return `<td class="${kind === "num" ? "num" : ""}">${esc(text(row[key], absence(row, key)))}</td>`;
+  return `<td class="${kind === "num" ? "num" : ""}">${present(row[key]) ? esc(row[key]) : absenceMarkup(row, key)}</td>`;
 }
 
 function tableRows(projectedRows, columnCount, allRows, temporal) {
@@ -103,20 +109,17 @@ function tableRows(projectedRows, columnCount, allRows, temporal) {
 function sortableHeader(key, labelKey) {
   const label = t(labelKey);
   const ariaSort = ui.sortKey === key ? (ui.direction === "asc" ? "ascending" : "descending") : "none";
-  return `<th aria-sort="${ariaSort}"><button type="button" data-sort-key="${key}" data-focus-key="sort:${key}" ${testIdAttribute("school", "sort", slug(key))}>${t("school.matrix.sort", { label })}<span aria-hidden="true">${ui.sortKey === key ? (ui.direction === "asc" ? " ↑" : " ↓") : ""}</span></button></th>`;
+  return `<th scope="col" aria-sort="${ariaSort}"><button type="button" aria-label="${esc(t("school.matrix.sort", { label }))}" data-sort-key="${key}" data-focus-key="sort:${key}" ${testIdAttribute("school", "sort", slug(key))}>${esc(label)}<span aria-hidden="true">${ui.sortKey === key ? (ui.direction === "asc" ? " ↑" : " ↓") : ""}</span></button></th>`;
 }
 
 function matrix(projectedRows, page, allRows, temporal) {
   const columns = visibleColumns();
-  const activityCount = ui.secondaryColumns ? 6 : 0;
   return `<section class="school-panel matrix-panel" ${testIdAttribute("school", "matrix")}>
-    <header><div><span class="eyebrow">${t("school.matrix.eyebrow")}</span><h2>${t("school.matrix.title")}</h2></div><div class="school-panel-tools"><span class="coverage-counter">${t("school.matrix.range", { start: page.start + 1, end: page.end, total: page.total })}</span>${help("school.help.matrix.label", "school.help.matrix.body", "school-help-matrix")}</div></header>
-    <div class="matrix-overflow-cue" aria-hidden="true">${t("school.matrix.scrollHint")}</div>
+    <header><h2>${t("school.matrix.title")}</h2><div class="school-panel-tools"><span class="coverage-counter">${t("school.matrix.range", { start: page.total ? page.start + 1 : 0, end: page.end, total: page.total })}</span><span class="matrix-overflow-cue" aria-hidden="true">${t("school.matrix.scrollHint")}</span>${help("school.help.matrix.label", "school.help.matrix.body", "school-help-matrix")}</div></header>
     <div class="matrix-scroll scroll-surface" role="region" aria-label="${t("school.matrix.aria")}" tabindex="0" ${testIdAttribute("school", "matrix", "scroll")}>
       <table class="school-matrix" ${testIdAttribute("school", "matrix", "table")}>
-        <thead><tr class="matrix-groups"><th colspan="3">${t("school.matrix.group.identity")}</th><th colspan="4">${t("school.matrix.group.score")}</th><th colspan="3">${t("school.matrix.group.learning")}</th>${activityCount ? `<th colspan="${activityCount}">${t("school.matrix.group.activity")}</th>` : ""}<th>${t("school.matrix.group.provenance")}</th></tr>
-        <tr>${columns.map(([key, label]) => sortableHeader(key, label)).join("")}<th>${t("school.matrix.column.state")}</th></tr></thead>
-        <tbody>${tableRows(projectedRows, columns.length, allRows, temporal)}</tbody>
+        <thead><tr>${columns.map(([key, label]) => sortableHeader(key, label)).join("")}<th scope="col">${t("school.matrix.column.state")}</th></tr></thead>
+        <tbody>${tableRows(projectedRows, columns.length, allRows, temporal) || `<tr><td colspan="${columns.length + 1}">${esc(t("school.matrix.noMatches"))}</td></tr>`}</tbody>
       </table>
     </div>
     <footer class="school-pagination" ${testIdAttribute("school", "pagination")}>
@@ -223,7 +226,7 @@ function bind(container, inspectCapability, viewState) {
       const rows = viewState.rows;
       ui.selectedId = node.dataset.selectCapability ?? node.dataset.capabilityId;
       inspectCapability(ui.selectedId, rows.find((row) => row.id === ui.selectedId), selectionNeighborhood(rows, ui.selectedId));
-      renderSchoolView(container, inspectCapability, viewState);
+      renderSchoolView(container, inspectCapability, { ...viewState, selectedId: ui.selectedId });
     };
     node.addEventListener("click", activate);
     node.addEventListener("keydown", (event) => { if (isActivationKey(event.key)) { event.preventDefault(); activate(); } });
@@ -258,10 +261,8 @@ export function renderSchoolView(container, inspectCapability, {
   const projected = projectRows(rows, { filters: [...ui.filters], sortKey: ui.sortKey, direction: ui.direction, groupByFamily: ui.groupByFamily });
   const page = paginateRows(projected, ui.page, ui.pageSize);
   const markup = `<div class="school-view" ${testIdAttribute("school", "root")}>
-    <header class="school-heading"><div><span class="eyebrow">${esc(t("school.heading.eyebrow"))}</span><h2>${esc(t("school.heading.title"))}</h2></div><p>${esc(t("school.heading.summary"))}</p></header>
     ${fixture ? `<div class="school-fixture-notice" role="status" ${testIdAttribute("school", "fixture")}><strong>${esc(t("school.fixture.title"))}</strong><span>${esc(t("school.fixture.detail"))}</span></div>` : ""}
     ${rows.length ? filterBar(projected, rows) : ""}
-    <div class="ui-glossary" aria-label="${esc(t("school.matrix.aria"))}" ${testIdAttribute("school", "glossary")}><span>${esc(t("school.glossary.was"))}</span><span>${esc(t("school.glossary.top"))}</span><span>${esc(t("school.glossary.now"))}</span><span>${esc(t("school.glossary.all"))}</span><span>${esc(t("school.glossary.pret"))}</span><span>${esc(t("school.glossary.scroll"))}</span></div>
     ${rows.length ? matrix(page.rows, page, rows, { nowMs, locale }) : `<section class="school-panel school-empty" ${testIdAttribute("school", "matrix")}><p>${esc(t("school.production.empty", { state: queryState }))}</p></section>`}
     ${dependencyView(rows, topologyAvailable)}
   </div>`;

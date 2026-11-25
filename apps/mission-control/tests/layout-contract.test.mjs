@@ -144,7 +144,8 @@ test("operator typography and explanatory surfaces use the shared visual languag
   assert.match(shell, /\.context-facts\s*\{[^}]*repeat\(auto-fit, minmax\(min\(140px, 100%\), 1fr\)\)/s);
   assert.doesNotMatch(shell, /\.selector\s*\{/);
   assert.match(shell, /\.ui-glossary\s*\{/);
-  assert.match(school, /class="ui-glossary"/);
+  assert.doesNotMatch(school, /class="ui-glossary"/);
+  assert.match(school, /school\.help\.matrix\.body/);
   assert.doesNotMatch(salience, /class="ui-glossary"/);
   assert.match(salience, /salience-axis-guide/);
   assert.doesNotMatch(corrections, /class="ui-glossary"/);

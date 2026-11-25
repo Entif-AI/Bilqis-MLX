@@ -47,7 +47,7 @@ export function projectRows(rows, { filters = [], sortKey = "id", direction = "a
   const factor = direction === "desc" ? -1 : 1;
   return [...filtered].sort((a, b) => {
     if (groupByFamily && a.family !== b.family) {
-      return a.family.localeCompare(b.family);
+      return String(a.family ?? "").localeCompare(String(b.family ?? ""));
     }
     const av = a[sortKey] ?? "";
     const bv = b[sortKey] ?? "";

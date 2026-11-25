@@ -142,7 +142,7 @@ test("graph lifecycle fixtures span ready through qualified plus held", () => {
 test("matrix orientation and peer dependency representations are explicit", () => {
   const source = fs.readFileSync(path.join(rendererRoot, "school", "school-view.mjs"), "utf8");
   const css = fs.readFileSync(path.join(rendererRoot, "school", "school.css"), "utf8");
-  assert.match(source, /school\.matrix\.group\.score/);
+  assert.match(source, /scope="col" aria-sort=/);
   assert.match(source, /secondaryColumns/);
   assert.match(source, /data-toggle-columns/);
   assert.match(source, /dependency-peers/);
@@ -156,6 +156,25 @@ test("matrix orientation and peer dependency representations are explicit", () =
   assert.match(css, /\.matrix-scroll[^}]*overflow:\s*auto/s);
   assert.match(css, /\.school-matrix \.capability-cell[^}]*position:\s*sticky/s);
   assert.match(css, /\.dependency-peers[^}]*grid-template-columns/s);
+});
+
+test("matrix defaults to concise sortable measured columns and discloses prerequisites", () => {
+  const container = host();
+  renderSchoolView(container, () => {}, { rows, fixture: true });
+  const table = container.innerHTML.match(/<table class="school-matrix"[\s\S]*?<\/table>/)?.[0];
+  assert.ok(table);
+  const head = table.match(/<thead>[\s\S]*?<\/thead>/)?.[0];
+  assert.ok(head);
+  assert.match(head, /aria-label="Sort by NOW"[^>]*>NOW</);
+  assert.match(head, /aria-sort="ascending"/);
+  assert.doesNotMatch(head, /data-sort-key="prerequisites"/);
+  for (const key of ["was", "top", "now", "total", "growth", "debt", "pRet"]) {
+    assert.ok(head.includes(`data-sort-key="${key}"`), key);
+  }
+  assert.match(head, /<th scope="col">State<\/th>/);
+  assert.doesNotMatch(container.innerHTML, /data-test-id="school-glossary"/);
+  assert.match(container.innerHTML, /data-test-id="school-fixture"/);
+  assert.match(table, /B\.AND/);
 });
 
 test("School consumes shared contextual help and renders only authoritative observation time", () => {

@@ -64,6 +64,9 @@ function matrixInspector(onInspect, id, row) {
       [t("school.inspector.sourceState")]: value(row.sourceState),
       [t("school.inspector.implementationState")]: value(row.implementationState),
       [t("school.inspector.qualificationState")]: value(row.qualificationState),
+      [t("school.inspector.absenceReasons")]: Object.entries(row.absenceReasons ?? {})
+        .filter(([, reason]) => reason)
+        .map(([key, reason]) => `${key}: ${t(`school.absence.${reason}`)}`),
     },
   });
 }
@@ -203,7 +206,9 @@ export async function activateSchoolDomain({
 
     curriculumModule?.invalidateCurriculumAtlasRequests?.();
     summary.textContent = t("shell.destination.school.purpose");
-    renderSchoolView(container, (id, row) => matrixInspector(onInspect, id, row), {
+    const matrix = document.createElement("div");
+    container.replaceChildren(matrix);
+    renderSchoolView(matrix, (id, row) => matrixInspector(onInspect, id, row), {
       ...matrixState,
       selectedId: schoolSelectedId,
     });

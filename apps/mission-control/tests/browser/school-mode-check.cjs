@@ -141,6 +141,22 @@ async function audit(page, launchMode, viewport, theme, density) {
   check(result.matrixOwnsOverflow, launchMode + " matrix lost its owned scroller");
   check(result.headerPosition === "sticky", launchMode + " matrix header is not sticky");
   check(result.identityPosition === "sticky", launchMode + " identity column is not sticky");
+  const columns = page.locator('[data-test-id="school-columns-toggle"]');
+  const prerequisites = page.locator('[data-test-id="school-sort-prerequisites"]');
+  check(await prerequisites.count() === 0, "secondary prerequisites occupy default matrix");
+  await columns.click();
+  check(await prerequisites.count() === 1, "prerequisite column disclosure failed");
+  check(await page.locator('[data-test-id="shell-school-mode-factory"]').count() === 1,
+    "matrix projection update removed peer navigation");
+  await columns.click();
+  const now = page.locator('[data-test-id="school-sort-now"]');
+  check(await now.getAttribute("aria-label") === "Sort by NOW", "sort name lost accessible action");
+  check((await now.innerText()).trim() === "NOW", "repetitive sort copy occupies visible header");
+  await now.click();
+  check(await now.evaluate(node => node.closest("th").getAttribute("aria-sort")) === "ascending", "sort state not projected");
+  await now.click();
+  check(await now.evaluate(node => node.closest("th").getAttribute("aria-sort")) === "descending", "sort direction did not reverse");
+  await page.locator('[data-test-id="school-sort-id"]').click();
   const firstCapability = page.locator('[data-test-id^="school-matrix-capability-"]').first();
   await firstCapability.click();
   const inspector = page.locator('[data-test-id="investigation-inspector"]');
