@@ -299,6 +299,52 @@ The detached witness took 83.550 seconds elapsed; first-step capture took
 6.019 GB. The 0.343-second perfect-target skip is not a candidate evaluation.
 No throughput or independent examination claim follows from these timings.
 
+## Observed finite loss changes
+
+The forward-only detached witness passed with source_mutated=false:
+snapshot 218a178dc9d530c5c831ef7de2152d761fb8f936686ad351735d7d2ed7e514ef,
+result SHA-256 885c9a22a8895a53d0af778d2b66000ac567139353d36efef655fddde2d14b7d,
+receipt SHA-256 52faf06ee5e74b0513378946b7c8036f6d2db5291cc46cd8ef646ee1d4c533c2.
+All six proposed displacements were reconstructed by native AdamW from the
+original saved gradients, masks, retained moments, clocks, decay and
+hyperparameters. Each maximum displacement replay error was exactly zero.
+The original source seed, content digest, family and episode IDs matched for
+each protected draw; each baseline forward loss agreed with its original
+gradient loss at the B11 comparison tolerance (relative 1e-5, absolute 1e-6).
+The actual forward-only loss owner used the proposed parameters' own
+generation binding. No candidate was admitted and no new gradients were
+computed.
+
+Observed mean loss changes (x 1e6):
+
+| Target / protected | IDENTITY | PARENT | LINK | MEMBER | EDGE | MAPS |
+|---|---:|---:|---:|---:|---:|---:|
+| IDENTITY | 552.118 | 592.967 | -219.335 | -56.068 | -90.361 | 207.474 |
+| PARENT | 350.386 | 351.499 | 87.976 | 145.445 | -23.276 | 567.685 |
+| LINK | 458.787 | 264.645 | -375.360 | 551.691 | 138.501 | 364.910 |
+| MEMBER | 772.695 | -542.611 | -356.108 | 587.195 | -401.735 | 721.892 |
+| EDGE | 945.240 | -232.220 | -414.918 | 518.243 | 124.355 | 985.553 |
+| MAPS | 144.581 | 559.509 | -236.720 | 220.031 | -83.943 | 445.833 |
+
+All 36 predicted signs agree with observed finite loss changes; 24 increase
+loss. Mean absolute Taylor residual
+2.24329297e-05;
+maximum absolute residual 5.94629798e-05.
+The eight raw-compatible harmful displacement pairs and five separate-draw
+same-capability loss increases are therefore observed, not merely predicted,
+on these exact controlled probes. Curvature contributes nonzero residuals,
+so local linear magnitudes are not exact. The natural mixed-lesson matrix
+remains first-order only. These observations do not measure a full visit,
+independent examination performance, or retained competence gain.
+
+The witness took 129.299 seconds, with peak MLX allocation
+2.291 GB and process peak RSS
+2.392 GB. It evaluated 36 original baseline
+rows and 216 displaced rows. This is diagnostic cost, not ordinary training
+or candidate-evaluation throughput. The initial finite diagnostic failed
+on a noncanonical module import; its terminal receipt is preserved. The
+canonical aliases resolved the import error before the passing witness.
+
 ## Reproduction and review
 
 On operator-authorized frozen custody, the controlled command is
@@ -308,6 +354,9 @@ Reuse existing saved gradients rather than regenerate them. The
 `--result-sha256`. The `native_lesson_dynamics` command consumes RUN PLANE
 NEW_DESTINATION with `--protected EVIDENCE --protected-result-sha256 DIGEST`
 and optionally `--cadence-projection-root VERIFIED_FROZEN_ROOT`.
+The `finite_loss` command consumes EVIDENCE NEW_DESTINATION with
+`--result-sha256 DIGEST`; it replays only the saved displacements and evaluates
+the exact original protected rows.
 The ordinary witness requires native selection and prospective admission
 authority, permits lawful holds/skips, and aborts before returning a candidate
 to the retention horizon. It is one-step diagnosis, not historical full-visit
@@ -336,3 +385,18 @@ reasoning configuration; those failures are not substantive review findings.
 The issue remains review-pending; do not open a placeholder PR, certify an
 independent pass, alter the integrated acceptance head, or advance the next
 experiment. No experiment is authorized by this report.
+
+### Exact integration checkpoint
+
+The implementation commit is
+65897bc5c8a6a036953bd749d62cfaca526fe3d0.
+Current main 46630137f3015be576782b89a71922eaf47fa07f was merged at
+f842318fe9752e79686a378bdf66f7e59a0896fc. The incoming delta was only
+release metadata, package version and changelog; no learning implementation
+or witness assumption changed. The complete affected diagnostic directory,
+rejection signer, source materialization and operator rehearsal suites passed
+36 tests in 5.21 seconds on the reconciled checkout. All prior passing native
+and CPU witnesses are retained with their original exact snapshot receipts.
+The local scoped pre-commit structure, governance and changed-code checks
+passed. The final normal pre-push gate and independent review must be
+reconciled separately; this report is not a hosted or EGM pass receipt.
