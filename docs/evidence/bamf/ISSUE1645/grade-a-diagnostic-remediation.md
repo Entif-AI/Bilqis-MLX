@@ -109,3 +109,16 @@ learning gain is null. All six native protected loss-dot signs match the origina
 mixed witness, with maximum absolute difference below 1e-12. This verifies the
 new observation without repeating the full controlled, moment or finite-loss
 witnesses. The whole scoped research test directory passed 41/41 tests.
+
+### Post-implementation drift correction
+
+Fresh independent drift review found that resolving a caller's CLI source path
+before checking symlinks could conceal a forbidden input. This is an
+`IMPLEMENTATION_DEFECT`, not a changed design. The common admission guard now
+checks the original path and every ancestor before canonicalization; source,
+plane, destination, artifact and freeze inputs cannot bypass it. Regressions
+exercise both controlled and mixed CLI entry points, a linked ancestor and a
+dangling destination. The full scoped research suite now passes 44/44. No
+numerical premise changed, so the passing native delivery replay is retained.
+The independent drift review must cover the corrected implementation before
+integration admission.

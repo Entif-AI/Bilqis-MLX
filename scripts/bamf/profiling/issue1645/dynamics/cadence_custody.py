@@ -5,7 +5,7 @@ from pathlib import Path
 import sqlite3
 
 from scripts.bamf.profiling.issue1645.reservation import require
-from scripts.bamf.profiling.issue1645.dynamics.artifacts import ArtifactGuard
+from scripts.bamf.profiling.issue1645.dynamics.artifacts import ArtifactGuard, require_no_symlink
 
 KEY = "active-grade-cadence-terminal-attempts"
 SCHEMA = "bilqis.mlx.bamf-active-grade-cadence-attempt-projection/v3"
@@ -63,8 +63,7 @@ def require_empty_wal(plane):
 def admit_freeze(root, manifest_path, expected):
     require(manifest_path is not None and expected is not None,
             "independently pinned cadence freeze manifest required")
-    require(not root.is_symlink() and not (root / "frozen").is_symlink()
-            and not (root / "frozen/run").is_symlink(), "symlink cadence freeze")
+    require_no_symlink(root / "frozen/run")
     guard = ArtifactGuard()
     guard.admit(manifest_path, expected)
     pin = json.loads(Path(manifest_path).read_text())
@@ -90,6 +89,8 @@ def verified_projection(root: Path, target_run: Path, manifest_path=None, expect
     caller-authored cadence. Both the historical prefix and accepted tip must
     match the new disposable run. The native owner authenticates the unseen tail.
     """
+    require_no_symlink(target_run / "bamf-state.json")
+    require_no_symlink(target_run / "events.jsonl")
     pin, guard = admit_freeze(root, manifest_path, expected)
     projection_bytes = (root / "projection.json").read_bytes()
     captured = json.loads(projection_bytes)

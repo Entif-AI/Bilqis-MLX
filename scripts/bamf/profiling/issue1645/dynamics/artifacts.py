@@ -11,6 +11,14 @@ FILES = ("update.safetensors", "protected.safetensors")
 LEGACY_SCHEMA = "bilqis.research.diagnostic-artifact-index/v1"
 
 
+def require_no_symlink(path):
+    """Check caller-supplied components before canonicalization can hide them."""
+    path = Path(path).absolute()
+    require(not any(item.is_symlink() for item in (path, *path.parents)),
+            f"symbolic link in diagnostic custody: {path.name}")
+    return path
+
+
 def identity(path):
     info = path.lstat()
     require(stat.S_ISREG(info.st_mode), f"nonregular artifact: {path.name}")
@@ -28,8 +36,7 @@ class ArtifactGuard:
     admitted: dict = field(default_factory=dict)
 
     def admit(self, path, expected):
-        path = Path(path)
-        require(not path.parent.is_symlink(), f"symlink artifact directory: {path.parent.name}")
+        path = require_no_symlink(path)
         require(isinstance(expected, str) and len(expected) == 64,
                 f"missing artifact digest: {path.name}")
         before = identity(path)
@@ -39,7 +46,8 @@ class ArtifactGuard:
 
     def require_current(self):
         for path, before in self.admitted.items():
-            require(not path.parent.is_symlink() and identity(path) == before,
+            require_no_symlink(path)
+            require(identity(path) == before,
                     f"artifact changed during consumption: {path.name}")
 
 
@@ -60,8 +68,7 @@ def reference_basis(reference):
 
 def admit_reference(root, expected, legacy_index=None, legacy_digest=None):
     """Only new result-bound hashes or separately pinned historical audit bytes."""
-    root = Path(root)
-    require(not root.is_symlink(), "symlink evidence root")
+    root = require_no_symlink(root)
     require((legacy_index is None) == (legacy_digest is None), "legacy index flags must be paired")
     guard = ArtifactGuard()
     path = root / "result.json"

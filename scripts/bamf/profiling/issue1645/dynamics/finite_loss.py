@@ -170,7 +170,7 @@ def main():
     parser.add_argument("--result-sha256", required=True)
     add_legacy_arguments(parser)
     args = parser.parse_args()
-    analyze(args.evidence.absolute(), args.destination.resolve(), args.result_sha256,
+    analyze(args.evidence.absolute(), args.destination.absolute(), args.result_sha256,
             args.legacy_artifact_index, args.legacy_artifact_index_sha256)
 
 

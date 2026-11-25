@@ -9,7 +9,7 @@ from unittest.mock import patch
 from scripts.bamf.profiling.issue1645.dynamics.authentic_dynamics import custody
 from scripts.bamf.profiling.issue1645.reservation import require
 from scripts.bamf.profiling.issue1645.dynamics.artifacts import (
-    add_legacy_arguments, admit_reference, reference_basis,
+    add_legacy_arguments, admit_reference, reference_basis, require_no_symlink,
 )
 from scripts.bamf.profiling.issue1645.dynamics.delivery_observation import (
     describe_delivery, observe_native_call,
@@ -128,12 +128,9 @@ def select_and_capture(run, parent, context, atlas, feature, cache, destination,
     return receipts
 
 
-def main():
+def parse_args():
     import argparse
-    import resource
-    import mlx.core as mx
     from scripts.bamf.profiling.issue1645.reservation import CAPABILITIES
-    from scripts.bamf.profiling.issue1645.dynamics.authentic_dynamics import isolated_copy
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source", type=Path)
@@ -147,8 +144,19 @@ def main():
     parser.add_argument("--cadence-freeze-sha256")
     add_legacy_arguments(parser)
     parser.add_argument("--preflight-only", action="store_true")
-    args = parser.parse_args()
-    destination = args.destination.resolve()
+    return parser.parse_args()
+
+
+def main():
+    import resource
+    import mlx.core as mx
+    from scripts.bamf.profiling.issue1645.reservation import CAPABILITIES
+    from scripts.bamf.profiling.issue1645.dynamics.authentic_dynamics import isolated_copy
+
+    args = parse_args()
+    destination = require_no_symlink(args.destination)
+    require_no_symlink(args.source)
+    require_no_symlink(args.plane)
     freeze_flags = (args.cadence_projection_root, args.cadence_freeze_manifest,
                     args.cadence_freeze_sha256)
     require(all(value is None for value in freeze_flags) or all(value is not None for value in freeze_flags),
@@ -160,7 +168,7 @@ def main():
     require(reference["manifest_sha256"] ==
             json.loads((args.source / "bamf-state.json").read_text())["manifest_sha256"],
             "protected probe parent mismatch")
-    run, before = isolated_copy(args.source.resolve(), args.plane.resolve(), destination)
+    run, before = isolated_copy(args.source.absolute(), args.plane.absolute(), destination)
     from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
     from bilqis_mlx.runtime.bamf_operator.session_parts.session_support import _execution_context
     mx.set_memory_limit(12*1024**3)

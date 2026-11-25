@@ -18,6 +18,7 @@ import time
 from types import SimpleNamespace
 
 from scripts.bamf.profiling.issue1645.reservation import CAPABILITIES, require
+from scripts.bamf.profiling.issue1645.dynamics.artifacts import require_no_symlink
 
 
 def file_digest(path):
@@ -31,12 +32,12 @@ def sha256_stream(stream):
 
 
 def custody(run):
-    return {name: file_digest(run / name)
+    return {name: file_digest(require_no_symlink(run / name))
             for name in ("bamf-state.json", "events.jsonl")}
 
 
 def reject_symlinks(root):
-    require(not root.is_symlink(), "symbolic link in diagnostic custody")
+    require_no_symlink(root)
     if root.is_dir():
         for base, dirs, files in os.walk(root, followlinks=False):
             require(not any((Path(base) / name).is_symlink()
@@ -45,6 +46,8 @@ def reject_symlinks(root):
 
 
 def isolated_copy(source, plane, destination):
+    source, plane, destination = (require_no_symlink(path).resolve()
+                                  for path in (source, plane, destination))
     require(not destination.exists(), "destination must be new")
     require(not destination.is_relative_to(source), "destination inside source")
     require(not source.is_relative_to(destination), "source inside destination")
@@ -242,7 +245,7 @@ def main():
     parser.add_argument("--lr", type=float, default=0.00013)
     parser.add_argument("--memory-gib", type=int, choices=(12, 16), default=12)
     args = parser.parse_args()
-    analyze(args.run.resolve(), args.plane.resolve(), args.destination.resolve(),
+    analyze(args.run.absolute(), args.plane.absolute(), args.destination.absolute(),
             tuple(args.capability or CAPABILITIES), args.each, args.lr, args.memory_gib)
 
 

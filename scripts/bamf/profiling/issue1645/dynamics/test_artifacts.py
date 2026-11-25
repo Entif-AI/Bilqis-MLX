@@ -17,7 +17,7 @@ class ArtifactAdmission(unittest.TestCase):
     def setUp(self):
         directory = TemporaryDirectory()
         self.addCleanup(directory.cleanup)
-        self.root = Path(directory.name)
+        self.root = Path(directory.name).resolve()
         self.result = self.root / "result.json"
         self.index = self.root / "legacy-index.json"
         self.reference = {"manifest_sha256": "a" * 64, "capabilities": {}}

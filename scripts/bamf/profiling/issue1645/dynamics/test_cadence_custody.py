@@ -3,6 +3,7 @@ from hashlib import sha256
 import json
 from pathlib import Path
 import sqlite3
+from unittest.mock import patch
 from tempfile import TemporaryDirectory
 import unittest
 
@@ -17,7 +18,7 @@ class CadenceCustody(unittest.TestCase):
     def setUp(self):
         directory = TemporaryDirectory()
         self.addCleanup(directory.cleanup)
-        self.root = Path(directory.name)
+        self.root = Path(directory.name).resolve()
         self.frozen = self.root / "frozen" / "run"
         self.frozen.mkdir(parents=True)
         self.target = self.root / "target"
@@ -144,4 +145,37 @@ class CadenceCustody(unittest.TestCase):
         destination = self.root / "disposable"
         with self.assertRaisesRegex(ValueError, "symbolic link"):
             isolated_copy(self.target, self.plane, destination)
+        self.assertFalse(destination.exists())
+
+    def test_controlled_cli_rejects_symlink_before_resolving(self):
+        from scripts.bamf.profiling.issue1645.dynamics.authentic_dynamics import main
+        alias = self.root / "alias"
+        alias.symlink_to(self.target, target_is_directory=True)
+        destination = self.root / "disposable"
+        with patch("sys.argv", ["authentic_dynamics", str(alias), str(self.plane), str(destination)]):
+            with self.assertRaisesRegex(ValueError, "symbolic link"):
+                main()
+        self.assertFalse(destination.exists())
+
+    def test_symlink_ancestor_and_dangling_destination_rejected(self):
+        alias = self.root / "alias"
+        alias.symlink_to(self.frozen.parent, target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, "symbolic link"):
+            isolated_copy(alias / "run", self.plane, self.root / "disposable")
+        destination = self.root / "dangling"
+        destination.symlink_to(self.root / "uncreated", target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, "symbolic link"):
+            isolated_copy(self.target, self.plane, destination)
+        self.assertFalse((self.root / "uncreated").exists())
+
+    def test_native_cli_rejects_symlink_before_admission(self):
+        from scripts.bamf.profiling.issue1645.dynamics.native_lesson_dynamics import main
+        alias = self.root / "alias"
+        alias.symlink_to(self.target, target_is_directory=True)
+        destination = self.root / "disposable"
+        argv = ["native_lesson_dynamics", str(alias), str(self.plane), str(destination),
+                "--protected", str(self.root), "--protected-result-sha256", "0" * 64]
+        with patch("sys.argv", argv):
+            with self.assertRaisesRegex(ValueError, "symbolic link"):
+                main()
         self.assertFalse(destination.exists())
