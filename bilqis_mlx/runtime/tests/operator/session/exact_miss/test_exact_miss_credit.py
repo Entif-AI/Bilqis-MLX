@@ -53,6 +53,8 @@ def test_exact_credit_requires_executed_preservation_and_preserves_legacy_identi
               'weakness_class_matches': {'debt': ['class']}}
     _record(trace, 5, legacy)
     old = _describe(trace)
+    # Fingerprint reproduced from the pinned pre-repair implementation.
+    assert old['key'] == '7e99f46231b42ab6'
     assert 'exact_miss_replay_delivered' not in old['features']
     assert old == describe(_policy(), candidate_steps=1, batch_size=3,
                            policy_controls=(legacy,), guidance_applied_steps=0,

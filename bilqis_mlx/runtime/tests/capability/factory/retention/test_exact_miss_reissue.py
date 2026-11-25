@@ -6,6 +6,7 @@ from types import SimpleNamespace as N
 import pytest
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.runtime import accepted_priority_visit_contracts as priority
 from bilqis_mlx.runtime.bamf_operator.session_parts import rehearsal
 from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
 from bilqis_mlx.runtime.bamf_operator.session_parts.weakness_rehearsal import GroupOffer
@@ -59,6 +60,43 @@ def _denied(reason, operation):
     with pytest.raises(BilqisError) as error:
         operation()
     assert error.value.context['reason'] == reason
+
+
+def _reselect(f, *, each=None, depth=None, metadata=None):
+    """Issue a fresh fixture selection; use real owner rows and grants."""
+    old = f.selection
+    offer = N(**vars(old.offer))
+    if each is not None:
+        rows, authority = f.source.draw_bound_rows(
+            seed=offer.source_seed, capability=offer.capability_id, each=each)
+        offer.rows = lambda: rows
+        offer.source_authority = authority
+        offer.source_each = each
+        f.direct = rows
+    policy = old.policy
+    if depth is not None:
+        policy["depth"] = depth
+    f.selection = priority._issue_result(
+        old.status, old.option_id, offer, old.visit, policy,
+        old.metadata if metadata is None else metadata, old.lesson_grade,
+        old.holds, f.run_dir, old._lawful_frontier)
+
+
+def test_delivery_rejects_valid_exact_grants_beyond_current_capacity(admitted, monkeypatch, tmp_path):
+    f = visit_fixture(admitted, monkeypatch, tmp_path, 'A.IDENTITY')
+    with evidence_mode(strict=False):
+        _reselect(f, each=2)
+        prospective = _prepare(f)
+        plan = _plan(f, prospective)
+        assert plan.weakness_capacity == 2
+        actual = rehearsal.materialize_rehearsal_rows(admitted, plan, 1,
+                                                      reserved_rows=f.direct)
+        assert _deliver(f, plan, actual).controls['exact_miss_replay_delivered'] == 2
+        excessive = rehearsal.materialize_rehearsal_rows(
+            admitted, replace(plan, weakness_capacity=6), 1, reserved_rows=f.direct)
+        assert len(excessive.preservation) == 3
+        _denied('BAMF_C05_EXACT_MISS_DELIVERY_CAPACITY',
+                lambda: _deliver(f, plan, excessive))
 
 
 def test_owner_census_and_source_reissue(admitted, monkeypatch, tmp_path):

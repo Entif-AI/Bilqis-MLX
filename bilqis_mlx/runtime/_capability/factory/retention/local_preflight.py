@@ -317,6 +317,8 @@ def require_exact_miss_delivery(instruction, context, selection, observation,
         delivered.append(row_id)
     if len(set(delivered)) != len(delivered):
         _invalid("BAMF_C05_EXACT_MISS_DELIVERY_DRIFT")
+    if delivered and sum(role == "preservation" for role in roles.values()) > selection.offer.source_each:
+        _invalid("BAMF_C05_EXACT_MISS_DELIVERY_CAPACITY")
     actual_ids = set(delivered)
     reserved = (*reserved_rows, *(row for row in rows if row["id"] not in actual_ids))
     used_ids = {row["id"] for row in reserved}
