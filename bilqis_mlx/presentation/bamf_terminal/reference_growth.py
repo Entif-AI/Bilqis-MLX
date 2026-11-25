@@ -5,6 +5,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 from .scores import paired_scores
+from .rows import MARKER, NOT_MEASURED
 from ..growth_projection import _grew
 from bilqis_mlx.data_plane import SHA256_HEX_LENGTH
 
@@ -100,15 +101,9 @@ class ReferenceGrowth:
                 self.scores[cap] = ReferenceScore(
                     owner, contract, baseline, current, self.generation)
 
-    def prime(self, visits):
-        """Read the last retained checkpoint and later rejected parent observations."""
-        if self.seen or self.scores:
-            return
-        durable = [v for v in visits if v.get("_durable_terminal_history")]
-        last = max((i for i, v in enumerate(durable)
-                    if v.get("outcome") == "ACCEPTED"), default=0)
-        for visit in durable[last:]:
-            self._measure(visit, initial=True)
+    def seed_checkpoint(self, visit):
+        """Accumulate reference observations of one accepted checkpoint."""
+        self._measure(visit, initial=True)
 
     def observe(self, visit):
         if not visit or not visit.get("_durable_terminal_history"):
@@ -136,6 +131,11 @@ class ReferenceGrowth:
         by_grade = defaultdict(list)
         for cap, item in self.scores.items():
             by_grade[item.grade].append(item)
+        present = {row.get("family") for row in families}
+        families.extend(
+            {MARKER: True, "grade": item.grade, "family": cap,
+             "step": "-", "attempt": "-"}
+            for cap, item in self.scores.items() if cap not in present)
         for row in families:
             item = self.scores.get(row.get("family"))
             if item is None:
@@ -143,6 +143,12 @@ class ReferenceGrowth:
             row.update(start=f"{item.start[0]}/{item.start[1]}",
                        after=f"{item.latest[0]}/{item.latest[1]}",
                        outcome="REF STALE" if item.generation != self.generation else "REF")
+        present_grades = {row.get("grade") for row in summaries}
+        summaries.extend(
+            {MARKER: True, "grade": owner, "visit": "-", "step": "-",
+             "attempt": "-", "best": NOT_MEASURED, "to100": NOT_MEASURED,
+             "right_pct": NOT_MEASURED}
+            for owner in by_grade if owner not in present_grades)
         for row in summaries:
             owner = row.get("grade")
             items = by_grade.get(owner, ())

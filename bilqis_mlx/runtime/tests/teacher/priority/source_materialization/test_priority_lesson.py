@@ -196,14 +196,15 @@ def test_selected_direct_authority_does_not_redraw_or_accept_foreign_content(adm
 def test_protected_interference_reserves_real_primary_rows_and_rotates_rehearsal(
         admitted, offer_factory):
     from bilqis_mlx.runtime.bamf_operator.session_parts.rehearsal import (
-        RehearsalPlan, materialize_rehearsal_rows, reserve_preservation,
+        compile_rehearsal_plan, materialize_rehearsal_rows, reserve_preservation,
     )
 
     parent, draw = offer_factory
     original = draw("A.PARENT")
     pool = prepare_lesson_pool(admitted, original)
     protected = ("A.IDENTITY", "A.MAPS", "A.MEMBER")
-    target = SimpleNamespace(protected_capability_ids=protected)
+    target = SimpleNamespace(protected_capability_ids=protected,
+                             target_grade_id="A", affected_edges=())
     protection = SimpleNamespace(digest="a" * 64)
     teacher = {"causal_experiment": {"negative_archetypes": [
         {"capability": "A.PARENT", "curriculum_scope": "school",
@@ -221,9 +222,29 @@ def test_protected_interference_reserves_real_primary_rows_and_rotates_rehearsal
     assert shaped.source_each == 24
     assert Counter(row["gold"] for row in shaped.rows()) == {"TRUE": 12, "FALSE": 12}
     assert admitted.require_bound_rows(shaped.rows(), shaped.source_authority) is shaped.source_authority
-    plan = RehearsalPlan("A.PARENT", "A", (), protected, (),
-                         "a" * 64, "b" * 64, "c" * 64, "d" * 64,
-                         preservation_allocation=allocation)
+    from bilqis_mlx.runtime.bamf_operator.session_parts import rehearsal
+    active = SimpleNamespace(
+        member_capability_ids=("A.PARENT",), activation_sha256="c" * 64,
+        definition=SimpleNamespace(definition_sha256="b" * 64))
+    selection = SimpleNamespace(
+        offer=shaped, metadata={"preservation_allocation": allocation},
+        visit=SimpleNamespace(identity=SimpleNamespace(visit_id="d" * 64)))
+    with patch.object(rehearsal, "require_current_retention_plan",
+                      return_value=(protection, target)), patch.object(
+        rehearsal, "current_structural_weaknesses", return_value=()), patch(
+        "bilqis_mlx.runtime.active_generated_grade.read_active_generated_grade",
+        return_value=active,
+    ):
+        plan = compile_rehearsal_plan(admitted.run_dir, parent, object(), admitted, selection)
+        assert compile_rehearsal_plan(
+            admitted.run_dir, parent, object(), admitted, selection) == plan
+        selection.metadata = {"preservation_allocation": {
+            **allocation, "pressure": {**allocation["pressure"], "A.MAPS": .9}}}
+        changed = compile_rehearsal_plan(
+            admitted.run_dir, parent, object(), admitted, selection)
+        assert changed.identity != plan.identity
+        assert changed.preservation_allocation["pressure"]["A.MAPS"] == .9
+    assert plan.preservation_allocation == allocation
     counts = Counter()
     for ordinal in range(1, 7):
         delivered = materialize_rehearsal_rows(admitted, plan, ordinal)

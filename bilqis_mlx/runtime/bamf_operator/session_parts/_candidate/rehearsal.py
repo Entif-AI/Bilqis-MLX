@@ -6,6 +6,7 @@ import hashlib
 from pathlib import Path
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
+from bilqis_mlx.learning.teacher_lineage_records import digest as teacher_digest
 from bilqis_mlx.runtime.structural_weakness_ledger import _ledger_key
 from .rehearsal_allocation import (
     PREDICATE_PAIR_ROWS, reserve_preservation as _reserve_preservation,
@@ -139,7 +140,8 @@ def compile_rehearsal_plan(run_dir, parent, cache, source_context, selection) ->
             selection.offer.source_each):
         _invalid("BAMF_REHEARSAL_ALLOCATION_AUTHORITY_DRIFT")
     payload = {
-        **({"preservation_allocation": allocation} if allocation is not None else {}),
+        **({"preservation_allocation_sha256": teacher_digest(allocation)}
+           if allocation is not None else {}),
         "schema": "bilqis.bamf.rehearsal-plan/v2",
         # A rejected candidate leaves generation and protection identity
         # unchanged. Bind fresh rehearsal to the actual issued visit as well.

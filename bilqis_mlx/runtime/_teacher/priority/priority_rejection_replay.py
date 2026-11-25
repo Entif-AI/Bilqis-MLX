@@ -8,6 +8,7 @@ from bilqis_mlx.data_plane import data_plane
 from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
 from bilqis_mlx.runtime import checkpoint_outbox
 from bilqis_mlx.runtime.bamf_bundle.records import canonical
+from bilqis_mlx.runtime.bamf_bundle.feature.historical_custody import HistoricalBamfBundle
 from bilqis_mlx.runtime.bamf_rejection import (
     portable_rejection_receipt, rejection_registry,
     verify_portable_rejection_authority,
@@ -28,6 +29,12 @@ def _projection(_identity):
     return RejectionProjection()
 
 
+def _accepted_optimizer_step(parent):
+    if isinstance(parent, HistoricalBamfBundle):
+        return parent.optimizer_step
+    return parent.retained_state.optimizer_step
+
+
 def _portable_rejection_receipt_sha(
         event, parent, cache, evidence, authority, authority_sha256):
     try:
@@ -35,7 +42,7 @@ def _portable_rejection_receipt_sha(
             authority, cache._correction_registry,
             run_id=cache.run_id, generation=cache.generation,
             student_manifest_sha256=cache.accepted_manifest_sha256,
-            optimizer_step=parent.retained_state.optimizer_step,
+            optimizer_step=_accepted_optimizer_step(parent),
             evidence=evidence)
     except BilqisError:
         _invalid("BAMF_PRIORITY_REJECTION_AUTHORITY_INVALID")
@@ -44,7 +51,7 @@ def _portable_rejection_receipt_sha(
     receipt = portable_rejection_receipt(
         run_id=cache.run_id, generation=cache.generation,
         student_manifest_sha256=cache.accepted_manifest_sha256,
-        optimizer_step=parent.retained_state.optimizer_step,
+        optimizer_step=_accepted_optimizer_step(parent),
         authority_sha256=authority_sha256)
     receipt_sha256 = hashlib.sha256(canonical(receipt)).hexdigest()
     if event.get("rejection_receipt_sha256") != receipt_sha256:
@@ -58,7 +65,7 @@ def _legacy_rejection_receipt_sha(event, parent, cache, evidence, authority_sha2
         "run_id": cache.run_id,
         "generation": cache.generation,
         "student_manifest_sha256": cache.accepted_manifest_sha256,
-        "optimizer_step": parent.retained_state.optimizer_step,
+        "optimizer_step": _accepted_optimizer_step(parent),
         "evidence": evidence,
     }
     try:
@@ -105,8 +112,8 @@ def _rejection_evidence_fields(evidence, parent):
     if (not isinstance(selected, str) or not selected
             or not isinstance(visit_id, str) or not visit_id
             or type(candidate_step) is not int
-            or candidate_step <= parent.retained_state.optimizer_step
-            or retained_step != parent.retained_state.optimizer_step
+            or candidate_step <= _accepted_optimizer_step(parent)
+            or retained_step != _accepted_optimizer_step(parent)
             or not isinstance(reason, str) or not reason
             or (rejection_attempt_ordinal is not None
                 and (type(rejection_attempt_ordinal) is not int
@@ -124,7 +131,7 @@ def _validated_rejection(event, parent, cache):
     if event.get("generation") != cache.generation:
         return None
     if (event.get("student_manifest_sha256") != cache.accepted_manifest_sha256
-            or event.get("optimizer_step") != parent.retained_state.optimizer_step):
+            or event.get("optimizer_step") != _accepted_optimizer_step(parent)):
         _invalid("BAMF_PRIORITY_REJECTION_IDENTITY_DRIFT")
     lineage = {"run_id": cache.run_id, "generation": cache.generation}
     if not checkpoint_outbox.ordinary_outbox_lineage(lineage, [event]):
@@ -174,7 +181,7 @@ def _current_projection(run_dir, parent, cache):
         cache.run_id,
         cache.generation,
         cache.accepted_manifest_sha256,
-        parent.retained_state.optimizer_step,
+        _accepted_optimizer_step(parent),
     )
     projection = _projection(identity)
     projection.refresh(

@@ -1,5 +1,5 @@
 """Private, neural-inert Bilqis MLX school controls."""
-__version__ = "1.5.2"  # x-release-please-version
+__version__ = "1.5.3"  # x-release-please-version
 
 from pathlib import Path
 
