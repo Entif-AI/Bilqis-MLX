@@ -21,7 +21,7 @@ _MANIFEST_INVALID = "CANDIDATE_STAGING_MANIFEST_INVALID"
 
 
 def _target(frontier, candidate_id):
-    frontier.verify()
+    """Resolve a target within the frontier verified by the caller."""
     candidate = next((item for item in frontier.candidates
                       if item.candidate_id == candidate_id), None)
     if (candidate is None or not candidate.proposed_capability_id or
@@ -34,12 +34,16 @@ def _target(frontier, candidate_id):
 
 def candidate_source_anchor(frontier: CandidateFrontierRelease, candidate_id: str) -> str:
     """Content-address the source sense without assigning a token or meaning."""
+    frontier.verify()
     _, sense = _target(frontier, candidate_id)
+    return _source_anchor(sense)
+
+
+def _source_anchor(sense):
     return f"ithkuil:sense/{sense.sense_id}@sha256:{sense.source_text_sha256}"
 
 
-def _verify_delta(frontier, current, candidate_id, successor):
-    candidate, _ = _target(frontier, candidate_id)
+def _verify_delta(candidate, anchor, current, successor):
     successor.verify_successor_of(current)
     target = candidate.proposed_capability_id
     delta = successor.transition
@@ -49,7 +53,7 @@ def _verify_delta(frontier, current, candidate_id, successor):
         raise ValueError("CANDIDATE_STAGING_DELTA_SCOPE_MISMATCH")
     _preserve_existing_authority(current, successor.curriculum, successor.source_bindings)
     binding = successor.source_bindings.by_capability.get(target)
-    if binding is None or binding.source_anchor != candidate_source_anchor(frontier, candidate_id):
+    if binding is None or binding.source_anchor != anchor:
         raise ValueError(_SOURCE_BINDING_MISMATCH)
     execution = successor.execution_plan.capability_map[target]
     explicit = set(execution.prerequisites) | set(execution.composed_of)
@@ -98,11 +102,12 @@ class StagedCandidate:
         if self.frontier_sha256 != frontier.release_sha256:
             raise ValueError("CANDIDATE_STAGING_FRONTIER_MISMATCH")
         candidate, sense = _target(frontier, self.candidate_id)
+        anchor = _source_anchor(sense)
         if (self.target_capability_id != candidate.proposed_capability_id or
                 self.source_sense_id != sense.sense_id or
-                self.source_anchor != candidate_source_anchor(frontier, self.candidate_id)):
+                self.source_anchor != anchor):
             raise ValueError(_SOURCE_BINDING_MISMATCH)
-        _verify_delta(frontier, current, self.candidate_id, self.successor)
+        _verify_delta(candidate, anchor, current, self.successor)
 
     @classmethod
     def from_manifest(cls, payload: dict, staged_sha256: str):
@@ -137,10 +142,11 @@ def compile_candidate_successor(
             not isinstance(curriculum, CurriculumDefinition) or
             not isinstance(source_bindings, SourceBindingSet)):
         raise TypeError("CANDIDATE_STAGING_INPUT_INVALID")
+    frontier.verify()
     candidate, sense = _target(frontier, candidate_id)
     current.verify()
     _preserve_existing_authority(current, curriculum, source_bindings)
-    anchor = candidate_source_anchor(frontier, candidate_id)
+    anchor = _source_anchor(sense)
     binding = source_bindings.by_capability.get(candidate.proposed_capability_id)
     if binding is None or binding.source_anchor != anchor:
         raise ValueError(_SOURCE_BINDING_MISMATCH)

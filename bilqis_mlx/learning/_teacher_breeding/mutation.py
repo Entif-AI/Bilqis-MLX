@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from ..teacher_strategy_population import effective_policy_key, effective_strategy_inventory
+from ..teacher_strategy_population import effective_policy_key
 from .ancestry import _retained_parent_candidates
 
 _INEFFECTIVE_MUTATION_FIELDS = frozenset({"preview"})
@@ -80,7 +80,8 @@ def _adaptive_numeric_children(base: dict, strategies: dict,
 def _register_child(teacher: dict, child: dict, *, effective: str,
                     parent_key: str, parent: dict, basis: str,
                     field: str, capability: str, curriculum_scope: str,
-                    total_capabilities: int, mutation_mode: str):
+                    total_capabilities: int, mutation_mode: str,
+                    inventory: dict[str, list[str]]):
     strategies = teacher["strategies"]
     identity = hashlib.sha256(
         json.dumps(child, sort_keys=True).encode()).hexdigest()[:12]
@@ -104,8 +105,9 @@ def _register_child(teacher: dict, child: dict, *, effective: str,
         "birth_event": int(channel.get("events", 0)) + 1,
         "proven_retained": False,
     }
-    from ..teacher_population_control import rebalance_live_population
-    rebalance_live_population(teacher, total_capabilities=total_capabilities)
+    from ..teacher_population_control import _rebalance_live_population
+    _rebalance_live_population(
+        teacher, {**inventory, effective: [identity]}, total_capabilities=total_capabilities)
     return identity, child, {
         "mutation_parent_policy_key": parent_key,
         "mutation_parent_basis": basis,
@@ -117,13 +119,14 @@ def _register_child(teacher: dict, child: dict, *, effective: str,
 def mint_bespoke_effective_strategy(engine, teacher: dict, rng, *,
                                     capability: str, curriculum_scope: str,
                                     diagnostic_key: str | None = None,
-                                    total_capabilities: int = 1):
+                                    total_capabilities: int = 1,
+                                    inventory: dict[str, list[str]]):
     """Breed one novel effective policy from retained capability/grade ancestry."""
     strategies = teacher.get("strategies", {})
     knobs = getattr(engine, "KNOBS", None)
     if not knobs:
         return None
-    existing = set(effective_strategy_inventory(teacher))
+    existing = set(inventory)
     max_context = int(getattr(engine, "MAX_TEACHER_CONTEXT_ITEMS", 24))
     seen_parents = set()
     parents = []
@@ -152,7 +155,7 @@ def mint_bespoke_effective_strategy(engine, teacher: dict, rng, *,
                     parent=parent, basis=basis, field=field,
                     capability=capability, curriculum_scope=curriculum_scope,
                     total_capabilities=total_capabilities,
-                    mutation_mode=mutation_mode)
+                    mutation_mode=mutation_mode, inventory=inventory)
                 if registered is not None:
                     return registered
     return None

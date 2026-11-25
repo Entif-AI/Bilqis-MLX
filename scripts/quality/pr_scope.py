@@ -57,7 +57,7 @@ def comparison_base(
     checkout_head: str = "HEAD",
 ) -> str:
     """Return the truthful temporal base for the checked-out CI candidate."""
-    if event_name == "workflow_dispatch":
+    if event_name in ("workflow_dispatch", "schedule"):
         if requested_base or push_base:
             return push_base or requested_base
         parents = _parents(root, checkout_head)

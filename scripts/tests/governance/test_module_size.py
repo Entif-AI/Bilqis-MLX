@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
+import os
 import subprocess
 import sys
 import tempfile
@@ -18,6 +19,9 @@ spec.loader.exec_module(check)
 
 class DevelopmentStructureTests(unittest.TestCase):
     def setUp(self):
+        self.enterContext(patch.dict(os.environ, {
+            key: value for key, value in os.environ.items() if not key.startswith("GIT_")
+        }, clear=True))
         self.temp = tempfile.TemporaryDirectory(prefix="bilqis-structure-")
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()

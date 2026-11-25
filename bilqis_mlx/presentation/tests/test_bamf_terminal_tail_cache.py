@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 from unittest.mock import patch
 
-from bilqis_mlx.presentation import bamf_terminal_source as source
+from bilqis_mlx.presentation.bamf_terminal import source as source
 
 
 def _event(index: int, *, accepted: bool = False):

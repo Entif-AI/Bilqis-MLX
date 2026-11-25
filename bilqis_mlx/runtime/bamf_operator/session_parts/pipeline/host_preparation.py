@@ -37,9 +37,13 @@ def learning_first_prepare_step(execute_candidate, selection, context):
     if not isinstance(keywords, dict) or keywords.get("learning_first_cache") is None:
         return None
     from bilqis_mlx.runtime.factory_training_preparation import (
+        LearningFirstSourceRowCache,
         prepare_learning_first_source_inputs_ahead,
     )
     authenticated = selection.offer._planning_generation._authenticated_features
+    # The ahead worker owns this cache. The optimizer's synchronous fallback
+    # owns a separate instance, so neither writes shared preparation state.
+    row_cache = LearningFirstSourceRowCache()
 
     def prepare(_ordinal, lesson):
         seed = getattr(lesson, "source_seed", None)
@@ -47,7 +51,8 @@ def learning_first_prepare_step(execute_candidate, selection, context):
             context, authenticated, lesson.delivered,
             source_seed=selection.offer.source_seed if seed is None else seed,
             source_each=len(lesson.direct) + len(lesson.enrichment),
-            source_identity=getattr(lesson, "prefetch_identity", None))
+            source_identity=getattr(lesson, "prefetch_identity", None),
+            row_cache=row_cache)
 
     return prepare
 

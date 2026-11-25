@@ -109,7 +109,7 @@ def _grant(handle, evidence, semantic_release):
 
 
 def lower_c13_episode_task_goal(
-    row: dict, *, semantic_release: str, capability, **_,
+    row: dict, *, semantic_release: str, capability, operator_registry=None, **_,
 ):
     if (not isinstance(row, dict) or "gold" in row
             or row.get("capability") != CAPABILITY
@@ -123,7 +123,9 @@ def lower_c13_episode_task_goal(
     if not isinstance(goal_id, str) or not goal_id:
         _invalid("BAMF_C13_TASK_SOURCE_VIEW_INVALID")
     goal = _task_goal(case, semantic_release, goal_id)
-    registry = default_registry(semantic_release)
+    registry = operator_registry if operator_registry is not None else default_registry(semantic_release)
+    if registry.semantic_release != semantic_release:
+        _invalid("BAMF_C04_OPERATOR_REGISTRY_RELEASE_DRIFT")
     task = TaskScope(
         _PRINCIPAL, _TENANT, _PURPOSE, semantic_release, _JURISDICTION,
         CAPABILITY, 0, 0, len(row.get("tokens", ())),
@@ -174,8 +176,12 @@ def resolve_c13_episode_task_goal(
         _invalid("BAMF_C13_TASK_TARGET_INVALID")
     source = dict(row)
     source.pop("gold", None)
-    goal, _binding = lower_c13_episode_task_goal(
+    goal, binding = lower_c13_episode_task_goal(
         source, semantic_release=semantic_release, capability=capability, **kwargs)
+    return _resolve_lowered_c13(row, goal, binding)
+
+
+def _resolve_lowered_c13(row, goal, _binding, **_):
     try:
         case = case_from_record(row["record"])
     except (KeyError, TypeError, ValueError):

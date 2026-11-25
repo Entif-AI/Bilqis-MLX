@@ -53,6 +53,7 @@ class RenderView:
         if isinstance(budget,(int,float)) and budget>0:
             percent=int(elapsed*100/budget+.5)
             fields.append(("MAX TIME",f"{percent}% / {_human_duration(budget)} max",16,False))
+        growth_suffix = "~" if state.get("_bamf_growth_partial") else ""
         fields.extend([
             ("RUN",self.run_name or "-",23,False),
             ("STEPS",step if step not in (None,'','?') else "-",7,True),
@@ -65,9 +66,9 @@ class RenderView:
             ("ST/M",round(self._steps_per_min) if isinstance(self._steps_per_min,(int,float)) else "-",5,True),
             ("RTN",retained if type(retained) is int else "-",4,True),
             ("RTN%",round(retained*100/visits) if type(retained) is int and type(visits) is int and visits>0 else "-",5,True),
-            ("GREW",f"{state['grew']:+d}" if type(state.get('grew')) is int else "-",5,True),
+            ("GREW",f"{state['grew']:+d}{growth_suffix}" if type(state.get('grew')) is int else "-",5,True),
             ("R/H",round(retained*3600/elapsed) if type(retained) is int and elapsed>0 else "-",5,True),
-            ("G/RTN",f"{state['grew']/retained:+.2f}" if type(state.get('grew')) is int and type(retained) is int and retained>0 else "-",6,True),
+            ("G/RTN",f"{state['grew']/retained:+.2f}{growth_suffix}" if type(state.get('grew')) is int and type(retained) is int and retained>0 else "-",6,True),
             ("GRAD",state.get("graduations","0.0.0 / 0.0.0"),18,False),
         ])
         halt=state.get('halt')
@@ -186,7 +187,7 @@ class RenderView:
         with self._draw_lock:
             self.dirty=False
             try:
-                from ..bamf_terminal_projection import refresh_bamf_terminal_projection
+                from ..bamf_terminal.projection import refresh_bamf_terminal_projection
                 refresh_bamf_terminal_projection(self)
                 self._sample_step_rate()
                 if self.stream.isatty():

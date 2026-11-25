@@ -3,7 +3,7 @@ from functools import partial
 from threading import Event
 import time
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 
 import pytest
 
@@ -120,7 +120,7 @@ def test_learning_first_callback_is_selected_without_touching_strict_execution()
         assert callback(1, lesson) == "prepared"
     prepare.assert_called_once_with(
         context, authenticated, (row,), source_seed=29, source_each=1,
-        source_identity=None)
+        source_identity=None, row_cache=ANY)
 
 
 def test_candidate_horizon_discovers_learning_first_pipeline_automatically():

@@ -111,3 +111,40 @@ class StagedCandidateCustodyTests(CandidateStagingFixture, unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "CANDIDATE_STAGING_IMMUTABLE_DRIFT"):
                 persist_staged_candidate(root, staged, self.frontier, self.current)
             self.assertEqual(path.read_text(), tampered)
+
+
+    def test_ready_realizations_reuse_verified_staging_until_a_write(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from bilqis_mlx.runtime import atlas_flywheel_runtime as runtime
+        from bilqis_mlx.runtime.atlas_flywheel_runtime_parts import planning
+
+        staged = self.stage()
+        fixture = self.fixture.fixture
+        candidate = SimpleNamespace(source_eligible_concept_ids=("fixture.semantic",))
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with patch.object(runtime, "live_source_registry", return_value=fixture.registry), \
+                    patch.object(runtime, "live_answer_registry", return_value=fixture.answers), \
+                    patch.object(planning.candidate_realizations, "_realized_a08_semantic_ids",
+                                 return_value=("fixture.semantic",)), \
+                    patch.object(planning.candidate_realizations, "realized_capability_id",
+                                 return_value="Z.C6"), \
+                    patch.object(planning.candidate_realizations, "project_realized_target"), \
+                    patch.object(planning.candidate_realizations, "prepare_realized_candidate",
+                                 return_value=staged), \
+                    patch.object(planning, "load_staged_candidates", wraps=load_staged_candidates) as load:
+                self.assertEqual(planning._persist_ready_realizations(
+                    root, self.current, candidate, self.frontier, fixture.graph), (staged,))
+                self.assertEqual(load.call_count, 2)
+                load.reset_mock()
+                self.assertEqual(planning._persist_ready_realizations(
+                    root, self.current, candidate, self.frontier, fixture.graph), (staged,))
+                self.assertEqual(load.call_count, 1)
+                path = next((root / "autonomy" / "staged-candidates").iterdir())
+                payload = json.loads(path.read_text())
+                payload["source_anchor"] = "forged"
+                path.write_text(json.dumps(payload))
+                with self.assertRaisesRegex(ValueError, "CANDIDATE_STAGING_DIGEST_MISMATCH"):
+                    planning._persist_ready_realizations(
+                        root, self.current, candidate, self.frontier, fixture.graph)

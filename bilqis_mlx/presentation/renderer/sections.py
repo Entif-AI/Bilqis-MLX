@@ -5,6 +5,8 @@ from .scores import _compact_score_line, _compact_summary_outcome, _right_grew, 
 from .system import _compact_system_detail, _system_kind
 from .layout import _section_heading, _step_exam, _table_line, _wide_columns
 
+_GROWTH_COVERAGE_FIELDS = ("count", "expected", "stale")
+
 class SectionsView:
     def _wide_section(self,name,width,shown):
         """Deduplicate conceptual rows, not the underlying receipt history."""
@@ -26,6 +28,12 @@ class SectionsView:
             correct,total=self._latest_all_grade_score()
             score=(f': {correct}/{total} ({100*correct/total:.1f}%) TRAINED'
                    if total else '')
+            coverage = self.state.get('_bamf_growth_coverage')
+            if isinstance(coverage, tuple) and len(coverage) == len(_GROWTH_COVERAGE_FIELDS) and coverage[0]:
+                count, expected, stale = coverage
+                score += f' | GREW REF {count}/{expected or "?"}'
+                if stale:
+                    score += f' S{stale}'
             return f'CURRICULUM [{shown}/{len(available)} visible]{score}'
         elif name=='SYSTEM & QUALIFICATION':
             return f'{shown}/{len(available)} states'
@@ -93,7 +101,8 @@ class SectionsView:
                 'right_pct':f'{100*parsed[0]/parsed[1]:.1f}%' if parsed is not None else '-',
                 'to100':str(parsed[1]-parsed[0]) if parsed is not None else '-',
                 'outcome':(f'CHAMP @{title.get("title_step","-")} | '
-                           f'br{title.get("breadth","-")}' if title is not None else '-'),
+                           f'br{title.get("breadth","-")}' if title is not None
+                           else observed.get('outcome','-')),
             })
         return families
 
@@ -108,7 +117,9 @@ class SectionsView:
                 'step_exam':_step_exam(row.get('step','-'),row.get('attempt','-')),
                 'score_line':_compact_score_line(
                     row.get('start','-'),row.get('best','-'),row.get('latest','-')),
-                'right_grew':_right_grew(row.get('start','-'),row.get('latest','-')),
+                'right_grew':_right_grew(
+                    None if row.get('_bamf_no_growth_baseline') else row.get('start','-'),
+                    row.get('latest','-')),
                 'outcome':_compact_summary_outcome(row.get('outcome','-')),
             })
             combined.extend(families.pop(row['grade'],()))

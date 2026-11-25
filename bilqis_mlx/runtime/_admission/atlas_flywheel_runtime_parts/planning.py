@@ -197,6 +197,7 @@ def _persist_ready_realizations(
         source_registry=sources, answer_registry=answers)
     known = {item.candidate_id for item in staged}
     known_capabilities = {item.target_capability_id for item in staged}
+    wrote_staging = False
     for semantic_id in candidate_realizations._realized_a08_semantic_ids(candidate):
         capability_id = candidate_realizations.realized_capability_id(semantic_id)
         if capability_id in known_capabilities:
@@ -213,8 +214,11 @@ def _persist_ready_realizations(
         )
         if realized.candidate_id not in known:
             persist_staged_candidate(run_dir, realized, frontier, current)
+            wrote_staging = True
             known.add(realized.candidate_id)
             known_capabilities.add(realized.target_capability_id)
+    if not wrote_staging:
+        return staged
     return load_staged_candidates(
         run_dir, frontier, current,
         source_registry=sources, answer_registry=answers)
