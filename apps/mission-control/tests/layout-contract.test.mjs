@@ -139,8 +139,9 @@ test("operator typography and explanatory surfaces use the shared visual languag
   assert.match(shell, /\.context-bar\s*\{[^}]*display:\s*flex[^}]*justify-content:\s*space-between/s);
   assert.match(shell, /\.context-disclosure\s*\{[^}]*position:\s*relative/s);
   assert.match(shell, /\.context-disclosure > summary\s*\{[^}]*display:\s*inline-flex[^}]*align-items:\s*center[^}]*background:\s*var\(--surface-2\)/s);
-  assert.match(shell, /\.context-popover\s*\{[^}]*position:\s*absolute/s);
-  assert.match(shell, /\.context-facts\s*\{[^}]*repeat\(3, minmax\(140px, 1fr\)\)/s);
+  assert.doesNotMatch(shell, /\.context-popover\s*\{[^}]*position:\s*(?:absolute|fixed)/s);
+  assert.match(shell, /\.context-popover\s*\{[^}]*width:\s*min\(680px, 100%\)/s);
+  assert.match(shell, /\.context-facts\s*\{[^}]*repeat\(auto-fit, minmax\(min\(140px, 100%\), 1fr\)\)/s);
   assert.doesNotMatch(shell, /\.selector\s*\{/);
   assert.match(shell, /\.ui-glossary\s*\{/);
   assert.match(school, /class="ui-glossary"/);

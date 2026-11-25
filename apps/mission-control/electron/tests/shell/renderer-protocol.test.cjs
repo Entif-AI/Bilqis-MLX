@@ -41,6 +41,7 @@ test("renderer protocol resolves only the checked-in Model Forensics asset allow
     "/foundation/accessibility.mjs",
     "/foundation/bootstrap-controller.mjs",
     "/foundation/capability-controller.mjs",
+    "/foundation/context-disclosures.mjs",
     "/foundation/current-view.mjs",
     "/foundation/i18n.mjs",
     "/foundation/primitives.mjs",

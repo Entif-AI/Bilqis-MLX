@@ -1,3 +1,5 @@
+const { contextDisclosureJourney } = require("./journeys/context-disclosure-journey.cjs");
+
 async function shellUsabilityProof(page, { check, setDisplay, navigate, reconnect }) {
   await page.setViewportSize({ width: 1440, height: 960 });
   await setDisplay(page, "dark", "comfortable");
@@ -61,6 +63,8 @@ async function shellUsabilityProof(page, { check, setDisplay, navigate, reconnec
   await page.locator('[data-test-id="shell-system-context-trigger"]').click();
   check(await system.evaluate(node => node.open), "System Context did not reopen");
   check(!await view.evaluate(node => node.open), "View remained open with System Context");
+
+  await contextDisclosureJourney(page);
 
   const summaryGeometry = await page.locator('[data-test-id="shell-system-context-trigger"]').evaluate((node) => {
     const style = getComputedStyle(node);

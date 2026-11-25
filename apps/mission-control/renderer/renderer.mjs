@@ -45,6 +45,7 @@ import {
   createBootstrapController,
 } from "./foundation/bootstrap-controller.mjs";
 import { bindStaticInteractions } from "./foundation/static-interactions.mjs";
+import { closeContextDisclosures } from "./foundation/context-disclosures.mjs";
 import { t } from "./foundation/i18n.mjs";
 
 const launchMode = window.bamfMissionControl.launchMode === "fixtures" ? "fixtures" : "production";
@@ -190,6 +191,7 @@ function render() {
     nextView !== null &&
     lastRenderedView !== nextView
   );
+  if (primaryDestinationChanged) closeContextDisclosures(document);
   frameShell.beforeRender();
   renderChrome(state, defense, displaySettings, shellPreferences, {
     api: window.bamfMissionControl,
@@ -250,6 +252,7 @@ function returnEvidenceOrigin() {
 }
 
 function navigateTo(view) {
+  closeContextDisclosures(document);
   state = navigate(state, view);
   document.querySelector("#command-palette")?.close?.();
   render();
@@ -268,6 +271,7 @@ function syncDomainSelection(selected) {
 function openPalette() {
   const dialog = document.querySelector("#command-palette");
   paletteReturnToken = focusToken(document.activeElement);
+  closeContextDisclosures(document);
   renderPaletteOptions(state, navigateTo);
   if (!dialog.open) dialog.showModal();
   window.queueMicrotask(() => dialog.querySelector("button:not(:disabled)")?.focus());

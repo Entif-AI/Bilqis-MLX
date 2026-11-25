@@ -1,4 +1,5 @@
 import { parseDeepLink } from "../deep-link.mjs";
+import { bindContextDisclosures, closeContextDisclosures } from "./context-disclosures.mjs";
 import { withRoute, openEvidence, openSelectionOwner } from "../shell-state.mjs";
 import {
   DENSITIES,
@@ -227,24 +228,14 @@ export function bindStaticInteractions({
     applyShellPreferences(document.documentElement, next);
     render();
   });
-  const contextDisclosures = [
-    document.querySelector("#system-context-disclosure"),
-    document.querySelector("#view-settings-disclosure"),
-  ];
-  contextDisclosures.forEach((disclosure) => {
-    disclosure.addEventListener("toggle", () => {
-      if (!disclosure.open) return;
-      contextDisclosures.forEach((other) => {
-        if (other !== disclosure) other.removeAttribute("open");
-      });
-    });
-  });
+  bindContextDisclosures(document);
   document.querySelector("#palette-close").addEventListener("click", () => {
     document.querySelector("#command-palette").close();
   });
   window.addEventListener("hashchange", () => {
     const state = getState();
     if (!state) return;
+    closeContextDisclosures(document);
     setState(withRoute(state, parseDeepLink(window.location.hash)));
     render();
   });

@@ -211,13 +211,12 @@ test("production launch strips fixture-looking selection even without a context 
   );
 });
 
-test("shell interactions make context popovers exclusive and reset only changed primary destinations", () => {
+test("shell binds context disclosure lifecycle separately from help and primary scroll", () => {
   const interactions = source("foundation/static-interactions.mjs");
   const renderer = source("renderer.mjs");
   const rendererUi = source("foundation/renderer-ui.mjs");
-  assert.match(interactions, /system-context-disclosure/);
-  assert.match(interactions, /view-settings-disclosure/);
-  assert.match(interactions, /other\.removeAttribute\("open"\)/);
+  assert.match(interactions, /bindContextDisclosures\(document\)/);
+  assert.match(renderer, /closeContextDisclosures\(document\)/);
   assert.match(interactions, /event\.key\s*!==\s*"Escape"/);
   assert.match(interactions, /owner\.dataset\.popupDismissed\s*=\s*"true"/);
   assert.match(rendererUi, /button\[data-view\]:not\(:disabled\)/);
