@@ -43,6 +43,10 @@ def _state(scheme):
     )
 
 
+class _CacheScope(SimpleNamespace):
+    pass
+
+
 class ParentAssessmentIdentityIntegrationTests(unittest.TestCase):
     def setUp(self):
         clear_parent_assessment_cache()
@@ -55,7 +59,7 @@ class ParentAssessmentIdentityIntegrationTests(unittest.TestCase):
             return parent_solver.context_for(goal, generation)
 
         self.solver = CompleteSolver(counted, parent_solver.budget)
-        self.cache = SimpleNamespace(
+        self.cache = _CacheScope(
             run_id="identity-cache-test", generation=1,
             accepted_manifest_sha256="1" * 64, generation_binding=PARENT,
             source_authority_registry_sha256="2" * 64,
