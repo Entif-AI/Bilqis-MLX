@@ -156,6 +156,9 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
             self.assertEqual(rejected[0].reason_code, decision.reason)
             self.assertEqual(rejected[0].candidate_id, decision.candidate_generation)
             self.assertIn(f"bamf-rejection:{receipt}", rejected[0].meta.receipt_refs)
+            episode = next(record for record in material.records
+                           if isinstance(record, LearningEpisode) and record.state == "REJECTED")
+            self.assertEqual((episode.started_at, episode.completed_at), (0, 0))
             self.assertEqual((self.run / "bamf-state.json").read_bytes(), before)
 
             with patch(

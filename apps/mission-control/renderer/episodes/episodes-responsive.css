@@ -64,6 +64,7 @@
     flex-direction: column;
   }
 
+  .production-learning .episode-picker,
   .episode-picker,
   .episode-summary-grid,
   .episode-custody dl {

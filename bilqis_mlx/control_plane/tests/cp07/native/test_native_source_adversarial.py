@@ -21,8 +21,8 @@ from bilqis_mlx.mission_control import (
 )
 from bilqis_mlx.mission_control import LearningEpisode
 from bilqis_mlx.runtime import checkpoint_outbox
-from bilqis_mlx.runtime.bamf_bundle import record_bamf_rejection
-from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import retention_decision
+from bilqis_mlx.runtime.bamf_bundle import load_bamf_generation, record_bamf_rejection
+from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import retention_decision, shape_patch
 
 from ..native_source_support import NativeSourceFixture
 
@@ -255,6 +255,21 @@ class NativeSourceAdversarialTests(NativeSourceFixture, unittest.TestCase):
         self.assertEqual(len({record.meta.record_id for record in episodes}), 2)
         page = native_query_catalog(self.run).query(QueryRequest(QueryFamily.RUN))
         self.assertEqual(page.state.value, "PRESENT")
+
+    def test_rejected_visit_at_nonzero_generation_has_unknown_wall_clock(self):
+        self.publish_successor()
+        before = (self.run / "bamf-state.json").read_bytes()
+        with shape_patch():
+            parent = load_bamf_generation(self.run / "bamf-state.json")
+        self.assertEqual(parent.generation, 1)
+        record_bamf_rejection(self.run, parent, self.rejection_evidence(parent))
+        material = materialize_native_projection(self.run, include_live_rejections=True)
+        rejected = [r for r in material.records if isinstance(r, LearningEpisode)
+                    and r.state == "REJECTED"]
+        self.assertEqual(len(rejected), 1)
+        self.assertEqual(rejected[0].meta.run.generation, 1)
+        self.assertEqual((rejected[0].started_at, rejected[0].completed_at), (0, 0))
+        self.assertEqual((self.run / "bamf-state.json").read_bytes(), before)
 
     def test_c16_rejection_requires_source_retention_decision(self):
         parent = self.parent()

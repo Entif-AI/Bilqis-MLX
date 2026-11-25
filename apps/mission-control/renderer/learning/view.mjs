@@ -36,16 +36,26 @@ function facts(record) {
       ? t("learning.production.decision")
       : record?.schema_version;
   return [
-    fact(t("learning.production.recordType"), type),
-    fact(t("learning.production.recordId"), recordId(record)),
     fact(t("learning.production.capability"), record?.capability_id),
-    record?.episode_id ? fact(t("learning.production.episodeId"), record.episode_id) : "",
-    record?.candidate_id ? fact(t("learning.production.candidateId"), record.candidate_id) : "",
-    record?.visit_id ? fact(t("learning.production.visitId"), record.visit_id) : "",
+    fact(t("learning.production.outcome"), record?.outcome ?? record?.state),
+    fact(t("learning.production.generation"), meta.run?.generation),
+    fact(t("learning.production.attemptedSteps"), null),
+    fact(t("learning.production.retainedSteps"), null),
+    fact(t("learning.production.recordType"), type),
     fact(t("learning.production.authority"), meta.authority),
     fact(t("learning.production.coverage"), meta.coverage),
     timeFact(t("learning.production.materialized"), meta.materialized_at,
       "learning-production-materialized"),
+  ].join("");
+}
+
+function provenanceFacts(record) {
+  const meta = record?.meta ?? {};
+  return [
+    fact(t("learning.production.recordId"), recordId(record)),
+    record?.episode_id ? fact(t("learning.production.episodeId"), record.episode_id) : "",
+    record?.candidate_id ? fact(t("learning.production.candidateId"), record.candidate_id) : "",
+    record?.visit_id ? fact(t("learning.production.visitId"), record.visit_id) : "",
     timeFact(t("learning.production.observed"), meta.observed_at,
       "learning-production-observed"),
     timeFact(t("learning.production.asOf"), meta.as_of,
@@ -61,7 +71,10 @@ function transactionPanel(record) {
     esc(t("learning.production.transaction.title")),
     "</h3></header><dl class=\"production-learning-facts\">",
     facts(record),
-    "</dl></section>",
+    "</dl><details class=\"episode-custody\"><summary>",
+    esc(t("learning.production.provenance")),
+    "</summary><dl class=\"production-learning-facts\">",
+    provenanceFacts(record), "</dl></details></section>",
   ].join("");
 }
 
@@ -125,7 +138,8 @@ function tabMarkup(activeTab) {
     '" data-learning-production-tab="', id,
     '" aria-controls="learning-production-panel-', id,
     '" aria-selected="', String(id === activeTab),
-    '" tabindex="', id === activeTab ? "0" : "-1", '">',
+    '" tabindex="', id === activeTab ? "0" : "-1", '" ',
+    testIdAttribute("learning", "production", "tab", id), ">",
     esc(t(key)), "</button>",
   ].join("")).join("");
 }
@@ -141,7 +155,8 @@ function panelMarkup(activeTab, record) {
     '<section role="tabpanel" id="learning-production-panel-', id,
     '" aria-labelledby="learning-production-tab-', id,
     '" data-learning-production-panel="', id, '" ',
-    id === activeTab ? "" : "hidden", ">",
+    id === activeTab ? "" : "hidden", " ",
+    testIdAttribute("learning", "production", "panel", id), ">",
     content[id], "</section>",
   ].join("")).join("");
 }

@@ -76,6 +76,10 @@ test("renderer protocol resolves only the checked-in Model Forensics asset allow
     "/episodes/episode-view.mjs",
     "/episodes/episode-view-shared.mjs",
     "/episodes/episodes.css",
+    "/episodes/episodes-foundation.css",
+    "/episodes/episodes-lifecycle.css",
+    "/episodes/episodes-comparison.css",
+    "/episodes/episodes-responsive.css",
     "/frame-explorer.css",
     "/frames/frame-contract.mjs",
     "/frames/frame-explorer.mjs",
@@ -239,6 +243,19 @@ test("production renderer static dependency graph is fixture-free", () => {
     for (const match of source.matchAll(/(?:from\s+|import\s*)["'](\.\.?\/[^"']+)["']/g)) {
       const resolved = "/" + path.posix.normalize(path.posix.join(path.posix.dirname(relative), match[1]));
       pending.push(resolved);
+    }
+  }
+});
+
+test("production protocol resolves all relative stylesheet imports", () => {
+  const root = path.resolve(__dirname, "../../../renderer");
+  const production = rendererAssetsForLaunchMode("production");
+  for (const [requestPath, relative] of production) {
+    if (!relative.endsWith(".css")) continue;
+    const source = fs.readFileSync(path.join(root, relative), "utf8");
+    for (const match of source.matchAll(/@import\s+(?:url\(\s*)?["'](\.\.?\/[^"']+)["']/g)) {
+      const resolved = "/" + path.posix.normalize(path.posix.join(path.posix.dirname(relative), match[1]));
+      assert.ok(production.has(resolved), `${requestPath} imports missing ${resolved}`);
     }
   }
 });

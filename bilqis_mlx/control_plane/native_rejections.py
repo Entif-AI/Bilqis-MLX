@@ -199,7 +199,10 @@ def _project_verified_rejection(verified, generation):
         record_meta(
             f"episode:{episode_id}", run, generation, evidence_refs=refs,
             receipt_refs=receipts, coverage=CoverageState.PARTIAL),
-        episode_id, capability, visit_id, "REJECTED", run.generation, run.generation)
+        # Rejection authority binds generation and optimizer coordinates, not
+        # a source wall-clock timestamp. Zero is the existing unknown-time
+        # sentinel; a generation number must never become a Unix timestamp.
+        episode_id, capability, visit_id, "REJECTED", 0, 0)
     candidate = CandidateDecision(
         record_meta(
             f"candidate:{event_id}", run, generation, evidence_refs=refs,

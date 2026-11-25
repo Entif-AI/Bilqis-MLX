@@ -93,6 +93,18 @@
   gap: var(--space-4);
 }
 
+.production-learning .episode-picker {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.production-learning .episode-picker label {
+  min-width: 0;
+}
+
+.production-learning .episode-inspect-candidate {
+  padding-inline: var(--space-3);
+}
+
 .episode-picker label {
   display: grid;
   gap: var(--space-1);
@@ -226,6 +238,36 @@
   grid-template-columns: minmax(210px, .8fr) minmax(260px, 1.2fr) minmax(230px, 1fr);
   gap: var(--space-5);
   margin-top: var(--space-5);
+}
+
+.production-learning-panel {
+  min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-1);
+}
+
+.production-learning-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
+  align-items: start;
+  gap: var(--space-3) var(--space-5);
+  margin: var(--space-3) 0 0;
+}
+
+.production-learning-facts > div {
+  min-width: 0;
+}
+
+.production-learning-facts dt {
+  color: var(--text-muted);
+  font-size: var(--type-label);
+}
+
+.production-learning-facts dd {
+  margin: var(--space-1) 0 0;
+  overflow-wrap: anywhere;
 }
 
 .episode-summary dl,

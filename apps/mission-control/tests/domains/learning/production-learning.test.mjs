@@ -46,6 +46,7 @@ const decision = Object.freeze({
     source_refs: [],
     evidence_refs: ["evidence:b"],
     receipt_refs: ["receipt:b"],
+    run: { generation: 7 },
   }),
   candidate_id: "candidate-7",
   capability_id: "B.AND",
@@ -99,6 +100,11 @@ test("production Learning preserves exact selected record and candidate outcome 
   assert.match(markup, /decision-record-7/);
   assert.match(markup, /ACCEPTED/);
   assert.match(markup, /SOURCE_GOLD_PASS/);
+  assert.match(markup, /Accepted evidence generation<\/dt><dd>7/);
+  assert.match(markup, /Attempted optimizer steps<\/dt><dd>Unavailable/);
+  assert.match(markup, /Retained optimizer steps<\/dt><dd>Unavailable/);
+  assert.match(markup, /data-test-id="learning-production-tab-outcome"/);
+  assert.match(markup, /data-test-id="learning-production-panel-outcome"/);
   assert.match(markup, /Historical generation 7/);
   assert.match(markup, /data-learning-production-tab="outcome"[^>]*aria-selected="true"/);
 });
