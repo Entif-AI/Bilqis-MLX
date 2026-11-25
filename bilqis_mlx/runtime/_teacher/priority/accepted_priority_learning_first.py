@@ -11,7 +11,8 @@ from .accepted_priority_visit_contracts import _require_issued
 
 
 def _learning_first_delivery(
-        selection, source_context, prepared_source_rows, prepared_enrichment_rows,
+        selection, source_context, prepared_source_rows, prepared_source_seed,
+        prepared_enrichment_rows,
         prepared_rehearsal_rows, rehearsal_by_id, rehearsal_bindings,
         rehearsal_authorities, observation, teacher_hparams,
         prepared_fresh_support_rows, fresh_support_by_id, fresh_support_binding,
@@ -30,7 +31,22 @@ def _learning_first_delivery(
         fresh_support_authority=fresh_support_authority,
         fresh_support_unavailable_reason=fresh_support_unavailable_reason,
         fresh_support_depth_control=fresh_support_depth_control)
-    return parent, semantic_context, policy, hparams, delivery_inputs, setup_seconds
+    (offer, rows, enrichment, rehearsal, rehearsal_by_id, rehearsal_bindings,
+     rehearsal_authorities, fresh_support, fresh_support_by_id, capability,
+     delivery, observation) = delivery_inputs
+    source_seed = offer.source_seed if prepared_source_seed is None else prepared_source_seed
+    if prepared_source_seed is not None:
+        observation = replace(observation, seed=source_seed)
+    delivered_rows = (*rows, *rehearsal, *enrichment, *fresh_support)
+    step_delivery = dict(
+        capability=capability, delivery=delivery, requested_count=len(delivered_rows),
+        source_seed=source_seed, source_each=len(rows) + len(enrichment),
+        teacher_strategy=policy, teacher_hparams=hparams, observation=observation,
+        rehearsal_by_id=rehearsal_by_id, rehearsal_bindings=rehearsal_bindings,
+        rehearsal_authorities=rehearsal_authorities,
+        fresh_support_by_id=fresh_support_by_id, semantic_context=semantic_context,
+    )
+    return parent, delivered_rows, step_delivery, setup_seconds
 
 
 def _learning_first_step_start(candidate_step_started_at, candidate_visit):
@@ -72,35 +88,22 @@ def execute_learning_first_priority_candidate(
     candidate_step_started_at = _learning_first_step_start(
         candidate_step_started_at, candidate_visit)
     (
-        parent, semantic_context, policy, hparams, delivery_inputs,
+        parent, delivered_rows, step_delivery,
         candidate_delivery_setup_wall_seconds,
     ) = _learning_first_delivery(
-        selection, source_context, prepared_source_rows, prepared_enrichment_rows,
+        selection, source_context, prepared_source_rows, prepared_source_seed,
+        prepared_enrichment_rows,
         prepared_rehearsal_rows, rehearsal_by_id, rehearsal_bindings,
         rehearsal_authorities, observation, teacher_hparams,
         prepared_fresh_support_rows, fresh_support_by_id, fresh_support_binding,
         fresh_support_authority, fresh_support_unavailable_reason,
         fresh_support_depth_control)
-    (offer, rows, enrichment, rehearsal, rehearsal_by_id, rehearsal_bindings,
-     rehearsal_authorities, fresh_support, fresh_support_by_id, capability, delivery,
-     observation) = delivery_inputs
-    source_seed = offer.source_seed if prepared_source_seed is None else prepared_source_seed
-    if prepared_source_seed is not None:
-        observation = replace(observation, seed=source_seed)
-    delivered_rows = (*rows, *rehearsal, *enrichment, *fresh_support)
     provenance = BamfVisitProvenance.from_c03_record(selection.visit.identity.to_record())
     return execute_factory_candidate_step(
         Path(selection._run_dir), source_context, parent,
         atlas_artifact_path, feature_artifact_path, delivered_rows,
-        capability=capability, delivery=delivery, requested_count=len(delivered_rows),
-        source_seed=source_seed, source_each=len(rows) + len(enrichment),
         optimizer_step_seed=optimizer_step_seed, visit_provenance=provenance,
-        teacher_strategy=policy, teacher_hparams=hparams, max_norm=max_norm,
-        observation=observation, memory_budget=memory_budget,
-        rehearsal_by_id=rehearsal_by_id,
-        rehearsal_bindings=rehearsal_bindings,
-        rehearsal_authorities=rehearsal_authorities,
-        fresh_support_by_id=fresh_support_by_id,
+        max_norm=max_norm, memory_budget=memory_budget,
         salience_provider=salience_provider, capture_diagnostics=capture_diagnostics,
         candidate=candidate, finalize_candidate=finalize_candidate,
         currentness_transaction=None,
@@ -116,7 +119,7 @@ def execute_learning_first_priority_candidate(
         progress_emission_wall_seconds=progress_emission_wall_seconds,
         observer_begin_step_wall_seconds=observer_begin_step_wall_seconds,
         candidate_delivery_setup_wall_seconds=candidate_delivery_setup_wall_seconds,
-        semantic_context=semantic_context, prepared_source=None,
+        prepared_source=None,
         accepted_cache=accepted_cache, selected_source_authority=None,
         learning_first_cache=learning_first_cache,
         prepared_learning_first_source_inputs=prepared_learning_first_source_inputs,
@@ -128,7 +131,7 @@ def execute_learning_first_priority_candidate(
         pipeline_accelerator_wait_for_host_wall_seconds=(
             pipeline_accelerator_wait_for_host_wall_seconds),
         distributed_profile=distributed_profile,
-        distributed_executor=distributed_executor)
+        distributed_executor=distributed_executor, **step_delivery)
 
 
 __all__ = ("execute_learning_first_priority_candidate",)
