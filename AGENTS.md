@@ -845,15 +845,17 @@ Do not turn evaluation purity into a substitute acceptance gate.
 expecting transfer across untaught semantics. Independently verified retained mastery
 of actually taught semantics, including exact recall, memorization and replay, is
 legitimate foundation learning. Independent assessment means independent
-source/oracle truth and honest scoring; it does not require zero semantic/specimen/
-source-family/episode overlap with instruction. A zero-overlap cohort is therefore
+source/oracle truth and honest scoring: the learner/solver receives no answer gold,
+while the scorer retains source-authorized gold and must not inject it into the solver.
+It does not require zero semantic/specimen/source-family/episode overlap with
+instruction. A zero-overlap cohort is therefore
 generalization/transfer telemetry unless a later human maturity decision promotes it.
 For retention-recovery work, report taught foundational competence and transfer as
 separate surfaces and use retained taught competence per wall-clock minute as the
 current product learning measure. Preserve C05, legitimate protected-regression law,
 source authority, accepted learner+AdamW custody and acceptance authority. Before
 changing retention-recovery experiments or interpreting the pinned v1 comparator,
-read `docs/specifications/retention_recovery_learning_contract.md`.
+read ADR-157 and `docs/specifications/retention_recovery_learning_contract.md`.
 
 ## CONTROLLING USER CORRECTION — 2026-10-23: #150 decomposes factory mechanics, not roots
 

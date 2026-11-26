@@ -3065,38 +3065,6 @@ later edit cannot silently restore premature generalization as a foundation gate
 protected-retention limits and human neural-update authority remain active. This ADR
 changes developmental evidence maturity, not those safety or provenance boundaries.
 
-### Owner clarification | 2026-11-26 | taught semantics precede generalization expectations
-
-The FOUNDATION_ACQUISITION stage is deliberately developmental. Bilqis must first
-acquire and retain the semantics that have actually been taught at the current earned
-curriculum complexity before transfer to untaught semantics is treated as an expected
-competence. Independently verified exact taught recall, memorization, replay, and
-taught-composition replication therefore constitute legitimate learning when the
-accepted learner retains them under the applicable source, custody, C05, and
-protected-regression rules.
-
-Independent assessment means the truth/oracle and scorer remain source-authorized,
-honest, reproducible, and separated from answer injection. It does **not** inherently
-require semantic, specimen, source-family, or episode non-overlap with instruction.
-Zero-overlap panels remain valid research instruments for measuring transfer and
-generalization, but while `generalization_status=MEASURE_ONLY` they cannot by
-themselves define, falsify, veto, or rank foundation learning.
-
-Historical experiments keep their frozen cohorts, thresholds, labels, and outcomes as
-historical evidence. When a historical zero-overlap result is discussed prospectively,
-it must be labeled transfer/generalization telemetry rather than silently substituted
-for taught foundational competence. Retention-recovery experiments must report the
-two surfaces separately: (1) independently verified retained competence on actually
-taught semantics at current earned complexity, which is the current product learning
-surface, and (2) generalization/transfer telemetry, which remains observational until
-explicit human maturity admission.
-
-The canonical current interpretation and pinned-v1 behavioral parity map are maintained
-in `docs/specifications/retention_recovery_learning_contract.md`. This clarification
-does not restore historical architecture wholesale and does not weaken source truth,
-rights, C05, protected competence, atomic model/AdamW custody, or legitimate acceptance
-authority.
-
 ## ADR-134 | 2026-11-05 | Alpha advancement follows earned complexity; novelty is measured, not gated
 
 **Status:** Accepted by direct owner correction on 2026-11-05. This refines ADR-097
@@ -4112,3 +4080,59 @@ checkpoint resets the local epoch, and the existing four-unretained and durable
 cooldown rules still operate unchanged. Cold replay must also prove that historical
 pre-ADR-156 rejection outcomes retain their original teacher hashes and do not seed
 the new target-failure-v2 debt.
+
+## ADR-157 | 2026-11-26 | Taught-foundation retention is authorizing; assessment answer gold stays evaluator-side
+
+**Status:** Accepted by direct owner correction on 2026-11-26 through issue #1645.
+This is an append-only prospective clarification of ADR-133 and ADR-134. It is not a
+retroactive edit to their 2026-11-05 decisions.
+
+**Problem:** Retention-recovery experiments and issue language had conflated two
+different questions: whether the learner retained semantics that were actually taught,
+and whether it generalized across untaught semantics. A first reconciliation also
+described assessment independence as if the scorer itself could not receive source
+gold. That wording contradicted the executable assessment architecture: the solver is
+given task goals only, while the evaluator must retain source-authorized gold in order
+to score the returned answer.
+
+**Decision:** During `FOUNDATION_ACQUISITION`, Bilqis first acquires and retains the
+semantics actually taught at current earned curriculum complexity. Independently
+verified exact taught recall, memorization, replay, and taught-composition replication
+are legitimate learning when the accepted learner retains them under applicable source,
+custody, C05, and protected-regression rules. Transfer over untaught semantics remains
+`MEASURE_ONLY` until an explicit human maturity admission changes that status.
+
+Independent assessment separates learner input from evaluator truth. The learner and
+solver MUST NOT receive the source answer gold as an assessment input. The evaluator
+and scorer MUST retain source-authorized gold and may compare the solver's returned
+answer against that gold. Scoring MUST NOT inject, leak, or otherwise route the gold
+answer into the solver. Assessment independence does not inherently require semantic,
+specimen, source-family, or episode non-overlap with instruction. Taught and previously
+shown specimens may therefore be independently scored when their source/rubric/cohort
+identity and evaluator truth remain authoritative.
+
+Zero-overlap, held-out, fresh-family, fresh-episode, and novel-composition panels remain
+valid instruments for measuring transfer and generalization. While generalization is
+`MEASURE_ONLY`, those panels cannot by themselves define, falsify, veto, or rank
+foundation learning. Retention-recovery experiments must report taught-foundation
+acquisition/retention separately from transfer telemetry.
+
+Historical experiments keep their frozen cohorts, thresholds, labels, and outcomes as
+historical evidence. A historical zero-overlap result may be reinterpreted prospectively
+as transfer/generalization telemetry, but its original protocol and outcome are not
+rewritten. The current product metric is independently verified retained competence on
+actually taught semantics per wall-clock minute, with protected competence and lawful
+resource bounds preserved.
+
+**Structural enforcement:** `docs/specifications/developmental_evidence_policy.json`
+defines the current machine policy. `scripts/check_factory_architecture.py` locks the
+policy fields. Capability-evaluation tests prove the solver receives goals without case
+gold while `Assessment.score` compares returned answers against evaluator-held source
+gold. `docs/specifications/retention_recovery_learning_contract.md` carries the current
+retention-recovery interpretation and pinned-v1 behavioral comparator map.
+
+**Still enforced:** Source correctness, rights, semantic identity, learner+AdamW
+custody, rollback, C05, ADR-142 mastery-debt protection, ADR-145 final-decision/canary
+law, protected competence, legitimate acceptance authority, and human merge/neural
+authority remain unchanged. This ADR does not restore historical architecture wholesale
+and does not promote generalization into a developmental gate.

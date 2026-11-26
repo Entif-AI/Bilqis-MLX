@@ -2,7 +2,7 @@
 
 Status: current repository control map for FOUNDATION_ACQUISITION retention recovery.
 Authority: ADR-019, ADR-020, ADR-022, ADR-031, ADR-083, ADR-084, ADR-097, ADR-133,
-ADR-134, ADR-142, ADR-145, ADR-153, ADR-154, ADR-155 and ADR-156, plus
+ADR-134, ADR-142, ADR-145, ADR-153, ADR-154, ADR-155, ADR-156 and ADR-157, plus
 `docs/specifications/developmental_evidence_policy.json`. Historical experiment
 records remain evidence; this document controls their prospective interpretation.
 
@@ -19,8 +19,10 @@ intervention-ranking gate. A future fixed generalization gate requires explicit 
 maturity admission.
 
 Independent assessment means source/oracle truth is independently authorized, cohort
-identity and rubric are explicit, scoring is honest and reproducible, and the scorer
-does not receive gold as an input. Independence does not inherently require unseen
+identity and rubric are explicit, and scoring is honest and reproducible. The learner
+and solver do not receive answer gold as assessment input. The scorer retains
+source-authorized gold and compares the solver's returned answer against it, without
+injecting that gold into the solver. Independence does not inherently require unseen
 semantics or zero specimen, source-family, or episode overlap with instruction.
 
 ## Developmental sequence

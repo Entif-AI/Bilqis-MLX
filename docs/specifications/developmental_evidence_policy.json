@@ -3,6 +3,14 @@
   "current_stage": "FOUNDATION_ACQUISITION",
   "generalization_status": "MEASURE_ONLY",
   "fixed_generalization_gate_authority": "EXPLICIT_HUMAN_ADMISSION",
+  "policy_authority": {
+    "foundation_acquisition": [
+      "ADR-133",
+      "ADR-134",
+      "ADR-157"
+    ],
+    "retention_recovery_clarification": "ADR-157"
+  },
   "current_acceptance": {
     "teacher_forced_gold_allowed": true,
     "same_specimen_replay_allowed": true,
@@ -21,7 +29,10 @@
   },
   "independent_assessment": {
     "source_oracle_independence_required": true,
-    "scorer_gold_input_forbidden": true,
+    "learner_answer_gold_input_forbidden": true,
+    "solver_answer_gold_input_forbidden": true,
+    "scorer_source_authorized_gold_required": true,
+    "scoring_must_not_inject_gold_into_solver": true,
     "taught_semantics_eligible": true,
     "previously_shown_specimens_eligible": true,
     "zero_semantic_overlap_required": false,
