@@ -14,6 +14,7 @@ from bilqis_mlx.runtime.factory_training_bridge import (
     prepare_factory_training_batch,
 )
 from bilqis_mlx.runtime.factory_training_preparation import (
+    LearningFirstSourceRowCache,
     _prepared_ahead_matches,
     prepare_learning_first_source_inputs_ahead,
 )
@@ -119,6 +120,33 @@ class LearningFirstHostPipelinePreparationTests(
                     ahead, context, context._accepted_feature_context, rows,
                     source_seed=12345, source_each=4,
                     source_identity=source_identity))
+
+    def test_ahead_reuses_exact_rows_without_reusing_packet_or_step_identity(self):
+        _parent, context, _atlas_path, _feature_path, rows, _delivery, _generation = (
+            self._case())
+        authenticated = context._accepted_feature_context
+        cache = LearningFirstSourceRowCache()
+        reordered = (*rows[1:], rows[0])
+        with evidence_mode(strict=False):
+            first = prepare_learning_first_source_inputs_ahead(
+                context, authenticated, rows, source_seed=12345, source_each=4,
+                source_identity="a" * 64, row_cache=cache)
+            second = prepare_learning_first_source_inputs_ahead(
+                context, authenticated, reordered, source_seed=12345, source_each=4,
+                source_identity="b" * 64, row_cache=cache)
+            cold = prepare_learning_first_source_inputs_ahead(
+                context, authenticated, reordered, source_seed=12345, source_each=4,
+                source_identity="b" * 64)
+
+        assert (cache.hits, cache.misses) == (len(rows), len(rows))
+        assert second.identity != first.identity
+        assert second.identity == cold.identity
+        assert second.model_sources == cold.model_sources
+        assert tuple(item.row for item in second.source_rows) == reordered
+        assert tuple(item.projection.digest for item in second.source_rows) == tuple(
+            item.projection.digest for item in cold.source_rows)
+        assert all(model is first.model_sources[(index + 1) % len(rows)]
+                   for index, model in enumerate(second.model_sources))
 
     def test_identity_drift_discards_and_recomputes_exactly(self):
         parent, context, atlas_path, feature_path, rows, delivery, generation = self._case()

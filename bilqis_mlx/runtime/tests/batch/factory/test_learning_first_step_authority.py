@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
+import weakref
 from unittest.mock import patch
 
 import pytest
@@ -217,3 +218,25 @@ def test_bound_candidate_drift_fails_closed_instead_of_reissuing():
 
     assert not any(step_authority.learning_first_step_authority_metrics_snapshot().values())
     assert first not in (None, "")
+
+def test_discarded_candidate_releases_step_authority_and_optimizer():
+    step_authority._reset_learning_first_step_authority_for_tests()
+    parent, cache, source = _fixture()
+    candidate = _Candidate()
+    candidate.learning_first = True
+    candidate.parent = parent.retained_state
+    candidate.update_steps = 1
+    candidate.optimizer = _Optimizer("candidate")
+    optimizer_ref = weakref.ref(candidate.optimizer)
+    patches = _patch_types(cache)
+    with patches[0], patches[1], patches[2]:
+        token = step_authority.issue_learning_first_step_authority(
+            cache, parent, candidate, source)
+        assert step_authority.learning_first_step_authority_exists(token)
+
+    del candidate
+
+    assert not step_authority.learning_first_step_authority_exists(token)
+    assert optimizer_ref() is None
+    with pytest.raises(BilqisError):
+        step_authority.require_learning_first_step_authority(token)

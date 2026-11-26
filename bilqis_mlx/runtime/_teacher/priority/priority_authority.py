@@ -34,6 +34,7 @@ from .priority_rejection_replay import (
     ordered_rejections as _ordered_rejections,
     rejection_recency as _rejection_recency,
 )
+from .priority_competence import priority_competence_snapshot
 
 _priority_options = _strict_priority_options
 
@@ -241,9 +242,22 @@ def _bind_lawful_priority_epoch(
     return planning_generation, cache, planning_epoch, planning, lawful_frontier
 
 
+def _announce_offer_fanout(progress, capabilities):
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+        strict_mode_enabled,
+    )
+    strict = strict_mode_enabled()
+    if progress is not None:
+        label = ("source-backed offers" if strict
+                 else "metadata-only learning-first intents")
+        progress(f"teacher: preparing {label} for {len(capabilities)} lawful capabilities")
+    return strict
+
+
 def issue_foundation_priority_authority(
         run_dir, source_context, parent, teacher_epoch, atlas_artifact_path, *,
-        teacher_state, progress=None, planning_cache=None, logical_batch_size=None):
+        teacher_state, progress=None, planning_cache=None, logical_batch_size=None,
+        program=None):
     """Issue only signed UNKNOWN salience; C06 ranking owns the resulting order."""
     from bilqis_mlx.runtime.bamf_bundle._darwin_salience_signer import (
         read_host_system_source_authority_signer,
@@ -257,7 +271,11 @@ def issue_foundation_priority_authority(
             run_dir, source_context, parent, atlas_artifact_path, progress,
             planning_cache=planning_cache))
     from bilqis_mlx.runtime.active_grade_cadence import issue_active_grade_cadence
-    cadence = issue_active_grade_cadence(run_dir, planning_epoch, lawful_frontier)
+    competence, rejection_snapshot = priority_competence_snapshot(
+        run_dir, parent, cache, source_context.release, program,
+        lawful_frontier.ready_capability_ids)
+    cadence = issue_active_grade_cadence(
+        run_dir, planning_epoch, lawful_frontier, competence=competence)
     selection_cadence = cadence
     ready_capabilities = cadence.authorized_capability_ids
     planning_source_each = _planning_source_each(logical_batch_size)
@@ -267,21 +285,7 @@ def issue_foundation_priority_authority(
             lawful_frontier.frontier_sha256, (), 0.0,
             counter, planning_generation,
             cadence, selection_cadence)
-    capabilities = ready_capabilities
-    if progress is not None:
-        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
-            strict_mode_enabled,
-        )
-        progress(
-            "teacher: preparing source-backed offers for "
-            f"{len(capabilities)} lawful capabilities"
-            if strict_mode_enabled()
-            else "teacher: preparing metadata-only learning-first intents for "
-                 f"{len(capabilities)} lawful capabilities")
-    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
-        strict_mode_enabled,
-    )
-    strict = strict_mode_enabled()
+    strict = _announce_offer_fanout(progress, ready_capabilities)
     offer_fanout_started = time.perf_counter() if strict else None
     capabilities, offers = _priority_offers(
         source_context, parent, atlas_artifact_path, next_seed,
@@ -292,7 +296,9 @@ def issue_foundation_priority_authority(
         max(0.0, time.perf_counter() - offer_fanout_started) if strict else None)
     if progress is not None:
         progress("teacher: ranking priority options")
-    rejection_count, rejection_positions = _rejection_recency(run_dir, parent, cache)
+    rejection_count, rejection_positions = (
+        _rejection_recency(run_dir, parent, cache)
+        if rejection_snapshot is None else rejection_snapshot[:2])
     option_ids = {capability for capability, _ in offers}
     rejection_positions = {
         capability: position
@@ -302,7 +308,8 @@ def issue_foundation_priority_authority(
     if not strict:
         now, frontier = learning_first_priority_frontier(
             source_context.release.release_sha256, offers, planning,
-            counter, last_selected, rejection_count, rejection_positions)
+            counter, last_selected, rejection_count, rejection_positions,
+            competence=competence)
         return AcceptedPriorityAuthority(
             frontier, None, planning,
             lawful_frontier, lawful_frontier.frontier_sha256, offers,

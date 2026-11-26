@@ -15,7 +15,8 @@ CADENCE_POINTER_SCHEMA = "bilqis.bamf.active-grade-cadence-pointer/v1"
 LEGACY_CADENCE_AUTHORIZATION_SCHEMA = (
     "bilqis.bamf.active-grade-cadence-authorization/v1")
 CADENCE_AUTHORIZATION_SCHEMA = "bilqis.bamf.active-grade-cadence-authorization/v2"
-CADENCE_POLICY_EPOCH = 2
+CADENCE_POLICY_EPOCH = 3
+_PREVIOUS_CADENCE_POLICY_EPOCH = 2
 RECOVERY_WIDTH = 3
 MAX_RECOVERY_ROUNDS = 2
 _RECOVERY_2_ROUND = 2
@@ -165,7 +166,8 @@ class ActiveGradeCadenceState:
                     self.policy_epoch != 1
                     or self.recovery_retained_counts
                     or self.recovery_rejected_counts))
-                or (not legacy and self.policy_epoch != CADENCE_POLICY_EPOCH)
+                or (not legacy and self.policy_epoch not in {
+                    _PREVIOUS_CADENCE_POLICY_EPOCH, CADENCE_POLICY_EPOCH})
                 or (not legacy and any(
                     retained.get(capability, 0) + rejected.get(capability, 0)
                     != count for capability, count in counts.items()))

@@ -149,6 +149,7 @@ def factory_evaluation_case_from_source(
         graph=source_context.graph,
         release=source_context.release,
         capability=execution,
+        operator_registry=source_context.operator_registry_for(semantic_release),
     )
     if (not isinstance(lowered, tuple)
             or len(lowered) != _LOWERED_TASK_PAIR_ARITY

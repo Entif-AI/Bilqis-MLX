@@ -1,0 +1,545 @@
+{
+  "arms": [
+    {
+      "accepted": true,
+      "artifact": "5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7",
+      "attempt_wall_seconds": 33.33970674988814,
+      "attempted_steps_per_minute": 21.595870815582856,
+      "backbone_compile": {
+        "dispatch_wall_seconds": 0.0,
+        "entries": 0,
+        "hits": 0,
+        "misses": 0,
+        "python_graph_traces": 0,
+        "python_trace_wall_seconds": 0.0
+      },
+      "completed_component_trials_per_hour": 107.97935407791428,
+      "decision_reason": "PAIRED_SCREEN_WITHIN_BUDGET",
+      "decision_status": "ELIGIBLE",
+      "fixed_independent_competence_change_per_hour": "NOT_MEASURED",
+      "label": "stock",
+      "memory_cap_bytes": 34359738368,
+      "optimizer_participation_sha256": "e9f0b5a9a310a3bdb764d52a35024f3981629eedc4b53d1ee832165878d878aa",
+      "optimizer_state_sha256": "dea039bfb925bf2d9776ea15bfeb51dba9788de74e7709ba076bb632d03c7004",
+      "optimizer_steps": 12,
+      "outcome_scores": [
+        [
+          "B.AND",
+          2,
+          3,
+          6
+        ]
+      ],
+      "parent_assessment_identity": null,
+      "parent_assessment_sha256": null,
+      "parent_sha256": "d11bffd868e6e9aaff398e798633636c758f2aa73329a923f3a4ce6717ca21e9",
+      "peak_mlx_bytes": 13434581144,
+      "protection_plan": "a427f2f8a2f94e5d937a087da42a4a9bd0eeb7d2a57b3e84d41cff6735165b4a",
+      "retention_capabilities": [
+        "B.AND"
+      ],
+      "retention_observations": [
+        {
+          "retention_target_case_count": 6
+        },
+        {
+          "retention_target_prepare_wall_seconds": 0.27673387504182756
+        },
+        {
+          "retention_target_solver_wall_seconds": 0.002220874885097146
+        },
+        {
+          "retention_completed": 0,
+          "retention_role": "parent",
+          "retention_subject": "B.AND",
+          "retention_total": 2
+        },
+        {
+          "retention_completed": 1,
+          "retention_role": "parent",
+          "retention_stage_timing": {
+            "role": "parent",
+            "subject": "B.AND",
+            "wall_seconds": 0.09916008310392499
+          },
+          "retention_subject": "B.AND",
+          "retention_total": 2
+        },
+        {
+          "retention_target_parent_wall_seconds": 0.09916633297689259
+        },
+        {
+          "retention_completed": 1,
+          "retention_role": "candidate",
+          "retention_subject": "B.AND",
+          "retention_total": 2
+        },
+        {
+          "retention_completed": 2,
+          "retention_role": "candidate",
+          "retention_stage_timing": {
+            "role": "candidate",
+            "subject": "B.AND",
+            "wall_seconds": 0.08568916702643037
+          },
+          "retention_subject": "B.AND",
+          "retention_total": 2
+        },
+        {
+          "retention_target_candidate_wall_seconds": 0.08569541689939797
+        },
+        {
+          "retention_target_largest_shared_positions": 0,
+          "retention_target_largest_shared_rows": 0,
+          "retention_target_scalar_neural_launches": 0,
+          "retention_target_shared_backbone_attention_cells": 0,
+          "retention_target_shared_backbone_launches": 0,
+          "retention_target_shared_backbone_padded_positions": 0,
+          "retention_target_shared_backbone_rows": 0
+        },
+        {
+          "retention_protected_case_count": 0
+        },
+        {
+          "retention_protected_prepare_wall_seconds": 0.0002492079511284828
+        },
+        {
+          "retention_scorecard": {
+            "baseline_coverage": {
+              "epoch_sha256": "cee53fc01ba00164cac55aee34fab6f665c0a07377c0b62dcd355aaddacd7c2b",
+              "group_denominators": [
+                {
+                  "group": "B",
+                  "measured": 0,
+                  "total": 1
+                }
+              ],
+              "measured_capabilities": [],
+              "measured_denominator": 0,
+              "schema": "bilqis.mlx.c05-baseline-coverage/v1",
+              "total_capabilities": 1,
+              "unmeasured_capabilities": [
+                "B.AND"
+              ]
+            },
+            "evidence_stage": "FOUNDATION_ACQUISITION",
+            "fixed_cohort_sha256": "5bed12d13b4ea4cc74b64e7a42fe6a7c50281647553013207cd96b400f0de530",
+            "foundation_mastery_debt_utility": {
+              "capabilities": {
+                "B.AND": {
+                  "after_accuracy": 0.5,
+                  "after_debt": 0.5,
+                  "before_accuracy": 0.333333333333,
+                  "before_debt": 0.666666666667,
+                  "utility_delta": 0.194444444444
+                }
+              },
+              "capability_count": 1,
+              "net": 0.194444444444,
+              "positive": true,
+              "power": 2
+            },
+            "learning_signals": [
+              {
+                "evidence_count": 6,
+                "note": "Predictions vary across the source cohort",
+                "signal": "REPETITIVE_ANSWERS",
+                "status": "NOT_OBSERVED"
+              },
+              {
+                "evidence_count": 6,
+                "note": "At or below source gold majority baseline",
+                "signal": "CHANCE_LEVEL_OR_LAGGING",
+                "status": "OBSERVED_IN_COHORT"
+              }
+            ],
+            "learning_target": {
+              "after": 3,
+              "before": 2,
+              "capability_id": "B.AND",
+              "state": "MEASURED",
+              "total": 6
+            },
+            "mastery_debt_min_utility": 0.05,
+            "policy_sha256": "cd8deb404b5a902c20dc6cdbed87f24ce98b689b62237e533ee834016683c16b",
+            "probe_each": 6,
+            "protected": [],
+            "rubric_sha256": "3377c21f4899c56b1a3daa4eea04bcf83c88e7b2896a39c816ad69bf9f1c4dde",
+            "schema": "bilqis.bamf.retention-scorecard/v1",
+            "source_sha256": "3866319b7d06c4a8870a8f0602af71d8f67ce4a12cb96fb08e2ea5bbec33f3be",
+            "target": {
+              "after": 3,
+              "baseline": 2,
+              "before": 2,
+              "capability_id": "B.AND",
+              "delta": 1,
+              "state": "NOT_MEASURED",
+              "total": 6
+            },
+            "target_capability": "B.AND"
+          }
+        },
+        {
+          "retention_decision_finalize_wall_seconds": 0.003622957970947027
+        }
+      ],
+      "route_compile": {
+        "entries": 1,
+        "hits": 10,
+        "misses": 2
+      },
+      "samples": [
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {}
+      ],
+      "setup_wall_seconds": 28.0027144998312,
+      "source_release": "5749166f23d7a8c932ce78efbf3e73ffe077973318c16704721a1ef78b3f55f4",
+      "source_seed": 37116,
+      "step_wall_seconds": [
+        3.1873290829826146,
+        2.679953374899924,
+        2.581228750059381,
+        2.774874791968614,
+        2.765598417026922,
+        2.5646570830140263,
+        2.405883666826412,
+        2.81259183306247,
+        2.5751272910274565,
+        2.6129924170672894,
+        2.592909500002861,
+        2.641037584049627
+      ],
+      "training_rows_count": 32,
+      "training_rows_sha256": "37a90119c466d9cbe8a6d93d13f00c85cc7d77e18d96041bb43bdb8ce52f6061",
+      "training_source_coordinates_count": 32,
+      "training_source_coordinates_sha256": "b4a0436cce805044e3ddeddd6217bac569bc37fedd3154330a7f254284e270b8",
+      "training_wall_seconds": 32.22065620799549,
+      "visit": {
+        "accepted_manifest_sha256": "75e7adcec339995f8ee44b4a2116f669244d3afb5e6af0d4823167dea569e2cd",
+        "capability_id": "B.AND",
+        "cursor": "GENESIS",
+        "generation": 0,
+        "policy_key": "p-other",
+        "run_identity_sha256": "925accfa6bd8ee73e2989bf7de09c854be5ec61a663e60aa15d7a3435a0baaf8",
+        "run_seed": 993,
+        "schema": "bilqis.bamf.c03-teacher-visit-identity/v1",
+        "selection_seed": 993,
+        "student_sha256": "8aa8e0551a52056b9edb57e5b6d4ed99f3d9345e56fdb364c834d10acd52333a",
+        "teacher_epoch": 0,
+        "teacher_identity": "ca6d20c969e0e8fcd453da403945fc6d173e99b70616e5a095dcfe73987d7e0a",
+        "visit_id": "3c0dfa4c8ef446a6406af3001028f9305e59423ef16526ede731965830144a20"
+      }
+    },
+    {
+      "accepted": true,
+      "artifact": "5f8fba20ecc0adebf39c3b663fdffa4f766e780915197f09d116713042a479e7",
+      "attempt_wall_seconds": 30.371601792052388,
+      "attempted_steps_per_minute": 23.706355856028935,
+      "backbone_compile": {
+        "dispatch_wall_seconds": 0.04339083144441247,
+        "entries": 3,
+        "hits": 33,
+        "misses": 3,
+        "python_graph_traces": 36,
+        "python_trace_wall_seconds": 0.042545829666778445
+      },
+      "completed_component_trials_per_hour": 118.53177928014468,
+      "decision_reason": "PAIRED_SCREEN_WITHIN_BUDGET",
+      "decision_status": "ELIGIBLE",
+      "fixed_independent_competence_change_per_hour": "NOT_MEASURED",
+      "label": "compiled",
+      "memory_cap_bytes": 34359738368,
+      "optimizer_participation_sha256": "e9f0b5a9a310a3bdb764d52a35024f3981629eedc4b53d1ee832165878d878aa",
+      "optimizer_state_sha256": "dea039bfb925bf2d9776ea15bfeb51dba9788de74e7709ba076bb632d03c7004",
+      "optimizer_steps": 12,
+      "outcome_scores": [
+        [
+          "B.AND",
+          2,
+          3,
+          6
+        ]
+      ],
+      "parent_assessment_identity": null,
+      "parent_assessment_sha256": null,
+      "parent_sha256": "d11bffd868e6e9aaff398e798633636c758f2aa73329a923f3a4ce6717ca21e9",
+      "peak_mlx_bytes": 13434581144,
+      "protection_plan": "a427f2f8a2f94e5d937a087da42a4a9bd0eeb7d2a57b3e84d41cff6735165b4a",
+      "retention_capabilities": [
+        "B.AND"
+      ],
+      "retention_observations": [
+        {
+          "retention_target_case_count": 6
+        },
+        {
+          "retention_target_prepare_wall_seconds": 0.2419572500512004
+        },
+        {
+          "retention_target_solver_wall_seconds": 0.002049124799668789
+        },
+        {
+          "retention_completed": 0,
+          "retention_role": "parent",
+          "retention_subject": "B.AND",
+          "retention_total": 2
+        },
+        {
+          "retention_completed": 1,
+          "retention_role": "parent",
+          "retention_stage_timing": {
+            "role": "parent",
+            "subject": "B.AND",
+            "wall_seconds": 0.08189108408987522
+          },
+          "retention_subject": "B.AND",
+          "retention_total": 2
+        },
+        {
+          "retention_target_parent_wall_seconds": 0.08189670788124204
+        },
+        {
+          "retention_completed": 1,
+          "retention_role": "candidate",
+          "retention_subject": "B.AND",
+          "retention_total": 2
+        },
+        {
+          "retention_completed": 2,
+          "retention_role": "candidate",
+          "retention_stage_timing": {
+            "role": "candidate",
+            "subject": "B.AND",
+            "wall_seconds": 0.07800212502479553
+          },
+          "retention_subject": "B.AND",
+          "retention_total": 2
+        },
+        {
+          "retention_target_candidate_wall_seconds": 0.07800654205493629
+        },
+        {
+          "retention_target_largest_shared_positions": 0,
+          "retention_target_largest_shared_rows": 0,
+          "retention_target_scalar_neural_launches": 0,
+          "retention_target_shared_backbone_attention_cells": 0,
+          "retention_target_shared_backbone_launches": 0,
+          "retention_target_shared_backbone_padded_positions": 0,
+          "retention_target_shared_backbone_rows": 0
+        },
+        {
+          "retention_protected_case_count": 0
+        },
+        {
+          "retention_protected_prepare_wall_seconds": 0.00023858295753598213
+        },
+        {
+          "retention_scorecard": {
+            "baseline_coverage": {
+              "epoch_sha256": "cee53fc01ba00164cac55aee34fab6f665c0a07377c0b62dcd355aaddacd7c2b",
+              "group_denominators": [
+                {
+                  "group": "B",
+                  "measured": 0,
+                  "total": 1
+                }
+              ],
+              "measured_capabilities": [],
+              "measured_denominator": 0,
+              "schema": "bilqis.mlx.c05-baseline-coverage/v1",
+              "total_capabilities": 1,
+              "unmeasured_capabilities": [
+                "B.AND"
+              ]
+            },
+            "evidence_stage": "FOUNDATION_ACQUISITION",
+            "fixed_cohort_sha256": "5bed12d13b4ea4cc74b64e7a42fe6a7c50281647553013207cd96b400f0de530",
+            "foundation_mastery_debt_utility": {
+              "capabilities": {
+                "B.AND": {
+                  "after_accuracy": 0.5,
+                  "after_debt": 0.5,
+                  "before_accuracy": 0.333333333333,
+                  "before_debt": 0.666666666667,
+                  "utility_delta": 0.194444444444
+                }
+              },
+              "capability_count": 1,
+              "net": 0.194444444444,
+              "positive": true,
+              "power": 2
+            },
+            "learning_signals": [
+              {
+                "evidence_count": 6,
+                "note": "Predictions vary across the source cohort",
+                "signal": "REPETITIVE_ANSWERS",
+                "status": "NOT_OBSERVED"
+              },
+              {
+                "evidence_count": 6,
+                "note": "At or below source gold majority baseline",
+                "signal": "CHANCE_LEVEL_OR_LAGGING",
+                "status": "OBSERVED_IN_COHORT"
+              }
+            ],
+            "learning_target": {
+              "after": 3,
+              "before": 2,
+              "capability_id": "B.AND",
+              "state": "MEASURED",
+              "total": 6
+            },
+            "mastery_debt_min_utility": 0.05,
+            "policy_sha256": "cd8deb404b5a902c20dc6cdbed87f24ce98b689b62237e533ee834016683c16b",
+            "probe_each": 6,
+            "protected": [],
+            "rubric_sha256": "3377c21f4899c56b1a3daa4eea04bcf83c88e7b2896a39c816ad69bf9f1c4dde",
+            "schema": "bilqis.bamf.retention-scorecard/v1",
+            "source_sha256": "3866319b7d06c4a8870a8f0602af71d8f67ce4a12cb96fb08e2ea5bbec33f3be",
+            "target": {
+              "after": 3,
+              "baseline": 2,
+              "before": 2,
+              "capability_id": "B.AND",
+              "delta": 1,
+              "state": "NOT_MEASURED",
+              "total": 6
+            },
+            "target_capability": "B.AND"
+          }
+        },
+        {
+          "retention_decision_finalize_wall_seconds": 0.002558707958087325
+        }
+      ],
+      "route_compile": {
+        "entries": 1,
+        "hits": 10,
+        "misses": 2
+      },
+      "samples": [
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {}
+      ],
+      "setup_wall_seconds": 25.31199708301574,
+      "source_release": "5749166f23d7a8c932ce78efbf3e73ffe077973318c16704721a1ef78b3f55f4",
+      "source_seed": 37116,
+      "step_wall_seconds": [
+        3.182330333860591,
+        2.293733957922086,
+        2.236354332882911,
+        2.33475145814009,
+        2.503250125097111,
+        2.402118709171191,
+        2.258608875097707,
+        2.3604322499595582,
+        2.445683583850041,
+        2.345688291825354,
+        2.509535916848108,
+        2.399487917078659
+      ],
+      "training_rows_count": 32,
+      "training_rows_sha256": "37a90119c466d9cbe8a6d93d13f00c85cc7d77e18d96041bb43bdb8ce52f6061",
+      "training_source_coordinates_count": 32,
+      "training_source_coordinates_sha256": "b4a0436cce805044e3ddeddd6217bac569bc37fedd3154330a7f254284e270b8",
+      "training_wall_seconds": 29.299346416955814,
+      "visit": {
+        "accepted_manifest_sha256": "75e7adcec339995f8ee44b4a2116f669244d3afb5e6af0d4823167dea569e2cd",
+        "capability_id": "B.AND",
+        "cursor": "GENESIS",
+        "generation": 0,
+        "policy_key": "p-other",
+        "run_identity_sha256": "925accfa6bd8ee73e2989bf7de09c854be5ec61a663e60aa15d7a3435a0baaf8",
+        "run_seed": 993,
+        "schema": "bilqis.bamf.c03-teacher-visit-identity/v1",
+        "selection_seed": 993,
+        "student_sha256": "8aa8e0551a52056b9edb57e5b6d4ed99f3d9345e56fdb364c834d10acd52333a",
+        "teacher_epoch": 0,
+        "teacher_identity": "ca6d20c969e0e8fcd453da403945fc6d173e99b70616e5a095dcfe73987d7e0a",
+        "visit_id": "3c0dfa4c8ef446a6406af3001028f9305e59423ef16526ede731965830144a20"
+      }
+    }
+  ],
+  "base_head": "83671fea5420e13499d83c92b31ca96f44b2a4fc",
+  "detached_receipt": {
+    "command_returncode": 0,
+    "final_mutation_guard_sha256": "affe735ccfc08e419d6c3639f82eeefe4ec2b904b4eebe6fe0266f8b50dab5ad",
+    "final_snapshot_sha256": "d2e3a43ddb9327bc925b4590f036b6f1ec6f412ab1148abf14336ce7e7fd77a7",
+    "finished_at": "2026-11-24T11:17:51.653968+00:00",
+    "mutation_guard_sha256": "affe735ccfc08e419d6c3639f82eeefe4ec2b904b4eebe6fe0266f8b50dab5ad",
+    "returncode": 0,
+    "schema": "bilqis.bamf.detached-long-run/v2",
+    "snapshot_sha256": "d2e3a43ddb9327bc925b4590f036b6f1ec6f412ab1148abf14336ce7e7fd77a7",
+    "source_mutated": false,
+    "source_sha256": "d2e3a43ddb9327bc925b4590f036b6f1ec6f412ab1148abf14336ce7e7fd77a7",
+    "started_at": "2026-11-24T11:15:04.187807+00:00",
+    "status": "PASS"
+  },
+  "interpretation": {
+    "actual_graph_reuse": false,
+    "candidate_gate": "FAIL_GRAPH_REUSE",
+    "fixed_c05_cohort_equal": true,
+    "fixed_c05_cohort_sha256": "5bed12d13b4ea4cc74b64e7a42fe6a7c50281647553013207cd96b400f0de530",
+    "fixed_c05_target_accuracy_delta_percentage_points": 16.666666666666668,
+    "fixed_c05_target_delta_pp_per_attempt_hour": {
+      "compiled": 1975.5296546690781,
+      "stock": 1799.6559012985717
+    },
+    "fixed_independent_competence_change_per_hour": "NOT_MEASURED: C05 target draw does not require independence",
+    "loss_sequence": "NOT_MEASURED: ordinary realized_cost was empty in both arms",
+    "warm_step_median_seconds": {
+      "compiled": 2.3604322499595582,
+      "stock": 2.6129924170672894
+    }
+  },
+  "raw_matched_summary": {
+    "attempt_wall_ratio": 0.9109738732826225,
+    "authorizing": false,
+    "fixed_independent_competence_change_per_hour": "NOT_MEASURED",
+    "observed_forward_graph_reuse": false,
+    "parity": {
+      "accepted": true,
+      "artifact": true,
+      "decision_reason": true,
+      "decision_status": true,
+      "loss_sequence": true,
+      "optimizer_participation_sha256": true,
+      "optimizer_state_sha256": true,
+      "optimizer_steps": true,
+      "outcome_scores": true,
+      "parent_sha256": true,
+      "protection_plan": true,
+      "source_release": true,
+      "source_seed": true,
+      "training_rows": true,
+      "training_source_coordinates": true
+    },
+    "peak_memory_ratio": 1.0,
+    "schema": "bilqis.issue1616.matched-component/v1",
+    "warm_step_wall_ratio": 0.903344469942552
+  },
+  "schema": "bilqis.issue1616.component-evidence/v1",
+  "source_snapshot_sha256": "d2e3a43ddb9327bc925b4590f036b6f1ec6f412ab1148abf14336ce7e7fd77a7",
+  "unscreened_evidence_sha256": "127242ebc2859d6904c2bfa81bfd2c3726f35ec2f5bf340387347229bc99fa2f"
+}

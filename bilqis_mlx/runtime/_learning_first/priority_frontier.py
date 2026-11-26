@@ -4,6 +4,9 @@ from pathlib import Path
 
 from bilqis_mlx.learning.atlas_salience import DispatchTier
 from bilqis_mlx.learning.salience_contracts import ActionKind
+from bilqis_mlx.runtime.priority_competence import (
+    CapabilityCompetence, UNKNOWN_COMPETENCE,
+)
 
 
 @dataclass(frozen=True)
@@ -21,6 +24,7 @@ class LearningFirstPriorityOption:
     dispatch_tier: DispatchTier
     salience_inputs_digest: str
     action_kind: ActionKind = ActionKind.TEACHING
+    competence: CapabilityCompetence = UNKNOWN_COMPETENCE
 
 
 @dataclass(frozen=True)
@@ -79,13 +83,14 @@ def planning_unlocks(capability_id, planning):
 
 def learning_first_priority_frontier(
         release_sha256, offers, planning, counter, last_selected,
-        rejection_count, rejection_positions):
+        rejection_count, rejection_positions, *, competence=None):
     now = counter + rejection_count
     rejection_recency = {
         capability: counter + position
         for capability, position in rejection_positions.items()
     }
     ranked = []
+    competence = competence or {}
     for stable_id, intent in offers:
         unlocks = planning_unlocks(stable_id, planning)
         tier = (DispatchTier.DOWNSTREAM_UNLOCK
@@ -95,10 +100,12 @@ def learning_first_priority_frontier(
             rejection_recency.get(stable_id, 0))
         option = LearningFirstPriorityOption(
             stable_id, LearningFirstPriorityContext(stable_id), eligible_since,
-            unlocks, tier, "")
-        ranked.append((tier, eligible_since, stable_id, option))
-    ranked.sort(key=lambda item: item[:3])
-    return now, LearningFirstPriorityFrontier(tuple(item[3] for item in ranked))
+            unlocks, tier, "", competence=competence.get(
+                stable_id, UNKNOWN_COMPETENCE))
+        ranked.append((option.competence.priority, tier, eligible_since,
+                       stable_id, option))
+    ranked.sort(key=lambda item: item[:-1])
+    return now, LearningFirstPriorityFrontier(tuple(item[-1] for item in ranked))
 
 
 __all__ = (

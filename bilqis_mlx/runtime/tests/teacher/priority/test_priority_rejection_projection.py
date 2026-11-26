@@ -9,6 +9,7 @@ import pytest
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.runtime import priority_rejection_replay as rejection_replay
+from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import evidence_mode
 from bilqis_mlx.runtime.tests.teacher.priority.rejection_projection_support import (
     CountingPlane, _parent, _cache, _rejection, _append, _record,
 )
@@ -175,6 +176,32 @@ def test_generation_change_rebuilds_only_the_new_generation_projection(monkeypat
     generation_three = rejection_replay.current_rejections(tmp_path, parent, _cache(3))
 
     assert [row[1] for row in generation_three] == ["visit:capability:beta:1"]
+
+
+def test_ordinary_projection_selects_current_rejections_and_reuses_unchanged_frontier(
+        monkeypatch, tmp_path):
+    plane = CountingPlane(tmp_path)
+    monkeypatch.setattr(rejection_replay, "data_plane", lambda: plane)
+    parent, cache = _parent(), _cache(3)
+    for ordinal in range(1, 5):
+        _record(tmp_path, _rejection(plane, ordinal, generation=2, journal_ordinal=ordinal))
+    _record(tmp_path, _rejection(plane, 1, generation=3, journal_ordinal=1))
+    with evidence_mode(strict=False):
+        rows = rejection_replay.current_rejections(tmp_path, parent, cache)
+        assert len(rows) == 1
+        assert plane.tails[-1]["event_count"] == 1
+        calls = len(plane.tails)
+        assert rejection_replay.rejection_recency(tmp_path, parent, cache) == (
+            1, {"capability:beta": 1})
+        assert len(plane.tails) == calls
+        _record(tmp_path, _rejection(plane, 2, generation=3, journal_ordinal=2))
+        assert len(rejection_replay.current_rejections(tmp_path, parent, cache)) == 2
+        assert plane.tails[-1]["event_count"] == 1
+        journal = tmp_path / "events.jsonl"
+        journal.write_bytes(journal.read_bytes().replace(b"retention_gate", b"retention_gato", 1))
+        with pytest.raises(BilqisError) as failure:
+            rejection_replay.current_rejections(tmp_path, parent, cache)
+        assert failure.value.context["reason"] == "BAMF_PRIORITY_REJECTION_JOURNAL_INVALID"
 
 
 def test_hydrated_projection_fails_closed_if_verified_journal_prefix_is_rewritten(

@@ -5,18 +5,12 @@ import json
 from pathlib import Path
 import random
 
-from bilqis_mlx.learning.teacher_visit_identity import TeacherVisitIdentity, require_teacher_visit_receipt
 from bilqis_mlx.learning.teacher_strategy_population import LEGACY_CHECKPOINT_RETIREMENT_POLICY
-from bilqis_mlx.runtime.bamf_operator.evidence_parts.validation import read_candidate_horizon_evidence
 from bilqis_mlx.runtime.priority_rejection_replay import current_rejection_outcomes
 from bilqis_mlx.runtime.state import _fingerprint
 
-from .observations import (
-    _compact_selected_teacher, apply_outcome, invalid, ledger,
-)
+from .observations import invalid
 
-
-_PORTABLE_TEACHER_AUTHORITY = "_portable_teacher_authority_verified"
 
 
 def _factory_capability_count(run_dir, observation):
@@ -111,7 +105,7 @@ def _recover_mutated_selected_teacher(run_dir, teacher, observation):
         random.Random(visit["selection_seed"]),
         capability=capability, phase=phase, curriculum_scope=scope_name,
         diagnostic_key=diagnostic_key,
-        total_capabilities=total_capabilities)
+        total_capabilities=total_capabilities, inventory=inventory)
     if challenger is None:
         invalid()
     key, policy, reason, _detail = challenger
@@ -173,82 +167,26 @@ def _recover_checkpointed_selected_teacher(run_dir, teacher, observation):
     return None
 
 
-def _selected_teacher_override(run_dir, teacher, observation):
-    if "selected_teacher" in observation:
-        return None
-    visit = observation["teacher_visit"]
-    prior = ledger(teacher, visit["accepted_manifest_sha256"])
-    applied = prior["applied"].get(observation["attempt_id"])
-    if applied == observation.get("outcome_sha256"):
-        return None
-    if applied is not None:
-        invalid()
-    selected_sha256 = observation.get("selected_teacher_sha256")
-    compact = _compact_selected_teacher(teacher, observation["context"])
-    if (isinstance(selected_sha256, str)
-            and _fingerprint(compact) == selected_sha256):
-        return None
-    checkpointed = _recover_checkpointed_selected_teacher(
-        run_dir, teacher, observation)
-    if checkpointed is not None:
-        return checkpointed
+def _recover_selected_teacher(run_dir, teacher, observation):
+    """Reconstruct only selections that differ from the compact replay state."""
+    key = observation["teacher_visit"]["policy_key"]
+    # Population checkpointing cannot introduce a new strategy.
+    if teacher.get("strategies", {}).get(key) == observation["selected_policy"]:
+        checkpointed = _recover_checkpointed_selected_teacher(
+            run_dir, teacher, observation)
+        if checkpointed is not None:
+            return checkpointed
     return _recover_mutated_selected_teacher(run_dir, teacher, observation)
 
 
 def replay_rejected_outcomes(run_dir, parent, cache, teacher):
-    for capability, visit_id, reason, receipt_sha, evidence in current_rejection_outcomes(
-            run_dir, parent, cache):
-        observation = evidence.get('how_outcome')
-        if observation is None:
-            continue
-        visit = TeacherVisitIdentity.from_record(observation['teacher_visit'])
-        if evidence.get(_PORTABLE_TEACHER_AUTHORITY) is not True:
-            require_teacher_visit_receipt(visit)
-        decision = observation['decision']
-        candidate_evidence = evidence.get('candidate_evidence')
-        if candidate_evidence is None:
-            attempted = (
-                evidence.get('candidate_optimizer_step', 0)
-                - evidence.get('retained_optimizer_step', 0))
-            invalid_record = (
-                observation.get('candidate_evidence') is not None
-                or observation.get('proposal_id') is not None
-                or observation.get('attempted_steps') != attempted)
-        else:
-            payload = read_candidate_horizon_evidence(run_dir, candidate_evidence)
-            proposal = payload['proposal']
-            selected_teacher_matches = (
-                observation.get('selected_teacher') == proposal.get('selected_teacher')
-                if 'selected_teacher' in observation or 'selected_teacher' in proposal
-                else observation.get('selected_teacher_sha256')
-                     == proposal.get('selected_teacher_sha256'))
-            invalid_record = (
-                observation['attempt_id'] != payload['attempt_id']
-                or observation['proposal_id'] != payload['proposal_id']
-                or observation['candidate_evidence'] != candidate_evidence['object']
-                or observation['context'] != proposal.get('how_context')
-                or not selected_teacher_matches
-                or observation['selected_policy'] != proposal['policy']
-                or observation['teacher_visit'] != proposal['teacher_visit']
-                or observation['context']['factory_release_sha256'] != proposal['factory_release_sha256']
-                or payload['outcome'] != {'accepted': False, 'decision': decision}
-                or proposal['candidate_attempt_ordinal'] != evidence['rejection_journal_ordinal']
-                or observation['attempted_steps'] != len(payload['steps']))
-        if (invalid_record
-                or visit.generation != cache.generation
-                or visit.accepted_manifest_sha256 != cache.accepted_manifest_sha256
-                or visit.capability_id != capability or visit.visit_id != visit_id
-                or decision != evidence['decision']
-                or decision['decision'] != 'REJECT' or decision['reason'] != reason
-                or observation['retained_steps'] != 0):
-            invalid()
-        teacher = apply_outcome(
-            teacher, observation,
-            selected_teacher_override=_selected_teacher_override(
-                run_dir, teacher, observation))
-        from bilqis_mlx.runtime.structural_weakness_replay import (
-            apply_rejection_weaknesses,
-        )
-        teacher = apply_rejection_weaknesses(
-            teacher, evidence, receipt_sha)
-    return teacher
+    from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import strict_mode_enabled
+    from .replay_fold import fold_rejections
+    from .replay_cache import replay_ordinary
+
+    rows = current_rejection_outcomes(run_dir, parent, cache)
+    def fold(base, tail):
+        return fold_rejections(run_dir, cache, base, tail, _recover_selected_teacher)
+    if strict_mode_enabled():
+        return fold(teacher, rows)
+    return replay_ordinary(run_dir, cache, teacher, rows, fold)

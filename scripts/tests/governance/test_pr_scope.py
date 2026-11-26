@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 from pathlib import Path
+import os
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from scripts.quality import pr_scope
 
@@ -15,6 +17,9 @@ def git(root: Path, *args: str) -> str:
 
 class PullRequestScopeTests(unittest.TestCase):
     def setUp(self):
+        self.enterContext(patch.dict(os.environ, {
+            key: value for key, value in os.environ.items() if not key.startswith("GIT_")
+        }, clear=True))
         self.temp = tempfile.TemporaryDirectory(prefix="bilqis-pr-scope-")
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()
@@ -63,6 +68,14 @@ class PullRequestScopeTests(unittest.TestCase):
             ),
             previous,
         )
+
+    def test_schedule_uses_first_parent_for_cold_verification(self):
+        previous = git(self.root, "rev-parse", "HEAD")
+        self.commit("current.py", "VALUE = 2\n", "fix: current")
+        self.assertEqual(pr_scope.comparison_base(
+            self.root, event_name="schedule", requested_base="",
+            pr_head_sha=git(self.root, "rev-parse", "HEAD"), push_base="",
+        ), previous)
 
     def test_unified_commit_scope_begins_at_prospective_enforcement_baseline(self):
         requested_base = git(self.root, "rev-parse", "HEAD")

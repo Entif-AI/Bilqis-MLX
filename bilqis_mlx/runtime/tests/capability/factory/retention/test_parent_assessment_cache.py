@@ -1,8 +1,11 @@
 """Generation-bound reuse contract for C05 fixed-school parent assessment."""
 from dataclasses import replace
 import unittest
+import weakref
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.learning.atlas_engram import MotifManifest
+from bilqis_mlx.runtime.bamf_bundle.execution_cache import _new_execution_cache
 from bilqis_mlx.learning.atlas_retention_decision import (
     issue_factory_retention_decision,
 )
@@ -15,6 +18,7 @@ from bilqis_mlx.runtime.capability_retention_foundation import (
 from bilqis_mlx.runtime._factory_parent_assessment_cache import (
     ParentAssessmentCacheIdentity,
     clear_parent_assessment_cache,
+    lookup_parent_assessment,
     use_parent_assessment,
 )
 from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import (
@@ -88,6 +92,41 @@ class ParentAssessmentCacheTests(unittest.TestCase):
         self.assertEqual(first_receipt.assessment_sha256, first.digest())
         with self.assertRaises(BilqisError):
             issue_factory_retention_decision(second_receipt)
+
+    def test_retired_generation_scope_does_not_retain_execution_cache(self):
+        solver, _, _, _, cohorts = _screen_inputs()
+        fixed = cohorts[2]
+        identity = _identity(
+            cohort=contract_digest(fixed), policy=fixed.policy_sha256,
+            rubric=fixed.rubric_sha256, source=fixed.source_sha256)
+
+        def scope(current):
+            return _new_execution_cache(
+                run_id=current.run_id, generation=current.accepted_generation,
+                accepted_manifest_sha256=current.accepted_manifest_sha256,
+                generation_binding=current.accepted_generation_binding,
+                motif_manifest=MotifManifest("a" * 64))
+
+        retired = scope(identity)
+        retired_ref = weakref.ref(retired)
+        assessment, receipt = use_parent_assessment(
+            identity, solver, fixed, PARENT, scope=retired)
+        self.assertFalse(receipt.reused)
+        self.assertTrue(lookup_parent_assessment(
+            identity, fixed, PARENT, scope=retired)[1].reused)
+
+        successor_identity = replace(identity, accepted_generation=8)
+        successor = scope(successor_identity)
+        self.assertIsNone(lookup_parent_assessment(
+            successor_identity, fixed, PARENT, scope=successor))
+        self.assertFalse(use_parent_assessment(
+            successor_identity, solver, fixed, PARENT, scope=successor)[1].reused)
+        del retired
+
+        self.assertIsNone(retired_ref())
+        self.assertEqual(assessment.generation_digest, PARENT)
+        self.assertTrue(lookup_parent_assessment(
+            successor_identity, fixed, PARENT, scope=successor)[1].reused)
 
     def test_rejected_then_new_candidate_reuses_parent_but_remeasures_candidate(self):
         parent_solver, candidate_solver, target, _, cohorts = _screen_inputs(

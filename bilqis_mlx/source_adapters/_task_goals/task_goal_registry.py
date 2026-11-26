@@ -7,9 +7,12 @@ from pathlib import Path
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 
-from .numeric_task_goal import lower_numeric_task_goal, resolve_numeric_task_goal
+from .numeric_task_goal import (
+    lower_numeric_task_goal, resolve_numeric_task_goal, _resolve_lowered_numeric,
+)
 from .answer_choice_task_goal import (
     lower_answer_choice_task_goal, resolve_answer_choice_task_goal,
+    _resolve_lowered_answer_choice,
 )
 
 SHA256_HEX_LENGTH = 64
@@ -116,30 +119,30 @@ def require_task_goal_lowerer(provider_id: str, provider_sha256: str):
 
 
 def learning_first_task_goal_lowerer(provider_id: str):
-    """Return task semantics without provider/authentication digest ceremony.
+    """Return gold-blind lowering and resolution of that same lowered task.
 
     Ordinary BAMF training already owns a selected Factory row. It needs the row's
     learning problem, not a second provider-identity attestation. Strict evidence
     mode continues to use the authenticated lowerer lookup.
     """
     if provider_id == "source.finite-numeric/v2":
-        return lower_numeric_task_goal, resolve_numeric_task_goal
+        return lower_numeric_task_goal, _resolve_lowered_numeric
     if provider_id in {
         "source.micro.predicates/v1",
         "source.micro.boolean-connectives/v1",
         "source.micro.boolean-composite/v1",
         "source.micro.boolean-identification/v1",
     }:
-        return lower_answer_choice_task_goal, resolve_answer_choice_task_goal
+        return lower_answer_choice_task_goal, _resolve_lowered_answer_choice
     from bilqis_mlx.source_adapters import event_frames
     if provider_id == event_frames.ADAPTER_ID:
-        return lower_answer_choice_task_goal, resolve_answer_choice_task_goal
+        return lower_answer_choice_task_goal, _resolve_lowered_answer_choice
     from bilqis_mlx.source_adapters.c13_episode import PROVIDER_ID as c13_provider_id
     if provider_id == c13_provider_id:
         from .c13_episode_task_goal import (
-            lower_c13_episode_task_goal, resolve_c13_episode_task_goal,
+            lower_c13_episode_task_goal, _resolve_lowered_c13,
         )
-        return lower_c13_episode_task_goal, resolve_c13_episode_task_goal
+        return lower_c13_episode_task_goal, _resolve_lowered_c13
     _invalid("BAMF_C04_SOURCE_TASK_LOWERER_REQUIRED")
 
 
