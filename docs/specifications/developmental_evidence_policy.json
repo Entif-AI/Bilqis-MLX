@@ -3,11 +3,20 @@
   "current_stage": "FOUNDATION_ACQUISITION",
   "generalization_status": "MEASURE_ONLY",
   "fixed_generalization_gate_authority": "EXPLICIT_HUMAN_ADMISSION",
+  "policy_authority": {
+    "foundation_acquisition": [
+      "ADR-133",
+      "ADR-134",
+      "ADR-157"
+    ],
+    "retention_recovery_clarification": "ADR-157"
+  },
   "current_acceptance": {
     "teacher_forced_gold_allowed": true,
     "same_specimen_replay_allowed": true,
     "exact_memorization_counts_as_learning": true,
     "cache_memoization_retrieval_counts_as_learning": true,
+    "retained_taught_semantics_count_as_learning": true,
     "held_out_required": false,
     "independent_source_family_required": false,
     "fresh_episode_required": false,
@@ -17,6 +26,23 @@
       "EXACT_TAUGHT_RECALL",
       "TAUGHT_COMPOSITION_REPLICATION"
     ]
+  },
+  "independent_assessment": {
+    "source_oracle_independence_required": true,
+    "learner_answer_gold_input_forbidden": true,
+    "solver_answer_gold_input_forbidden": true,
+    "scorer_source_authorized_gold_required": true,
+    "scoring_must_not_inject_gold_into_solver": true,
+    "taught_semantics_eligible": true,
+    "previously_shown_specimens_eligible": true,
+    "zero_semantic_overlap_required": false,
+    "zero_specimen_overlap_required": false,
+    "zero_source_family_overlap_required": false,
+    "zero_episode_overlap_required": false
+  },
+  "developmental_sequence": {
+    "teach_semantics_before_generalization_expectation": true,
+    "untaught_semantics_generalization_status": "MEASURE_ONLY"
   },
   "alpha_advancement": {
     "basis": "CURRENT_EARNED_COMPLEXITY_SUCCESS_RATIO",
@@ -29,7 +55,9 @@
   "candidate_retention": {
     "immediate_target_gain_required": false,
     "protected_regression_checks_required": true,
-    "no_gain_strategy_retirement_remains_teacher_owned": true
+    "no_gain_strategy_retirement_remains_teacher_owned": true,
+    "primary_product_metric": "INDEPENDENTLY_VERIFIED_RETAINED_TAUGHT_COMPETENCE_PER_WALL_CLOCK_MINUTE",
+    "generalization_metric_is_separate": true
   },
   "novelty_measurement": {
     "required": true,

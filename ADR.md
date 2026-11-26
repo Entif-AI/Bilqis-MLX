@@ -4080,3 +4080,59 @@ checkpoint resets the local epoch, and the existing four-unretained and durable
 cooldown rules still operate unchanged. Cold replay must also prove that historical
 pre-ADR-156 rejection outcomes retain their original teacher hashes and do not seed
 the new target-failure-v2 debt.
+
+## ADR-157 | 2026-11-26 | Taught-foundation retention is authorizing; assessment answer gold stays evaluator-side
+
+**Status:** Accepted by direct owner correction on 2026-11-26 through issue #1645.
+This is an append-only prospective clarification of ADR-133 and ADR-134. It is not a
+retroactive edit to their 2026-11-05 decisions.
+
+**Problem:** Retention-recovery experiments and issue language had conflated two
+different questions: whether the learner retained semantics that were actually taught,
+and whether it generalized across untaught semantics. A first reconciliation also
+described assessment independence as if the scorer itself could not receive source
+gold. That wording contradicted the executable assessment architecture: the solver is
+given task goals only, while the evaluator must retain source-authorized gold in order
+to score the returned answer.
+
+**Decision:** During `FOUNDATION_ACQUISITION`, Bilqis first acquires and retains the
+semantics actually taught at current earned curriculum complexity. Independently
+verified exact taught recall, memorization, replay, and taught-composition replication
+are legitimate learning when the accepted learner retains them under applicable source,
+custody, C05, and protected-regression rules. Transfer over untaught semantics remains
+`MEASURE_ONLY` until an explicit human maturity admission changes that status.
+
+Independent assessment separates learner input from evaluator truth. The learner and
+solver MUST NOT receive the source answer gold as an assessment input. The evaluator
+and scorer MUST retain source-authorized gold and may compare the solver's returned
+answer against that gold. Scoring MUST NOT inject, leak, or otherwise route the gold
+answer into the solver. Assessment independence does not inherently require semantic,
+specimen, source-family, or episode non-overlap with instruction. Taught and previously
+shown specimens may therefore be independently scored when their source/rubric/cohort
+identity and evaluator truth remain authoritative.
+
+Zero-overlap, held-out, fresh-family, fresh-episode, and novel-composition panels remain
+valid instruments for measuring transfer and generalization. While generalization is
+`MEASURE_ONLY`, those panels cannot by themselves define, falsify, veto, or rank
+foundation learning. Retention-recovery experiments must report taught-foundation
+acquisition/retention separately from transfer telemetry.
+
+Historical experiments keep their frozen cohorts, thresholds, labels, and outcomes as
+historical evidence. A historical zero-overlap result may be reinterpreted prospectively
+as transfer/generalization telemetry, but its original protocol and outcome are not
+rewritten. The current product metric is independently verified retained competence on
+actually taught semantics per wall-clock minute, with protected competence and lawful
+resource bounds preserved.
+
+**Structural enforcement:** `docs/specifications/developmental_evidence_policy.json`
+defines the current machine policy. `scripts/check_factory_architecture.py` locks the
+policy fields. Capability-evaluation tests prove the solver receives goals without case
+gold while `Assessment.score` compares returned answers against evaluator-held source
+gold. `docs/specifications/retention_recovery_learning_contract.md` carries the current
+retention-recovery interpretation and pinned-v1 behavioral comparator map.
+
+**Still enforced:** Source correctness, rights, semantic identity, learner+AdamW
+custody, rollback, C05, ADR-142 mastery-debt protection, ADR-145 final-decision/canary
+law, protected competence, legitimate acceptance authority, and human merge/neural
+authority remain unchanged. This ADR does not restore historical architecture wholesale
+and does not promote generalization into a developmental gate.
