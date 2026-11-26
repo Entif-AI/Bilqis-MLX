@@ -21,7 +21,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if __package__:
     from .factory_architecture.developmental_evidence_policy import (
         DEVELOPMENTAL_POLICY, FOUNDATION_POLICY_DOCS, FOUNDATION_POLICY_MARKER,
-        RELEASE_BOUNDARY_OVERRIDES, _developmental_evidence_expected,
+        PREMATURE_FOUNDATION_GATES, RELEASE_BOUNDARY_OVERRIDES,
+        _developmental_evidence_expected,
         _developmental_evidence_policy, _developmental_policy_docs,
         _release_boundary_override_matches,
     )
@@ -33,7 +34,8 @@ if __package__:
 else:
     from factory_architecture.developmental_evidence_policy import (
         DEVELOPMENTAL_POLICY, FOUNDATION_POLICY_DOCS, FOUNDATION_POLICY_MARKER,
-        RELEASE_BOUNDARY_OVERRIDES, _developmental_evidence_expected,
+        PREMATURE_FOUNDATION_GATES, RELEASE_BOUNDARY_OVERRIDES,
+        _developmental_evidence_expected,
         _developmental_evidence_policy, _developmental_policy_docs,
         _release_boundary_override_matches,
     )
