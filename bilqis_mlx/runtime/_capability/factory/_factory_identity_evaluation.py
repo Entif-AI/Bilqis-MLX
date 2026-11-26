@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from weakref import WeakValueDictionary
 
 from bilqis_mlx.learning._atlas_candidate.identity_binding import CandidateIdentityBinding
 from bilqis_mlx.runtime.capability_retention import (
@@ -18,7 +19,8 @@ SHA256_HEX_LENGTH = 64
 
 def _new_factory_evaluation_owner():
     """Keep live C05 evaluation authority in closure-owned object identity."""
-    issued = {}
+    # Authenticate live evaluations without extending candidate-state lifetime.
+    issued = WeakValueDictionary()
 
     def require(value):
         if issued.get(id(value)) is not value:

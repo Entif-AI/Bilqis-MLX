@@ -1,4 +1,4 @@
-"""Regression coverage for ADR-133/ADR-134 machine-policy closure."""
+"""Regression coverage for ADR-133/ADR-134/ADR-157 machine-policy closure."""
 from __future__ import annotations
 
 import json
@@ -45,6 +45,15 @@ class DevelopmentalEvidencePolicyTests(unittest.TestCase):
         mutations = (
             (("schema",), "bilqis.developmental-evidence-policy/v999"),
             (("current_acceptance", "allowed_evidence_kinds"), ["STRICT_HELD_OUT"]),
+            (("policy_authority", "retention_recovery_clarification"), "ADR-133"),
+            (("independent_assessment", "learner_answer_gold_input_forbidden"), False),
+            (("independent_assessment", "solver_answer_gold_input_forbidden"), False),
+            (("independent_assessment", "scorer_source_authorized_gold_required"), False),
+            (("independent_assessment", "scoring_must_not_inject_gold_into_solver"), False),
+            (("independent_assessment", "zero_semantic_overlap_required"), True),
+            (("independent_assessment", "taught_semantics_eligible"), False),
+            (("developmental_sequence", "untaught_semantics_generalization_status"), "REQUIRED_GATE"),
+            (("candidate_retention", "primary_product_metric"), "ZERO_OVERLAP_TRANSFER_PER_MINUTE"),
             (("alpha_advancement", "pool_growth"), "FIXED_HELD_OUT"),
             (("alpha_advancement", "complexity_growth"), "STATIC"),
             (("novelty_measurement", "record_pass_failure_ratios"), False),

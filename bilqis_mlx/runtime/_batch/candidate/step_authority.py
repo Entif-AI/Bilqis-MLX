@@ -88,12 +88,16 @@ def _cleanup_candidate(key: int, reference) -> None:
         current = _CANDIDATE_TOKENS.get(key)
         if current is not None and current[0] is reference:
             _CANDIDATE_TOKENS.pop(key, None)
+            _drop_token(current[1])
 
 
 def _drop_token(token: str) -> None:
     authority = _TOKENS.pop(token, None)
     if authority is None:
         return
+    owner = _OWNERS.get(authority.cache_id)
+    if owner is not None and owner.token == token:
+        owner.token = None
     if _PARAMETER_TOKENS.get(id(authority.parameters)) == token:
         _PARAMETER_TOKENS.pop(id(authority.parameters), None)
     if authority.candidate_ref is not None:
