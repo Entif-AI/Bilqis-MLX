@@ -29,6 +29,17 @@ class DisplacementWitness(unittest.TestCase):
         self.assertGreater(float(preserve @ (next_theta - theta)), 0.)
         self.assertEqual(int(count), 11)
 
+    def test_optimizer_history_can_reverse_raw_harm_into_beneficial_update(self):
+        theta = np.array([0., 0.], dtype=np.float32)
+        gradient = np.array([1., 0.], dtype=np.float32)
+        protected_gradient = np.array([-1., 0.], dtype=np.float32)
+        next_theta, _, _, count = actual(theta, [-2., 0.], [4., 1.], 10,
+                                         gradient, True)
+        raw_descent = -gradient
+        self.assertGreater(float(protected_gradient @ raw_descent), 0.)
+        self.assertLess(float(protected_gradient @ (next_theta - theta)), 0.)
+        self.assertEqual(int(count), 11)
+
     def test_selected_rows_equivalent_to_full_mask(self):
         theta = np.array([[2., -1.], [3., 4.], [-.3, .8]], np.float32)
         m = np.array([[.1, -.2], [.9, -.8], [.01, .2]], np.float32)

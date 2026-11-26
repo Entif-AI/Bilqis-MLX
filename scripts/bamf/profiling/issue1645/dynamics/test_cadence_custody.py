@@ -84,6 +84,14 @@ class CadenceCustody(unittest.TestCase):
         self.assertEqual(receipt["indexed_bytes"], self.frontier)
         self.assertEqual((self.target / "events.jsonl").read_bytes(), self.line + b'{}\n')
 
+    def test_projection_from_a_different_accepted_parent_is_rejected(self):
+        pointer = json.loads((self.target / "bamf-state.json").read_text())
+        pointer["generation"] += 1
+        pointer["manifest_sha256"] = "d" * 64
+        (self.target / "bamf-state.json").write_text(json.dumps(pointer))
+        with self.assertRaisesRegex(ValueError, "projection parent pointer mismatch"):
+            self.verify()
+
     def test_changed_ledger_prefix_is_rejected(self):
         (self.target / "events.jsonl").write_bytes(self.line.replace(b'ACCEPTED', b'REJECTED'))
         with self.assertRaisesRegex(ValueError, "target ledger prefix mismatch"):
