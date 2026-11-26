@@ -1,0 +1,147 @@
+{
+  "schema": "bilqis.research.grade-a-learning-dynamics-generation70/v1",
+  "issue": 1645,
+  "authority": "IPR-0220",
+  "scope": "read-only generation-70 learning-dynamics diagnosis; no learner publication or retained-learning claim",
+  "accepted_parent": {
+    "generation": 70,
+    "manifest_sha256": "19d12ad8c8799440faa7757cb7417735540f8a100069a5741dc67bfeb41b0f9b",
+    "checkpoint_sha256": "b6a836df4f5cad03eb6590b073aa73820474aece7a82c7ccbed550f4a468a27f",
+    "optimizer_step": 737,
+    "bamf_state_sha256": "640729092bda4209c2bbe9b6ea147fc6cfdb8a81f6c0984962738cffd04fe864",
+    "events_sha256": "66a37da56249874552329a49cc1fd328057af77a2458028e89fa776327951cd0",
+    "trainer_observed_sha256": "d6b1d34c4fea50b24103f9165e397cf019f2c0fdfcd27510c9a4d1506e50fa97"
+  },
+  "artifacts": {
+    "protected_source_bound": {
+      "result_sha256": "8424471db294d3d0e16489a5596d9cf2ec9567ae4c3b024806400116101da724",
+      "detached_receipt_sha256": "54d5e83a5dfed2008657239b225f7f6f202d7aa33e930b1ef6eecc3c6a2082d1",
+      "source_snapshot_sha256": "b1e1a6038b5870bdf65d7ee02a43c9322ed565f47116baa71f1a433d9787b132",
+      "source_mutated": false,
+      "wall_seconds": 89.86935191601515
+    },
+    "cadence_freeze": {
+      "freeze_manifest_sha256": "dfc9d97f42edf18913416a1220a5a1161b832e98b16c37b1c49c58d9c6e6913c",
+      "projection_sha256": "56bb131391d9df16085dc04190f48229a20ee6536dca25ac65fc4b8a90d60991",
+      "ledger_prefix_sha256": "9e4c18a201d138275b581b7c3d05d608bba8631b125b195a646d9f85bfbbd953",
+      "indexed_bytes": 101200225,
+      "indexed_records": 1037
+    },
+    "native_pre_admission": {
+      "mixed_sha256": "fbc7ccafe0492a654b16a655bb60c528b1d68583c7adaba6fa53854a63e98400",
+      "detached_receipt_sha256": "b977e0c4f590083d39dec0423cbfa1c82a2af12086e67d3482888d1e40148403",
+      "source_snapshot_sha256": "b1e1a6038b5870bdf65d7ee02a43c9322ed565f47116baa71f1a433d9787b132",
+      "source_mutated": false
+    },
+    "moment_sensitivity": {
+      "result_sha256": "a6c9290140e34e1a1663fe2f648813ea21f70b8976ae582c89ab8931db890396",
+      "wall_seconds": 28.59865920781158,
+      "cpu_seconds": 27.985139
+    },
+    "finite_loss": {
+      "result_sha256": "e0c7e8181a1631fd9707e7b6d6fdcffde68f0b7e1e4be65dec59c46d72a24b56",
+      "detached_receipt_sha256": "c44ec672bf5d0b7ade3b68975d0494ce151b9f4a6e2ed6d0fdcb4a7e8f794b57",
+      "source_snapshot_sha256": "058d841e6a6f71387b23bb98bc94d5353549c200f117946bbf4658f01b9af417",
+      "source_mutated": false,
+      "wall_seconds": 141.79329533316195,
+      "max_displacement_replay_error": 0.0,
+      "first_order_sign_agreement": {
+        "matched": 35,
+        "total": 36
+      }
+    }
+  },
+  "capability_measurement_level": {
+    "A.IDENTITY": "source-bound gradient/update plus native pre-admission mixed lesson",
+    "A.PARENT": "source-bound gradient/update; current native scheduler returned NO_ADMISSIBLE_TEACHING",
+    "A.LINK": "source-bound gradient/update plus native pre-admission mixed lesson",
+    "A.MEMBER": "source-bound gradient/update plus native pre-admission mixed lesson",
+    "A.EDGE": "source-bound gradient/update plus natural native PERFECT_TARGET_SKIPPED preflight",
+    "A.MAPS": "source-bound gradient/update; current native scheduler returned NO_ADMISSIBLE_TEACHING"
+  },
+  "optimizer": {
+    "diagnostic_source_bound_learning_rate": 0.00013,
+    "beta1": 0.88,
+    "beta2": 0.97,
+    "epsilon": 1e-7,
+    "weight_decay": 0.03,
+    "clip_max_norm": 1.0,
+    "maximum_observed_masked_gradient_norm": 0.09357049316167831,
+    "clipping_activated": false,
+    "raw_harmful_pairs": 18,
+    "adamw_harmful_pairs": 13,
+    "raw_to_adamw_sign_flips": 9,
+    "sum_absolute_old_moment_dot": 0.009937018026048504,
+    "sum_absolute_current_gradient_and_rounding_dot": 0.007915697238020533,
+    "sum_absolute_weight_decay_dot": 9.875724354340742e-8,
+    "tested_output_epsilon_values": [1e-5, 0.0001],
+    "full_model_sign_flips_from_tested_output_epsilon": 0
+  },
+  "parent_maps_identity": {
+    "A.IDENTITY->A.PARENT": {
+      "raw_negative_gradient_dot": -0.000393855006899807,
+      "native_delta_dot": -0.0006465870804826307,
+      "observed_forward_loss_change": -0.000623852014541626
+    },
+    "A.IDENTITY->A.MAPS": {
+      "raw_negative_gradient_dot": 0.0005318414935956149,
+      "native_delta_dot": 0.0005956416959347196,
+      "observed_forward_loss_change": 0.0005890528361002604
+    },
+    "A.PARENT->A.IDENTITY": {
+      "raw_negative_gradient_dot": -0.000458320852585613,
+      "native_delta_dot": -0.0004311140397121558,
+      "observed_forward_loss_change": -0.00045052170753479004
+    },
+    "A.PARENT->A.MAPS": {
+      "raw_negative_gradient_dot": 0.00014024135406284966,
+      "native_delta_dot": 0.0001559113991640886,
+      "observed_forward_loss_change": 0.00017762184143066406
+    },
+    "A.MAPS->A.IDENTITY": {
+      "raw_negative_gradient_dot": -0.0001464723743658549,
+      "native_delta_dot": -0.0001500994513423909,
+      "observed_forward_loss_change": -0.00012937188148498535
+    },
+    "A.MAPS->A.PARENT": {
+      "raw_negative_gradient_dot": 0.00021342611048702013,
+      "native_delta_dot": -0.00025625841488174955,
+      "observed_forward_loss_change": -0.00022766987482706705
+    }
+  },
+  "historical_execution_economics": {
+    "run_stop_receipt_sha256": "845d7d4c447e189ac36f1a7e131330b1ccc69d27d3252ac8a52a9975fd8fc74b",
+    "elapsed_seconds": 310.3620570001658,
+    "visits": 17,
+    "accepted_visits": 1,
+    "rejected_visits": 16,
+    "terminal_visits_per_minute": 3.286484700224589,
+    "accepted_optimizer_step": 737,
+    "candidate_evaluation_invocations": null,
+    "candidate_evaluation_latency_seconds": null,
+    "candidate_evaluation_throughput": null,
+    "cache_hits": null,
+    "note": "surviving records do not persist these evaluation-only counters; attempted optimizer steps and scheduler invocations are not substituted"
+  },
+  "claims": {
+    "retained_learning_established": false,
+    "optimizer_state_interference_supported": true,
+    "clipping_explains_observed_matrix": false,
+    "weight_decay_explains_observed_matrix": false,
+    "tested_output_epsilon_is_sufficient_fix": false,
+    "optimizer_interference_is_sole_failure_cause": false
+  },
+  "next_experiment": {
+    "name": "matched disposable optimizer-history ablation pilot",
+    "accepted_starting_generation": 70,
+    "accepted_starting_optimizer_step": 737,
+    "run_seed": 543,
+    "per_arm_training_seconds": 300,
+    "pilot_positive_threshold": "treatment >= control + 1 net independently retained correct item on the 72-item fixed assessment, with no newly lost protected-capability item",
+    "falsification_scope": "failure to meet the threshold falsifies only a one-item-or-larger immediate effect in this exact five-minute generation-70 condition; it does not falsify smaller, longer-horizon, or general optimizer-history effects",
+    "causal_scope": "combined retained first-and-second-moment history; the pilot cannot distinguish first-moment from second-moment causality",
+    "launch_authorized": false,
+    "production_strategy_adopted": false,
+    "report": "grade-a-learning-dynamics-generation70.md"
+  }
+}
