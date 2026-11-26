@@ -25,6 +25,36 @@ from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import (
 )
 
 class CapabilityEvaluationTests(unittest.TestCase):
+    def test_independent_assessment_keeps_answer_gold_out_of_solver_input(self):
+        cases, contexts = _cases("target", "neutral", 1, "gold-boundary")
+        cohort = EvaluationCohort(
+            EvidenceKind.FRESH_TARGET, cases, (("target", "neutral"),),
+            "d" * 64, "e" * 64, "f" * 64, "0" * 64,
+            ("trained-family",), ("trained-episode",), case_census_digest(cases))
+        observed_goals = []
+
+        def context_for(goal, generation):
+            observed_goals.append(goal)
+            self.assertIs(goal, cases[0].goal)
+            self.assertFalse(hasattr(goal, "gold"))
+            binding = contexts[goal.goal_id]
+
+            def propose(request):
+                node = goal.expression_or_holes.nodes[0]
+                proposal = replace(goal, expression_or_holes=_program(replace(
+                    node, operator_id="ADD", candidate_operator_ids=())))
+                return NeuralProposal(
+                    proposal, request.source_binding_digest, request.generation_digest,
+                    request.unresolved_signature, "c" * 64)
+
+            return SolveContext(binding, neural_proposer=propose)
+
+        assessment = evaluate_capabilities(
+            CompleteSolver(context_for, SolveBudget(DAGBudget())), cohort, PARENT)
+        self.assertEqual(observed_goals, [cases[0].goal])
+        self.assertEqual(assessment.cohort.cases[0].gold, cases[0].gold)
+        self.assertEqual(assessment.score("target"), (1, 1))
+
     def test_route_full_score_never_substitutes_for_correct_typed_answer(self):
         evidence = _evidence()
         neural = evidence.target.candidate
