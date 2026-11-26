@@ -3065,6 +3065,38 @@ later edit cannot silently restore premature generalization as a foundation gate
 protected-retention limits and human neural-update authority remain active. This ADR
 changes developmental evidence maturity, not those safety or provenance boundaries.
 
+### Owner clarification | 2026-11-26 | taught semantics precede generalization expectations
+
+The FOUNDATION_ACQUISITION stage is deliberately developmental. Bilqis must first
+acquire and retain the semantics that have actually been taught at the current earned
+curriculum complexity before transfer to untaught semantics is treated as an expected
+competence. Independently verified exact taught recall, memorization, replay, and
+taught-composition replication therefore constitute legitimate learning when the
+accepted learner retains them under the applicable source, custody, C05, and
+protected-regression rules.
+
+Independent assessment means the truth/oracle and scorer remain source-authorized,
+honest, reproducible, and separated from answer injection. It does **not** inherently
+require semantic, specimen, source-family, or episode non-overlap with instruction.
+Zero-overlap panels remain valid research instruments for measuring transfer and
+generalization, but while `generalization_status=MEASURE_ONLY` they cannot by
+themselves define, falsify, veto, or rank foundation learning.
+
+Historical experiments keep their frozen cohorts, thresholds, labels, and outcomes as
+historical evidence. When a historical zero-overlap result is discussed prospectively,
+it must be labeled transfer/generalization telemetry rather than silently substituted
+for taught foundational competence. Retention-recovery experiments must report the
+two surfaces separately: (1) independently verified retained competence on actually
+taught semantics at current earned complexity, which is the current product learning
+surface, and (2) generalization/transfer telemetry, which remains observational until
+explicit human maturity admission.
+
+The canonical current interpretation and pinned-v1 behavioral parity map are maintained
+in `docs/specifications/retention_recovery_learning_contract.md`. This clarification
+does not restore historical architecture wholesale and does not weaken source truth,
+rights, C05, protected competence, atomic model/AdamW custody, or legitimate acceptance
+authority.
+
 ## ADR-134 | 2026-11-05 | Alpha advancement follows earned complexity; novelty is measured, not gated
 
 **Status:** Accepted by direct owner correction on 2026-11-05. This refines ADR-097

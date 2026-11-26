@@ -45,6 +45,10 @@ class DevelopmentalEvidencePolicyTests(unittest.TestCase):
         mutations = (
             (("schema",), "bilqis.developmental-evidence-policy/v999"),
             (("current_acceptance", "allowed_evidence_kinds"), ["STRICT_HELD_OUT"]),
+            (("independent_assessment", "zero_semantic_overlap_required"), True),
+            (("independent_assessment", "taught_semantics_eligible"), False),
+            (("developmental_sequence", "untaught_semantics_generalization_status"), "REQUIRED_GATE"),
+            (("candidate_retention", "primary_product_metric"), "ZERO_OVERLAP_TRANSFER_PER_MINUTE"),
             (("alpha_advancement", "pool_growth"), "FIXED_HELD_OUT"),
             (("alpha_advancement", "complexity_growth"), "STATIC"),
             (("novelty_measurement", "record_pass_failure_ratios"), False),

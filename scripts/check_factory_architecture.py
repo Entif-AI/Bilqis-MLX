@@ -158,17 +158,8 @@ def inspect_factory_architecture(root: Path) -> tuple[str, ...]:
     return tuple(problems)
 
 
-def _developmental_evidence_policy(root: Path) -> tuple[str, ...]:
-    problems = []
-    path = root / DEVELOPMENTAL_POLICY
-    if not path.is_file():
-        return ("DEVELOPMENTAL_EVIDENCE_POLICY_MISSING",)
-    try:
-        policy = json.loads(path.read_text())
-    except (OSError, json.JSONDecodeError):
-        return ("DEVELOPMENTAL_EVIDENCE_POLICY_INVALID",)
-
-    expected = {
+def _developmental_evidence_expected() -> dict[tuple[str, ...], object]:
+    return {
         ("schema",): "bilqis.developmental-evidence-policy/v1",
         ("current_stage",): "FOUNDATION_ACQUISITION",
         ("generalization_status",): "MEASURE_ONLY",
@@ -177,6 +168,7 @@ def _developmental_evidence_policy(root: Path) -> tuple[str, ...]:
         ("current_acceptance", "same_specimen_replay_allowed"): True,
         ("current_acceptance", "exact_memorization_counts_as_learning"): True,
         ("current_acceptance", "cache_memoization_retrieval_counts_as_learning"): True,
+        ("current_acceptance", "retained_taught_semantics_count_as_learning"): True,
         ("current_acceptance", "held_out_required"): False,
         ("current_acceptance", "independent_source_family_required"): False,
         ("current_acceptance", "fresh_episode_required"): False,
@@ -186,6 +178,16 @@ def _developmental_evidence_policy(root: Path) -> tuple[str, ...]:
             "EXACT_TAUGHT_RECALL",
             "TAUGHT_COMPOSITION_REPLICATION",
         ],
+        ("independent_assessment", "source_oracle_independence_required"): True,
+        ("independent_assessment", "scorer_gold_input_forbidden"): True,
+        ("independent_assessment", "taught_semantics_eligible"): True,
+        ("independent_assessment", "previously_shown_specimens_eligible"): True,
+        ("independent_assessment", "zero_semantic_overlap_required"): False,
+        ("independent_assessment", "zero_specimen_overlap_required"): False,
+        ("independent_assessment", "zero_source_family_overlap_required"): False,
+        ("independent_assessment", "zero_episode_overlap_required"): False,
+        ("developmental_sequence", "teach_semantics_before_generalization_expectation"): True,
+        ("developmental_sequence", "untaught_semantics_generalization_status"): "MEASURE_ONLY",
         ("alpha_advancement", "basis"): "CURRENT_EARNED_COMPLEXITY_SUCCESS_RATIO",
         ("alpha_advancement", "previously_shown_examples_count"): True,
         ("alpha_advancement", "held_out_required"): False,
@@ -195,6 +197,8 @@ def _developmental_evidence_policy(root: Path) -> tuple[str, ...]:
         ("candidate_retention", "immediate_target_gain_required"): False,
         ("candidate_retention", "protected_regression_checks_required"): True,
         ("candidate_retention", "no_gain_strategy_retirement_remains_teacher_owned"): True,
+        ("candidate_retention", "primary_product_metric"): "INDEPENDENTLY_VERIFIED_RETAINED_TAUGHT_COMPETENCE_PER_WALL_CLOCK_MINUTE",
+        ("candidate_retention", "generalization_metric_is_separate"): True,
         ("novelty_measurement", "required"): True,
         ("novelty_measurement", "authorizing"): False,
         ("novelty_measurement", "may_veto_advancement"): False,
@@ -210,6 +214,19 @@ def _developmental_evidence_policy(root: Path) -> tuple[str, ...]:
         ],
         ("future_fixed_gate", "requires_explicit_human_admission"): True,
     }
+
+
+def _developmental_evidence_policy(root: Path) -> tuple[str, ...]:
+    problems = []
+    path = root / DEVELOPMENTAL_POLICY
+    if not path.is_file():
+        return ("DEVELOPMENTAL_EVIDENCE_POLICY_MISSING",)
+    try:
+        policy = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return ("DEVELOPMENTAL_EVIDENCE_POLICY_INVALID",)
+
+    expected = _developmental_evidence_expected()
     for keys, value in expected.items():
         actual = policy
         for key in keys:
