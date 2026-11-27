@@ -14,16 +14,11 @@ from pathlib import Path
 import subprocess
 import sys
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-from bilqis_mlx.runtime.memory_safety import (
-    DEFAULT_TRAINER_MEMORY_CEILING_GIB, TrainerMemoryPolicy,
-)
-from bilqis_mlx.runtime.trainer_resource_governor import GOVERNOR_MODEL, GOVERNOR_NAME
-
 try:
+    from scripts.bamf.detached.resource_governor import (
+        DEFAULT_TRAINER_MEMORY_CEILING_GIB, GOVERNOR_MODEL, GOVERNOR_NAME,
+        TrainerMemoryPolicy,
+    )
     from scripts.bamf.detached.checked_launch import (
         CONTRACT_ENV, child_environment, prepare_checked_launch,
         read_checked_completion, read_checked_preflight, require_launch_contract,
@@ -38,6 +33,10 @@ try:
         _write_json,
     )
 except ModuleNotFoundError:  # direct execution from scripts/bamf
+    from detached.resource_governor import (
+        DEFAULT_TRAINER_MEMORY_CEILING_GIB, GOVERNOR_MODEL, GOVERNOR_NAME,
+        TrainerMemoryPolicy,
+    )
     from detached.checked_launch import (
         CONTRACT_ENV, child_environment, prepare_checked_launch,
         read_checked_completion, read_checked_preflight, require_launch_contract,

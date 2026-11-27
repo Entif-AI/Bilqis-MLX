@@ -11,11 +11,9 @@ import signal
 import subprocess
 import time
 
-from bilqis_mlx.runtime.memory_safety import (
-    GIB, TRAINER_MEMORY_CEILING_ENV, TrainerMemoryPolicy,
-)
-from bilqis_mlx.runtime.trainer_resource_governor import (
-    GOVERNOR_ENV, GOVERNOR_MODEL, GOVERNOR_NAME, supervise_running_process,
+from .resource_governor import (
+    GIB, GOVERNOR_ENV, GOVERNOR_MODEL, GOVERNOR_NAME,
+    TRAINER_MEMORY_CEILING_ENV, TrainerMemoryPolicy, supervise_running_process,
 )
 
 
