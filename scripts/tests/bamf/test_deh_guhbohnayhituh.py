@@ -14,6 +14,25 @@ from bilqis_mlx.runtime.trainer_resource_governor import (
 
 
 class DehGuhbohnayhituhTests(unittest.TestCase):
+    def test_unavailable_footprint_measurement_fails_closed(self):
+        process = SimpleNamespace(pid=2468, returncode=None)
+        process.poll = Mock(side_effect=[None, None, None, None])
+        process.wait = Mock(return_value=-signal.SIGKILL)
+        killpg = Mock()
+
+        result = supervise_running_process(
+            process,
+            policy=TrainerMemoryPolicy.from_gib(12),
+            footprint_bytes=lambda _pid: None,
+            sleep=lambda _seconds: None,
+            kill_process_group=killpg,
+        )
+
+        self.assertEqual(result.status, "RESOURCE_GOVERNOR_UNAVAILABLE")
+        self.assertEqual(
+            result.guard_reason, "process physical footprint measurement unavailable")
+        killpg.assert_called_once_with(process.pid, signal.SIGKILL)
+
     def test_real_child_is_killed_when_physical_footprint_crosses_trip_boundary(self):
         policy = TrainerMemoryPolicy(
             ceiling_bytes=160 * MIB,
