@@ -48,6 +48,7 @@ def _terminal_visit_status(outcome):
         "CERTIFICATION_FAILED": "CERTIFICATION_FAILED",
         "CERTIFICATION_SUPERSEDED": "CERTIFICATION_SUPERSEDED",
         "CERTIFICATION_POLICY_REQUIRED": "CERTIFICATION_POLICY_REQUIRED",
+        "PREFLIGHT_EXHAUSTED": "PREFLIGHT_EXHAUSTED",
     }.get(outcome)
 
 
@@ -97,7 +98,7 @@ def _run_visits(
         source_prefetch_workers, progress, source_prefetch_executor, metrics,
         run_authority_binding, resource_snapshot, monotonic, visit_fn,
         observer_type, emit_progress):
-    visits = accepted = rejected = 0
+    visits = accepted = rejected = skipped = 0
     attempts = 0
     resource_holds = set()
     admission_status, admission_advances = None, 0
@@ -146,18 +147,21 @@ def _run_visits(
         if outcome == "REJECTED":
             rejected += 1
             continue
+        if outcome == "PERFECT_TARGET_SKIPPED":
+            skipped += 1
+            continue
         accepted += 1
     else:
         status = "VISIT_LIMIT" if max_visits and visits >= max_visits else "TIME_LIMIT"
     return (
         status, visits, accepted, rejected, admission_status,
-        admission_advances, resource_witness,
+        admission_advances, resource_witness, skipped,
     )
 
 
 def _finalize_stop(
         run_dir, *, status, minutes, max_visits, steps_per_visit, batch_size, reserve_gib,
-        source_prefetch_workers, visits, accepted, rejected, admission_status,
+        source_prefetch_workers, visits, accepted, rejected, admission_status, skipped,
         admission_advances, resource_witness, resource_snapshot, elapsed_clock,
         elapsed_started, load_generation, record_stop):
     current = load_generation(run_dir)
@@ -174,7 +178,7 @@ def _finalize_stop(
             batch_size=batch_size,
             reserve_gib=reserve_gib,
             source_prefetch_workers=source_prefetch_workers,
-            visits=visits, accepted=accepted, rejected=rejected,
+            visits=visits, accepted=accepted, rejected=rejected, skipped=skipped,
             elapsed_seconds=elapsed_seconds, admission_status=admission_status,
             admission_advances=admission_advances,
             resource_witness=resource_witness or {})
@@ -208,7 +212,7 @@ def operate(
             before_visits(run_dir)
         (
             status, visits, accepted, rejected, admission_status,
-            admission_advances, resource_witness,
+            admission_advances, resource_witness, skipped,
         ) = _run_visits(
             run_dir, deadline=deadline, max_visits=max_visits,
             steps_per_visit=steps_per_visit, batch_size=batch_size, reserve_gib=reserve_gib,
@@ -226,6 +230,7 @@ def operate(
             reserve_gib=reserve_gib,
             source_prefetch_workers=source_prefetch_workers, visits=visits,
             accepted=accepted, rejected=rejected, admission_status=admission_status,
+            skipped=skipped,
             admission_advances=admission_advances,
             resource_witness=resource_witness, resource_snapshot=resource_snapshot,
             elapsed_clock=elapsed_clock, elapsed_started=elapsed_started,
@@ -251,4 +256,4 @@ def operate(
         admission_status=admission_status,
         admission_advances=admission_advances,
         elapsed_seconds=elapsed_seconds,
-        stop_receipt_sha256=stop_receipt_sha256)
+        stop_receipt_sha256=stop_receipt_sha256, skipped=skipped)

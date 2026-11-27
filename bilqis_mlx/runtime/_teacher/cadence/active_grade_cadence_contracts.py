@@ -50,6 +50,7 @@ class ActiveGradeCadencePhase(str, Enum):
 class ActiveGradeCadenceOutcome(str, Enum):
     RETAINED = "RETAINED"
     REJECTED = "REJECTED"
+    PERFECT_TARGET_SKIPPED = "PERFECT_TARGET_SKIPPED"
 
 
 class ActiveGradeCadenceDisposition(str, Enum):

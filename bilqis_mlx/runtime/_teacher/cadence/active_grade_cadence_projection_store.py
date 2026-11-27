@@ -51,7 +51,8 @@ def _restore_projection(record):
             if (not isinstance(item, list) or len(item) != _ATTEMPT_RECORD_SIZE
                     or not isinstance(item[0], dict)
                     or not isinstance(item[1], str) or not item[1]
-                    or item[_ATTEMPT_OUTCOME_INDEX] not in {"RETAINED", "REJECTED"}):
+                    or item[_ATTEMPT_OUTCOME_INDEX] not in {
+                        "RETAINED", "REJECTED", "PERFECT_TARGET_SKIPPED"}):
                 return None
             attempts.append((item[0], item[1], item[_ATTEMPT_OUTCOME_INDEX]))
         seen = set(record["seen_accepted_events"])

@@ -296,3 +296,19 @@ def test_cadence_policy_epoch_is_owned_by_1333_not_a09_frontier(tmp_path):
     assert after.state.policy_epoch == CADENCE_POLICY_EPOCH
     assert after.state.cadence_sha256 == before.state.cadence_sha256
 
+
+
+def test_neutral_perfect_skips_exhaust_bounded_cadence_without_training_credit(tmp_path):
+    frontier = _frontier((_capability('A'),))
+    epoch = _epoch({'A': 1})
+    with patch('bilqis_mlx.runtime.active_grade_cadence_policy.obligations_for_capability',
+               side_effect=_obligations(epoch)):
+        for _ in range(3):
+            issued = issue_active_grade_cadence(tmp_path, epoch, frontier)
+            _record_terminal(tmp_path, issued, 'A', 'PERFECT_TARGET_SKIPPED')
+        boundary = issue_active_grade_cadence(tmp_path, epoch, frontier)
+        assert boundary.disposition is ActiveGradeCadenceDisposition.RECOVERY_EXHAUSTED
+        assert not boundary.state.recovery_attempt_counts
+        assert not boundary.state.recovery_retained_counts
+        assert not boundary.state.recovery_rejected_counts
+        assert issue_active_grade_cadence(tmp_path, epoch, frontier).state == boundary.state

@@ -103,12 +103,17 @@ class DataPlaneEventMixin:
                 "rebuilt": rebuild}
 
     def indexed_event_tail(self, run_dir: Path, after_byte: int = 0, *,
-                           rejection_generation: int | None = None) -> dict:
+                           rejection_generation: int | None = None,
+                           terminal_generation: int | None = None) -> dict:
         """Return ordered payloads; optionally project one generation's rejections."""
         if type(after_byte) is not int or after_byte < 0:
             raise ValueError(DataPlaneError.EVENT_CURSOR_INVALID.value)
         if rejection_generation is not None and (
                 type(rejection_generation) is not int or rejection_generation < 0):
+            raise ValueError(DataPlaneError.EVENT_CURSOR_INVALID.value)
+        if terminal_generation is not None and (
+                type(terminal_generation) is not int or terminal_generation < 0
+                or rejection_generation is not None):
             raise ValueError(DataPlaneError.EVENT_CURSOR_INVALID.value)
         synced = self.sync_event_ledger(run_dir)
         key = synced["run_dir"]
@@ -116,7 +121,8 @@ class DataPlaneEventMixin:
             identity = self._db.execute(
                 "SELECT st_dev,st_ino,indexed_bytes FROM event_ledgers WHERE run_dir=?",
                 (key,)).fetchone()
-            rows = self._indexed_payloads(key, after_byte, rejection_generation)
+            rows = self._indexed_payloads(key, after_byte, rejection_generation,
+                                          terminal_generation)
         events = tuple(json.loads(row[0]) for row in rows)
         return {
             **synced,
@@ -125,7 +131,8 @@ class DataPlaneEventMixin:
             "event_count": len(events),
         }
 
-    def _indexed_payloads(self, key, after_byte, rejection_generation):
+    def _indexed_payloads(self, key, after_byte, rejection_generation,
+                          terminal_generation=None):
         query = "SELECT payload FROM event_stream WHERE run_dir=? AND end_byte>?"
         parameters = (key, after_byte)
         if rejection_generation is not None:
@@ -137,6 +144,12 @@ class DataPlaneEventMixin:
                       "json_extract(CAST(payload AS TEXT),'$.generation')=?) "
                       "ELSE 1 END")
             parameters += ("BAMF_CANDIDATE_REJECTED", rejection_generation)
+        elif terminal_generation is not None:
+            query += (" AND json_valid(CAST(payload AS TEXT)) AND "
+                      "json_extract(CAST(payload AS TEXT),'$.event') IN (?,?) AND "
+                      "json_extract(CAST(payload AS TEXT),'$.generation')=?")
+            parameters += ("BAMF_CANDIDATE_REJECTED", "BAMF_PERFECT_TARGET_SKIPPED",
+                           terminal_generation)
         return self._db.execute(query + " ORDER BY sequence", parameters).fetchall()
 
     def event_projection_state(

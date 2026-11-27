@@ -63,14 +63,21 @@ def _candidate_seed_identity(candidate_state, candidate_bundle) -> str:
     ))
 
 
-def target_stage(
-        source_context, parent, candidate_bundle, candidate_state, artifact_path,
-        release, plan, target_plan, training, cached_rows, cache, observer=None, *,
-        authenticated=None, mastery_debt_min_utility=0.05):
-    started = time.perf_counter() if observer is not None else None
-    target = target_plan.target_capability_id
-    (reference_seed, reference_rows), protected_rows = split_cached_rows(
-        cached_rows, target_plan)
+def _target_draw(source_context, candidate_state, candidate_bundle, release, cache,
+                 target, training, preflight):
+    if preflight is not None:
+        from .local_preflight import require_preflight
+        require_preflight(preflight)
+        return preflight
+    candidate_seed_identity = _candidate_seed_identity(candidate_state, candidate_bundle)
+    fresh_seed = _owner_seed(release.release_sha256, cache, target, candidate_seed_identity)
+    return _fresh_rows(
+        source_context, (target,), seed=fresh_seed + C05_FRESH_TARGET_SEED_OFFSET,
+        training=training, require_independent=False)
+
+
+def _reference_cases(source_context, candidate_bundle, artifact_path, reference_seed,
+                     reference_rows, authenticated):
     from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
         strict_evidence_enabled,
     )
@@ -85,17 +92,28 @@ def target_stage(
                 source_context, row,
                 semantic_release=authenticated.features.semantic_release)
             for row in reference_rows)
+    return reference_cases
+
+
+def target_stage(
+        source_context, parent, candidate_bundle, candidate_state, artifact_path,
+        release, plan, target_plan, training, cached_rows, cache, observer=None, *,
+        authenticated=None, mastery_debt_min_utility=0.05, preflight=None):
+    started = time.perf_counter() if observer is not None else None
+    target = target_plan.target_capability_id
+    (reference_seed, reference_rows), protected_rows = split_cached_rows(
+        cached_rows, target_plan)
+    reference_cases = _reference_cases(
+        source_context, candidate_bundle, artifact_path, reference_seed,
+        reference_rows, authenticated)
     epoch = comparison_epoch(
         release, plan, target_plan, reference_cases, parent, cache)
     ledger = BaselineLedger.from_optional_record(parent.baseline_evidence)
     target_group = ((target, target_plan.target_grade_id),)
     target_coverage = baseline_coverage(ledger, epoch, target_group)
-    candidate_seed_identity = _candidate_seed_identity(candidate_state, candidate_bundle)
-    fresh_seed = _owner_seed(
-        release.release_sha256, cache, target, candidate_seed_identity)
-    target_draw = _fresh_rows(
-        source_context, (target,), seed=fresh_seed + C05_FRESH_TARGET_SEED_OFFSET,
-        training=training, require_independent=False)
+    target_draw = _target_draw(
+        source_context, candidate_state, candidate_bundle, release, cache,
+        target, training, preflight)
     target_instruments = tuple(_instruments(
         source_context, candidate_bundle, artifact_path, target_draw.rows,
         seed=target_draw.seed, each=C05_PROBE_EACH,
@@ -114,9 +132,11 @@ def target_stage(
     elapsed(observer, "retention_target_prepare_wall_seconds", started)
 
     started = time.perf_counter() if observer is not None else None
-    parent_solver, parent_generation = factory_complete_solver(
-        source_context, parent, artifact_path, target_instruments,
-        execution_cache=cache)
+    parent_solver = parent_generation = None
+    if preflight is None:
+        parent_solver, parent_generation = factory_complete_solver(
+            source_context, parent, artifact_path, target_instruments,
+            execution_cache=cache)
     candidate_solver, candidate_generation = factory_complete_solver(
         source_context, candidate_bundle, artifact_path, target_instruments,
         authenticated=authenticated)
@@ -124,9 +144,17 @@ def target_stage(
 
     started = time.perf_counter() if observer is not None else None
     total_assessments = 2 + (2 if target_plan.protected_capability_ids else 0)
-    parent_assessment = observed_assessment(
-        parent_solver, target_cohort, parent_generation, observer, 0,
-        total_assessments, target, "parent", evaluator=evaluate_capabilities)
+    if preflight is None:
+        parent_assessment = observed_assessment(
+            parent_solver, target_cohort, parent_generation, observer, 0,
+            total_assessments, target, "parent", evaluator=evaluate_capabilities)
+    else:
+        from .local_preflight import reuse_parent_assessment
+        parent_assessment = reuse_parent_assessment(
+            preflight, parent, cache, release, plan, target_plan,
+            target_cohort, target_coverage)
+        observe(observer, retention_completed=1, retention_total=total_assessments,
+                retention_subject=target, retention_role="parent")
     elapsed(observer, "retention_target_parent_wall_seconds", started)
     started = time.perf_counter() if observer is not None else None
     candidate_assessment = observed_assessment(

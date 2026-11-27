@@ -18,7 +18,7 @@ from ..capability_evaluation import _invalid
 def foundation_local_retention_screen(
         source_context, parent, candidate_bundle, candidate_state, artifact_path,
         release, plan, target_plan, training, cached_rows, cache, *,
-        observer=None, mastery_debt_min_utility=0.05):
+        observer=None, mastery_debt_min_utility=0.05, preflight=None):
     """Resolve a fresh target pair before any protected candidate inference."""
     from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
         strict_evidence_enabled,
@@ -37,7 +37,8 @@ def foundation_local_retention_screen(
         source_context, parent, candidate_bundle, candidate_state, artifact_path,
         release, plan, target_plan, training, cached_rows, cache, observer,
         authenticated=authenticated,
-        mastery_debt_min_utility=mastery_debt_min_utility)
+        mastery_debt_min_utility=mastery_debt_min_utility,
+        **({"preflight": preflight} if preflight is not None else {}))
     if decision is not None:
         return decision, parent, candidate_bundle, cache, comparison, None, None
 
