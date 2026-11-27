@@ -226,7 +226,7 @@ test("production Memory builds exact current and historical CP03 queries", () =>
     mode: "current",
     run_id: "run-1188",
     record_id: null,
-    schema_version: "bilqis.bamf.mission-control.memory-snapshot/v1",
+    schema_version: null,
     generation: null,
     frontier_id: null,
     as_of: null,
@@ -322,4 +322,22 @@ test("Memory stylesheet modules stay below the structural interruption threshold
 test("fixture generation sequence is ordered and immutable enough for compare", () => {
   assert.deepEqual(MEMORY_GENERATIONS.map((item) => item.generation), [44_238, 44_239]);
   assert.equal(MEMORY_GENERATIONS.every((item) => Object.isFrozen(item)), true);
+});
+
+
+test("production Memory distinguishes authenticated allocation from absent retrieval telemetry", () => {
+  const context = { runId: "run-1188", generation: 9, mode: "LIVE" };
+  const record = { schema_version: "bilqis.bamf.mission-control.memory-snapshot/v2",
+    meta: { run: { run_id: context.runId, generation: 9 } },
+    allocated_slots: 78, slot_capacity: 16384, pending_keys: 5, aliases: 0 };
+  const page = { accepted: true, state: "PARTIAL", records: [record] };
+  const profile = memoryProfileFromPage(page, context);
+  assert.equal(profile.metrics.allocatedSlots.value, 78);
+  assert.equal(profile.metrics.slotCapacity.value, 16384);
+  assert.equal(profile.metrics.hits.value, null);
+  assert.equal(profile.metrics.aliases.value, 0);
+  assert.equal(memoryProfileFromPage(page, { ...context, generation: 8 }), null);
+  const html = productionMemoryMarkup({ current: profile });
+  assert.match(html, /Allocated motif slots/);
+  assert.match(html, /16384/);
 });

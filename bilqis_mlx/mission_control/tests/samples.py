@@ -5,7 +5,10 @@ from .sample_parts.base import (
 )
 from .sample_parts.trainer import TRAINER_SAMPLES
 
-SAMPLES = (*BASE_SAMPLES, *TRAINER_SAMPLES)
+from ..contracts.events import LearningHistorySummary
+
+SAMPLES = (*BASE_SAMPLES, *TRAINER_SAMPLES,
+           LearningHistorySummary(meta("learning-summary"), D1, 0, 0, 0, 0, (), None))
 
 __all__ = (
     "D1", "D2", "D3", "D4", "RUN", "SEMANTIC_ID", "SEMANTIC_CONCEPT_ID",

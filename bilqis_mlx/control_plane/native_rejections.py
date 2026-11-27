@@ -213,6 +213,58 @@ def _project_verified_rejection(verified, generation):
     )
 
 
+def read_rejection_rows(lines):
+    """Decode the complete journal format, retaining only rejection evidence."""
+    for raw in lines:
+        if not raw.endswith(b"\n"):
+            invalid("CONTROL_PLANE_NATIVE_EVENT_LEDGER_INVALID")
+        try:
+            native = json.loads(raw)
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            invalid("CONTROL_PLANE_NATIVE_EVENT_LEDGER_INVALID")
+        if isinstance(native, dict) and native.get("event") == "BAMF_CANDIDATE_REJECTED":
+            yield native
+
+
+def project_rejection_rows(
+        rows, history, *, portable_only=False, verified_portable=None):
+    """Project verified portable rows and revalidate legacy backing objects."""
+    by_manifest = {item.manifest_sha256: item for item in history}
+    records, events, seen_receipts = [], [], set()
+    plane = None
+    for index, native in enumerate(rows):
+        generation = by_manifest.get(native.get("student_manifest_sha256"))
+        if generation is None:
+            invalid("CONTROL_PLANE_NATIVE_REJECTION_INVALID")
+        cached = None if verified_portable is None else verified_portable.get(index)
+        if cached is not None:
+            receipt_sha, projected_records, projected_events = cached
+        else:
+            if not portable_only and plane is None and native.get("rejection_authority") is None:
+                from bilqis_mlx.data_plane import data_plane
+                plane = data_plane()
+            try:
+                verified = _verified_rejection(native, generation, plane)
+            except _LegacyRejectionUnavailable:
+                records.append(_unavailable_rejection(native, generation))
+                continue
+            if verified is None:
+                continue
+            _event_id, _authority, receipt_sha, _evidence, portable = verified
+            if receipt_sha in seen_receipts:
+                continue
+            projected_records, projected_events = _project_verified_rejection(
+                verified, generation)
+            if portable and verified_portable is not None:
+                verified_portable[index] = receipt_sha, projected_records, projected_events
+        if receipt_sha in seen_receipts:
+            continue
+        seen_receipts.add(receipt_sha)
+        records.extend(projected_records)
+        events.extend(projected_events)
+    return tuple(records), tuple(events)
+
+
 def rejection_material(
         run_dir: Path, history: tuple[AuthenticatedGeneration, ...], *,
         portable_only: bool = False):
@@ -221,42 +273,9 @@ def rejection_material(
         return (), ()
     if ledger.is_symlink() or not ledger.is_file():
         invalid("CONTROL_PLANE_NATIVE_EVENT_LEDGER_INVALID")
-    by_manifest = {item.manifest_sha256: item for item in history}
-    records, events, seen_receipts = [], [], set()
-    plane = None
-    if not portable_only:
-        from bilqis_mlx.data_plane import data_plane
-        plane = data_plane()
-
     with ledger.open("rb") as stream:
-        for raw in stream:
-            if not raw.endswith(b"\n"):
-                invalid("CONTROL_PLANE_NATIVE_EVENT_LEDGER_INVALID")
-            try:
-                native = json.loads(raw)
-            except (UnicodeDecodeError, json.JSONDecodeError):
-                invalid("CONTROL_PLANE_NATIVE_EVENT_LEDGER_INVALID")
-            if not isinstance(native, dict) or native.get("event") != "BAMF_CANDIDATE_REJECTED":
-                continue
-            generation = by_manifest.get(native.get("student_manifest_sha256"))
-            if generation is None:
-                invalid("CONTROL_PLANE_NATIVE_REJECTION_INVALID")
-            try:
-                verified = _verified_rejection(native, generation, plane)
-            except _LegacyRejectionUnavailable:
-                records.append(_unavailable_rejection(native, generation))
-                continue
-            if verified is None:
-                continue
-            receipt_sha = verified[2]
-            if receipt_sha in seen_receipts:
-                continue
-            seen_receipts.add(receipt_sha)
-            projected_records, projected_events = _project_verified_rejection(
-                verified, generation)
-            records.extend(projected_records)
-            events.extend(projected_events)
-    return tuple(records), tuple(events)
+        return project_rejection_rows(
+            read_rejection_rows(stream), history, portable_only=portable_only)
 
 
 __all__ = ("rejection_material",)

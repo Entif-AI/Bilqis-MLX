@@ -143,6 +143,8 @@ function isSha256(value) {
 }
 
 function validateEvent(value) {
+  if (exactKeys(value, ["schemaVersion", "state"]) &&
+      value.schemaVersion === "bamf.gui20.event-stream-state/v1" && value.state === "DISCONNECTED") return value;
   const keys = [
     "schema_version", "meta", "event_id", "position", "event_family",
     "payload_schema_version", "payload_record_id", "payload_sha256", "payload_ref",

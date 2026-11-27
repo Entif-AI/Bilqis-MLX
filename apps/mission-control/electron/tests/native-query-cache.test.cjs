@@ -13,7 +13,7 @@ test("native query source preserves cache and request identity", () => {
     python,
     [
       "-B", "-m", "unittest",
-"bilqis_mlx.control_plane.tests.cp07.test_native_query_cache",
+"bilqis_mlx.control_plane.tests.cp07.native.test_native_query_cache",
       "-q",
     ],
     {

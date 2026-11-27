@@ -12,9 +12,11 @@ export function buildQuery(lens, overrides = {}) {
 }
 
 export function chooseDossier(records, lens, capabilityId) {
-  const found = records.filter((row) => row.schema_version === DOSSIER_SCHEMA &&
-    row.capability_id === capabilityId && row.meta?.run?.run_id === lens.runId &&
+  const eligible = records.filter((row) => row.schema_version === DOSSIER_SCHEMA &&
+    row.meta?.run?.run_id === lens.runId &&
     (lens.mode === "HISTORICAL" ? row.meta.run.generation === lens.generation : true));
+  const selected = capabilityId ?? eligible[0]?.capability_id;
+  const found = eligible.filter((row) => row.capability_id === selected);
   if (found.length > 1) throw new Error("DOSSIER_IDENTITY_AMBIGUOUS");
   return found[0] ?? null;
 }

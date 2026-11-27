@@ -79,16 +79,50 @@ export function createBootstrapController({
     }, reconnectDelayMs);
   }
 
+  function setVerified(context) {
+    setVerifiedLiveContext(context);
+  }
+
+  function latestRoute() {
+    const state = getState();
+    return constrainRouteToLaunchMode(
+      state ? routeFromState(state) : parseDeepLink(currentHash()), launchMode);
+  }
+
+  function matchesStatus(status, context) {
+    return status?.serviceLive === true && status.learnerReady === true &&
+      status.runId === context?.runId && status.generation === context?.generation;
+  }
+
+  function sameServicePosture(previous, next) {
+    return next?.serviceLive === true && [
+      "state", "serviceReady", "learnerReady", "learnerActive",
+      "learnerState", "runId", "generation", "failureCode",
+    ].every(key => previous[key] === next[key]);
+  }
+
+  function armServiceCheck(connection) {
+    if (fixtureMode || typeof api.status !== "function" || reconnectToken !== null) return;
+    reconnectToken = scheduleReconnect(async () => {
+      reconnectToken = null;
+      let status;
+      try { status = await api.status(); } catch { status = null; }
+      if (!sameServicePosture(connection, status)) {
+        return establishSnapshot({ preserveRoute: true, reuseConnection: status?.serviceLive === true });
+      }
+      armServiceCheck(status);
+    }, Math.max(2000, reconnectDelayMs));
+  }
+
   async function establishSnapshot({ preserveRoute = false, reuseConnection = false } = {}) {
     clearReconnect();
     const current = getState();
     const quietRetry = reuseConnection && current !== null;
     if (!quietRetry) resetFrameShell();
     if (current) setState({ ...current, mutationAvailable: false });
-    const requestedRoute = preserveRoute && current
-      ? routeFromState(current)
-      : parseDeepLink(currentHash());
-    const route = constrainRouteToLaunchMode(requestedRoute, launchMode);
+    const route = preserveRoute && current
+      ? latestRoute()
+      : constrainRouteToLaunchMode(parseDeepLink(currentHash()), launchMode);
     if (!quietRetry) {
       setDefense(defensiveState("loading", {
         snapshotAvailable: Boolean(current),
@@ -123,7 +157,16 @@ export function createBootstrapController({
           assertOperatorView(snapshot);
           operatorView = snapshot;
           snapshotSource = "service";
-          if (!fixtureMode) cacheOperatorView(storage, operatorView);
+          // If the accepted pointer advanced during the query, establish the
+          // connection's identity again instead of blessing a mismatched view.
+          if (!fixtureMode && connection.runId != null &&
+              !matchesStatus(connection, normalizeContext(operatorView))) {
+            connection = await api.status();
+            if (!matchesStatus(connection, normalizeContext(operatorView))) {
+              operatorView = null;
+            }
+          }
+          if (!fixtureMode && operatorView) cacheOperatorView(storage, operatorView);
         }
       } catch (error) {
         operatorView = null;
@@ -144,22 +187,24 @@ export function createBootstrapController({
       }
     }
 
+    const latest = getState();
     if (operatorView === null && connection?.serviceLive === true) {
       const phase = connection.learnerReady === true ? "telemetry-pending" : "learner-unavailable";
       setBootstrap(Object.freeze({ phase, connection, error: snapshotError }));
-      if (current) {
-        setDefense(defensiveState("stale", {
+      if (latest) {
+        const stale = defensiveState("stale", {
           snapshotAvailable: true,
           snapshotSource: "previous",
-        }));
-        setState({ ...current, mutationAvailable: false });
+        });
+        setDefense(stale);
+        setState(withDefensiveState(latest, stale));
       } else {
         setDefense(connection.learnerReady === true
           ? defensiveState("progressive", { snapshotAvailable: false, snapshotSource: "service" })
           : defensiveStateForConnection(connection.state, { snapshotAvailable: false, snapshotSource: "service" }));
         setState(null);
       }
-      setVerifiedLiveContext(null);
+      setVerified(null);
       render();
       announce(connection.learnerReady === true
         ? t("foundation.bootstrap.announce.telemetryPending")
@@ -170,16 +215,16 @@ export function createBootstrapController({
 
     if (operatorView === null) {
       const options = {
-        snapshotAvailable: Boolean(current),
-        snapshotSource: current ? "previous" : "none",
+        snapshotAvailable: Boolean(latest),
+        snapshotSource: latest ? "previous" : "none",
       };
       let nextDefense = defensiveStateForError(snapshotError ?? connectError, options);
-      if (current && ["unavailable", "unknown"].includes(nextDefense.id)) {
+      if (latest && ["unavailable", "unknown"].includes(nextDefense.id)) {
         nextDefense = defensiveState("stale", options);
       }
       setDefense(nextDefense);
-      setState(current ? { ...current, mutationAvailable: false } : null);
-      setVerifiedLiveContext(null);
+      setState(latest ? withDefensiveState(latest, nextDefense) : null);
+      setVerified(null);
       setBootstrap(Object.freeze({ phase: "failed", connection, error: snapshotError ?? connectError }));
       render();
       announce(t("foundation.bootstrap.announce.noSnapshot", { state: nextDefense.label }));
@@ -196,10 +241,11 @@ export function createBootstrapController({
       nextDefense = defensiveState("stale", options);
     }
     setDefense(nextDefense);
-    setVerifiedLiveContext(!fixtureMode && snapshotSource === "service" && nextDefense.id === "live"
+    setVerified(!fixtureMode && snapshotSource === "service" && nextDefense.id === "live"
       ? normalizeContext(operatorView)
       : null);
-    const shellState = withDefensiveState(createShellState(operatorView, route), nextDefense);
+    const shellState = withDefensiveState(
+      createShellState(operatorView, latest ? latestRoute() : route), nextDefense);
     setState({
       ...shellState,
       context: fixtureMode
@@ -210,6 +256,7 @@ export function createBootstrapController({
     setBootstrap(Object.freeze({ phase: "ready", connection, error: null }));
     render();
     if (snapshotSource !== "service" || connection?.serviceLive !== true) armReconnect();
+    else armServiceCheck(connection);
     announce(t(
       nextDefense.historical
         ? "foundation.bootstrap.announce.inspection"

@@ -6,15 +6,16 @@ from bilqis_mlx.mission_control.envelopes import (
     StreamPosition, UnavailableEnvelope, UnavailableReason, event_cursor_sha256,
 )
 from bilqis_mlx.mission_control.events import (
-    CandidateDecision, CandidateOutcome, CorrectionEvent, FrameCompileReceipt,
+    CandidateDecision, CandidateOutcome, CorrectionEvent, CorrectionFrontierSnapshot, FrameCompileReceipt,
     LearningEpisode, SalienceEvent,
 )
+from bilqis_mlx.mission_control.contracts.events import SalienceEventV2
 from bilqis_mlx.mission_control.model import (
     AuthorityClass, CoverageState, DataValue, RecordMeta, RunRef,
     ValueOrigin, ValueState,
 )
 from bilqis_mlx.mission_control.observability import (
-    GenerationManifest, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
+    GenerationManifest, GenerationManifestV2, MemorySnapshot, MemorySnapshotV2, NeuralRuntimeSample, ResourceSample,
     SemanticAtlasSnapshot, SemanticProjectionSnapshot, SemanticProjectionState,
     SemanticReleaseSnapshot, TeacherSnapshot,
 )
@@ -115,15 +116,24 @@ BASE_SAMPLES = (
                         value(1000, "parameters"), value(0.25, "fraction")),
     MemorySnapshot(meta("memory"), value(100, "bytes"), value(1000, "bytes"),
                    value(8), value(2), value(1)),
+    MemorySnapshotV2(meta("memory-allocation", coverage=CoverageState.PARTIAL),
+                     *(DataValue(ValueState.MISSING, None, None) for _ in range(5)),
+                     78, 16384, 5, 0, D1, D2),
     TeacherSnapshot(meta("teacher"), "teacher-a", 3, "strategy-2",
                     value(10), value(7), value(3)),
     SalienceEvent(meta("salience"), "salience-1", "B.EXAMPLE",
                   value(3, "ordinal", ValueOrigin.SOURCE_AUTHORITATIVE),
                   value(2, "ordinal", ValueOrigin.DERIVED),
                   value(4, "ordinal", ValueOrigin.INFERRED), "TEACHING"),
+    SalienceEventV2(meta("salience-c06"), "salience-2", "B.EXAMPLE",
+                    value("LOW", "ordinal", ValueOrigin.DERIVED),
+                    value("HIGH", "ordinal", ValueOrigin.DERIVED),
+                    DataValue(ValueState.UNKNOWN, None, None), "UNKNOWN", "FOLLOWUP"),
     CorrectionEvent(meta("correction"), "correction-1", 4, "source:a", D1, D2,
                     "REQUALIFICATION_REQUIRED"),
     GenerationManifest(meta("generation"), D1, D2, D3, D4, "ACCEPTED"),
+    GenerationManifestV2(meta("generation-partial", coverage=CoverageState.PARTIAL),
+                         D1, None, None, D4, "ACCEPTED"),
     ResourceSample(meta("resources"), value(100, "bytes"), value(1000, "bytes"),
                    value(500, "bytes"), value(1.5, "steps/minute")),
     SemanticConceptSnapshot(
@@ -228,3 +238,7 @@ BASE_SAMPLES += (FactoryCockpitSnapshot(
         ),
     ),),
 ),)
+
+BASE_SAMPLES += (
+    CorrectionFrontierSnapshot(meta("correction-frontier", coverage=CoverageState.PARTIAL), 4, 0, D1),
+)

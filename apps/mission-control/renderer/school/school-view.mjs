@@ -73,7 +73,7 @@ function visibleColumns() {
 
 function cell(row, key, kind) {
   if (key === "id") return `<th class="capability-cell" scope="row"><button type="button" data-select-capability="${esc(row.id)}" data-focus-key="school:${esc(row.id)}" ${testIdAttribute("school", "matrix", "capability", slug(row.id))} title="${esc(t("school.matrix.inspect", { id: row.id }))}">${esc(row.id)}</button></th>`;
-  if (key === "prerequisites") return `<td>${esc(row.prerequisites?.length ? row.prerequisites.join(", ") : absence(row, "prerequisites"))}</td>`;
+  if (key === "prerequisites") return `<td>${esc(row.prerequisites?.length ? row.prerequisites.join(", ") : row.absenceReasons?.prerequisites === null ? t("school.common.none") : absence(row, "prerequisites"))}</td>`;
   if (["was", "top", "now"].includes(key)) return `<td class="num">${esc(score(row[key], row.total, absence(row, key)))}</td>`;
   if (key === "total") return `<td class="num">${esc(text(row.total))}</td>`;
   if (key === "growth") {
@@ -81,7 +81,7 @@ function cell(row, key, kind) {
     return `<td class="num" data-delta="${Math.sign(row.growth)}">${row.growth >= 0 ? "+" : ""}${row.growth}</td>`;
   }
   if (key === "pRet") return `<td class="num">${esc(Number.isFinite(row.pRet) ? row.pRet.toFixed(2) : absence(row, "pRet"))}</td>`;
-  if (key === "sourceFamilies") return `<td>${esc(row.sourceFamilies?.length ? row.sourceFamilies.join(", ") : absence(row, "sourceFamilies"))}</td>`;
+  if (key === "sourceFamilies") return `<td>${esc(row.sourceFamilies?.length ? row.sourceFamilies.join(", ") + t("school.sourceFamilies.observedPartial") : absence(row, "sourceFamilies"))}</td>`;
   return `<td class="${kind === "num" ? "num" : ""}">${esc(text(row[key], absence(row, key)))}</td>`;
 }
 

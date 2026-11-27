@@ -90,7 +90,7 @@ test("production Lineage queries exact CP03 run and generation identity", () => 
     mode: "current",
     run_id: "run-production",
     record_id: null,
-    schema_version: "bilqis.bamf.mission-control.generation-manifest/v1",
+    schema_version: null,
     generation: 17,
     frontier_id: null,
     as_of: null,
@@ -111,6 +111,10 @@ test("production selection fails closed to the exact GenerationManifest context"
   other.meta.record_id = "generation:16";
   assert.equal(selectGenerationRecord(page([other, exact]), context), exact);
   assert.equal(selectGenerationRecord(page([other]), context), null);
+  const combined = {...exact,
+    schema_version: "bilqis.bamf.mission-control.generation-manifest/v2",
+    student_sha256: null, optimizer_state_sha256: null};
+  assert.equal(selectGenerationRecord(page([combined]), context), combined);
   assert.deepEqual(rejectedDecisions(page([rejectedRecord(), exact])), [rejectedRecord()]);
 });
 

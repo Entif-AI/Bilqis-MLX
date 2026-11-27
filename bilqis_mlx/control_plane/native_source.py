@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from functools import partial
 import threading
 import weakref
 
@@ -11,14 +12,26 @@ from bilqis_mlx.mission_control import MissionControlQueryCatalog
 from .native_contracts import AuthenticatedGeneration, NativeProjectionMaterial
 from .native_custody import accepted_pointer, authenticated_history
 from .native_mapping import accepted_records
+from .native_cache.source import _source_token
+from .native_cache.rejections import RejectionLedgerCache, LEDGER_CHANGED
 from .native_factory import accepted_factory_records
 from .native_rejections import rejection_material
 from .native_contracts import run_ref
 from .observed import observed_records, publish_observed_events
+from .observed.school import ObservedSchoolProjection
+from .observed.salience import unavailable_salience
+from .projection.memory import accepted_memory_records
+from .projection.school import (
+    admitted_release_identity, admitted_school_records, read_admitted_release,
+)
+from .projection.correction_frontier import accepted_correction_frontier
+from .projection.learning_history import LearningHistoryProjection, learning_history_summary
 from .projection.capability_dossier import (
     accepted_capability_dossiers as _accepted_capability_dossiers,
 )
-from .projection.semantic_release import accepted_semantic_release_records
+from .projection.semantic_release import (
+    AcceptedSemanticProjection, accepted_semantic_release_records,
+)
 from bilqis_mlx.mission_control.contracts.trainer import TrainerObservation
 
 
@@ -60,42 +73,84 @@ def _service_lock(service):
         return lock
 
 
-def _materialize_authenticated_history(
-        run_dir: Path, history: tuple[AuthenticatedGeneration, ...], *,
-        include_live_rejections: bool) -> NativeProjectionMaterial:
-    """Project an already-authenticated lineage without re-reading its ancestry."""
-    run_dir = Path(run_dir)
-    records, events, manifests = [], [], []
+def _project_accepted_base(run_dir, history, *,
+                           semantic_projection=accepted_semantic_release_records):
+    records, events = [], []
     parent = None
     for generation in history:
         generated, emitted = accepted_records(generation, parent)
         records.extend(generated)
+        records.extend(accepted_memory_records(run_dir, generation))
+        records.extend(accepted_correction_frontier(generation))
         events.extend(emitted)
-        manifests.append(generation.manifest_sha256)
         parent = generation
     records.extend(accepted_factory_records(history))
+    release = None
     if history:
-        records.extend(accepted_semantic_release_records(run_dir, history[-1]))
+        records.extend(semantic_projection(run_dir, history[-1]))
+        release = read_admitted_release(run_dir, history[-1])
+        records.extend(admitted_school_records(history[-1], release, records))
+        records.append(unavailable_salience(history[-1]))
+    return NativeProjectionMaterial(
+        tuple(records), tuple(events),
+        tuple(generation.manifest_sha256 for generation in history),
+        _accepted_learning_health(history), release)
+
+
+class _AcceptedBaseCache:
+    """Retain the expensive accepted/semantic projection across event appends."""
+
+    def __init__(self):
+        self.history = self.outbox_token = self.material = None
+        self.semantic_projection = AcceptedSemanticProjection()
+
+    def __call__(self, run_dir, history):
+        outbox_token = (_source_token(run_dir)[3:],
+                        admitted_release_identity(run_dir, history))
+        if self.history is not history or self.outbox_token != outbox_token:
+            material = _project_accepted_base(
+                run_dir, history, semantic_projection=self.semantic_projection)
+            self.history, self.outbox_token, self.material = (
+                history, outbox_token, material)
+        return self.material
+
+
+def _materialize_authenticated_history(
+        run_dir: Path, history: tuple[AuthenticatedGeneration, ...], *,
+        include_live_rejections: bool, accepted_base=_project_accepted_base,
+        rejection_source=None, learning_summary=learning_history_summary,
+) -> NativeProjectionMaterial:
+    """Project accepted custody, rejection evidence, and the live overlay."""
+    run_dir = Path(run_dir)
+    base = accepted_base(run_dir, history)
+    records, events = list(base.records), list(base.events)
     rejected_records, rejected_events = (
-        rejection_material(run_dir, history)
+        (rejection_source or rejection_material)(run_dir, history)
         if include_live_rejections
         else rejection_material(run_dir, history, portable_only=True))
-    records.extend(_accepted_capability_dossiers(history, rejected_records))
+    records.extend(_accepted_capability_dossiers(
+        history, rejected_records, release=base.admitted_release))
     after = accepted_pointer(run_dir)
     if (not history
             or after["manifest_sha256"] != history[-1].manifest_sha256
             or after["acceptance_sha256"] != history[-1].acceptance_sha256):
         from .native_contracts import invalid
         invalid("CONTROL_PLANE_NATIVE_HISTORY_POINTER_CHANGED")
-    accepted_health = _accepted_learning_health(history)
+    accepted_health = base.accepted_learning_health_by_manifest
     if include_live_rejections:
         records.extend(observed_records(
             run_dir, tuple(run_ref(item) for item in history),
-            accepted_health_by_manifest=accepted_health))
+            accepted_health_by_manifest=accepted_health,
+            school_projection=ObservedSchoolProjection(records)))
     records.extend(rejected_records)
+    if include_live_rejections:
+        summary = learning_summary(history[-1], records)
+        if summary is not None:
+            records.append(summary)
     events.extend(rejected_events)
     return NativeProjectionMaterial(
-        tuple(records), tuple(events), tuple(manifests), accepted_health)
+        tuple(records), tuple(events), base.generation_manifests, accepted_health,
+        base.admitted_release)
 
 
 def materialize_native_projection(
@@ -133,6 +188,7 @@ def native_query_catalog(run_dir: Path) -> MissionControlQueryCatalog:
         if error.context.get("reason") in {
             "BAMF_GENERATION_POINTER_CHANGED_DURING_READ",
             "CONTROL_PLANE_NATIVE_HISTORY_POINTER_CHANGED",
+            LEDGER_CHANGED,
         }:
             return MissionControlQueryCatalog.unavailable()
         raise
@@ -146,18 +202,22 @@ def native_query_source(run_dir: Path):
     return build_native_query_source(
         run_dir,
         authenticated_history_fn=authenticated_history,
-        materialize_history_fn=_materialize_authenticated_history,
-        materialize_projection_fn=materialize_native_projection,
+        materialize_history_fn=partial(
+            _materialize_authenticated_history, accepted_base=_AcceptedBaseCache(),
+            rejection_source=RejectionLedgerCache(),
+            learning_summary=LearningHistoryProjection()),
         run_refs_fn=_run_refs,
         observed_records_fn=observed_records,
     )
 
 
-def publish_native_events(service, *, seen_event_ids: set[str] | None = None):
+def publish_native_events(service, *, seen_event_ids: set[str] | None = None,
+                          material=None):
     """Publish authenticated BAMF deltas exactly once per caller-owned frontier."""
     seen = set() if seen_event_ids is None else seen_event_ids
-    material = materialize_native_projection(
-        service.run_dir, include_live_rejections=True)
+    if material is None:
+        material = materialize_native_projection(
+            service.run_dir, include_live_rejections=True)
     published = list(publish_observed_events(service, tuple(
         record for record in material.records if isinstance(record, TrainerObservation))))
     resource_pending = False
@@ -202,17 +262,27 @@ def refresh_native_events(service):
                     service, observed_records(
                         service.run_dir, run_refs,
                         accepted_health_by_manifest=accepted_health))
-            elif seen is None:
-                material = materialize_native_projection(
-                    service.run_dir, include_live_rejections=True)
-                setattr(service, _SEEN_ATTR, {
-                    event_id for _family, _record, event_id in material.events})
-                published = publish_observed_events(service, tuple(
-                    record for record in material.records
-                    if isinstance(record, TrainerObservation)))
             else:
-                _material, published = publish_native_events(service, seen_event_ids=seen)
-                material = _material
+                source = getattr(service, "_query_source", None)
+                shared_material = getattr(source, "_native_material", None)
+                if shared_material is not None:
+                    material = shared_material()
+                    if material is None:
+                        return ()
+                if seen is None:
+                    if material is None:
+                        material = materialize_native_projection(
+                            service.run_dir, include_live_rejections=True)
+                    setattr(service, _SEEN_ATTR, {
+                        event_id for _family, _record, event_id in material.events})
+                    published = publish_observed_events(service, tuple(
+                        record for record in material.records
+                        if isinstance(record, TrainerObservation)))
+                elif material is None:
+                    material, published = publish_native_events(service, seen_event_ids=seen)
+                else:
+                    material, published = publish_native_events(
+                        service, seen_event_ids=seen, material=material)
             after = _source_token(service.run_dir)
             if after == before:
                 setattr(service, _SOURCE_TOKEN_ATTR, after)
@@ -226,6 +296,7 @@ def refresh_native_events(service):
             if error.context.get("reason") in {
                 "BAMF_GENERATION_POINTER_CHANGED_DURING_READ",
                 "CONTROL_PLANE_NATIVE_HISTORY_POINTER_CHANGED",
+                LEDGER_CHANGED,
             }:
                 return ()
             raise

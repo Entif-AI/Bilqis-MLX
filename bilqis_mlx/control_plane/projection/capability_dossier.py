@@ -1,4 +1,7 @@
 """Accepted-history projection for the existing CapabilityDossier contract."""
+import json
+from dataclasses import asdict
+
 from bilqis_mlx.mission_control import CoverageState, DataValue, ValueState
 from bilqis_mlx.mission_control.contracts.dossier import (
     CapabilityDossier, DossierEntry, DossierValue,
@@ -8,6 +11,9 @@ from ..native_contracts import data_value, missing_value, record_meta, run_ref
 
 
 SCORE_FIELD_COUNT = 4
+MAX_DOSSIER_REFERENCE_LENGTH = 512
+MAX_RELEASE_DOSSIER_ENTRIES = 125
+MAX_RELEASE_DOSSIER_BYTES = 32 * 1024
 
 
 def _row(stats, capability):
@@ -62,7 +68,89 @@ def _accepted_health(stats, latest):
         )
 
 
-def accepted_capability_dossiers(history, rejected_records):
+def _release_entries(execution, run, release_ref):
+    """Bound declared prerequisites and source adapter without inventing families."""
+    if execution is None:
+        return ()
+    cap = execution.capability_id
+    refs = (release_ref,)
+    entries = (
+        DossierEntry(
+            f"source-binding:{cap}", "sources", "admitted-source-binding",
+            "Admitted source binding", run.generation, 0,
+            (DossierValue("provider_id", data_value(execution.provider_id)),
+             DossierValue("source_anchor", data_value(execution.source_anchor)),
+             DossierValue("oracle_id", data_value(execution.oracle_id)),
+             DossierValue("provider_implementation_sha256",
+                          data_value(execution.provider_implementation_sha256))),
+            refs, "source", execution.source_anchor),
+        DossierEntry(
+            f"prerequisite-inventory:{cap}", "dependencies", "prerequisite-inventory",
+            "Admitted prerequisite inventory", run.generation, 0,
+            (DossierValue("prerequisite_count",
+                          data_value(len(execution.prerequisites))),),
+            refs, None, None),
+        *(DossierEntry(
+            f"prerequisite:{cap}:{dependency}", "dependencies", "prerequisite",
+            "Admitted prerequisite", run.generation, 0, (),
+            refs, "capability", dependency)
+          for dependency in execution.prerequisites
+          if len(f"prerequisite:{cap}:{dependency}") <= MAX_DOSSIER_REFERENCE_LENGTH
+          and len(dependency) <= MAX_DOSSIER_REFERENCE_LENGTH),
+    )
+    # Reserve room for accepted-history and strategy entries; truncation is
+    # observable through prerequisite_count and the partial dossier coverage.
+    bounded, size = [], 0
+    for entry in entries:
+        cost = len(json.dumps(asdict(entry), ensure_ascii=True).encode()) + 1
+        if len(bounded) >= MAX_RELEASE_DOSSIER_ENTRIES or size + cost > MAX_RELEASE_DOSSIER_BYTES:
+            break
+        bounded.append(entry)
+        size += cost
+    return tuple(bounded)
+
+
+def _capability_dossier(latest, run, capability, row, execution, ref, release_ref):
+    unknown = DataValue(ValueState.UNKNOWN, None, None)
+    history_values = (
+        DossierValue("was", data_value(row["first"])
+                     if row.get("comparable") and row.get("first") is not None else missing_value()),
+        DossierValue("visits", data_value(row["visits"])
+                    if row["visits"] else missing_value()),
+        DossierValue("retained_steps", data_value(row["retained"])
+                     if row["visits"] and row["retained_ok"] else missing_value()),
+    )
+    entries = [DossierEntry(
+        f"accepted-history:{capability}", "performance", "accepted-history",
+        "Accepted capability history", run.generation, 0,
+        history_values, (ref,), None, None,
+    )]
+    if row.get("strategy"):
+        entries.append(DossierEntry(
+            f"accepted-strategy:{capability}", "teaching", "strategy",
+            "Latest accepted teacher strategy", run.generation, 0,
+            (DossierValue("strategy", data_value(row["strategy"])),),
+            (ref,), None, None,
+        ))
+    entries.extend(_release_entries(execution, run, release_ref))
+    return CapabilityDossier(
+        record_meta(
+            f"dossier:{run.run_id}:{run.generation}:{capability}", run, latest,
+            evidence_refs=(ref, release_ref) if execution is not None else (ref,),
+            coverage=CoverageState.PARTIAL,
+        ),
+        capability, capability,
+        data_value(row["latest"]) if row.get("latest") is not None else missing_value(),
+        data_value(row["top"])
+        if row.get("comparable") and row.get("top") is not None else missing_value(),
+        data_value(row["total"]) if row.get("total") is not None else missing_value(),
+        missing_value(), unknown, missing_value(), missing_value(),
+        data_value("ADMITTED") if execution is not None else missing_value(),
+        tuple(entries),
+    )
+
+
+def accepted_capability_dossiers(history, rejected_records, *, release=None):
     """Return capability-scoped accepted facts without inventing missing metrics."""
     if not history:
         return ()
@@ -83,43 +171,17 @@ def accepted_capability_dossiers(history, rejected_records):
             _row(stats, capability)["visits"] += 1
 
     run, result = run_ref(latest), []
+    executions = ({item.capability_id: item for item in release.execution_plan.capabilities}
+                  if release is not None else {})
+    release_ref = f"factory-release:{release.release_sha256}" if release is not None else None
+    for cap in executions:
+        _row(stats, cap)
     ref = f"bamf-manifest:{latest.manifest_sha256}"
-    unknown = DataValue(ValueState.UNKNOWN, None, None)
     for capability, row in sorted(stats.items()):
-        if row.get("latest") is None and row["visits"] == 0:
+        execution = executions.get(capability)
+        if row.get("latest") is None and row["visits"] == 0 and execution is None:
             continue
-        history_values = (
-            DossierValue("was", data_value(row["first"])
-                         if row.get("comparable") and row.get("first") is not None else missing_value()),
-            DossierValue("visits", data_value(row["visits"])),
-            DossierValue("retained_steps", data_value(row["retained"])
-                         if row["retained_ok"] else missing_value()),
-        )
-        entries = [DossierEntry(
-            f"accepted-history:{capability}", "performance", "accepted-history",
-            "Accepted capability history", run.generation, 0,
-            history_values, (ref,), None, None,
-        )]
-        if row.get("strategy"):
-            entries.append(DossierEntry(
-                f"accepted-strategy:{capability}", "teaching", "strategy",
-                "Latest accepted teacher strategy", run.generation, 0,
-                (DossierValue("strategy", data_value(row["strategy"])),),
-                (ref,), None, None,
-            ))
-        result.append(CapabilityDossier(
-            record_meta(
-                f"dossier:{run.run_id}:{run.generation}:{capability}", run, latest,
-                evidence_refs=(ref,), coverage=CoverageState.PARTIAL,
-            ),
-            capability, capability,
-            data_value(row["latest"]) if row.get("latest") is not None else missing_value(),
-            data_value(row["top"])
-            if row.get("comparable") and row.get("top") is not None else missing_value(),
-            data_value(row["total"]) if row.get("total") is not None else missing_value(),
-            missing_value(), unknown, missing_value(), missing_value(), missing_value(),
-            tuple(entries),
-        ))
+        result.append(_capability_dossier(latest, run, capability, row, execution, ref, release_ref))
     return tuple(result)
 
 

@@ -2,6 +2,8 @@ const QUERY_SCHEMA = "bilqis.bamf.control-plane.query/v1";
 
 export const GENERATION_MANIFEST_SCHEMA =
   "bilqis.bamf.mission-control.generation-manifest/v1";
+export const GENERATION_MANIFEST_SCHEMA_V2 =
+  "bilqis.bamf.mission-control.generation-manifest/v2";
 export const CANDIDATE_DECISION_SCHEMA =
   "bilqis.bamf.mission-control.candidate-decision/v1";
 
@@ -23,10 +25,7 @@ function baseQuery(context, family) {
 }
 
 export function buildGenerationQuery(context) {
-  return {
-    ...baseQuery(context, "generation"),
-    schema_version: GENERATION_MANIFEST_SCHEMA,
-  };
+  return baseQuery(context, "generation");
 }
 
 export function buildRejectedQuery(context) {
@@ -40,7 +39,7 @@ export function assertQueryPage(value) {
 
 export function selectGenerationRecord(page, context) {
   const records = (page?.records ?? []).filter(record =>
-    record?.schema_version === GENERATION_MANIFEST_SCHEMA &&
+    [GENERATION_MANIFEST_SCHEMA, GENERATION_MANIFEST_SCHEMA_V2].includes(record?.schema_version) &&
     record?.meta?.run?.run_id === context?.runId &&
     record?.meta?.run?.generation === context?.generation
   );

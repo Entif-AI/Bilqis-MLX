@@ -5,8 +5,8 @@ from .contracts.envelopes import (
     StreamPosition, UnavailableEnvelope, UnavailableReason,
 )
 from .contracts.events import (
-    CandidateDecision, CandidateOutcome, CorrectionEvent, FrameCompileReceipt,
-    LearningEpisode, SalienceEvent,
+    CandidateDecision, CandidateOutcome, CorrectionEvent, CorrectionFrontierSnapshot, FrameCompileReceipt,
+    LearningEpisode, LearningHistorySummary, SalienceEvent, SalienceEventV2,
 )
 from .contracts.factory import (
     FactoryAdmissionAuthority, FactoryBlocker, FactoryCockpitSnapshot,
@@ -19,7 +19,7 @@ from .contracts.model import (
     MissionControlContractError, RecordMeta, RunRef, ValueOrigin, ValueState,
 )
 from .contracts.observability import (
-    GenerationManifest, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
+    GenerationManifest, GenerationManifestV2, MemorySnapshot, MemorySnapshotV2, NeuralRuntimeSample, ResourceSample,
     SemanticAtlasSnapshot, SemanticProjectionSnapshot, SemanticProjectionState,
     SemanticReleaseSnapshot, TeacherSnapshot,
 )
@@ -55,14 +55,14 @@ from .contracts.snapshots import (
 __all__ = (
     "ALL_RECORD_TYPES", "ActionParameter", "ActionReceiptState",
     "AuthorityClass", "CandidateDecision", "CandidateOutcome",
-    "CapabilitySnapshot", "ContractErrorCode", "CorrectionEvent",
+    "CapabilitySnapshot", "ContractErrorCode", "CorrectionEvent", "CorrectionFrontierSnapshot",
     "CoverageState", "CurriculumFrontier", "DataValue", "ErrorEnvelope",
-    "EventEnvelope", "FrameCompileReceipt", "GenerationManifest",
+    "EventEnvelope", "FrameCompileReceipt", "GenerationManifest", "GenerationManifestV2",
     "FactoryAdmissionAuthority", "FactoryBlocker", "FactoryCockpitSnapshot",
     "FactoryCurrencyState", "FactoryDeliveryStatus", "FactoryGradeFrontier",
     "FactoryLifecycleStatus", "FactoryRunLineage", "FactorySubjectKind",
     "FactoryTopologyEvidence", "FactoryTopologyKnowledge",
-    "LearningEpisode", "MemorySnapshot", "MissionControlContractError",
+    "LearningEpisode", "LearningHistorySummary", "MemorySnapshot", "MemorySnapshotV2", "MissionControlContractError",
     "Notification", "NotificationKind", "NotificationSeverity", "NotificationState",
     "MissionControlQueryCatalog",
     "MissionControlProjection", "PROJECTION_SCHEMA", "PROJECTION_SCHEMA_VERSION",
@@ -70,7 +70,7 @@ __all__ = (
     "NeuralRuntimeSample", "OperatorActionReceipt", "OperatorActionReceiptV2",
     "OperatorActionRequest", "OperatorActionRequestV2",
     "OperatorView", "PartialEnvelope", "RECORD_BY_SCHEMA", "RecordMeta",
-    "ResourceSample", "RunContext", "RunRef", "SalienceEvent",
+    "ResourceSample", "RunContext", "RunRef", "SalienceEvent", "SalienceEventV2",
     "DEFAULT_PAGE_SIZE", "MAX_PAGE_SIZE", "QUERY_PAGE_SCHEMA",
     "QUERY_REQUEST_SCHEMA", "QueryFamily", "QueryLink", "QueryMode",
     "QueryPage", "QueryRequest", "QueryState",

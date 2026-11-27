@@ -1,4 +1,4 @@
-import { correctionQuery, productionProjectionFromPage } from "./corrections-model.mjs";
+import { correctionFrontierQuery, correctionQuery, productionProjectionFromPage } from "./corrections-model.mjs";
 import { bindCorrectionsInteractions, renderCorrectionsMarkup } from "./corrections-view.mjs";
 
 function contextKey(context) { return context ? [context.runId, context.generation, context.mode, context.fixture === true].join(":") : "none"; }
@@ -31,9 +31,12 @@ export function createCorrectionsController(api, { fixtureSupport = null } = {})
     const epoch = ++request; const source = context; const fixture = source?.fixture === true && fixtureSupport;
     if (fixture) { projection = fixture.projection; render(); return; }
     try {
-      const page = await api.query(correctionQuery(source));
+      const [page, frontierPage] = await Promise.all([
+        api.query(correctionQuery(source)),
+        api.query(correctionFrontierQuery(source)).catch(() => null),
+      ]);
       if (epoch !== request || source !== context) return;
-      projection = productionProjectionFromPage(page, source, selected?.id ?? null);
+      projection = productionProjectionFromPage(page, source, selected?.id ?? null, frontierPage);
     } catch (_error) {
       if (epoch !== request || source !== context) return;
       projection = productionProjectionFromPage(null, source, selected?.id ?? null);

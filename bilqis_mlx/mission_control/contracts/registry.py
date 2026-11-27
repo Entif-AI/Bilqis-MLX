@@ -6,11 +6,11 @@ from .envelopes import (
     UnavailableEnvelope,
 )
 from .events import (
-    CandidateDecision, CorrectionEvent, FrameCompileReceipt, LearningEpisode,
-    SalienceEvent,
+    CandidateDecision, CorrectionEvent, CorrectionFrontierSnapshot, FrameCompileReceipt, LearningEpisode,
+    SalienceEvent, SalienceEventV2, LearningHistorySummary,
 )
 from .observability import (
-    GenerationManifest, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
+    GenerationManifest, GenerationManifestV2, MemorySnapshot, MemorySnapshotV2, NeuralRuntimeSample, ResourceSample,
     SemanticAtlasSnapshot, SemanticProjectionSnapshot, SemanticReleaseSnapshot,
     TeacherSnapshot,
 )
@@ -54,6 +54,7 @@ ALL_RECORD_TYPES = (
     CurriculumFrontier,
     LearningEpisode,
     CandidateDecision,
+    LearningHistorySummary,
     SemanticAtlasSnapshot,
     SemanticReleaseSnapshot,
     SemanticProjectionSnapshot,
@@ -65,10 +66,14 @@ ALL_RECORD_TYPES = (
     FrameCompileReceipt,
     NeuralRuntimeSample,
     MemorySnapshot,
+    MemorySnapshotV2,
     TeacherSnapshot,
     SalienceEvent,
+    SalienceEventV2,
     CorrectionEvent,
+    CorrectionFrontierSnapshot,
     GenerationManifest,
+    GenerationManifestV2,
     ResourceSample,
     Notification,
     OperatorActionRequest,

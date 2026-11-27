@@ -25,7 +25,8 @@ function learningCopy(status) {
     REGRESSION: "regression",
     THROUGHPUT_ONLY: "throughputOnly",
     NO_FRESH_GAIN: "noFreshGain",
-  })[status] ?? "noFreshGain";
+    UNKNOWN: "unknown",
+  })[status] ?? "unknown";
   return { label: t(`home.learning.${suffix}`), detail: t(`home.learning.${suffix}Detail`) };
 }
 
@@ -137,6 +138,9 @@ function statusBand(model, status, badge) {
 
 function currentWork(model, { nowMs, locale } = {}) {
   const current = model.currentWork;
+  const active = model.observed?.current?.connection_state === "LIVE"
+    && model.observed.current.outcome === "RUNNING";
+  const recorded = !active && (model.observed?.current || current.recordId);
   const assessment = t("home.current.assessmentValue", {
     target: current.targetAssessment ?? t("home.common.unavailable"),
     protected: current.protectedAssessment ?? t("home.common.unavailable"),
@@ -149,7 +153,7 @@ function currentWork(model, { nowMs, locale } = {}) {
     ["home.current.assessmentPosture", assessment],
   ];
   const inspect = current.recordId
-    ? `<button type="button" class="home-link" data-home-target-kind="episode" data-home-target-id="${esc(current.recordId)}" ${testIdAttribute("home", "current", "inspect")}>${esc(t("home.current.inspect"))}</button>` : "";
+    ? `<button type="button" class="home-link" data-home-target-kind="episode" data-home-target-id="${esc(current.recordId)}" ${testIdAttribute("home", "current", "inspect")}>${esc(t(active ? "home.current.inspect" : "home.current.inspectRecorded"))}</button>` : "";
   const observedTime = temporalMarkup({
     unixSeconds: current.observedAt,
     nowMs,
@@ -157,41 +161,41 @@ function currentWork(model, { nowMs, locale } = {}) {
     testId: "home-current-time",
   });
   return `<section class="home-surface home-current" ${testIdAttribute("home", "current", "work")}>
-    <header><div><span class="eyebrow">${esc(t("home.current.eyebrow"))}</span><h2>${esc(t("home.current.title"))}</h2></div><div class="home-heading-tools"><span>${esc((current.capabilityId || model.observed?.current) ? t("home.current.observed") : t("home.common.unavailable"))}</span>${help("home.help.current.label", "home.help.current.body", "home-help-current")}</div></header>
+    <header><div><span class="eyebrow">${esc(t(active ? "home.current.eyebrow" : "home.current.recordedEyebrow"))}</span><h2>${esc(t(active ? "home.current.title" : "home.current.recordedTitle"))}</h2></div><div class="home-heading-tools"><span>${esc(t(active ? "home.current.observed" : recorded ? "home.current.recorded" : "home.common.unavailable"))}</span>${help("home.help.current.label", "home.help.current.body", "home-help-current")}</div></header>
     ${model.observed?.current ? renderObservedWork(model.observed, esc, { nowMs, locale }) : `<dl>${rows.map(([labelKey, value]) => `<div><dt>${esc(t(labelKey))}</dt><dd>${esc(value ?? t("home.common.unavailable"))}</dd></div>`).join("")}</dl><div class="home-time-row"><span>${esc(t("home.current.observedTime"))}</span>${observedTime}</div>${inspect}`}
   </section>`;
 }
 
 function attention(model, priority, { nowMs, locale } = {}) {
   return `<section class="home-surface home-attention" data-priority="${priority}" ${testIdAttribute("home", "attention")}>
-    <header><div><span class="eyebrow">${esc(t("home.attention.eyebrow"))}</span><h2>${esc(t("home.attention.title"))}</h2></div><div class="home-heading-tools"><span>${esc(t("home.attention.count", { count: model.attention.length }))}</span>${help("home.help.attention.label", "home.help.attention.body", "home-help-attention")}</div></header>
+    <header><div><span class="eyebrow">${esc(t("home.attention.eyebrow"))}</span><h2>${esc(t("home.attention.title"))}</h2></div><div class="home-heading-tools"><span>${esc(model.attention.length || model.evidence?.attention !== false ? t("home.attention.count", { count: model.attention.length }) : t("home.common.unavailable"))}</span>${help("home.help.attention.label", "home.help.attention.body", "home-help-attention")}</div></header>
     <div class="attention-list">${model.attention.map((item, index) => {
       const copy = attentionCopy(item);
       const time = temporalMarkup({ unixSeconds: item.observedAt, nowMs, locale, testId: `home-attention-time-${index}` });
       return `<div class="home-list-item" data-severity="${esc(item.severity ?? "attention")}"><button type="button" data-severity="${esc(item.severity ?? "attention")}" data-home-target-kind="${esc(item.target?.kind ?? item.kind)}" data-home-target-id="${esc(item.target?.id ?? item.id)}" ${testIdAttribute("home", "attention", "item", index)}><span>${esc(item.kind)}</span><strong>${esc(copy.label)}</strong><small>${esc(copy.detail)}</small></button>${time}</div>`;
-    }).join("") || `<p class="home-quiet">${esc(t("home.attention.empty"))}</p>`}</div>
+    }).join("") || `<p class="home-quiet">${esc(t(model.evidence?.attention === false ? "home.common.unavailable" : "home.attention.empty"))}</p>`}</div>
   </section>`;
 }
 
 function pulse(model, { nowMs, locale } = {}) {
   return `<section class="home-analysis home-pulse" ${testIdAttribute("home", "pulse")}>
-    <header><div><span class="eyebrow">${esc(t("home.pulse.eyebrow"))}</span><h2>${esc(t("home.pulse.title"))}</h2></div><div class="home-heading-tools"><span>${esc(t("home.pulse.count", { count: model.pulse.length }))}</span>${help("home.help.pulse.label", "home.help.pulse.body", "home-help-pulse")}</div></header>
+    <header><div><span class="eyebrow">${esc(t("home.pulse.eyebrow"))}</span><h2>${esc(t("home.pulse.title"))}</h2></div><div class="home-heading-tools"><span>${esc(model.pulse.length || model.evidence?.pulse !== false ? t("home.pulse.count", { count: model.pulse.length }) : t("home.common.unavailable"))}</span>${help("home.help.pulse.label", "home.help.pulse.body", "home-help-pulse")}</div></header>
     <div class="pulse-list">${model.pulse.map((event, index) => {
       const copy = pulseCopy(event);
       const time = temporalMarkup({ unixSeconds: event.observedAt, nowMs, locale, testId: `home-pulse-time-${index}` });
       return `<div class="home-list-item"><button type="button" data-home-target-kind="${esc(event.target?.kind ?? "evidence")}" data-home-target-id="${esc(event.target?.id ?? `pulse:${index}`)}" ${testIdAttribute("home", "pulse", "item", index)}><span class="pulse-kind">${esc(event.kind)}</span><strong>${esc(copy.label)}</strong><small>${esc(copy.detail)}</small></button>${time}</div>`;
-    }).join("") || `<p class="home-empty">${esc(t("home.pulse.empty"))}</p>`}</div>
+    }).join("") || `<p class="home-empty">${esc(t(model.evidence?.pulse === false ? "home.common.unavailable" : "home.pulse.empty"))}</p>`}</div>
   </section>`;
 }
 
 function notifications(model, { nowMs, locale } = {}) {
   const rows = Array.isArray(model.notifications) ? model.notifications : [];
   return `<section class="home-analysis home-notifications" ${testIdAttribute("home", "notifications")}>
-    <header><div><span class="eyebrow">${esc(t("home.notifications.eyebrow"))}</span><h2>${esc(t("home.notifications.title"))}</h2></div><span>${esc(t("home.notifications.count", { count: rows.length }))}</span></header>
+    <header><div><span class="eyebrow">${esc(t("home.notifications.eyebrow"))}</span><h2>${esc(t("home.notifications.title"))}</h2></div><span>${esc(rows.length || model.evidence?.notification !== false ? t("home.notifications.count", { count: rows.length }) : t("home.common.unavailable"))}</span></header>
     <div class="pulse-list">${rows.map((item, index) => {
       const time = temporalMarkup({ unixSeconds: item.createdAt, nowMs, locale, testId: `home-notification-time-${index}` });
       return `<div class="home-list-item" data-severity="${esc(String(item.severity ?? "INFO").toLowerCase())}"><button type="button" data-home-target-kind="${esc(item.target?.kind ?? "reference")}" data-home-target-id="${esc(item.target?.id ?? item.evidenceRef)}" ${testIdAttribute("home", "notification", "item", index)}><span class="pulse-kind">${esc(item.kind)}</span><strong>${esc(item.subjectRef)}</strong><small>${esc(t("home.notifications.evidence", { evidence: item.evidenceRef }))}</small></button>${time}</div>`;
-    }).join("") || `<p class="home-empty">${esc(t("home.notifications.empty"))}</p>`}</div>
+    }).join("") || `<p class="home-empty">${esc(t(model.evidence?.notification === false ? "home.common.unavailable" : "home.notifications.empty"))}</p>`}</div>
   </section>`;
 }
 
@@ -245,7 +249,7 @@ export function renderHomeMarkup(model, { historical = false, nowMs = Date.now()
     const status = homeStatus(model);
     const badge = model.provenance === "FIXTURE"
       ? t(historical ? "home.provenance.fixtureHistorical" : "home.provenance.fixture")
-      : t(historical ? "home.provenance.historical" : "home.provenance.live");
+      : t(historical ? "home.provenance.historical" : model.disconnected ? "home.provenance.stale" : "home.provenance.live");
     const temporal = { nowMs, locale };
     const primary = status.attentionPriority === "primary" ? attention(model, "primary", temporal) + currentWork(model, temporal) : currentWork(model, temporal) + attention(model, "secondary", temporal);
     return `<div class="home-dashboard" data-attention-priority="${status.attentionPriority}" ${testIdAttribute("home", "root")}>

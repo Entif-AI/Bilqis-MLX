@@ -1,6 +1,6 @@
 import { renderSchoolView } from "./school-view.mjs";
 import { loadSchoolRows } from "./school-live.mjs";
-import { loadFactoryRows } from "./factory-live.mjs";
+import { loadFactoryRows, loadFactoryLineagePage } from "./factory-live.mjs";
 import { renderFactoryCockpitView } from "./factory-cockpit-view.mjs";
 import { t } from "../foundation/i18n.mjs";
 import { contextHelpMarkup } from "../foundation/primitives.mjs";
@@ -145,7 +145,11 @@ export async function activateSchoolDomain({
         factoryState = Object.freeze({ state: "UNAVAILABLE", coverage: "UNKNOWN", rows: Object.freeze([]) });
       }
       if (token !== schoolEpoch || !isActive()) return;
-      renderFactoryCockpitView(container, { ...factoryState, onInspect });
+      renderFactoryCockpitView(container, {
+        ...factoryState, onInspect,
+        loadLineagePage: launchMode === "fixtures" ? null :
+          (record, cursor) => loadFactoryLineagePage(api, record, cursor),
+      });
       subnav(container, schoolMode, renderMode);
       if (restoreModeFocus) container.querySelector('[data-school-mode="factory"]')?.focus();
       return;

@@ -254,3 +254,91 @@ test("transport loss never discards an already-rendered route or last-good snaps
   assert.equal(defenses.at(-1).snapshotSource, "previous");
   assert.equal(scheduled.length, 1);
 });
+
+test("live route ignores old generation and follows accepted tip without losing navigation", async () => {
+  let state = null;
+  let verified = null;
+  let generation = OPERATOR_VIEW.meta.run.generation;
+  const runId = OPERATOR_VIEW.meta.run.run_id;
+  const scheduled = [];
+  const status = () => ({
+    state: "healthy", serviceLive: true, serviceReady: true,
+    learnerReady: true, runId, generation,
+  });
+  const controller = createBootstrapController({
+    api: {
+      connect: async () => status(),
+      status: async () => status(),
+      querySnapshot: async () => {
+        const snapshot = structuredClone(OPERATOR_VIEW);
+        snapshot.meta.run.generation = generation;
+        if (generation !== OPERATOR_VIEW.meta.run.generation) {
+          snapshot.meta.run.generation_manifest_sha256 = "8".repeat(64);
+        }
+        return snapshot;
+      },
+    },
+    storage: storageFixture(),
+    getState: () => state,
+    setState: next => { state = next; },
+    setDefense() {},
+    setBootstrap() {},
+    setVerifiedLiveContext: next => { verified = next; },
+    resetFrameShell() {},
+    render() {},
+    announce() {},
+    currentHash: () => "#/view/school?run=fixture-run&generation=2&mode=LIVE",
+    scheduleReconnect: callback => { scheduled.push(callback); return scheduled.length; },
+    cancelReconnect() {},
+  });
+  await controller.establishSnapshot();
+  assert.equal(state.view, "school");
+  assert.equal(state.context.generation, generation);
+  assert.equal(state.context.freshness, "FRESH");
+  state = { ...state, view: "learning" };
+  generation += 1;
+  await scheduled.shift()();
+  assert.equal(state.view, "learning");
+  assert.equal(state.context.generation, generation);
+  assert.equal(verified.generation, generation);
+  assert.equal(state.context.freshness, "FRESH");
+});
+
+test("stable read-only service does not tear down an in-use inspection session", async () => {
+  let state = null;
+  let connects = 0;
+  let snapshots = 0;
+  let renders = 0;
+  let status = { state: "unknown", serviceLive: true, serviceReady: true,
+    learnerReady: false, learnerActive: null, runId: null, generation: null };
+  const scheduled = [];
+  const controller = createBootstrapController({
+    api: {
+      connect: async () => { connects += 1; return status; },
+      status: async () => status,
+      querySnapshot: async () => { snapshots += 1; return structuredClone(OPERATOR_VIEW); },
+    },
+    storage: storageFixture(),
+    getState: () => state,
+    setState: next => { state = next; },
+    setDefense() {}, setBootstrap() {}, setVerifiedLiveContext() {},
+    resetFrameShell() {}, render() { renders += 1; }, announce() {},
+    currentHash: () => "#/view/school",
+    scheduleReconnect: callback => { scheduled.push(callback); return scheduled.length; },
+    cancelReconnect() {},
+  });
+  await controller.establishSnapshot();
+  const before = renders;
+  assert.equal(state.mutationAvailable, false);
+  await scheduled.shift()();
+  assert.equal(connects, 1);
+  assert.equal(snapshots, 1);
+  assert.equal(renders, before);
+  status = { ...status, state: "healthy", learnerReady: true,
+    runId: OPERATOR_VIEW.meta.run.run_id, generation: OPERATOR_VIEW.meta.run.generation };
+  await scheduled.shift()();
+  assert.equal(connects, 1);
+  assert.equal(snapshots, 2);
+  assert.equal(state.view, "school");
+  assert.equal(state.context.freshness, "FRESH");
+});

@@ -291,7 +291,7 @@ def _record(row, runs, now_ms, accepted_health=None, *, raw_schema=None):
 
 def observed_records(
         run_dir: Path, runs, *, now_ms=None,
-        accepted_health_by_manifest=_AUTO_ACCEPTED_HEALTH) -> tuple[TrainerObservation, ...]:
+        accepted_health_by_manifest=_AUTO_ACCEPTED_HEALTH, school_projection=None) -> tuple:
     """Bound input bytes and rows; malformed observations cannot hide accepted state."""
     now_ms = int(time.time() * 1000) if now_ms is None else now_ms
     try:
@@ -343,4 +343,13 @@ def observed_records(
                 records[record.observation_id] = record
         except (ValueError, TypeError, KeyError, AttributeError, OverflowError):
             continue
-    return tuple(records.values())
+    school = ()
+    if school_projection is not None and bounded_visits and records:
+        row = bounded_visits[-1]
+        observation = records.get(row.get("observation_id"))
+        if observation is not None:
+            try:
+                school = school_projection.project(observation, row)
+            except (ValueError, TypeError, KeyError, AttributeError, OverflowError):
+                pass
+    return (*records.values(), *school)

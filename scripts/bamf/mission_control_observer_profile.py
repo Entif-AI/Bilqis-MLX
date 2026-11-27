@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from contextlib import redirect_stdout
+from dataclasses import replace
 import io
 import json
 from pathlib import Path
@@ -26,11 +27,14 @@ from bilqis_mlx.control_plane.native_rejections import rejection_material
 from bilqis_mlx.control_plane.observed import observed_records
 from bilqis_mlx.control_plane.tests.cp07.native_source_support import NativeSourceFixture
 from bilqis_mlx.control_plane.tests.observed import test_source as observed_support
-from bilqis_mlx.mission_control import MissionControlQueryCatalog
+from bilqis_mlx.mission_control import (
+    CandidateDecision, CandidateOutcome, LearningEpisode, LearningHistorySummary,
+    MissionControlQueryCatalog,
+)
 from bilqis_mlx.mission_control.query_contracts import QueryFamily, QueryRequest
 
 
-SCHEMA = "bilqis.bamf.mission-control.observer-profile/v1"
+SCHEMA = "bilqis.bamf.mission-control.observer-profile/v2"
 FAMILIES = tuple(
     family for family in QueryFamily if family.value not in {"reference", "links"})
 IDLE_CORE_FRACTION_BUDGET = 0.01
@@ -96,13 +100,53 @@ def _cold_attribution(run_dir: Path):
         "authenticated_history_cpu_ms": history_cpu,
         "accepted_record_projection_wall_ms": accepted_wall,
         "accepted_record_projection_cpu_ms": accepted_cpu,
-        "rejection_ledger_sqlite_wall_ms": rejection_wall,
-        "rejection_ledger_sqlite_cpu_ms": rejection_cpu,
+        "rejection_ledger_wall_ms": rejection_wall,
+        "rejection_ledger_cpu_ms": rejection_cpu,
         "observation_overlay_wall_ms": observed_wall,
         "observation_overlay_cpu_ms": observed_cpu,
         "catalog_construction_wall_ms": catalog_wall,
         "catalog_construction_cpu_ms": catalog_cpu,
     }
+
+
+def _home_history_profile(catalog, run_id):
+    """Measure full episode transport against the bounded CURRENT Home record."""
+    def read(request):
+        wall, cpu = perf_counter(), process_time()
+        rows, pages, size = [], 0, 0
+        while True:
+            page = catalog.query(request)
+            rows.extend(page.records)
+            pages += 1
+            size += len(json.dumps(catalog.encode_page(page), separators=(",", ":")).encode())
+            if page.next_cursor is None:
+                break
+            request = replace(request, cursor=page.next_cursor)
+        return rows, {
+            "pages": pages, "records": len(rows), "encoded_bytes": size,
+            "wall_ms": (perf_counter() - wall) * 1000,
+            "cpu_ms": (process_time() - cpu) * 1000,
+        }
+
+    details, full = read(QueryRequest(QueryFamily.EPISODE, run_id=run_id, limit=32))
+    compact, bounded = read(QueryRequest(QueryFamily.RECORD, run_id=run_id,
+        schema_version=LearningHistorySummary.SCHEMA, limit=1))
+    if not compact:
+        return {"status": "SUMMARY_UNAVAILABLE", "detail": full}
+    summary, = compact
+    episodes = [row for row in details if isinstance(row, LearningEpisode)]
+    decisions = [row for row in details if isinstance(row, CandidateDecision)]
+    pulse = tuple(sorted(decisions, key=lambda row: (
+        row.meta.observed_at if row.meta.observed_at is not None
+        else row.meta.materialized_at), reverse=True)[:8])
+    conserved = (
+        summary.visit_count == len(episodes)
+        and summary.decision_count == len(decisions)
+        and summary.accepted_count == sum(row.outcome is CandidateOutcome.ACCEPTED for row in decisions)
+        and summary.rejected_count == sum(row.outcome is CandidateOutcome.REJECTED for row in decisions)
+        and summary.recent_decisions == pulse
+        and summary.active_episode == next((row for row in episodes if row.state != "COMPLETED"), None))
+    return {"status": "PASS" if conserved else "FAIL", "detail": full, "summary": bounded}
 
 
 def _real_profile(run_dir: Path):
@@ -137,7 +181,8 @@ def _real_profile(run_dir: Path):
         "serialization_full_round_wall_ms": _mean_ms(serialization, 0),
         "serialization_full_round_cpu_ms": _mean_ms(serialization, 1),
         "cold_attribution": attribution,
-        "sqlite_role": "cold rejection-ledger authentication only; warm cached query path avoids it",
+        "home_history": _home_history_profile(catalog, run_id),
+        "sqlite_role": "native rejection evidence is read from the authenticated event ledger; this profile excludes notification SQLite composition",
     }
 
 
@@ -231,7 +276,8 @@ def profile(run_dir: Path):
         "worst_change_core_fraction": worst_change_fraction,
     }
     passed = (
-        live["accepted_history_reauthentications"] == 0
+        real["home_history"]["status"] == "PASS"
+        and live["accepted_history_reauthentications"] == 0
         and all(measured[key] <= value for key, value in budgets.items()))
     return {
         "schema": SCHEMA,
@@ -247,9 +293,9 @@ def profile(run_dir: Path):
         },
         "attribution": {
             "accepted_record_reconstruction": "timed separately in cold_attribution",
-            "query_fanout": "measured across 14 native query families",
+            "query_fanout": "measured across native query families, plus complete Home episode pagination versus bounded summary",
             "serialization": "measured separately from catalog query execution",
-            "sqlite": "timed with rejection-ledger authentication in cold_attribution",
+            "sqlite": "notification SQLite composition is outside this native catalog profile",
             "event_subscription": "blocking wait; refresh cost measured separately",
         },
     }
@@ -258,8 +304,16 @@ def profile(run_dir: Path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-dir", type=Path, required=True)
+    parser.add_argument("--home-history-only", action="store_true",
+                        help="Compare bounded Home history with full CP03 pagination, read-only.")
     args = parser.parse_args()
-    result = profile(args.run_dir.expanduser().resolve())
+    root = args.run_dir.expanduser().resolve()
+    if args.home_history_only:
+        pointer = json.loads((root / "bamf-state.json").read_text())
+        catalog = native_query_source(root)()
+        result = _home_history_profile(catalog, pointer["run_id"])
+    else:
+        result = profile(root)
     print(json.dumps(result, indent=2, sort_keys=True))
     return 0 if result["status"] == "PASS" else 1
 

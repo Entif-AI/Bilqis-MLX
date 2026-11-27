@@ -14,7 +14,7 @@ from bilqis_mlx.mission_control.contracts.notifications import (
     notification_id_for_source,
 )
 from bilqis_mlx.mission_control.projection import MissionControlProjection
-from bilqis_mlx.runtime.akasha_outbox import AkashaEvent, AkashaEventKind, read_outbox
+from bilqis_mlx.runtime.akasha_outbox import AkashaEvent, AkashaEventKind, read_outbox_read_only
 
 from ..native_contracts import AuthenticatedGeneration, run_ref
 from ..native_custody import authenticated_history
@@ -207,7 +207,7 @@ def sync_akasha_notifications(
     outbox = Path(run_dir) / "akasha-outbox.sqlite3"
     imported = 0
     now = int(time.time()) if projected_at is None else projected_at
-    for event in read_outbox(outbox):
+    for event in read_outbox_read_only(outbox):
         notification = notification_from_akasha_event(event, projected_at=now)
         if notification is None:
             continue
@@ -218,12 +218,13 @@ def sync_akasha_notifications(
 
 def sync_native_transition_notifications(
     run_dir: Path, projection: MissionControlProjection, *, projected_at: int | None = None,
+    history: tuple[AuthenticatedGeneration, ...] | None = None,
 ) -> int:
     """Import accepted native grade-promotion transitions without mutating source custody."""
     now = int(time.time()) if projected_at is None else projected_at
     imported = 0
     parent = None
-    for generation in authenticated_history(Path(run_dir)):
+    for generation in authenticated_history(Path(run_dir)) if history is None else history:
         release_notice = notification_from_semantic_release_change(
             generation, parent, projected_at=now)
         if release_notice is not None:

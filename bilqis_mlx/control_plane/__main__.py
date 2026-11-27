@@ -7,10 +7,8 @@ from pathlib import Path
 
 from bilqis_mlx.paths import active_run_dir
 from bilqis_mlx.mission_control.projection import MissionControlProjection
-from bilqis_mlx.control_plane.native_source import native_query_source
-from bilqis_mlx.mission_control import MissionControlQueryCatalog
-from bilqis_mlx.control_plane.notifications import (
-    sync_akasha_notifications, sync_native_transition_notifications,
+from bilqis_mlx.control_plane.notifications.query_source import (
+    composed_query_source, notification_projection,
 )
 
 from .discovery import discover_learner
@@ -31,46 +29,22 @@ def _default_socket(run_dir: Path) -> Path:
     return run_dir.parent / f".{run_dir.name}.control-plane.sock"
 
 
-def _notification_projection(run_dir: Path) -> MissionControlProjection:
-    path = run_dir.parent / f".{run_dir.name}.mission-control-notifications.sqlite3"
-    return (
-        MissionControlProjection(path)
-        if path.exists()
-        else MissionControlProjection.create_empty(path)
-    )
-
-
-def _composed_query_source(run_dir: Path, projection: MissionControlProjection):
-    native = native_query_source(run_dir)
-
-    def source(query=None):
-        sync_akasha_notifications(run_dir, projection)
-        catalog = native(query)
-        if not catalog.available:
-            return catalog
-        sync_native_transition_notifications(run_dir, projection)
-        return MissionControlQueryCatalog((*catalog.records, *projection.notifications()))
-
-    source._bilqis_query_aware = True
-    return source
-
-
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     socket_path = args.socket or _default_socket(args.run_dir)
-    notification_projection = (
+    projection = (
         MissionControlProjection(args.projection_db)
         if args.projection_db is not None
-        else _notification_projection(args.run_dir)
+        else notification_projection(args.run_dir)
     )
     query_source = (
-        notification_projection.catalog
+        projection.catalog
         if args.projection_db is not None
-        else _composed_query_source(args.run_dir, notification_projection)
+        else composed_query_source(args.run_dir, projection)
     )
     service = ControlPlaneService(
         args.run_dir, socket_path, query_source=query_source,
-        notification_projection=notification_projection)
+        notification_projection=projection)
     print(json.dumps({
         "schema": "bilqis.bamf.control-plane.started/v1",
         "service": service.identity.to_record(),

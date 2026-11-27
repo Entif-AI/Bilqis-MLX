@@ -68,7 +68,7 @@ function exactIdentityDisclosure(record, t) {
     testIdAttribute("lineage", "production", "identities") +
     '><summary>' + esc(t("lineage.production.exactIdentities")) + "</summary><dl>" +
     rows.map(([key, value]) => "<div><dt>" + esc(t(key)) +
-      "</dt><dd><code>" + esc(value) + "</code></dd></div>").join("") +
+      "</dt><dd><code>" + esc(value ?? t("lineage.value.unavailable")) + "</code></dd></div>").join("") +
     "</dl></details>";
 }
 

@@ -15,10 +15,10 @@ from bilqis_mlx.mission_control.projection import MissionControlProjection
 from bilqis_mlx.mission_control.query_contracts import QueryFamily, QueryMode, QueryRequest
 from bilqis_mlx.runtime.bamf_bundle import record_bamf_rejection
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import retention_decision
-from ..observed import test_source as observed_support
+from ...observed import test_source as observed_support
 
 
-from .native_source_support import NativeSourceFixture
+from ..native_source_support import NativeSourceFixture
 
 
 class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
@@ -32,40 +32,7 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
             self.assertEqual(history[-1].manifest_sha256, pointer["manifest_sha256"])
 
             material = materialize_native_projection(self.run)
-            episodes = [record for record in material.records if isinstance(record, LearningEpisode)]
-            candidates = [record for record in material.records if isinstance(record, CandidateDecision)]
-            capabilities = [record for record in material.records if isinstance(record, CapabilitySnapshot)]
-            resources = [record for record in material.records if isinstance(record, ResourceSample)]
-            teachers = [record for record in material.records if isinstance(record, TeacherSnapshot)]
-            operator_views = [record for record in material.records if isinstance(record, OperatorView)]
-            self.assertEqual(len(operator_views), 2)
-            self.assertEqual(operator_views[-1].learner_state, "READY")
-            self.assertEqual(operator_views[-1].meta.run.generation, 1)
-            self.assertEqual(len(episodes), 1)
-            self.assertEqual(episodes[0].capability_id, "A.NATIVE")
-            self.assertEqual(episodes[0].meta.coverage.value, "PARTIAL")
-            self.assertEqual(len(candidates), 1)
-            self.assertEqual(candidates[0].outcome.value, "ACCEPTED")
-            self.assertEqual(len(capabilities), 1)
-            self.assertEqual(capabilities[0].grade_id, "UNKNOWN")
-            self.assertEqual(capabilities[0].score_correct.state.value, "MISSING")
-            self.assertEqual(capabilities[0].score_total.state.value, "MISSING")
-            self.assertEqual(capabilities[0].debt.state.value, "MISSING")
-            self.assertEqual(len(resources), 1)
-            self.assertEqual(resources[0].memory_used_bytes.state.value, "UNKNOWN")
-            self.assertEqual(resources[0].memory_budget_bytes.value, 64 * 1024 ** 3)
-            self.assertGreater(resources[0].disk_used_bytes.value, 0)
-            self.assertEqual(resources[0].step_rate_per_minute.value, 2.0)
-            self.assertEqual(len(teachers), 1)
-            self.assertEqual(teachers[0].teacher_identity, history[-1].teacher_state["teacher_identity"])
-            self.assertEqual(teachers[0].teacher_epoch, history[-1].teacher_state["teacher_epoch"])
-            self.assertEqual(
-                teachers[0].strategy_id,
-                history[-1].teacher_state["last_visit"]["policy_key"],
-            )
-            self.assertEqual(teachers[0].attempts.state.value, "MISSING")
-            self.assertEqual(teachers[0].accepted.state.value, "MISSING")
-            self.assertEqual(teachers[0].rejected.state.value, "MISSING")
+            episode = self._assert_native_projection(material, history)
 
             index = self.root / "native-projection.sqlite3"
             projection = MissionControlProjection.rebuild_from_bamf(index, self.run)
@@ -88,7 +55,12 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
             current_resource_page = projection.catalog().query(QueryRequest(
                 QueryFamily.RESOURCE, run_id=source.run_id,
             ))
-            self.assertEqual(generation_gap.state.value, "UNKNOWN")
+            self.assertEqual(generation_gap.state.value, "PARTIAL")
+            self.assertEqual(len(generation_gap.records), 1)
+            self.assertEqual(generation_gap.records[0].checkpoint_sha256,
+                             history[-1].manifest["tensors"]["sha256"])
+            self.assertIsNone(generation_gap.records[0].student_sha256)
+            self.assertIsNone(generation_gap.records[0].optimizer_state_sha256)
             self.assertEqual(resource_page.state.value, "PARTIAL")
             self.assertIsInstance(resource_page.records[0], ResourceSample)
             self.assertEqual(current_resource_page.state.value, "PARTIAL")
@@ -96,7 +68,7 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
             self.assertIsInstance(current_resource_page.records[0], ResourceSample)
             projected_episode = next(
                 record for record in historical.records if isinstance(record, LearningEpisode))
-            self.assertEqual(projected_episode.episode_id, episodes[0].episode_id)
+            self.assertEqual(projected_episode.episode_id, episode.episode_id)
 
             index.unlink()
             rebuilt = MissionControlProjection.rebuild_from_bamf(index, self.run)
@@ -104,6 +76,52 @@ class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):
                 QueryFamily.CAPABILITY, run_id=source.run_id,
             )), current)
             self.assertEqual((self.run / "bamf-state.json").read_bytes(), before)
+
+    def _assert_native_projection(self, material, history):
+        episodes = [record for record in material.records if isinstance(record, LearningEpisode)]
+        candidates = [record for record in material.records if isinstance(record, CandidateDecision)]
+        capabilities = [record for record in material.records if isinstance(record, CapabilitySnapshot)]
+        resources = [record for record in material.records if isinstance(record, ResourceSample)]
+        teachers = [record for record in material.records if isinstance(record, TeacherSnapshot)]
+        operator_views = [record for record in material.records if isinstance(record, OperatorView)]
+        self.assertEqual(len(operator_views), 2)
+        self.assertEqual(operator_views[-1].learner_state, "READY")
+        self.assertEqual(operator_views[-1].meta.run.generation, 1)
+        self.assertEqual(len(episodes), 1)
+        self.assertEqual(episodes[0].capability_id, "A.NATIVE")
+        self.assertEqual(episodes[0].meta.coverage.value, "PARTIAL")
+        self.assertEqual(len(candidates), 1)
+        self.assertEqual(candidates[0].outcome.value, "ACCEPTED")
+        from bilqis_mlx.control_plane.projection.school import read_admitted_release
+        release = read_admitted_release(self.run, history[-1])
+        admitted = {item.capability_id for item in release.execution_plan.capabilities}
+        self.assertEqual({row.capability_id for row in capabilities}, admitted | {"A.NATIVE"})
+        native = next(row for row in capabilities if row.capability_id == "A.NATIVE")
+        self.assertEqual(native.grade_id, "UNKNOWN")
+        self.assertEqual(native.score_correct.state.value, "MISSING")
+        self.assertEqual(native.score_total.state.value, "MISSING")
+        self.assertEqual(native.debt.state.value, "MISSING")
+        for row in capabilities:
+            if row.capability_id in admitted:
+                self.assertEqual(row.status, "ADMITTED")
+                self.assertEqual(row.score_correct.state.value, "MISSING")
+        self.assertEqual(len(resources), 1)
+        self.assertEqual(resources[0].memory_used_bytes.state.value, "UNKNOWN")
+        self.assertEqual(resources[0].memory_budget_bytes.value, 64 * 1024 ** 3)
+        self.assertGreater(resources[0].disk_used_bytes.value, 0)
+        self.assertEqual(resources[0].step_rate_per_minute.value, 2.0)
+        self.assertEqual(len(teachers), 1)
+        self.assertEqual(teachers[0].teacher_identity, history[-1].teacher_state["teacher_identity"])
+        self.assertEqual(teachers[0].teacher_epoch, history[-1].teacher_state["teacher_epoch"])
+        self.assertEqual(
+            teachers[0].strategy_id,
+            history[-1].teacher_state["last_visit"]["policy_key"],
+        )
+        self.assertEqual(teachers[0].attempts.state.value, "MISSING")
+        self.assertEqual(teachers[0].accepted.state.value, "MISSING")
+        self.assertEqual(teachers[0].rejected.state.value, "MISSING")
+
+        return episodes[0]
 
     def test_generation_coordinate_is_never_reinterpreted_as_unix_materialization_time(self):
             self.assertEqual(materialized_at({}, 7), 0)

@@ -6,7 +6,7 @@ from pathlib import Path
 from bilqis_mlx.mission_control.operator import OperatorActionRequestV2
 
 from .c11 import (
-    parameter_flags, parameter_map, report_target, run_cli_json, same_lineage,
+    parameter_flags, parameter_map, read_only_target, report_target, run_cli_json, same_lineage,
 )
 from .execution import C11ExecutionRuntime
 from .model import (
@@ -116,12 +116,19 @@ class C11CommandExecutor(C11ExecutionRuntime):
     ):
         if action is CommandAction.STOP:
             return self._stop_parts(parameters)
+        if action in {CommandAction.STATUS, CommandAction.CHECKPOINT_VERIFY}:
+            target, _inspection = read_only_target(self.run_dir)
+            report = {
+                "result": "ACCEPTED_GENERATION_INSPECTED",
+                "generation_manifest_sha256": target.generation_manifest_sha256,
+                "ready_for_training": None,
+                "neural_updates": False,
+            }
+            postcondition = (
+                "operator-status" if action is CommandAction.STATUS else "checkpoint-verified")
+            return report, target, CommandMode.READ_ONLY, [], postcondition
         report, dry_argv = self._resume_preflight(request)
         target = report_target(self.run_dir, report, existing=True)
-        if action is CommandAction.STATUS:
-            return report, target, CommandMode.READ_ONLY, [], "operator-status"
-        if action is CommandAction.CHECKPOINT_VERIFY:
-            return report, target, CommandMode.READ_ONLY, [], "checkpoint-verified"
         if action is CommandAction.ADMISSION_LEASE:
             return self._admission_parts(request, report, target, parameters)
         mode = CommandMode.DRY_RUN if request.dry_run else CommandMode.MUTATING

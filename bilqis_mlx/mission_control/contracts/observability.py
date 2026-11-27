@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from .model import (
-    DataValue, RecordMeta, WireRecord, is_name, is_sha256, is_wire_integer, require,
+    CoverageState, DataValue, RecordMeta, WireRecord, is_name, is_sha256, is_wire_integer, require,
 )
 
 
@@ -138,6 +138,27 @@ class MemorySnapshot(WireRecord):
 
 
 @dataclass(frozen=True)
+class MemorySnapshotV2(MemorySnapshot):
+    """Retained motif allocation, distinct from retrieval and byte telemetry."""
+    SCHEMA = "bilqis.bamf.mission-control.memory-snapshot/v2"
+    allocated_slots: int
+    slot_capacity: int
+    pending_keys: int
+    aliases: int
+    allocation_snapshot_sha256: str
+    motif_manifest_sha256: str
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        require(all(is_wire_integer(item) and item >= 0 for item in (
+            self.allocated_slots, self.slot_capacity, self.pending_keys, self.aliases,
+        )) and 0 < self.slot_capacity and self.allocated_slots <= self.slot_capacity,
+                "MEMORY_ALLOCATION_COUNTS")
+        require(is_sha256(self.allocation_snapshot_sha256)
+                and is_sha256(self.motif_manifest_sha256), "MEMORY_ALLOCATION_DIGEST")
+
+
+@dataclass(frozen=True)
 class TeacherSnapshot(WireRecord):
     SCHEMA = "bilqis.bamf.mission-control.teacher-snapshot/v1"
     meta: RecordMeta
@@ -175,6 +196,25 @@ class GenerationManifest(WireRecord):
         require(self.parent_manifest_sha256 is None
                 or is_sha256(self.parent_manifest_sha256), "PARENT_MANIFEST")
         require(is_name(self.status), "GENERATION_STATUS")
+
+
+@dataclass(frozen=True)
+class GenerationManifestV2(GenerationManifest):
+    """A combined checkpoint need not have separate component digests."""
+    SCHEMA = "bilqis.bamf.mission-control.generation-manifest/v2"
+    student_sha256: str | None
+    optimizer_state_sha256: str | None
+
+    def __post_init__(self) -> None:
+        WireRecord.__post_init__(self)
+        require(is_sha256(self.checkpoint_sha256), "GENERATION_DIGEST")
+        require(all(item is None or is_sha256(item) for item in (
+            self.student_sha256, self.optimizer_state_sha256)), "GENERATION_DIGEST")
+        require(self.parent_manifest_sha256 is None
+                or is_sha256(self.parent_manifest_sha256), "PARENT_MANIFEST")
+        require(is_name(self.status), "GENERATION_STATUS")
+        if self.student_sha256 is None or self.optimizer_state_sha256 is None:
+            require(self.meta.coverage is CoverageState.PARTIAL, "GENERATION_COVERAGE")
 
 
 @dataclass(frozen=True)

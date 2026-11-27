@@ -40,7 +40,8 @@ test("Home uses the governed five-state band and target overview regions", () =>
   assert.match(markup, /Fixture evidence/);
   assert.match(markup, /School Snapshot/);
   assert.match(markup, /class="home-school-table-wrap"[^>]*tabindex="0"[^>]*data-test-id="home-school-scroll"/);
-  assert.match(markup, /Observed · provisional/);
+  assert.match(markup, /Recorded · not a live transaction/);
+  assert.doesNotMatch(markup, /Observed · provisional/);
   assert.match(markup, /Accepted capability snapshot/);
   assert.equal(model.learningStatus, "REGRESSION");
 });
@@ -282,4 +283,22 @@ test("active notifications remain visible during otherwise-empty generation-zero
   assert.match(markup, /data-test-id="home-notifications"/);
   assert.match(markup, /BLOCKER/);
   assert.match(markup, /data-home-target-kind="reference"/);
+});
+
+
+test("missing evidence does not become measured zero or healthy status", () => {
+  const model = projectionFromPages({ run: runPage({ generation: 7 }) }, context);
+  assert.equal(model.runtime.retainedCandidates, null);
+  assert.equal(model.runtime.rejectedCandidates, null);
+  assert.equal(model.system.correctionDebt, null);
+  assert.equal(model.curriculum.qualifiedCapabilities, null);
+  assert.equal(model.learningStatus, "UNKNOWN");
+  assert.equal(homeStatus(model).regression, null);
+  assert.equal(homeStatus(model).blocked, null);
+  assert.equal(homeStatus(model).invalidity, null);
+  const pages = Object.fromEntries(HOME_FAMILIES.map((family) => [family, emptyPage(family)]));
+  const empty = projectionFromPages(pages, context);
+  assert.equal(empty.runtime.retainedCandidates, 0);
+  assert.equal(empty.system.correctionDebt, 0);
+  assert.equal(empty.curriculum.qualifiedCapabilities, 0);
 });

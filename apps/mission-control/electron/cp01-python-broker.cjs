@@ -120,14 +120,15 @@ class Cp01PythonBroker {
     });
     child.stderr.resume();
     this.eventProcesses.add(child);
-    child.once("exit", () => {
-      if (!ready) rejectReady(this.#cause("BAMF_GUI20_CP01_PROCESS_UNAVAILABLE"));
+    const terminated = () => {
+      if (cleaned) return;
+      const unexpected = this.eventProcesses.has(child);
       cleanup();
-    });
-    child.once("error", () => {
       if (!ready) rejectReady(this.#cause("BAMF_GUI20_CP01_PROCESS_UNAVAILABLE"));
-      cleanup();
-    });
+      else if (unexpected) listener({ schemaVersion: "bamf.gui20.event-stream-state/v1", state: "DISCONNECTED" });
+    };
+    child.once("exit", terminated);
+    child.once("error", terminated);
     try {
       await readyPromise;
     } catch (error) {

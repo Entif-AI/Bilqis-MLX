@@ -15,14 +15,14 @@ from bilqis_mlx.mission_control.projection import MissionControlProjection
 from bilqis_mlx.mission_control.query_contracts import QueryFamily, QueryMode, QueryRequest
 from bilqis_mlx.runtime.bamf_bundle import record_bamf_rejection
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import retention_decision
-from ..observed import test_source as observed_support
+from ...observed import test_source as observed_support
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.control_plane import ControlPlaneClient, ControlPlaneService, EventFamily
-from ..support import start_service
+from ...support import start_service
 
 
-from .native_source_support import NativeSourceFixture
+from ..native_source_support import NativeSourceFixture
 
 
 class NativeBamfProjectionTests(NativeSourceFixture, unittest.TestCase):

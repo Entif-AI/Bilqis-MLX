@@ -52,7 +52,7 @@ test("production salience query binds current and historical context exactly", (
   const historical = salienceQuery({ runId: "bamf-live", mode: "HISTORICAL", generation: 8 });
   assert.equal(historical.mode, "historical");
   assert.equal(historical.generation, 8);
-  assert.equal(historical.schema_version, "bilqis.bamf.mission-control.salience-event/v1");
+  assert.equal(historical.schema_version, null);
 });
 
 test("production salience record keeps authority, times, and evidence references literal", () => {
@@ -69,6 +69,15 @@ test("production salience record keeps authority, times, and evidence references
   assert.deepEqual(event.evidenceRefs, ["evidence:salience:live"]);
   assert.deepEqual(event.receiptRefs, ["receipt:salience:live"]);
   assert.equal(event.effectiveAt, null);
+});
+
+test("signed C06 event classification does not assert a teaching action", () => {
+  const event = salienceEventFromRecord({
+    ...record(), schema_version: "bilqis.bamf.mission-control.salience-event/v2",
+    action_kind: "UNKNOWN", event_kind: "CORRECTION_APPLIED",
+  });
+  assert.equal(event.eventKind, "CORRECTION_APPLIED");
+  assert.equal(event.actionKind, "UNKNOWN");
 });
 
 test("production salience loader paginates and preserves the selected generation contract", async () => {

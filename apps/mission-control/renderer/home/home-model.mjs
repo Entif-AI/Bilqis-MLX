@@ -3,6 +3,7 @@ import { formatDurationSeconds } from "../foundation/temporal.mjs";
 
 const QUERY_SCHEMA = "bilqis.bamf.control-plane.query/v1";
 const PRESENT = "PRESENT";
+export const HISTORY_SUMMARY_SCHEMA = "bilqis.bamf.mission-control.learning-history-summary/v1";
 const NOTIFICATION_EVENT_FAMILIES = new Set([
   "capability.graduated", "grade.promoted", "semantic.release.changed",
   "graph.materialized", "qualification.gate.changed", "blocker.changed",
@@ -48,6 +49,24 @@ export function isNotificationEvent(event) {
   return NOTIFICATION_EVENT_FAMILIES.has(String(event?.event_family ?? ""));
 }
 
+export function familiesForEvent(event) {
+  const name = event?.event_family;
+  if (name === "operator.action.state") return ["status"];
+  const families = new Set();
+  const family = familyForEvent(event);
+  if (family) families.add(family);
+  if (isNotificationEvent(event)) families.add("notification");
+  if (name === "capability.graduated" || name === "grade.promoted" ||
+      name === "semantic.release.changed" || name === "qualification.gate.changed") {
+    families.add("school");
+    families.add("capability");
+  }
+  if (name === "graph.materialized") families.add("semantic");
+  if (name === "resource.health.sample") families.add("neural");
+  if (name === "blocker.changed" || name === "drift.detected") families.add("correction");
+  return [...families];
+}
+
 function value(record, field) {
   const datum = record?.[field];
   return datum?.state === PRESENT ? datum.value : null;
@@ -73,6 +92,22 @@ function pageRecords(pages, family) {
 function pageState(pages, family) {
   const page = pages[family];
   return page?.accepted === true ? page.state : "UNAVAILABLE";
+}
+
+function completePage(pages, family) {
+  const page = pages[family];
+  return page?.accepted === true && page.coverage === "COMPLETE" &&
+    ["PRESENT", "EMPTY"].includes(page.state) && page.truncated !== true;
+}
+
+function observedCount(rows, complete) {
+  return rows.length || (complete ? 0 : null);
+}
+
+function measuredSum(rows, field) {
+  const values = rows.map((row) => value(row, field));
+  return values.length && values.every(Number.isFinite)
+    ? values.reduce((sum, item) => sum + item, 0) : null;
 }
 
 function ratio(numerator, denominator) {
@@ -103,7 +138,7 @@ export function classifyLearning({ retained = 0, freshRetainedImprovements = 0, 
   if (regressions > 0) return "REGRESSION";
   if (freshRetainedImprovements > 0) return "IMPROVING";
   if (retained > 0) return "THROUGHPUT_ONLY";
-  return "NO_FRESH_GAIN";
+  return retained === null || freshRetainedImprovements === null ? "UNKNOWN" : "NO_FRESH_GAIN";
 }
 
 export function homeStatus(model) {
@@ -115,10 +150,10 @@ export function homeStatus(model) {
     model?.attention?.some((item) => item.severity === "invalid") === true;
   return Object.freeze({
     running: model?.runtime?.running ?? null,
-    learning: model?.learningStatus ?? "NO_FRESH_GAIN",
-    regression,
-    blocked,
-    invalidity,
+    learning: model?.learningStatus ?? "UNKNOWN",
+    regression: regression || (model?.evidence?.regression === false ? null : false),
+    blocked: blocked || (model?.evidence?.attention === false ? null : false),
+    invalidity: invalidity || (model?.evidence?.attention === false ? null : false),
     attentionPriority: regression || blocked || invalidity ? "primary" : "secondary",
   });
 }
@@ -143,24 +178,26 @@ export function projectionFromPages(pages, context) {
     acceptedStepDurationSeconds: Number.isFinite(acceptedStepDurationMs)
       ? acceptedStepDurationMs / 1000 : null,
   });
-  const school = latest(schoolRecords, "bilqis.bamf.mission-control.school-snapshot/v1");
   const frontier = latest(schoolRecords, "bilqis.bamf.mission-control.curriculum-frontier/v1");
   const semantic = latest(semanticRecords, "bilqis.bamf.mission-control.semantic-atlas-snapshot/v1");
   const resource = latest(resources, "bilqis.bamf.mission-control.resource-sample/v1");
   const teacher = latest(teachers, "bilqis.bamf.mission-control.teacher-snapshot/v1");
   const capabilityRows = capabilities.filter((record) => record.schema_version === "bilqis.bamf.mission-control.capability-snapshot/v1");
   const episodeRows = episodes.filter((record) => record.schema_version === "bilqis.bamf.mission-control.learning-episode/v1");
-  const decisions = episodes.filter((record) => record.schema_version === "bilqis.bamf.mission-control.candidate-decision/v1");
-  const currentCorrect = capabilityRows.reduce((sum, record) => sum + (value(record, "score_correct") ?? 0), 0);
-  const currentTotal = capabilityRows.reduce((sum, record) => sum + (value(record, "score_total") ?? 0), 0);
-  const debt = capabilityRows.reduce((sum, record) => sum + (value(record, "debt") ?? 0), 0);
-  const retained = decisions.filter((record) => record.outcome === "ACCEPTED").length;
-  const rejected = decisions.filter((record) => record.outcome === "REJECTED").length;
-  const activeEpisode = episodeRows.find((record) => record.state !== "COMPLETED") ?? null;
-  const correctionDebt = corrections.filter((record) => record.state === "REQUALIFICATION_REQUIRED").length;
+  const summary = latest(episodes, HISTORY_SUMMARY_SCHEMA);
+  const decisions = summary?.recent_decisions ?? episodes.filter((record) => record.schema_version === "bilqis.bamf.mission-control.candidate-decision/v1");
+  const episodeComplete = completePage(pages, "episode");
+  const currentCorrect = measuredSum(capabilityRows, "score_correct");
+  const currentTotal = measuredSum(capabilityRows, "score_total");
+  const debt = measuredSum(capabilityRows, "debt");
+  const count = (number) => number || (episodeComplete ? 0 : null);
+  const retained = count(summary?.accepted_count ?? decisions.filter((record) => record.outcome === "ACCEPTED").length);
+  const rejected = count(summary?.rejected_count ?? decisions.filter((record) => record.outcome === "REJECTED").length);
+  const activeEpisode = summary?.active_episode ?? episodeRows.find((record) => record.state !== "COMPLETED") ?? null;
+  const correctionDebt = observedCount(corrections.filter((record) => record.state === "REQUALIFICATION_REQUIRED"), completePage(pages, "correction"));
   const qualified = capabilityRows.filter((record) => record.status === "QUALIFIED").length;
   const domainRecordCount = (
-    capabilities.length + episodes.length + schoolRecords.length + semanticRecords.length + neuralRecords.length +
+    capabilities.length + (summary ? summary.visit_count + summary.decision_count : episodes.length) + schoolRecords.length + semanticRecords.length + neuralRecords.length +
     resources.length + corrections.length + teachers.length + notifications.length
   );
   const startup = run && !observed.current && context?.mode !== "HISTORICAL" && domainRecordCount === 0
@@ -197,14 +234,21 @@ export function projectionFromPages(pages, context) {
 
   return Object.freeze({
     provenance: "LIVE_QUERY",
+    disconnected: context?.transportDisconnected === true,
     observed,
     startup,
     state: Object.freeze(Object.fromEntries(HOME_FAMILIES.map((family) => [family, pageState(pages, family)]))),
     learningStatus: classifyLearning({
-      retained, freshRetainedImprovements: freshGain, regressions: healthRegressions,
+      retained: health?.state === "MEASURED" ? retained ?? 0 : retained, freshRetainedImprovements: freshGain, regressions: healthRegressions,
+    }),
+    evidence: Object.freeze({
+      pulse: episodeComplete || decisions.length > 0,
+      attention: completePage(pages, "correction") && completePage(pages, "notification") && completePage(pages, "run"),
+      regression: health?.protected_regression_state === "MEASURED" && health?.certified_surface_regression_state !== "NOT_MEASURED",
+      notification: completePage(pages, "notification") || notifications.length > 0,
     }),
     learning: Object.freeze({
-      latestSchoolScore: ratio(currentCorrect, currentTotal),
+      latestSchoolScore: pages.capability?.truncated ? null : ratio(currentCorrect, currentTotal),
       bestSchoolScore: null,
       wholeSchoolGrowth: null,
       gRtn: null,
@@ -212,18 +256,18 @@ export function projectionFromPages(pages, context) {
       retainedOptimizerSteps: null,
     }),
     curriculum: Object.freeze({
-      qualifiedCapabilities: qualified || value(school, "mastered_count"),
-      observedDebt: capabilityRows.length ? debt : null,
+      qualifiedCapabilities: qualified || (completePage(pages, "capability") && capabilityRows.every((row) => ["QUALIFIED", "NOT_QUALIFIED"].includes(row.status)) ? 0 : null),
+      observedDebt: pages.capability?.truncated ? null : debt,
       activeConcepts: value(semantic, "active_concepts"),
-      ready: frontier?.ready_capability_ids?.length ?? null,
-      held: frontier?.held_capability_ids?.length ?? null,
+      ready: frontier?.meta?.coverage === "COMPLETE" ? frontier.ready_capability_ids.length : null,
+      held: frontier?.meta?.coverage === "COMPLETE" ? frontier.held_capability_ids.length : null,
       uncovered: null,
     }),
     runtime: Object.freeze({
       running: typeof context?.operatorActive === "boolean" ? context.operatorActive : null,
       elapsed: Number.isFinite(observed.current?.elapsed_ms)
         ? formatDurationSeconds(observed.current.elapsed_ms / 1000) : null,
-      visits: episodeRows.length || null,
+      visits: count(summary?.visit_count ?? episodeRows.length),
       visitRate: null,
       retainedCandidates: retained,
       rejectedCandidates: rejected,

@@ -113,15 +113,20 @@ finally:
     let unsubscribe = () => {};
     let resolveEvent;
     let rejectEvent;
+    let resolveDisconnect;
+    const disconnected = new Promise((resolve) => { resolveDisconnect = resolve; });
     const eventPromise = new Promise((resolve, reject) => {
       resolveEvent = resolve;
       rejectEvent = reject;
     });
     const timeout = setTimeout(() => rejectEvent(new Error("GUI03_EVENT_TIMEOUT")), 2500);
     unsubscribe = await broker.subscribe((event) => {
-      clearTimeout(timeout);
-      unsubscribe();
-      resolveEvent(event);
+      if (event.schemaVersion === "bamf.gui20.event-stream-state/v1") {
+        resolveDisconnect(event);
+      } else {
+        clearTimeout(timeout);
+        resolveEvent(event);
+      }
     });
     fs.writeFileSync(publishTrigger, "publish\n");
     const observed = await eventPromise;
@@ -129,6 +134,13 @@ finally:
     assert.equal(observed.event_family, "lesson.visit.completed");
     assert.equal(observed.payload_record_id, "episode");
     assert.equal(JSON.stringify(observed).includes(socketPath), false);
+    const child = [...broker.eventProcesses][0];
+    child.kill();
+    await once(child, "exit");
+    assert.deepEqual(await disconnected, {
+      schemaVersion: "bamf.gui20.event-stream-state/v1", state: "DISCONNECTED",
+    });
+    unsubscribe();
   } finally {
     broker.close();
     if (service.exitCode === null) {

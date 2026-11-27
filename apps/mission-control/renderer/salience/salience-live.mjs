@@ -1,5 +1,6 @@
 const QUERY_SCHEMA = "bilqis.bamf.control-plane.query/v1";
 const SALIENCE_SCHEMA = "bilqis.bamf.mission-control.salience-event/v1";
+const C06_SALIENCE_SCHEMA = "bilqis.bamf.mission-control.salience-event/v2";
 const PAGE_LIMIT = 32;
 const MAX_PAGES = 64;
 
@@ -20,7 +21,7 @@ export function salienceQuery(context, cursor = null) {
     mode: historical ? "historical" : "current",
     run_id: context?.runId ?? null,
     record_id: null,
-    schema_version: SALIENCE_SCHEMA,
+    schema_version: null,
     generation: historical ? context?.generation ?? null : null,
     frontier_id: null,
     as_of: null,
@@ -31,12 +32,13 @@ export function salienceQuery(context, cursor = null) {
 }
 
 export function salienceEventFromRecord(record) {
-  if (record?.schema_version !== SALIENCE_SCHEMA) return null;
+  if (![SALIENCE_SCHEMA, C06_SALIENCE_SCHEMA].includes(record?.schema_version)) return null;
   return Object.freeze({
     recordId: record.meta?.record_id ?? record.salience_id,
     salienceId: record.salience_id,
     capabilityId: record.capability_id,
     actionKind: record.action_kind,
+    eventKind: record.schema_version === C06_SALIENCE_SCHEMA ? record.event_kind : null,
     axes: Object.freeze({
       impact: dataValue(record.impact),
       exigency: dataValue(record.exigency),

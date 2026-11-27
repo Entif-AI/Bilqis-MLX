@@ -1,7 +1,12 @@
 """Ephemeral CP03 bounded query catalog over authoritative CP02 records."""
 from __future__ import annotations
 
+from bisect import bisect_right
+from collections import defaultdict
 from collections.abc import Iterable
+from dataclasses import replace
+from functools import lru_cache
+from itertools import chain
 
 from .contracts.envelopes import (
     PartialEnvelope, StaleEnvelope, UnavailableEnvelope,
@@ -21,9 +26,32 @@ from .semantic import (
     SemanticSimilaritySnapshot,
 )
 from .query_support import (
-    FAMILY_TYPES, build_page, encode_query_page, matches_identity,
+    FAMILY_TYPES, _rows_digest, build_page, encode_query_page, matches_identity,
     record_sort_key, select_current,
 )
+
+
+def _merge_sorted_records(base, additions):
+    """Merge a small sorted overlay without rescanning the immutable base."""
+    if not additions:
+        return base
+    if not base:
+        return additions
+    chunks = []
+    start = 0
+    for item in additions:
+        end = bisect_right(base, record_sort_key(item), lo=start, key=record_sort_key)
+        chunks.extend((base[start:end], (item,)))
+        start = end
+    chunks.append(base[start:])
+    return tuple(chain.from_iterable(chunks))
+
+
+def _merge_record_indexes(base, additions):
+    merged = base.copy()
+    for key, records in additions.items():
+        merged[key] = _merge_sorted_records(merged.get(key, ()), records)
+    return merged
 
 
 class MissionControlQueryCatalog:
@@ -37,7 +65,47 @@ class MissionControlQueryCatalog:
         require(len(ids) == len(set(ids)), "QUERY_RECORD_ID_DUPLICATE")
         self._records = tuple(sorted(copied, key=record_sort_key))
         self.available = available
-        self._by_id = {item.meta.record_id: item for item in self._records}
+        self._by_id = {}
+        self._by_type = defaultdict(list)
+        self._by_schema = defaultdict(list)
+        self._marker_records = []
+        self._current_generation = {}
+        self._episodes_by_capability = defaultdict(list)
+        for item in self._records:
+            self._by_id[item.meta.record_id] = item
+            self._by_type[type(item)].append(item)
+            self._by_schema[item.schema_version].append(item)
+            if type(item) in {PartialEnvelope, StaleEnvelope, UnavailableEnvelope}:
+                self._marker_records.append(item)
+            run = item.meta.run
+            if run is not None and not isinstance(item, TrainerObservation):
+                self._current_generation[run.run_id] = max(
+                    run.generation, self._current_generation.get(run.run_id, -1))
+            if type(item) is LearningEpisode:
+                self._episodes_by_capability[run, item.capability_id].append(item)
+        self._selection = lru_cache(maxsize=32)(self._select)
+        self._selection_digest = lru_cache(maxsize=32)(self._digest)
+
+    def with_records(self, records: Iterable[WireRecord]) -> "MissionControlQueryCatalog":
+        """Add independently validated records while retaining base indexes."""
+        overlay = MissionControlQueryCatalog(records, available=self.available)
+        if not overlay.records:
+            return self
+        require(not any(key in self._by_id for key in overlay._by_id),
+                "QUERY_RECORD_ID_DUPLICATE")
+        overlay._records = _merge_sorted_records(self._records, overlay._records)
+        overlay._by_id = self._by_id | overlay._by_id
+        overlay._by_type = _merge_record_indexes(self._by_type, overlay._by_type)
+        overlay._by_schema = _merge_record_indexes(self._by_schema, overlay._by_schema)
+        overlay._marker_records = _merge_sorted_records(
+            self._marker_records, overlay._marker_records)
+        overlay._episodes_by_capability = _merge_record_indexes(
+            self._episodes_by_capability, overlay._episodes_by_capability)
+        generations = self._current_generation.copy()
+        for run_id, generation in overlay._current_generation.items():
+            generations[run_id] = max(generation, generations.get(run_id, -1))
+        overlay._current_generation = generations
+        return overlay
 
     @classmethod
     def unavailable(cls) -> "MissionControlQueryCatalog":
@@ -51,11 +119,24 @@ class MissionControlQueryCatalog:
     def _base_records(self, request: QueryRequest) -> tuple[WireRecord, ...]:
         record_types = FAMILY_TYPES.get(request.family)
         require(record_types is not None, "QUERY_FAMILY_RECORDS")
+        if request.record_id is not None:
+            item = self._by_id.get(request.record_id)
+            candidates = () if item is None else (item,)
+        elif request.schema_version is not None:
+            candidates = self._by_schema.get(request.schema_version, ())
+        elif request.family is QueryFamily.RECORD:
+            candidates = self._records
+        else:
+            candidates = (
+                item for kind in record_types for item in self._by_type.get(kind, ()))
         rows = [
-            item for item in self._records
+            item for item in candidates
             if type(item) in record_types and matches_identity(item, request)
         ]
-        if request.mode is QueryMode.CURRENT and request.record_id is None:
+        release_lineage = (request.family is QueryFamily.GENERATION
+                           and request.reference is not None)
+        if (request.mode is QueryMode.CURRENT and request.record_id is None
+                and not release_lineage):
             rows = select_current(rows, request.family)
         newest_first = (
             request.mode is QueryMode.CURRENT
@@ -72,7 +153,7 @@ class MissionControlQueryCatalog:
             None if request.run_id is None else f"{request.family.value}:{request.run_id}",
         }
         markers = [
-            item for item in self._records
+            item for item in self._marker_records
             if ((type(item) is PartialEnvelope and item.partial_record_id in record_ids)
                 or (type(item) is StaleEnvelope and item.stale_record_id in record_ids))
                 or (type(item) is UnavailableEnvelope and item.resource in resources
@@ -81,26 +162,22 @@ class MissionControlQueryCatalog:
         ]
         if not records and request.as_of is not None:
             markers.extend(
-                item for item in self._records
+                item for item in self._marker_records
                 if type(item) is StaleEnvelope
                 and item.requested_as_of == request.as_of
                 and item.stale_record_id in self._by_id
                 and type(self._by_id[item.stale_record_id])
                 in FAMILY_TYPES.get(request.family, ())
             )
-        cumulative = request.family in {QueryFamily.CAPABILITY, QueryFamily.EPISODE}
+        cumulative = (request.family in {QueryFamily.CAPABILITY, QueryFamily.EPISODE}
+                      or (request.family is QueryFamily.GENERATION
+                          and request.reference is not None))
         if (request.mode is QueryMode.CURRENT and request.generation is None
                 and request.as_of is None and not cumulative):
-            current_generation = {}
-            for item in self._records:
-                run = item.meta.run
-                if run is not None and not isinstance(item, TrainerObservation):
-                    current_generation[run.run_id] = max(
-                        run.generation, current_generation.get(run.run_id, -1))
             markers = [
                 item for item in markers
                 if item.meta.run is None
-                or item.meta.run.generation == current_generation.get(
+                or item.meta.run.generation == self._current_generation.get(
                     item.meta.run.run_id, item.meta.run.generation)
             ]
         return tuple(sorted(markers, key=record_sort_key))
@@ -160,13 +237,11 @@ class MissionControlQueryCatalog:
                           record.target_semantic_id, meta.record_id),
             ))
         if type(record) is CapabilitySnapshot and meta.run is not None:
-            for item in self._records:
-                if (type(item) is LearningEpisode and item.meta.run == meta.run
-                        and item.capability_id == record.capability_id):
-                    links.append(QueryLink(
-                        "EPISODE", meta.record_id, item.meta.record_id,
-                        item.meta.record_id))
-        if type(record) is GenerationManifest:
+            for item in self._episodes_by_capability.get((meta.run, record.capability_id), ()):
+                links.append(QueryLink(
+                    "EPISODE", meta.record_id, item.meta.record_id,
+                    item.meta.record_id))
+        if isinstance(record, GenerationManifest):
             checkpoint_ref = f"checkpoint:{record.checkpoint_sha256}"
             links.append(QueryLink(
                 "CHECKPOINT", meta.record_id,
@@ -197,7 +272,7 @@ class MissionControlQueryCatalog:
             if exact_checkpoint:
                 source_records = [
                     item for item in source_records
-                    if type(item) is GenerationManifest
+                    if isinstance(item, GenerationManifest)
                     and f"checkpoint:{item.checkpoint_sha256}" == request.record_id
                 ]
             elif request.mode is QueryMode.CURRENT:
@@ -242,10 +317,19 @@ class MissionControlQueryCatalog:
         return self._page(
             request, (), markers, links, exact_missing=not links and not markers)
 
-    def _page(self, request, records, markers, links=(), *, exact_missing=False):
+    def _select(self, request):
+        records = self._base_records(request)
+        return records, self._markers(records, request)
+
+    def _digest(self, request):
+        return _rows_digest(self._selection(request)[0])
+
+    def _page(self, request, records, markers, links=(), *, exact_missing=False,
+              rows_digest=None):
         return build_page(
             available=self.available, request=request, records=records,
             markers=markers, links=links, exact_missing=exact_missing,
+            rows_digest=rows_digest,
         )
 
     def query(self, request: QueryRequest) -> QueryPage:
@@ -255,8 +339,8 @@ class MissionControlQueryCatalog:
             return self._query_reference(request)
         if not self.available:
             return self._page(request, (), (), exact_missing=False)
-        records = self._base_records(request)
-        markers = self._markers(records, request)
+        identity = replace(request, cursor=None)
+        records, markers = self._selection(identity)
         exact_missing = bool(
             request.record_id is not None
             or request.generation is not None
@@ -264,7 +348,8 @@ class MissionControlQueryCatalog:
             or request.as_of is not None
         ) and not records and not markers
         return self._page(
-            request, records, markers, exact_missing=exact_missing)
+            request, records, markers, exact_missing=exact_missing,
+            rows_digest=lambda: self._selection_digest(identity))
 
     @staticmethod
     def encode_page(page: QueryPage) -> dict:

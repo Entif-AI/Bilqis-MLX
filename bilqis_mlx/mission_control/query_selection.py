@@ -3,8 +3,10 @@ from __future__ import annotations
 
 from .contracts.model import WireRecord
 from .contracts.dossier import CapabilityDossier
+from .contracts.events import CorrectionFrontierSnapshot, LearningHistorySummary, SalienceEvent
+from .contracts.envelopes import UnavailableEnvelope
 from .contracts.observability import (
-    GenerationManifest, MemorySnapshot, NeuralRuntimeSample, ResourceSample,
+    GenerationManifest, GenerationManifestV2, MemorySnapshot, MemorySnapshotV2, NeuralRuntimeSample, ResourceSample,
     SemanticAtlasSnapshot, SemanticProjectionSnapshot, SemanticReleaseSnapshot,
     TeacherSnapshot,
 )
@@ -117,9 +119,9 @@ def _current_identity(record: WireRecord):
         return (*base, record.source_semantic_id, record.target_semantic_id, record.basis_ref)
     if type(record) in {
         RunContext, OperatorView, SchoolSnapshot, CurriculumFrontier,
-        GenerationManifest, SemanticAtlasSnapshot, NeuralRuntimeSample,
-        MemorySnapshot, TeacherSnapshot, ResourceSample, SemanticReleaseSnapshot,
-        SemanticProjectionSnapshot,
+        GenerationManifest, GenerationManifestV2, SemanticAtlasSnapshot, NeuralRuntimeSample,
+        MemorySnapshot, MemorySnapshotV2, TeacherSnapshot, ResourceSample, SemanticReleaseSnapshot,
+        SemanticProjectionSnapshot, CorrectionFrontierSnapshot,
     }:
         return base
     if type(record) is SemanticConceptSnapshot:
@@ -129,13 +131,20 @@ def _current_identity(record: WireRecord):
     return None
 
 
+def is_live_overlay(record):
+    return (isinstance(record, TrainerObservation)
+            or isinstance(record, (CurriculumFrontier, CapabilityDossier, SalienceEvent))
+            and record.meta.record_id.startswith("trainer-observed:"))
+
+
 def matches_identity(
         item: WireRecord, request: QueryRequest, *, match_record_id: bool = True) -> bool:
-    if isinstance(item, TrainerObservation) and (
+    if (is_live_overlay(item) or isinstance(item, LearningHistorySummary)) and (
             request.mode is not QueryMode.CURRENT or request.generation is not None
             or request.as_of is not None or request.frontier_id is not None):
         return False
-    if request.schema_version is not None and item.schema_version != request.schema_version:
+    if (request.schema_version is not None and item.schema_version != request.schema_version
+            and (match_record_id or not isinstance(item, UnavailableEnvelope))):
         return False
     if request.run_id is not None:
         global_notification = (
@@ -155,6 +164,12 @@ def matches_identity(
         return False
     if request.frontier_id is not None:
         if type(item) is not CurriculumFrontier or item.frontier_id != request.frontier_id:
+            return False
+    if request.family is QueryFamily.GENERATION and request.reference is not None:
+        # Explicit release lineage includes every accepted generation of that
+        # release, not just the current generation. Other queries keep their lens.
+        run = item.meta.run
+        if run is None or request.reference != f"factory-release:{run.factory_release_sha256}":
             return False
     if (request.family is QueryFamily.RECORD and request.reference is not None
             and request.reference not in _forensic_refs(item)):

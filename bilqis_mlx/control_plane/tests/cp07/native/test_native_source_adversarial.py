@@ -24,7 +24,7 @@ from bilqis_mlx.runtime import checkpoint_outbox
 from bilqis_mlx.runtime.bamf_bundle import record_bamf_rejection
 from bilqis_mlx.runtime.tests.custody.bamf_bundle.helpers import retention_decision
 
-from .native_source_support import NativeSourceFixture
+from ..native_source_support import NativeSourceFixture
 
 
 class NativeSourceAdversarialTests(NativeSourceFixture, unittest.TestCase):

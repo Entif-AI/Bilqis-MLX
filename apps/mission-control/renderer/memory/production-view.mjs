@@ -32,13 +32,14 @@ function metricValue(metric) {
 function metricRows(t, profile) {
   const labels = {
     used: "used", budget: "budget", hits: "hits", misses: "misses", requalifications: "requalifications",
+    allocatedSlots: "allocatedSlots", slotCapacity: "slotCapacity", pendingKeys: "pendingKeys", aliases: "aliases",
   };
   return Object.entries(profile.metrics).map(([key, metric]) => `<tr data-test-id="memory-production-metric-${key}"><th scope="row">${esc(t(`memory.production.${labels[key]}`))}</th><td>${esc(metricValue(metric))}</td><td>${esc(metric.state)}</td></tr>`).join("");
 }
 
 function overview(t, profile, locale) {
   const observed = profile.observedAt == null
-    ? `<span data-test-id="memory-production-time-unavailable">${esc(t("foundation.temporal.unavailable"))}</span>`
+    ? `<span data-test-id="memory-production-time-unavailable">${esc(t("memory.value.unavailable"))}</span>`
     : temporalMarkup({ unixSeconds: profile.observedAt, locale, testId: "memory-production-time" });
   return `<section class="memory-surface" data-test-id="memory-production-overview"><header class="memory-section-heading"><div><span class="eyebrow">${esc(t("memory.summary.eyebrow"))}</span><h3>${esc(t("memory.summary.title"))}</h3></div><div class="memory-heading-tools">${help(t, "metrics", "metrics")}${help(t, "time", "time")}</div></header><dl class="memory-production-context"><div><dt>${esc(t("memory.production.generation"))}</dt><dd>${esc(profile.generation ?? "UNAVAILABLE")}</dd></div><div><dt>${esc(t("memory.production.observed"))}</dt><dd>${observed}</dd></div></dl><div class="memory-table-wrap" tabindex="0" role="region" aria-label="${esc(t("memory.summary.title"))}"><table class="memory-slot-table"><thead><tr><th>${esc(t("memory.production.metric"))}</th><th>${esc(t("memory.production.metricValue"))}</th><th>${esc(t("memory.production.metricState"))}</th></tr></thead><tbody>${metricRows(t, profile)}</tbody></table></div><button type="button" class="${controlClass("inspect")}" data-memory-production-inspect data-test-id="memory-production-inspect">Inspect source record</button></section>`;
 }

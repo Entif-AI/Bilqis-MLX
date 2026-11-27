@@ -210,3 +210,21 @@ test("publication between snapshot anchors retries on the next bounded tick", as
   assert.equal(controller.currentModel().runtime.retainedCandidates, 1);
   await controller.deactivate();
 });
+
+
+test("an accepted unavailable page preserves the last observation until a coherent snapshot returns", async () => {
+  let tick, page = runPage();
+  const controller = createHomeController({ query: async () => page,
+    subscribeEvents: () => () => {} },
+  { schedule: (callback) => { tick = callback; return 1; }, cancel: () => {} });
+  await controller.activate(context, { host: host() });
+  page = { accepted: true, state: "UNAVAILABLE", coverage: "UNKNOWN", records: [] };
+  await tick();
+  assert.equal(controller.currentModel().observed.acceptedGeneration, 0);
+  assert.equal(controller.currentModel().observed.current.connection_state, "DISCONNECTED");
+  page = runPage(observation({ phase: "COMPLETED", outcome: "ACCEPTED", connection_state: "FINISHED" }), 1);
+  await tick();
+  assert.equal(controller.currentModel().observed.acceptedGeneration, 1);
+  assert.equal(controller.currentModel().observed.current.outcome, "ACCEPTED");
+  await controller.deactivate();
+});

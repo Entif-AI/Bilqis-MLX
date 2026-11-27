@@ -51,6 +51,28 @@ def _record_selected_visit_identity(observer, selection):
         _stage_observation(observer, visit_id=identity)
 
 
+def _record_accepted_setup(runtime_observer, accepted_state_metrics, accepted_state_started):
+    accepted_state_total = max(0.0, time.perf_counter() - accepted_state_started)
+    accepted_state_metrics["accepted_state_setup_wall_seconds"] = accepted_state_total
+    accepted_state_metrics["accepted_state_setup_other_wall_seconds"] = max(
+        0.0,
+        accepted_state_total - sum(float(accepted_state_metrics.get(name, 0.0)) for name in (
+            "accepted_runtime_host_wall_seconds",
+            "accepted_generation_load_wall_seconds",
+            "accepted_source_context_wall_seconds",
+            "accepted_feature_authentication_wall_seconds",
+        )))
+    if runtime_observer is not None:
+        runtime_observer.update(**accepted_state_metrics)
+
+
+
+def _record_school_frontier(observer, selection):
+    if observer is not None:
+        from ..evidence_parts.school import issued_school_observation
+        _stage_observation(observer, school_frontier=issued_school_observation(selection))
+
+
 def prepare_bamf_visit_impl(
         run_dir: Path, *, steps_per_visit, batch_size, reserve_gib, progress,
         source_prefetch_workers, source_prefetch_executor,
@@ -89,18 +111,8 @@ def prepare_bamf_visit_impl(
         candidate_identity_sha256=getattr(
             host_cache, "_candidate_identity_sha256", None))
     if strict:
-        accepted_state_total = max(0.0, time.perf_counter() - accepted_state_started)
-        accepted_state_metrics["accepted_state_setup_wall_seconds"] = accepted_state_total
-        accepted_state_metrics["accepted_state_setup_other_wall_seconds"] = max(
-            0.0,
-            accepted_state_total - sum(float(accepted_state_metrics.get(name, 0.0)) for name in (
-                "accepted_runtime_host_wall_seconds",
-                "accepted_generation_load_wall_seconds",
-                "accepted_source_context_wall_seconds",
-                "accepted_feature_authentication_wall_seconds",
-            )))
-        if runtime_observer is not None:
-            runtime_observer.update(**accepted_state_metrics)
+        _record_accepted_setup(runtime_observer, accepted_state_metrics,
+                               accepted_state_started)
         emit_progress(progress, "planning current candidate frontier and teacher priority")
     planning_started = time.perf_counter() if strict else None
     selection = select_priority_visit(
@@ -113,6 +125,7 @@ def prepare_bamf_visit_impl(
         _record_planning_observation(runtime_observer, selection, planning_started)
     else:
         _record_selected_visit_identity(runtime_observer, selection)
+    _record_school_frontier(runtime_observer, selection)
     if selection.status != "TEACHER_SELECTED":
         if (selection.status == "NO_ADMISSIBLE_TEACHING"
                 and any(reason == OOM_EXHAUSTED for _, reason in selection.holds)):
