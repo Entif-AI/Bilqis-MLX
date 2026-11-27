@@ -4,6 +4,7 @@ from pathlib import Path
 import argparse
 import sys
 from .settings import DEFAULT_RUN
+from bilqis_mlx.errors import SCHOOL
 from bilqis_mlx.runtime.memory_safety import (
     DEFAULT_TRAINER_MEMORY_CEILING_GIB,
     MAX_TRAINER_MEMORY_CEILING_GIB,
@@ -14,11 +15,9 @@ def _memory_ceiling_gib(value: str) -> float:
     try:
         ceiling = float(value)
     except ValueError as error:
-        raise argparse.ArgumentTypeError("memory ceiling must be a number") from error
+        raise argparse.ArgumentTypeError(SCHOOL.BAMF_RESOURCES.INVALID.code) from error
     if not 0 < ceiling <= MAX_TRAINER_MEMORY_CEILING_GIB:
-        raise argparse.ArgumentTypeError(
-            f"memory ceiling must be greater than 0 and at most "
-            f"{MAX_TRAINER_MEMORY_CEILING_GIB:g} GiB")
+        raise argparse.ArgumentTypeError(SCHOOL.BAMF_RESOURCES.INVALID.code)
     return ceiling
 
 

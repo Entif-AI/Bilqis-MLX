@@ -9,6 +9,8 @@ from pathlib import Path
 import sys
 import tracemalloc
 
+from bilqis_mlx.errors import ErrorBus, SCHOOL
+
 
 MIB = 1024 ** 2
 GIB = 1024 ** 3
@@ -18,6 +20,10 @@ DEFAULT_WARNING_MARGIN_MIB = 2048
 DEFAULT_TRIP_MARGIN_MIB = 1024
 DEFAULT_SAMPLE_INTERVAL_MS = 20
 TRAINER_MEMORY_CEILING_ENV = "BILQIS_TRAINER_MEMORY_CEILING_GIB"
+
+
+def _memory_invalid(reason: str) -> None:
+    ErrorBus.raise_(SCHOOL.BAMF_RESOURCES.INVALID, reason=reason)
 
 
 @dataclass(frozen=True)
@@ -35,19 +41,17 @@ class TrainerMemoryPolicy:
             sample_interval_ms: int = DEFAULT_SAMPLE_INTERVAL_MS):
         ceiling = float(ceiling_gib)
         if not (0 < ceiling <= MAX_TRAINER_MEMORY_CEILING_GIB):
-            raise ValueError(
-                f"trainer memory ceiling must be greater than 0 and at most "
-                f"{MAX_TRAINER_MEMORY_CEILING_GIB:g} GiB")
+            _memory_invalid("BAMF_MEMORY_CEILING_INVALID")
         if (type(warning_margin_mib) is not int or type(trip_margin_mib) is not int
                 or warning_margin_mib <= trip_margin_mib or trip_margin_mib <= 0):
-            raise ValueError("memory warning margin must exceed the positive trip margin")
+            _memory_invalid("BAMF_MEMORY_MARGIN_INVALID")
         if type(sample_interval_ms) is not int or sample_interval_ms <= 0:
-            raise ValueError("memory sample interval must be positive")
+            _memory_invalid("BAMF_MEMORY_SAMPLE_INTERVAL_INVALID")
         ceiling_bytes = int(ceiling * GIB)
         warning_bytes = ceiling_bytes - warning_margin_mib * MIB
         trip_bytes = ceiling_bytes - trip_margin_mib * MIB
         if warning_bytes <= 0 or warning_bytes >= trip_bytes:
-            raise ValueError("memory margins leave no usable trainer budget")
+            _memory_invalid("BAMF_MEMORY_BUDGET_INVALID")
         return cls(
             ceiling_bytes=ceiling_bytes,
             warning_bytes=warning_bytes,
@@ -108,7 +112,7 @@ if sys.platform == "darwin":
 
 def process_memory_snapshot(pid: int) -> ProcessMemorySnapshot | None:
     if type(pid) is not int or pid <= 0:
-        raise ValueError("pid must be a positive integer")
+        _memory_invalid("BAMF_MEMORY_PID_INVALID")
     if sys.platform == "darwin":
         value = _DarwinRusage()
         if _PROC_PID_RUSAGE(pid, 0, ctypes.byref(value)) != 0:
@@ -176,9 +180,9 @@ def assess_memory_plateau(
     policy = policy or MemoryPlateauPolicy()
     samples = tuple(samples)
     if len(samples) < policy.min_samples:
-        raise ValueError("memory plateau requires more representative samples")
+        _memory_invalid("BAMF_MEMORY_PLATEAU_SAMPLE_COUNT_INVALID")
     if not (0 <= policy.warmup_samples < len(samples) - 1):
-        raise ValueError("memory plateau warmup leaves too few samples")
+        _memory_invalid("BAMF_MEMORY_PLATEAU_WARMUP_INVALID")
     window = samples[policy.warmup_samples:]
     values = tuple(int(sample.physical_footprint_bytes) for sample in window)
     net_growth = values[-1] - values[0]
@@ -217,7 +221,7 @@ def capture_quiescent_memory_sample(
     python_heap = tracemalloc.get_traced_memory()[0] if tracemalloc.is_tracing() else None
     process = process_memory_snapshot(os.getpid())
     if process is None:
-        raise RuntimeError("process memory measurement unavailable")
+        _memory_invalid("BAMF_MEMORY_PROCESS_MEASUREMENT_UNAVAILABLE")
     return MemoryPlateauSample(
         ordinal=ordinal,
         physical_footprint_bytes=process.physical_footprint_bytes,

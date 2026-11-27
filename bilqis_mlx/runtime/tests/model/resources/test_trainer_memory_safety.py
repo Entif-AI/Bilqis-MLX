@@ -1,5 +1,6 @@
 import unittest
 
+from bilqis_mlx.errors import BilqisError, SCHOOL
 from bilqis_mlx.runtime.memory_safety import (
     GIB,
     MIB,
@@ -20,8 +21,11 @@ class TrainerMemoryPolicyTests(unittest.TestCase):
         self.assertEqual(policy.sample_interval_seconds, 0.02)
 
     def test_policy_refuses_more_than_sixteen_gib(self):
-        with self.assertRaisesRegex(ValueError, "16 GiB"):
+        with self.assertRaises(BilqisError) as raised:
             TrainerMemoryPolicy.from_gib(17)
+        self.assertEqual(raised.exception.code, SCHOOL.BAMF_RESOURCES.INVALID.code)
+        self.assertEqual(
+            raised.exception.context["reason"], "BAMF_MEMORY_CEILING_INVALID")
 
 
 class MemoryPlateauTests(unittest.TestCase):
