@@ -10,6 +10,15 @@ from bilqis_mlx.cli import main, parse_args
 
 
 class OperatorTests(unittest.TestCase):
+    def test_trainer_memory_ceiling_defaults_to_twelve_and_refuses_above_sixteen(self):
+        self.assertEqual(parse_args(["train", "--resume"]).memory_ceiling_gib, 12.0)
+        self.assertEqual(
+            parse_args(["train", "--resume", "--memory-ceiling-gib", "14"]).memory_ceiling_gib,
+            14.0,
+        )
+        with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            parse_args(["train", "--resume", "--memory-ceiling-gib", "17"])
+
     def test_strict_mode_is_explicit_and_strict_evidence_is_only_an_alias(self):
         self.assertFalse(parse_args(["train", "--resume"]).strict_mode)
         self.assertTrue(parse_args([

@@ -10,6 +10,20 @@ from bilqis_mlx.cli import main
 
 
 class OperatorTests(unittest.TestCase):
+    def test_real_cli_human_training_reexecs_under_resource_governor(self):
+        argv = [
+            "bilqis_mlx.cli", "train", "--human-run", "--resume",
+            "--run-dir", "/tmp/bilqis-governor-test",
+        ]
+        with patch("sys.argv", argv), patch(
+                "bilqis_mlx.presentation.operator_cli.command.run_governed_train",
+                return_value=73) as governed, patch(
+                "bilqis_mlx.presentation.operator_cli.command._main",
+                side_effect=AssertionError("unguarded training entered")):
+            self.assertEqual(main(), 73)
+
+        governed.assert_called_once()
+
     def test_human_training_interrupt_reports_resume_point_once_without_traceback(self):
         from bilqis_mlx import trainer
         with tempfile.TemporaryDirectory() as tmp, patch('bilqis_mlx.runtime.operating_loop.operate', side_effect=KeyboardInterrupt), \

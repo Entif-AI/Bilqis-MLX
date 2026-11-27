@@ -176,6 +176,35 @@ production OOM restore/retry path are wired and verified on the actual execution
 path. Never use a test-harness memory accident as evidence that production training
 is safe, and never use the analytical planner alone as proof of measured peak RAM.
 
+### Trainer retained-memory plateau and hard containment — 2026-11-27
+
+Treat retained-memory growth as a correctness defect. Any change that adds or changes
+an iterative or recursive trainer path must identify its natural quiescent boundary
+and the state that is intentionally live after that boundary. Reviewers must reject
+unbounded tensor-bearing histories, caches, closures, parent chains, optimizer/model
+ancestry, or recursive state. Lazy MLX state that crosses an optimizer-step boundary
+must have an explicit materialization boundary unless a focused proof shows that the
+deferred graph remains bounded.
+
+Memory-sensitive trainer changes need a representative plateau witness. Exercise the
+complete configured candidate horizon and enough repeated boundaries to show that the
+post-boundary physical-footprint low-water mark stabilizes. Use the bounded
+candidate-step memory telemetry and `scripts/bamf/memory/check_trainer_memory_plateau.py`.
+The default plateau policy ignores two warmup samples, requires at least six samples,
+and rejects either more than 512 MiB net retained growth or a sustained slope above
+128 MiB per sample. Tune those tolerances only when the workload has a measured,
+bounded reason to retain more state. A GC cycle, cache clear, planner estimate, or a
+single successful step does not prove a plateau.
+
+All human trainer commands and detached Python trainer/research runs must execute
+under **Deh Guhbohnayhituh (CR-8s)**. Its configurable policy ceiling defaults to
+12 GiB and refuses values above 16 GiB. The governor warns at 10 GiB and kills the
+owned process group at 11 GiB, leaving one GiB of sampling/burst headroom below the
+12 GiB policy ceiling. The default sample interval is 20 ms. MLX `set_memory_limit`
+and `set_wired_limit` are secondary allocator controls, not substitutes for this
+external physical-footprint governor. A governor trip is execution-invalid resource
+evidence and never a failed neural treatment.
+
 Run `npm run verify:premerge` only when the changed dependency closure is genuinely
 broad enough to justify the repository aggregate runner, or when the human explicitly
 requests a fresh whole-repository qualification. An integration/turn-in boundary by
