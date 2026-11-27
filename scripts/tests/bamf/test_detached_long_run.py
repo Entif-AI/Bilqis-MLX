@@ -8,13 +8,50 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from scripts.bamf.detached_long_run import (
     SOURCE_MUTATED_EXIT, _snapshot_workdir, _worker,
 )
+from scripts.bamf.detached import support as detached_support
 
 
 class DetachedLongRunTests(unittest.TestCase):
+    def test_snapshot_file_prefers_copy_on_write_clone(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source.bin"
+            destination = root / "snapshot.bin"
+            source.write_bytes(b"copy-on-write")
+            clone = SimpleNamespace(returncode=0)
+
+            with patch.object(detached_support.subprocess, "run", return_value=clone) as run:
+                with patch.object(detached_support.shutil, "copy2") as copy2:
+                    copied = detached_support._copy_snapshot_file(source, destination)
+
+            self.assertEqual(copied, str(destination))
+            run.assert_called_once_with(
+                ["cp", "-c", "-p", str(source), str(destination)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+            )
+            copy2.assert_not_called()
+
+    def test_snapshot_file_falls_back_when_clone_is_unavailable(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source.bin"
+            destination = root / "snapshot.bin"
+            source.write_bytes(b"portable fallback")
+            clone = SimpleNamespace(returncode=1)
+
+            with patch.object(detached_support.subprocess, "run", return_value=clone):
+                copied = detached_support._copy_snapshot_file(source, destination)
+
+            self.assertEqual(Path(copied), destination)
+            self.assertEqual(destination.read_bytes(), source.read_bytes())
+
     def test_snapshot_preserves_internal_broken_symlink_but_rejects_escape(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

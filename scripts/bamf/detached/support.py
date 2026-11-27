@@ -86,6 +86,22 @@ def _git_toplevel(source: Path) -> Path | None:
     return None if completed.returncode else Path(completed.stdout.strip()).resolve()
 
 
+def _copy_snapshot_file(source: str | os.PathLike, destination: str | os.PathLike) -> str:
+    """Prefer a copy-on-write file clone, with a portable byte-copy fallback."""
+    source_path = Path(source)
+    destination_path = Path(destination)
+    cloned = subprocess.run(
+        ["cp", "-c", "-p", str(source_path), str(destination_path)],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    if cloned.returncode == 0:
+        return str(destination_path)
+    destination_path.unlink(missing_ok=True)
+    return shutil.copy2(source_path, destination_path)
+
+
 def _prepare_git_snapshot(source: Path, snapshot: Path) -> bool:
     if _git_toplevel(source) != source:
         return False
@@ -102,7 +118,7 @@ def _prepare_git_snapshot(source: Path, snapshot: Path) -> bool:
         shutil.rmtree(child) if child.is_dir() and not child.is_symlink() else child.unlink()
     shutil.copytree(
         source, snapshot, symlinks=True, ignore=_snapshot_ignore,
-        copy_function=shutil.copy2, dirs_exist_ok=True,
+        copy_function=_copy_snapshot_file, dirs_exist_ok=True,
     )
     return True
 
@@ -144,7 +160,7 @@ def _snapshot_workdir(source: Path, snapshot: Path) -> dict[str, str]:
         if not git_snapshot:
             shutil.copytree(
                 source, snapshot, symlinks=True, ignore=_snapshot_ignore,
-                copy_function=shutil.copy2,
+                copy_function=_copy_snapshot_file,
             )
         _bind_local_runtime(source, snapshot)
         after = _tree_digest(source)

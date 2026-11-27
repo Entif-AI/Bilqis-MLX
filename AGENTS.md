@@ -457,6 +457,20 @@ reads the receipt and log after the human returns, reconciles the result, and on
 then decides the next action. Interactive execution remains appropriate for work
 expected to finish comfortably below five minutes.
 
+**Heavyweight custody is leased, not archival:** Detached snapshots, disposable
+data-plane copies, diagnostic model copies and other multi-GiB execution custody are
+temporary working state unless a current authority explicitly requires that exact
+copy to remain. Prefer filesystem copy-on-write clones for isolated snapshots when
+supported. When a run reaches a terminal receipt, preserve the small receipts,
+results, hashes and other declared evidence needed to reproduce or review the
+decision, then retire its heavyweight snapshot/copies before launching another
+same-lineage successor. A new fork, repair or retry is not permission to leave the
+predecessor's heavyweight custody behind. If exact heavyweight bytes must remain,
+record the live owner and retention reason. Never retire the preserved legacy trainer
+authority, the causal current learner/model+own-AdamW, or another independently
+required custody surface merely to recover disk. Agents must treat disk consumption
+as a bounded resource and must not externalize routine cleanup onto the human.
+
 Every lane-owned BAMF implementation leaf or open lane PR must be represented in that lane's
 machine-readable state under `docs/tasks/bamf-0.2/flow-control/`. Before substantive
 branch mutation, the operator must run `python3 -B scripts/check_bamf_flow_control.py`
