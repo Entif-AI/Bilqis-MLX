@@ -14,7 +14,7 @@ from bilqis_mlx.runtime.source_execution import source_content_digest
 from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import (
     _cases, _solver,
 )
-from bilqis_mlx.runtime.tests.teacher.priority.test_structural_weakness_replay import (
+from bilqis_mlx.runtime.tests.teacher.priority.weakness.test_structural_weakness_replay import (
     CAPABILITY, _SourceContext, _selection_for_context, _weakness_record,
 )
 
@@ -153,3 +153,22 @@ def test_learning_first_weakness_closes_from_compact_historical_source_ids(
         selection=selection, assessment=assessment,
         instruments=(_Instrument(fresh_row),))
     assert weakness_replay.carried_structural_weaknesses(closed) == ()
+
+
+def test_previsit_debt_distinguishes_current_resolved_and_unmeasured(monkeypatch, tmp_path):
+    from bilqis_mlx.runtime.structural_weakness_replay import recorded_weakness_debt
+    context, selection, teacher, wrapper, _, assessment, fresh, instrument = (
+        _proof(monkeypatch, tmp_path))
+    how = selection.metadata["how_context"]
+    frontier = selection._lawful_frontier
+    assert recorded_weakness_debt({}, how, frontier, CAPABILITY) is None
+    assert recorded_weakness_debt(teacher, how, frontier, CAPABILITY) is True
+    changed = _selection_for_context(context, policy_epoch=8)
+    assert recorded_weakness_debt(
+        teacher, changed.metadata["how_context"],
+        changed._lawful_frontier, CAPABILITY) is None
+    closed = weakness_replay.resolve_structural_weakness(
+        teacher, run_dir=tmp_path, wrapper=wrapper, source_context=context,
+        selection=selection, assessment=assessment, instruments=(instrument(fresh),))
+    assert recorded_weakness_debt(closed, how, frontier, CAPABILITY) is False
+    assert recorded_weakness_debt(teacher, how, frontier, CAPABILITY) is True

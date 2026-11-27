@@ -5,7 +5,7 @@ from bilqis_mlx.semantics.domains import contract_digest
 
 from bilqis_mlx.runtime.capability_evaluation import Assessment, _invalid, _sha
 from bilqis_mlx.runtime.capability_retention import (
-    AssessmentPair, Decision, DecisionStatus,
+    AssessmentPair, Decision, DecisionStatus, EvidenceKind,
 )
 from bilqis_mlx.runtime.capability_retention_foundation import (
     FoundationRetentionPolicy,
@@ -78,33 +78,26 @@ def _assessment_maps(assessment):
 
 def finalize_target_first_local_candidate(
         target_capability: str, policy: FoundationRetentionPolicy, fixed,
-        target_pair: AssessmentPair, protected_pair: AssessmentPair | None, *,
+        target_pair: AssessmentPair, reference_pair: AssessmentPair, *,
         retention_protection_plan_sha256: str,
         evaluated_capability_ids: tuple[str, ...], observer=None) -> Decision:
-    """Compose the fresh target pair with later protected evidence without re-solving it."""
+    """Require fresh target gain and value preservation on the fixed reference."""
     _fixed_cohort_contract(target_capability, policy, fixed)
     if (not _sha(retention_protection_plan_sha256)
             or evaluated_capability_ids
             != tuple(capability for capability, _group in policy.capability_groups)
-            or type(target_pair) is not AssessmentPair):
-        _invalid("BAMF_C05_RETENTION_PROTECTION_SCOPE_INVALID")
-    pairs = (target_pair,) + ((protected_pair,) if protected_pair is not None else ())
-    if (any(type(pair) is not AssessmentPair for pair in pairs)
-            or len({pair.parent.generation_digest for pair in pairs}) != 1
-            or len({pair.candidate.generation_digest for pair in pairs}) != 1):
+            or type(target_pair) is not AssessmentPair
+            or type(reference_pair) is not AssessmentPair
+            or target_pair.parent.cohort.kind is not EvidenceKind.FRESH_TARGET
+            or target_pair.parent.cohort.capability_groups
+            != ((target_capability, dict(policy.capability_groups)[target_capability]),)
+            or reference_pair.parent.cohort != fixed
+            or target_pair.parent.generation_digest != reference_pair.parent.generation_digest
+            or target_pair.candidate.generation_digest != reference_pair.candidate.generation_digest):
         _invalid("BAMF_C05_TARGET_FIRST_EVIDENCE_INVALID")
-    parent_results, parent_contracts = {}, {}
-    candidate_results, candidate_contracts = {}, {}
-    for pair in pairs:
-        results, contracts = _assessment_maps(pair.parent)
-        parent_results.update(results)
-        parent_contracts.update(contracts)
-        results, contracts = _assessment_maps(pair.candidate)
-        candidate_results.update(results)
-        candidate_contracts.update(contracts)
-    case_ids = {case.case_id for case in fixed.cases}
-    if (set(parent_results) != case_ids or set(candidate_results) != case_ids):
-        _invalid("BAMF_C05_TARGET_FIRST_EVIDENCE_INVALID")
+    parent_results, parent_contracts = _assessment_maps(reference_pair.parent)
+    candidate_results, candidate_contracts = _assessment_maps(reference_pair.candidate)
+    pairs = (target_pair, reference_pair)
     pair_digests = tuple((pair.parent.digest(), pair.candidate.digest()) for pair in pairs)
     decision = final_fixed_school_decision(
         target_capability,
@@ -112,26 +105,32 @@ def finalize_target_first_local_candidate(
         dict(policy.protected_reference_losses), policy, fixed,
         target_pair.parent.generation_digest, target_pair.candidate.generation_digest,
         lambda digests, blocking: contract_digest({
-            "schema": "bilqis.c05.foundation-local-retention-evidence/v2",
+            "schema": "bilqis.c05.foundation-local-retention-evidence/v3",
             "target_capability": target_capability,
             "policy_sha256": policy.digest(),
             "retention_protection_plan_sha256": retention_protection_plan_sha256,
             "evaluated_capability_ids": evaluated_capability_ids,
-            "assessment_pairs": tuple(digests),
+            "fresh_and_reference_pairs": tuple(digests),
             "blocking_capability": blocking,
         }),
         pair_digests, parent_results, parent_contracts,
         candidate_results, candidate_contracts, observer=observer, ordinary=True,
         evaluated_capability_ids=evaluated_capability_ids,
-        retention_protection_plan_sha256=retention_protection_plan_sha256)
-    scores = []
-    for capability in evaluated_capability_ids:
-        source = next(pair for pair in pairs
-                      if capability in dict(pair.parent.cohort.capability_groups))
-        before, total = source.parent.score(capability)
-        after, _ = source.candidate.score(capability)
-        scores.append((capability, before, after, total))
-    return replace(decision, outcome_scores=tuple(scores))
+        retention_protection_plan_sha256=retention_protection_plan_sha256,
+        learning_pair=target_pair)
+    def score(pair, capability):
+        before, total = pair.parent.score(capability)
+        after, _ = pair.candidate.score(capability)
+        return capability, before, after, total
+
+    reference_scores = tuple(score(reference_pair, cap) for cap in evaluated_capability_ids)
+    # Preserve the existing fresh-target HOW credit and expose the distinct
+    # authorizing reference scores in the same signed outcome.
+    scores = tuple(score(target_pair, row[0]) if row[0] == target_capability else row
+                   for row in reference_scores)
+    return replace(decision, outcome_scores=scores,
+                   fixed_reference_scores=reference_scores,
+                   fixed_reference_cohort_sha256=fixed.expected_case_digest)
 
 
 def evaluate_foundation_local_candidate(

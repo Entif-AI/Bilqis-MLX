@@ -5,14 +5,14 @@ import weakref
 
 from bilqis_mlx.learning.teacher_lineage import restore_teacher_lineage
 from bilqis_mlx.learning.teacher_lineage_records import SHA256_HEX_LENGTH, valid_hex
-from bilqis_mlx.learning.teacher_realized_action import describe
+from bilqis_mlx.learning.teacher_realized_action import describe, weakness_delivery_facts
 from bilqis_mlx.learning.teacher_strategy_population import (
     TARGET_FAILURE_CHECKPOINT_RETIREMENT_POLICY,
     effective_policy_key,
 )
 from bilqis_mlx.runtime.state import _fingerprint
 
-from .observations import SCHEMA, apply_outcome, invalid
+from .observations import FIXED_REFERENCE_SCHEMA, SCHEMA, apply_outcome, invalid
 
 
 class _IssuedOutcome(dict):
@@ -123,7 +123,8 @@ def _outcome_attempt(
                 for step in steps for item in step['positions']))
         return (
             selected, payload['attempt_id'], payload['proposal_id'],
-            candidate_evidence['object'], realized, len(steps))
+            candidate_evidence['object'], realized, len(steps),
+            weakness_delivery_facts([step['controls'] for step in steps]))
     attempted_steps = learning_summary.get('candidate_steps')
     if type(attempted_steps) is not int or attempted_steps < 1:
         invalid()
@@ -135,7 +136,8 @@ def _outcome_attempt(
         enrichment_examples=learning_summary.get('enrichment_examples'))
     return (
         selected, learning_summary.get('attempt_id'), None, None,
-        realized, attempted_steps)
+        realized, attempted_steps,
+        weakness_delivery_facts(learning_summary.get('policy_controls')))
 
 
 def build_outcome(
@@ -167,7 +169,7 @@ def build_outcome(
     if not scores:
         invalid()
     (selected, attempt_id, proposal_id, candidate_object, realized,
-     attempted_steps) = _outcome_attempt(
+     attempted_steps, weakness_delivery) = _outcome_attempt(
         run_dir, selection, decision, candidate_evidence, learning_summary,
         identity, context, selected_sha256)
     cap = identity.capability_id
@@ -179,7 +181,10 @@ def build_outcome(
         if selected is not None
         else {'selected_teacher_sha256': selected_sha256}
     )
+    from bilqis_mlx.runtime.scored_target_weakness import live_resolution_proofs
+    weakness_resolutions = live_resolution_proofs(selection, evaluation, decision)
     observation = _IssuedOutcome({
+        **({'weakness_resolutions': weakness_resolutions} if weakness_resolutions else {}),
         'schema': SCHEMA, 'attempt_id': attempt_id,
         'proposal_id': proposal_id, 'candidate_evidence': candidate_object,
         'teacher_visit': identity.to_record(), 'context': context,
@@ -187,10 +192,16 @@ def build_outcome(
         'selected_policy': selection.policy,
         'effective_policy_key': effective_policy_key(selection.policy),
         'realized_action': realized, 'attempted_steps': attempted_steps,
+        **({'weakness_delivery': weakness_delivery} if weakness_delivery else {}),
         'retained_steps': attempted_steps if decision.accepted else 0,
         'decision': decision.to_record(), 'scores': [list(row) for row in scores],
         'protected_capabilities': list(protected),
     })
+    reference_scores = evaluation.decision.fixed_reference_scores
+    if reference_scores:
+        observation['schema'] = FIXED_REFERENCE_SCHEMA
+        observation['fixed_reference_scores'] = [list(row) for row in reference_scores]
+        observation['fixed_reference_cohort_sha256'] = evaluation.decision.fixed_reference_cohort_sha256
     observation['outcome_sha256'] = _fingerprint(observation)
     _register_outcome(observation)
     return observation
@@ -238,11 +249,14 @@ def carry_credit_to_successor(visit, successor, parent):
 
 def context_for_selection(
         release, program, grade, school, option, teacher, metadata,
-        total_capabilities):
+        total_capabilities, *, prepared_context=None):
     key = metadata['diagnostic_context_key']
     payload = teacher['causal_experiment']['diagnostic_contexts'][key]
-    context = selection_context(release, program, grade, school.stage,
-        option.context.scope, payload, option.context.capability_id)
+    context = (
+        selection_context(release, program, grade, school.stage,
+            option.context.scope, payload, option.context.capability_id)
+        if prepared_context is None else {**prepared_context, "diagnostics": payload}
+    )
     competence = getattr(option, 'competence', None)
     if competence is not None:
         context['competence_priority'] = competence.to_record()

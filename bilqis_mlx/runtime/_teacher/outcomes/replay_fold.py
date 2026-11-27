@@ -52,6 +52,10 @@ def fold_rejections(run_dir, cache, teacher, rows, recover_selected_teacher):
                 or payload['outcome'] != {'accepted': False, 'decision': decision}
                 or proposal['candidate_attempt_ordinal'] != evidence['rejection_journal_ordinal']
                 or observation['attempted_steps'] != len(payload['steps']))
+            from bilqis_mlx.learning.teacher_realized_action import weakness_delivery_facts
+            invalid_record = invalid_record or (
+                observation.get('weakness_delivery', []) != weakness_delivery_facts(
+                    [step['controls'] for step in payload['steps']]))
         if (invalid_record
                 or visit.generation != cache.generation
                 or visit.accepted_manifest_sha256 != cache.accepted_manifest_sha256
@@ -60,7 +64,13 @@ def fold_rejections(run_dir, cache, teacher, rows, recover_selected_teacher):
                 or decision['decision'] != 'REJECT' or decision['reason'] != reason
                 or observation['retained_steps'] != 0):
             invalid()
+        prior = teacher.get('how_outcomes', {})
+        already_applied = (
+            prior.get('parent_manifest_sha256') == visit.accepted_manifest_sha256
+            and observation['attempt_id'] in prior.get('applied', {}))
         teacher = apply_replayed_outcome(teacher, observation, recover)
+        if already_applied:
+            continue
         weaknesses = evidence.get('structural_weaknesses', ())
         if weaknesses or not isinstance(weaknesses, (list, tuple)):
             from bilqis_mlx.runtime.structural_weakness_replay import (

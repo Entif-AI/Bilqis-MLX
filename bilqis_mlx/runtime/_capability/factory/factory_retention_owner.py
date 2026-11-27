@@ -256,7 +256,7 @@ def evaluate_factory_retention_candidate(
     *,
     run_dir: Path, observer=None, plasticity_escape=None,
     mastery_debt_min_utility: float = 0.05,
-    accepted_parent=None, execution_cache=None,
+    accepted_parent=None, execution_cache=None, preflight=None,
 ):
     """Run C05 with no caller-selected solver, cohort, policy or coverage map."""
     if (type(candidate) is not CandidateTransaction
@@ -299,11 +299,21 @@ def evaluate_factory_retention_candidate(
         target_plan = plan.for_target(target_capability)
 
     if CURRENT_EVIDENCE_STAGE is EvidenceStage.FOUNDATION_ACQUISITION:
+        if preflight is not None:
+            from .retention.local_preflight import require_preflight
+            require_preflight(preflight)
+            if (preflight.visit.capability_id != target_capability
+                    or (strict and any(
+                        authority.visit_id != preflight.visit.visit_id
+                        for authority in candidate.training_authorities
+                        if authority is not None))):
+                _invalid("BAMF_C05_PROSPECTIVE_TARGET_INVALID")
         return _foundation_retention_evaluation(
             source_context, parent, candidate_bundle, candidate_state, artifact_path,
             release, plan, target_plan, training, cached_rows, cache,
             parent_identity_sha256=candidate._parent_identity_sha256,
             mastery_debt_min_utility=mastery_debt_min_utility,
+            **({"preflight": preflight} if preflight is not None else {}),
             **({"observer": observer} if observer is not None else {}))
     instruments = _local_retention_instruments(
         source_context, candidate_bundle, artifact_path, cached_rows, target_plan)

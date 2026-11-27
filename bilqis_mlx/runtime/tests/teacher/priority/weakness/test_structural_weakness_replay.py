@@ -203,7 +203,7 @@ def test_cold_projection_rehydrates_exact_weakness_evidence(tmp_path):
         return (
             "9" * 64,
             (CAPABILITY, "visit:z", "NO_MEASURABLE_TARGET_GAIN", "9" * 64),
-            1, 1, (wrapper,),
+            1, 1, (wrapper,), {"structural_weaknesses": [weakness]},
         )
 
     projection_key = "r13-weakness-fixture"

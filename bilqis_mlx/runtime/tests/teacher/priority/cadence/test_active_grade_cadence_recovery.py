@@ -14,7 +14,7 @@ from bilqis_mlx.runtime.active_grade_cadence_contracts import ActiveGradeCadence
 from bilqis_mlx.runtime.active_grade_cadence_custody import read_current_cadence
 from bilqis_mlx.runtime import active_grade_cadence_boundary as cadence_boundary
 
-from bilqis_mlx.runtime.tests.teacher.priority.test_active_grade_cadence import (
+from bilqis_mlx.runtime.tests.teacher.priority.cadence.test_active_grade_cadence import (
     _capability,
     _epoch,
     _frontier,

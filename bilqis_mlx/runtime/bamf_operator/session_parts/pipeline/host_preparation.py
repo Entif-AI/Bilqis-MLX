@@ -46,9 +46,10 @@ def learning_first_prepare_step(execute_candidate, selection, context):
     row_cache = LearningFirstSourceRowCache()
 
     def prepare(_ordinal, lesson):
+        seed = getattr(lesson, "source_seed", None)
         return prepare_learning_first_source_inputs_ahead(
             context, authenticated, lesson.delivered,
-            source_seed=selection.offer.source_seed,
+            source_seed=selection.offer.source_seed if seed is None else seed,
             source_each=len(lesson.direct) + len(lesson.enrichment),
             source_identity=getattr(lesson, "prefetch_identity", None),
             row_cache=row_cache)

@@ -62,7 +62,34 @@ def reconcile_bamf_outbox(
         publish_missing=publish_missing)
 
 
-def record_bamf_rejection(run_dir: Path, student: CompleteStudent, evidence: dict) -> str:
+def _rejection_authority(student, pointer, optimizer_step, evidence,
+                         owner_evaluation, owner_decision, owner_selection):
+    from bilqis_mlx.runtime.scored_target_weakness import bind_live_target_observation
+    if owner_evaluation is not None and owner_selection is None:
+        invalid("BAMF_SCORED_TARGET_SELECTION_REQUIRED")
+    enriched = bind_live_target_observation(
+        evidence, owner_evaluation, owner_decision, owner_selection)
+    registry = rejection_registry(dict(student.correction_frontier))
+    portable = (
+        None if registry is None else try_issue_portable_rejection_authority(
+            registry, run_id=student.run_id, generation=student.generation,
+            student_manifest_sha256=pointer["manifest_sha256"],
+            optimizer_step=optimizer_step, evidence=dict(enriched)))
+    if portable is not None:
+        return enriched, portable, True
+    return evidence, {
+        "schema": "bilqis.mlx.bamf-rejection-authority/v1",
+        "run_id": student.run_id,
+        "generation": student.generation,
+        "student_manifest_sha256": pointer["manifest_sha256"],
+        "optimizer_step": optimizer_step,
+        "evidence": dict(evidence),
+    }, False
+
+
+def record_bamf_rejection(run_dir: Path, student: CompleteStudent, evidence: dict, *,
+                          owner_evaluation=None, owner_decision=None,
+                          owner_selection=None) -> str:
     """Publish idempotent failure evidence without minting or mutating a generation."""
     if type(student) is not CompleteStudent or not isinstance(evidence, dict) or not evidence:
         invalid("BAMF_REJECTION_EVIDENCE_INVALID")
@@ -79,28 +106,14 @@ def record_bamf_rejection(run_dir: Path, student: CompleteStudent, evidence: dic
         if type(optimizer_step) is not int or optimizer_step != manifest.get("tensors", {}).get("optimizer_step"):
             invalid(DataPlaneError.BUNDLE_PAYLOAD_DRIFT)
         evidence = _validated_c03_rejection_evidence(student, pointer, evidence)
-        registry = rejection_registry(dict(student.correction_frontier))
-        portable_authority = (
-            None if registry is None else try_issue_portable_rejection_authority(
-                registry, run_id=student.run_id, generation=student.generation,
-                student_manifest_sha256=pointer["manifest_sha256"],
-                optimizer_step=optimizer_step, evidence=dict(evidence)))
-        if portable_authority is None:
-            authority = {
-                "schema": "bilqis.mlx.bamf-rejection-authority/v1",
-                "run_id": student.run_id,
-                "generation": student.generation,
-                "student_manifest_sha256": pointer["manifest_sha256"],
-                "optimizer_step": optimizer_step,
-                "evidence": dict(evidence),
-            }
-        else:
-            authority = portable_authority
+        evidence, authority, portable = _rejection_authority(
+            student, pointer, optimizer_step, evidence,
+            owner_evaluation, owner_decision, owner_selection)
         authority_raw = canonical(authority)
         authority_sha256 = sha(authority_raw)
         data_plane().put_object(authority_sha256, authority_raw)
         portable_receipt = None
-        if portable_authority is not None:
+        if portable:
             portable_receipt = portable_rejection_receipt(
                 run_id=student.run_id, generation=student.generation,
                 student_manifest_sha256=pointer["manifest_sha256"],
@@ -120,7 +133,7 @@ def record_bamf_rejection(run_dir: Path, student: CompleteStudent, evidence: dic
             "evidence": dict(evidence),
             "rejection_authority_sha256": authority_sha256,
         }
-        if portable_authority is not None:
+        if portable:
             event.update({
                 "rejection_authority": authority,
                 "rejection_receipt_sha256": portable_digest,

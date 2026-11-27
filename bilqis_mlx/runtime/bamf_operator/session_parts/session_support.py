@@ -41,9 +41,11 @@ class BamfPreparedVisit:
     candidate_evidence: dict | None = None
     how_outcome: dict | None = None
     structural_weaknesses: tuple = ()
+    retention_evaluation: object | None = None
     learning_health: dict | None = None
     rejection_journal_ordinal: int | None = None
     rejection_attempt_ordinal: int | None = None
+    preflight: object | None = None
 
 
 @dataclass(frozen=True)
@@ -71,6 +73,7 @@ class BamfOperatorResult:
     admission_advances: int = 0
     elapsed_seconds: float = 0.0
     stop_receipt_sha256: str | None = None
+    skipped: int = 0
 
 
 def _execution_context(

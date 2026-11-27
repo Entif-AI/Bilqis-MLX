@@ -242,3 +242,69 @@ def test_versioned_retained_protected_loss_is_negative_evidence(schema, protecte
         pattern = channel["negative_archetypes"][0]
         assert pattern["delta"]["peer"] == -1 / 12
         assert pattern["paired_scores_sha256"] == record["decision"]["evidence_sha256"]
+
+
+def _fixed_reference_outcome(parent, *, schema, measured_target=True):
+    cap = "opaque:next"
+    record = outcome(parent)
+    measured = [cap, "peer"] if measured_target else ["peer"]
+    record["decision"].update(
+        reason="PROTECTED_CAPABILITY_REGRESSION",
+        retention_protection_plan_sha256="f" * 64,
+        baseline_coverage={
+            "schema": "bilqis.mlx.c05-baseline-coverage/v1",
+            "epoch_sha256": "a" * 64,
+            "measured_capabilities": measured,
+            "unmeasured_capabilities": [] if measured_target else [cap],
+            "measured_denominator": len(measured),
+            "total_capabilities": 2,
+            "group_denominators": [{"group": "Z", "measured": len(measured), "total": 2}],
+        })
+    return signed(record, schema=schema, candidate_evidence=None, proposal_id=None,
+        scores=[[cap, 1, 3, 6], ["peer", 5, 4, 6]],
+        protected_capabilities=["peer"],
+        fixed_reference_scores=[[cap, 5, 2, 6], ["peer", 5, 4, 6]],
+        fixed_reference_cohort_sha256="e" * 64)
+
+
+@pytest.mark.parametrize("measured_target,expected_loss", [(True, .5), (False, 1/6)])
+def test_fixed_reference_credit_preserves_fresh_gain_and_measured_safety(
+        measured_target, expected_loss):
+    parent = teacher_fixture()
+    value = _fixed_reference_outcome(parent, schema="bilqis.bamf.teacher-outcome/v3",
+                                     measured_target=measured_target)
+    final = apply_outcome(parent, value)
+    channel = final["causal_experiment"]
+    record = channel["contexts"]["opaque:next|MAIN|factory/test"]["policy"]
+    assert record["target_delta_sum"] == pytest.approx(1/3)
+    assert record["worst_protected_loss_sum"] == pytest.approx(expected_loss)
+    assert final["global_stats"]["policy"]["latest"] == pytest.approx(-expected_loss)
+    assert channel["negative_archetypes"][0]["fixed_reference_deltas"] == (
+        {"opaque:next": -.5, "peer": -1/6} if measured_target else {"peer": -1/6})
+    assert apply_outcome(final, value) == final
+    assert parent == teacher_fixture()
+
+
+def test_previous_fixed_reference_observation_keeps_original_credit():
+    parent = teacher_fixture()
+    value = _fixed_reference_outcome(parent, schema="bilqis.bamf.teacher-outcome/v2")
+    result = apply_outcome(parent, value)
+    historical = deepcopy(value)
+    historical.pop("fixed_reference_scores")
+    historical.pop("fixed_reference_cohort_sha256")
+    historical = signed(historical)
+    old = apply_outcome(parent, historical)
+    assert result["causal_experiment"] == old["causal_experiment"]
+    assert result["global_stats"] == old["global_stats"]
+
+
+@pytest.mark.parametrize("change", [
+    {"fixed_reference_cohort_sha256": None},
+    {"fixed_reference_scores": [["opaque:next", 5, 2, 6], ["peer", 5, 5, 6]]},
+    {"fixed_reference_scores": [["opaque:next", 5, 2, 6]]},
+])
+def test_fixed_reference_credit_rejects_inconsistent_evidence(change):
+    parent = teacher_fixture()
+    value = _fixed_reference_outcome(parent, schema="bilqis.bamf.teacher-outcome/v3")
+    with pytest.raises(BilqisError):
+        apply_outcome(parent, signed(value, **change))

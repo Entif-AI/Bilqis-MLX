@@ -69,7 +69,7 @@ def consume_attempt(
     counts = dict(state.recovery_attempt_counts)
     retained = dict(state.recovery_retained_counts)
     rejected = dict(state.recovery_rejected_counts)
-    if state.phase in {
+    if terminal_outcome is not ActiveGradeCadenceOutcome.PERFECT_TARGET_SKIPPED and state.phase in {
             ActiveGradeCadencePhase.RECOVERY_1,
             ActiveGradeCadencePhase.RECOVERY_2}:
         counts[capability_id] = counts.get(capability_id, 0) + 1

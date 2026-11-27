@@ -2,10 +2,14 @@ from pathlib import Path
 from types import SimpleNamespace as NS
 from unittest.mock import patch
 
+import pytest
+
 from bilqis_mlx.runtime.bamf_operator.session_parts.session_execution import execute_horizon
+from bilqis_mlx.runtime.bamf_operator.source_prefetch import SourcePrefetchMetrics
 
 
-def test_native_horizon_preserves_enrichment_role_into_candidate_delivery():
+@pytest.mark.parametrize("metrics,plan", [(SourcePrefetchMetrics(), None), (None, object())])
+def test_native_horizon_preserves_enrichment_role_into_candidate_delivery(metrics, plan):
     direct = ({"id": "direct", "capability": "Z.C0"},)
     enrichment = ({"id": "extra", "capability": "Z.C0"},)
     lesson = NS(direct=direct, enrichment=enrichment, delivered=(*direct, *enrichment))
@@ -14,7 +18,7 @@ def test_native_horizon_preserves_enrichment_role_into_candidate_delivery():
 
     class Lane:
         def __init__(self, *args, **kwargs):
-            pass
+            self.metrics = kwargs["metrics"]
 
         def lesson(self, ordinal):
             assert ordinal == 1
@@ -45,8 +49,9 @@ def test_native_horizon_preserves_enrichment_role_into_candidate_delivery():
             return_value=(None, ())):
         execute_horizon(
             Path("/tmp"), selection, NS(), parent, "atlas", "feature", direct, 1,
-            cache, 1, None, 0, None, object(), NS(update=lambda **_: None),
-            source_lane_cls=Lane, source_metrics_cls=lambda: object(),
+            cache, 1, None, 0, None, metrics, NS(update=lambda **_: None),
+            rehearsal_plan=plan,
+            source_lane_cls=Lane, source_metrics_cls=SourcePrefetchMetrics,
             prepare_evidence_root=lambda _: None, capture_cls=lambda *a, **k: object(),
             delivery_observation_cls=observation, execute_candidate=execute_candidate,
             step_seed=lambda *a: 3, emit_progress=lambda *a: None,

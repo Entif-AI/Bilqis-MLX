@@ -319,6 +319,20 @@ def _diagnostic_context(channel: dict, capability: str, curriculum_scope: str,
         "rejection_pressure": int(stagnation.get("rejection_streak", 0)) > 0,
         "dominant_rejection_reason": dominant,
     }
+    if "native_previsit" in diagnostics:
+        previsit = diagnostics["native_previsit"]
+        if (not isinstance(previsit, dict) or set(previsit) != {
+                "fixed_reference_deficit", "target_sample_deficit",
+                "reference_conflict", "structural_debt"}
+                or any(value is not None and type(value) is not bool
+                       for value in previsit.values())
+                or type(previsit["reference_conflict"]) is not bool):
+            raise ValueError(LearningExperimentError.DIAGNOSTIC_REASON_DRIFT.value)
+        # Native ordinary visits do not measure the legacy exam/adviser signals.
+        # Preserve their unknown state without reinterpreting historical keys.
+        payload.update(warnings=None, unresolved_misses=None, champion_candidates=None,
+                       native_previsit_schema="bilqis.bamf.previsit-diagnostics/v1",
+                       native_previsit=dict(previsit))
     if (channel.get("selection_contract") == BAMF_SUCCESSOR_SELECTION
             and "salience_evidence" in diagnostics):
         from .atlas_salience import salience_priority_features

@@ -145,6 +145,9 @@ def rebuild_authenticated_cadence_attempts(run_dir: Path):
         return ()
     from bilqis_mlx.data_plane import data_plane
     from .priority_rejection_replay import authenticated_rejection_event
+    from bilqis_mlx.runtime.bamf_bundle.publication.preflight import (
+        EVENT, PERFECT_TARGET_SKIPPED, authenticate_perfect_target_skip,
+    )
 
     plane = data_plane()
     tail = plane.indexed_event_tail(root, 0)
@@ -167,18 +170,23 @@ def rebuild_authenticated_cadence_attempts(run_dir: Path):
             continue
         evidence = event.get("evidence")
         cadence = evidence.get("cadence") if isinstance(evidence, dict) else None
-        if event.get("event") != "BAMF_CANDIDATE_REJECTED" or not isinstance(
+        if event.get("event") not in {"BAMF_CANDIDATE_REJECTED", EVENT} or not isinstance(
                 cadence, dict):
             continue
         parent = chain.get(event.get("generation"))
         if parent is None:
             _invalid("BAMF_ACTIVE_GRADE_CADENCE_REJECTION_GENERATION_INVALID")
-        if not authenticated_rejection_event(event, parent[0], parent[1]):
-            _invalid("BAMF_ACTIVE_GRADE_CADENCE_REJECTION_EVENT_INVALID")
+        if event.get("event") == EVENT:
+            authenticate_perfect_target_skip(event, parent[0], parent[1])
+            outcome = PERFECT_TARGET_SKIPPED
+        else:
+            if not authenticated_rejection_event(event, parent[0], parent[1]):
+                _invalid("BAMF_ACTIVE_GRADE_CADENCE_REJECTION_EVENT_INVALID")
+            outcome = "REJECTED"
         capability = evidence.get("capability")
         if capability not in cadence.get("authorized_capability_ids", ()):
             _invalid("BAMF_ACTIVE_GRADE_CADENCE_REJECTION_EVENT_INVALID")
-        attempts.append((cadence, capability, "REJECTED"))
+        attempts.append((cadence, capability, outcome))
     for key, (generation, event) in sorted(
             accepted.items(), key=lambda item: item[1][0]):
         if key not in seen:

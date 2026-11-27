@@ -48,6 +48,10 @@ def _execute_horizon_step(
         progress_started = time.perf_counter()
         emit_progress(progress, f"executing candidate step {ordinal}/{horizon}")
         progress_seconds = time.perf_counter() - progress_started
+    if not strict and getattr(lesson, "source_seed", None) is not None:
+        pipeline_kwargs["prepared_source_seed"] = lesson.source_seed
+    if not strict and getattr(lesson, "primary_lesson", None) is not None:
+        pipeline_kwargs["prepared_primary_lesson"] = lesson.primary_lesson
     step = execute_candidate(
         selection, context, atlas_path, feature_path,
         teacher_hparams=parent.optimizer_hyperparameters, observation=observation,

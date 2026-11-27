@@ -147,18 +147,14 @@ def test_unmeasured_target_still_allows_established_protected_veto():
     target_pair = AssessmentPair(
         evaluate_capabilities(parent_solver, cohorts[0], PARENT),
         evaluate_capabilities(parent_solver, cohorts[0], CANDIDATE))
-    protected_cohort = replace(
-        fixed,
-        cases=protected_cases,
-        capability_groups=((protected, "future-grade-z"),),
-        expected_case_digest=case_census_digest(protected_cases),
-    )
-    protected_pair = AssessmentPair(
-        evaluate_capabilities(parent_solver, protected_cohort, PARENT),
-        evaluate_capabilities(candidate_solver, protected_cohort, CANDIDATE))
+    from bilqis_mlx.runtime.tests.capability.capability_retention_helpers import _rescore
+    fixed_pair = _rescore(AssessmentPair(
+        evaluate_capabilities(parent_solver, fixed, PARENT),
+        evaluate_capabilities(candidate_solver, fixed, CANDIDATE)),
+        {target: 0, protected: 12}, {target: 0, protected: 0})
 
     decision = finalize_target_first_local_candidate(
-        target, final_policy, fixed, target_pair, protected_pair,
+        target, final_policy, fixed, target_pair, fixed_pair,
         retention_protection_plan_sha256="4" * 64,
         evaluated_capability_ids=(target, protected))
 

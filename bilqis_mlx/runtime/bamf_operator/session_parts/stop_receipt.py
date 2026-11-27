@@ -51,7 +51,7 @@ def _resume_state(status: str) -> tuple[bool, str]:
         return True, "RESUME_AFTER_RESOURCE_RECOVERY"
     if status in {
             "PRIORITY_HOLD", "ADMISSION_HOLD", "IMPLEMENTATION_UNCOVERED",
-            "FIXED_POINT"}:
+            "FIXED_POINT", "PREFLIGHT_EXHAUSTED"}:
         return True, "RESUME_WHEN_WORK_AVAILABLE"
     return True, "RESUME_ALLOWED"
 
@@ -67,7 +67,7 @@ def record_normal_stop_receipt(
         steps_per_visit: int, reserve_gib: float, source_prefetch_workers: int,
         visits: int, accepted: int, rejected: int, elapsed_seconds: float,
         admission_status: str | None, admission_advances: int,
-        resource_witness: dict, batch_size: int = 32) -> str | None:
+        resource_witness: dict, batch_size: int = 32, skipped: int = 0) -> str | None:
     """Append a normal-stop receipt without minting or replacing a generation."""
     run_dir = Path(run_dir)
     # Unit routing tests use lightweight stand-ins. Production custody always has
@@ -107,6 +107,7 @@ def record_normal_stop_receipt(
         "visits": visits,
         "accepted_visits": accepted,
         "rejected_visits": rejected,
+        "skipped_visits": skipped,
         "admission_status": admission_status,
         "admission_advances": admission_advances,
         "resource_witness": dict(resource_witness),

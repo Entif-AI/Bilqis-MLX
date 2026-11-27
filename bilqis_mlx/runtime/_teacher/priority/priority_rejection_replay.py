@@ -8,6 +8,7 @@ from bilqis_mlx.data_plane import data_plane
 from bilqis_mlx.errors import BilqisError, ErrorBus, SCHOOL
 from bilqis_mlx.runtime import checkpoint_outbox
 from bilqis_mlx.runtime.bamf_bundle.records import canonical
+from bilqis_mlx.runtime.bamf_bundle.feature.historical_custody import HistoricalBamfBundle
 from bilqis_mlx.runtime.bamf_rejection import (
     portable_rejection_receipt, rejection_registry,
     verify_portable_rejection_authority,
@@ -28,6 +29,12 @@ def _projection(_identity):
     return RejectionProjection()
 
 
+def _accepted_optimizer_step(parent):
+    if isinstance(parent, HistoricalBamfBundle):
+        return parent.optimizer_step
+    return parent.retained_state.optimizer_step
+
+
 def _portable_rejection_receipt_sha(
         event, parent, cache, evidence, authority, authority_sha256):
     try:
@@ -35,7 +42,7 @@ def _portable_rejection_receipt_sha(
             authority, cache._correction_registry,
             run_id=cache.run_id, generation=cache.generation,
             student_manifest_sha256=cache.accepted_manifest_sha256,
-            optimizer_step=parent.retained_state.optimizer_step,
+            optimizer_step=_accepted_optimizer_step(parent),
             evidence=evidence)
     except BilqisError:
         _invalid("BAMF_PRIORITY_REJECTION_AUTHORITY_INVALID")
@@ -44,7 +51,7 @@ def _portable_rejection_receipt_sha(
     receipt = portable_rejection_receipt(
         run_id=cache.run_id, generation=cache.generation,
         student_manifest_sha256=cache.accepted_manifest_sha256,
-        optimizer_step=parent.retained_state.optimizer_step,
+        optimizer_step=_accepted_optimizer_step(parent),
         authority_sha256=authority_sha256)
     receipt_sha256 = hashlib.sha256(canonical(receipt)).hexdigest()
     if event.get("rejection_receipt_sha256") != receipt_sha256:
@@ -58,7 +65,7 @@ def _legacy_rejection_receipt_sha(event, parent, cache, evidence, authority_sha2
         "run_id": cache.run_id,
         "generation": cache.generation,
         "student_manifest_sha256": cache.accepted_manifest_sha256,
-        "optimizer_step": parent.retained_state.optimizer_step,
+        "optimizer_step": _accepted_optimizer_step(parent),
         "evidence": evidence,
     }
     try:
@@ -105,8 +112,8 @@ def _rejection_evidence_fields(evidence, parent):
     if (not isinstance(selected, str) or not selected
             or not isinstance(visit_id, str) or not visit_id
             or type(candidate_step) is not int
-            or candidate_step <= parent.retained_state.optimizer_step
-            or retained_step != parent.retained_state.optimizer_step
+            or candidate_step <= _accepted_optimizer_step(parent)
+            or retained_step != _accepted_optimizer_step(parent)
             or not isinstance(reason, str) or not reason
             or (rejection_attempt_ordinal is not None
                 and (type(rejection_attempt_ordinal) is not int
@@ -124,7 +131,7 @@ def _validated_rejection(event, parent, cache):
     if event.get("generation") != cache.generation:
         return None
     if (event.get("student_manifest_sha256") != cache.accepted_manifest_sha256
-            or event.get("optimizer_step") != parent.retained_state.optimizer_step):
+            or event.get("optimizer_step") != _accepted_optimizer_step(parent)):
         _invalid("BAMF_PRIORITY_REJECTION_IDENTITY_DRIFT")
     lineage = {"run_id": cache.run_id, "generation": cache.generation}
     if not checkpoint_outbox.ordinary_outbox_lineage(lineage, [event]):
@@ -146,6 +153,11 @@ def _validated_rejection(event, parent, cache):
         validate_rejection_weaknesses,
     )
     weaknesses = validate_rejection_weaknesses(evidence, receipt_sha256)
+    if "target_weakness_observation" in evidence:
+        if not portable:
+            _invalid("BAMF_SCORED_TARGET_OBSERVATION_UNSIGNED")
+        from bilqis_mlx.runtime.scored_target_weakness import validate_target_weakness_observation
+        validate_target_weakness_observation(evidence["target_weakness_observation"], evidence)
     replay_evidence = {
         **evidence,
         _PORTABLE_TEACHER_AUTHORITY: portable,
@@ -169,7 +181,7 @@ def _current_projection(run_dir, parent, cache):
         cache.run_id,
         cache.generation,
         cache.accepted_manifest_sha256,
-        parent.retained_state.optimizer_step,
+        _accepted_optimizer_step(parent),
     )
     projection = _projection(identity)
     projection.refresh(
@@ -238,19 +250,18 @@ def current_structural_weaknesses(
         carried_structural_weaknesses, weakness_is_current,
     )
 
-    projection = _current_projection(run_dir, parent, cache)
     selected = capability or selection.visit.identity.capability_id
     current = {}
     # Generation-zero parent custody intentionally precedes C03 bootstrap.
     # The issued visit already owns the authenticated current teacher projection.
     teacher = restore_teacher_lineage(selection.visit.projection.teacher_state).teacher()
-    candidates = (
-        *carried_structural_weaknesses(teacher),
-        *projection.weaknesses_view(),
-    )
-    for item in candidates:
+    # C03 selection has already folded authenticated rejection outcomes.
+    # Overlaying raw rejection history here would reopen resolved classes
+    # and discard the ledger's realized-exposure counts.
+    for item in carried_structural_weaknesses(teacher):
         weakness = item["weakness"]
-        if (weakness["capability_id"] == selected
+        if (weakness.get("evidence_kind") == "SCORED_PARENT_MISS"
+                and weakness["capability_id"] == selected
                 and weakness_is_current(item, source_context, selection)):
             current[weakness["weakness_class"]["class_sha256"]] = item
     return tuple(current[key] for key in sorted(current))

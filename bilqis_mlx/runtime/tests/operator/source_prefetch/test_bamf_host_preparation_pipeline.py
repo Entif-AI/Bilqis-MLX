@@ -111,7 +111,7 @@ def test_learning_first_callback_is_selected_without_touching_strict_execution()
     assert learning_first_prepare_step(strict_executor, selection, context) is None
 
     row = {"id": "row:1", "capability": "A.TEST"}
-    lesson = SimpleNamespace(delivered=(row,), direct=(row,), enrichment=())
+    lesson = SimpleNamespace(delivered=(row,), direct=(row,), enrichment=(), source_seed=29)
     with patch(
             "bilqis_mlx.runtime.factory_training_preparation."
             "prepare_learning_first_source_inputs_ahead",
@@ -119,7 +119,7 @@ def test_learning_first_callback_is_selected_without_touching_strict_execution()
         callback = learning_first_prepare_step(learning_executor, selection, context)
         assert callback(1, lesson) == "prepared"
     prepare.assert_called_once_with(
-        context, authenticated, (row,), source_seed=17, source_each=1,
+        context, authenticated, (row,), source_seed=29, source_each=1,
         source_identity=None, row_cache=ANY)
 
 

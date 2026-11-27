@@ -37,7 +37,6 @@ from .local_evaluation import evaluate_target_gate
 from .local_screen_support import (
     cached_instruments,
     comparison_epoch,
-    coverage_for_groups,
     elapsed,
     foundation_policy,
     local_coverage,
@@ -63,14 +62,21 @@ def _candidate_seed_identity(candidate_state, candidate_bundle) -> str:
     ))
 
 
-def target_stage(
-        source_context, parent, candidate_bundle, candidate_state, artifact_path,
-        release, plan, target_plan, training, cached_rows, cache, observer=None, *,
-        authenticated=None, mastery_debt_min_utility=0.05):
-    started = time.perf_counter() if observer is not None else None
-    target = target_plan.target_capability_id
-    (reference_seed, reference_rows), protected_rows = split_cached_rows(
-        cached_rows, target_plan)
+def _target_draw(source_context, candidate_state, candidate_bundle, release, cache,
+                 target, training, preflight):
+    if preflight is not None:
+        from .local_preflight import require_preflight
+        require_preflight(preflight)
+        return preflight
+    candidate_seed_identity = _candidate_seed_identity(candidate_state, candidate_bundle)
+    fresh_seed = _owner_seed(release.release_sha256, cache, target, candidate_seed_identity)
+    return _fresh_rows(
+        source_context, (target,), seed=fresh_seed + C05_FRESH_TARGET_SEED_OFFSET,
+        training=training, require_independent=False)
+
+
+def _reference_cases(source_context, candidate_bundle, artifact_path, reference_seed,
+                     reference_rows, authenticated):
     from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
         strict_evidence_enabled,
     )
@@ -85,17 +91,28 @@ def target_stage(
                 source_context, row,
                 semantic_release=authenticated.features.semantic_release)
             for row in reference_rows)
+    return reference_cases
+
+
+def target_stage(
+        source_context, parent, candidate_bundle, candidate_state, artifact_path,
+        release, plan, target_plan, training, cached_rows, cache, observer=None, *,
+        authenticated=None, mastery_debt_min_utility=0.05, preflight=None):
+    started = time.perf_counter() if observer is not None else None
+    target = target_plan.target_capability_id
+    (reference_seed, reference_rows), protected_rows = split_cached_rows(
+        cached_rows, target_plan)
+    reference_cases = _reference_cases(
+        source_context, candidate_bundle, artifact_path, reference_seed,
+        reference_rows, authenticated)
     epoch = comparison_epoch(
         release, plan, target_plan, reference_cases, parent, cache)
     ledger = BaselineLedger.from_optional_record(parent.baseline_evidence)
     target_group = ((target, target_plan.target_grade_id),)
     target_coverage = baseline_coverage(ledger, epoch, target_group)
-    candidate_seed_identity = _candidate_seed_identity(candidate_state, candidate_bundle)
-    fresh_seed = _owner_seed(
-        release.release_sha256, cache, target, candidate_seed_identity)
-    target_draw = _fresh_rows(
-        source_context, (target,), seed=fresh_seed + C05_FRESH_TARGET_SEED_OFFSET,
-        training=training, require_independent=False)
+    target_draw = _target_draw(
+        source_context, candidate_state, candidate_bundle, release, cache,
+        target, training, preflight)
     target_instruments = tuple(_instruments(
         source_context, candidate_bundle, artifact_path, target_draw.rows,
         seed=target_draw.seed, each=C05_PROBE_EACH,
@@ -114,19 +131,29 @@ def target_stage(
     elapsed(observer, "retention_target_prepare_wall_seconds", started)
 
     started = time.perf_counter() if observer is not None else None
-    parent_solver, parent_generation = factory_complete_solver(
-        source_context, parent, artifact_path, target_instruments,
-        execution_cache=cache)
+    parent_solver = parent_generation = None
+    if preflight is None:
+        parent_solver, parent_generation = factory_complete_solver(
+            source_context, parent, artifact_path, target_instruments,
+            execution_cache=cache)
     candidate_solver, candidate_generation = factory_complete_solver(
         source_context, candidate_bundle, artifact_path, target_instruments,
         authenticated=authenticated)
     elapsed(observer, "retention_target_solver_wall_seconds", started)
 
     started = time.perf_counter() if observer is not None else None
-    total_assessments = 2 + (2 if target_plan.protected_capability_ids else 0)
-    parent_assessment = observed_assessment(
-        parent_solver, target_cohort, parent_generation, observer, 0,
-        total_assessments, target, "parent", evaluator=evaluate_capabilities)
+    total_assessments = 4
+    if preflight is None:
+        parent_assessment = observed_assessment(
+            parent_solver, target_cohort, parent_generation, observer, 0,
+            total_assessments, target, "parent", evaluator=evaluate_capabilities)
+    else:
+        from .local_preflight import reuse_parent_assessment
+        parent_assessment = reuse_parent_assessment(
+            preflight, parent, cache, release, plan, target_plan,
+            target_cohort, target_coverage)
+        observe(observer, retention_completed=1, retention_total=total_assessments,
+                retention_subject=target, retention_role="parent")
     elapsed(observer, "retention_target_parent_wall_seconds", started)
     started = time.perf_counter() if observer is not None else None
     candidate_assessment = observed_assessment(
@@ -145,47 +172,44 @@ def target_stage(
     )
 
 
-def protected_stage(
+def reference_stage(
         source_context, parent, candidate_bundle, artifact_path,
-        release, plan, target_plan, training, protected_rows, cache,
+        release, plan, target_plan, training, reference_rows, cache,
         target_coverage, observer=None, *, authenticated=None,
         mastery_debt_min_utility=0.05):
     started = time.perf_counter() if observer is not None else None
-    protected_instruments = cached_instruments(
-        source_context, candidate_bundle, artifact_path, protected_rows,
+    reference_instruments = cached_instruments(
+        source_context, candidate_bundle, artifact_path, reference_rows,
         authenticated=authenticated)
-    protected_pair = parent_cache = None
     coverage = local_coverage(target_coverage, target_plan, plan.digest)
-    observe(observer, retention_protected_case_count=len(protected_instruments))
+    observe(observer,
+            retention_reference_case_count=len(reference_instruments),
+            retention_protected_case_count=sum(
+                item.case.capability_id in target_plan.protected_capability_ids
+                for item in reference_instruments))
     elapsed(observer, "retention_protected_prepare_wall_seconds", started)
-    if not protected_instruments:
-        return protected_pair, parent_cache, protected_instruments, coverage
-
     groups = target_plan.evaluated_capability_groups
-    protected_groups = tuple(
-        pair for pair in groups if pair[0] in target_plan.protected_capability_ids)
-    protected_coverage = coverage_for_groups(coverage, protected_groups)
-    protected_cases = tuple(item.case for item in protected_instruments)
-    protected_policy = foundation_policy(
-        protected_groups, target_plan.protected_capability_ids,
-        protected_cases, protected_coverage, mastery_debt_min_utility)
-    protected_cohort = _cohort(
-        EvidenceKind.FIXED_SCHOOL, protected_instruments, protected_groups,
-        release, protected_policy, training,
+    reference_cases = tuple(item.case for item in reference_instruments)
+    reference_policy = foundation_policy(
+        groups, target_plan.protected_capability_ids,
+        reference_cases, coverage, mastery_debt_min_utility)
+    reference_cohort = _cohort(
+        EvidenceKind.FIXED_SCHOOL, reference_instruments, groups,
+        release, reference_policy, training,
         rubric_sha256=plan.rubric_sha256,
         scope_sha256=target_plan.evaluation_scope_sha256,
         source_sha256=plan.source_sha256)
     started = time.perf_counter() if observer is not None else None
-    protected_parent_solver = None
-    protected_parent_generation = cache.generation_binding
+    reference_parent_solver = None
+    reference_parent_generation = cache.generation_binding
     parent_identity = factory_parent_assessment_identity(
-        source_context, parent, cache, protected_cohort,
-        None, protected_parent_generation)
+        source_context, parent, cache, reference_cohort,
+        None, reference_parent_generation)
     cached_parent = lookup_parent_assessment(
-        parent_identity, protected_cohort, protected_parent_generation, scope=cache)
+        parent_identity, reference_cohort, reference_parent_generation, scope=cache)
     if cached_parent is None:
-        protected_parent_solver, protected_parent_generation = factory_complete_solver(
-            source_context, parent, artifact_path, protected_instruments,
+        reference_parent_solver, reference_parent_generation = factory_complete_solver(
+            source_context, parent, artifact_path, reference_instruments,
             execution_cache=cache)
     elapsed(observer, "retention_protected_parent_solver_wall_seconds", started)
     started = time.perf_counter() if observer is not None else None
@@ -193,11 +217,11 @@ def protected_stage(
         observer, retention_completed=2, retention_total=4,
         retention_subject="fixed_school", retention_role="parent")
     if cached_parent is None:
-        protected_parent, parent_cache = use_parent_assessment(
-            parent_identity, protected_parent_solver, protected_cohort,
-            protected_parent_generation, scope=cache)
+        reference_parent, parent_cache = use_parent_assessment(
+            parent_identity, reference_parent_solver, reference_cohort,
+            reference_parent_generation, scope=cache)
     else:
-        protected_parent, parent_cache = cached_parent
+        reference_parent, parent_cache = cached_parent
     observe(
         observer, retention_completed=3, retention_total=4,
         retention_subject="fixed_school", retention_role="parent",
@@ -210,18 +234,18 @@ def protected_stage(
     observe(observer, retention_parent_cache_reused=parent_cache.reused)
 
     started = time.perf_counter() if observer is not None else None
-    protected_candidate_solver, protected_candidate_generation = factory_complete_solver(
-        source_context, candidate_bundle, artifact_path, protected_instruments,
+    reference_candidate_solver, reference_candidate_generation = factory_complete_solver(
+        source_context, candidate_bundle, artifact_path, reference_instruments,
         authenticated=authenticated)
     elapsed(observer, "retention_protected_candidate_solver_wall_seconds", started)
     started = time.perf_counter() if observer is not None else None
-    protected_candidate = observed_assessment(
-        protected_candidate_solver, protected_cohort, protected_candidate_generation,
+    reference_candidate = observed_assessment(
+        reference_candidate_solver, reference_cohort, reference_candidate_generation,
         observer, 3, 4, "fixed_school", "candidate",
         evaluator=evaluate_capabilities)
     elapsed(observer, "retention_protected_candidate_wall_seconds", started)
     solver_profile(
         observer, "retention_protected",
-        protected_parent_solver, protected_candidate_solver)
-    protected_pair = AssessmentPair(protected_parent, protected_candidate)
-    return protected_pair, parent_cache, protected_instruments, coverage
+        reference_parent_solver, reference_candidate_solver)
+    reference_pair = AssessmentPair(reference_parent, reference_candidate)
+    return reference_pair, parent_cache, reference_policy

@@ -12,7 +12,7 @@ from bilqis_mlx.runtime.active_grade_certification_handoff import (
     require_current_certification_boundary,
 )
 from bilqis_mlx.runtime.accepted_priority_visit_contracts import _issue_result
-from bilqis_mlx.runtime.tests.teacher.priority.test_active_grade_cadence import (
+from bilqis_mlx.runtime.tests.teacher.priority.cadence.test_active_grade_cadence import (
     _capability,
     _epoch,
     _frontier,

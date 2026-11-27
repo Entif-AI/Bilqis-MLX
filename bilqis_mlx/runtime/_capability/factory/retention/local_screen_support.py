@@ -124,25 +124,6 @@ def foundation_policy(
             mastery_debt_min_utility))
 
 
-def coverage_for_groups(coverage, groups):
-    capabilities = tuple(capability for capability, _group in groups)
-    measured = tuple(capability for capability in capabilities
-                     if capability in set(coverage.measured_capabilities))
-    measured_set = set(measured)
-    unmeasured = tuple(capability for capability in capabilities
-                       if capability not in measured_set)
-    group_names = tuple(dict.fromkeys(group for _capability, group in groups))
-    return BaselineCoverage(
-        measured, unmeasured,
-        tuple((
-            group,
-            sum(capability in measured_set for capability, member in groups
-                if member == group),
-            sum(member == group for _capability, member in groups),
-        ) for group in group_names),
-        len(measured), len(capabilities), coverage.epoch_sha256)
-
-
 def local_coverage(target_coverage, target_plan, plan_sha256):
     measured = set(target_plan.protected_capability_ids)
     if target_plan.target_capability_id in set(target_coverage.measured_capabilities):

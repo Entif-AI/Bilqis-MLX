@@ -2,7 +2,7 @@
 import inspect
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -149,3 +149,42 @@ def test_strict_horizon_preserves_rehearsal_with_accepted_cache():
     assert _rehearsal_plan_from(captured) is rehearsal_plan
     from bilqis_mlx.runtime.bamf_operator.session_parts import native_session
     assert _executor_from(captured) is native_session.execute_accepted_priority_candidate
+
+
+@pytest.mark.parametrize("strict", (False, True))
+def test_prospective_ordinals_reach_real_horizon_coordinator(strict):
+    from bilqis_mlx.runtime.bamf_operator.session_parts import native_session
+
+    cache = object.__new__(AcceptedExecutionCache)
+    parent, context = object(), object()
+    selection = SimpleNamespace(status="TEACHER_SELECTED")
+    rehearsal, candidate_visit = object(), object()
+    steps, capture, snapshot = (object(),), object(), object()
+    with evidence_mode(strict=strict), patch.multiple(
+            native_session,
+            bind_current_retention_protection_plan=Mock(),
+            compile_rehearsal_plan=Mock(return_value=rehearsal),
+            prepare_accepted_priority_candidate_visit=Mock(return_value=candidate_visit),
+            candidate_step_horizon=Mock(return_value=4),
+            rejection_attempt_ordinals=Mock(side_effect=AssertionError("prospective ordinals redrawn")),
+            candidate_identity_metrics_snapshot=Mock(return_value=snapshot),
+            execute_horizon=Mock(return_value=(steps, capture))):
+        result = candidate_horizon_execution(
+            Path("/run"), parent, context, "atlas", "features", selection, (),
+            "A.TEST", cache, 12, None, 0, None, None, None, None,
+            emit_progress=lambda *_: None, invalid=_invalid, attempt_ordinals=(7, 3))
+
+        assert result == (cache, steps, capture, 7, 3, snapshot if strict else None)
+        native_session.bind_current_retention_protection_plan.assert_called_once_with(
+            context, parent, cache)
+        native_session.compile_rehearsal_plan.assert_called_once_with(
+            Path("/run"), parent, cache, context, selection)
+        args, kwargs = native_session.execute_horizon.call_args
+        assert args[7:10] == (4, cache, 7)
+        assert kwargs["rehearsal_plan"] is rehearsal
+        assert kwargs["candidate_visit"] is (candidate_visit if strict else None)
+        assert kwargs["candidate_executor"] is (
+            native_session.execute_accepted_priority_candidate if strict
+            else native_session.execute_learning_first_priority_candidate)
+        assert native_session.prepare_accepted_priority_candidate_visit.call_count == int(strict)
+        native_session.rejection_attempt_ordinals.assert_not_called()

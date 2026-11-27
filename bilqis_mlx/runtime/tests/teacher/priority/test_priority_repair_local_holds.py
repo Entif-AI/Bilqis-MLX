@@ -60,6 +60,9 @@ def _select(priority, options, offers, **kwargs):
          patch.object(priority, "salience_priority_features", return_value={}), \
          patch.object(priority, "requalify_priority", return_value=qualified), \
          patch.object(priority, "_grade", return_value="g"), \
+         patch.object(priority, "prepare_lesson_pool", return_value=object()), \
+         patch.object(priority, "shape_priority_lesson", side_effect=lambda _ctx, _p, offer, *_: (offer, {})), \
+         patch.object(priority, "context_for_selection", return_value={}), \
          patch.object(priority, "select_visit_policy", return_value=("k", {"lr": 0.5}, {})), \
          patch.object(priority, "_selection_projection", return_value=SimpleNamespace(teacher_state={})), \
          patch.object(priority, "derive_teacher_visit_identity", return_value=identity), \

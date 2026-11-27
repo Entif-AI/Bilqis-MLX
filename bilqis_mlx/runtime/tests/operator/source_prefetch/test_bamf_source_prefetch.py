@@ -45,6 +45,7 @@ def _fixture(capability="capability:prefetch", *, visit="visit:prefetch"):
         source_family_id="family:" + capability,
         source_binding_digest=contract_digest(source_binding),
         source_authority=SimpleNamespace(
+            source_family_id="family:" + capability,
             content_sha256=source_content_digest(rows)),
         rows=lambda: rows,
     )
@@ -279,3 +280,33 @@ def test_native_operator_preserves_zero_one_two_worker_configuration(workers):
     assert visit.call_args.kwargs["source_prefetch_workers"] == workers
     assert visit.call_args.kwargs["source_prefetch_executor"] is (
         None if workers == 0 else executors[workers])
+
+
+def test_ordinary_lessons_redraw_target_rows_at_each_step():
+    selection, context, parent = _fixture("A.EDGE")
+    selection.policy = {"depth": 1, "contrast": 0.0}
+    def draw(*, seed, capability, each):
+        rows = tuple({"id": f"{capability}:{seed}:{i}", "capability": capability,
+                      "gold": "TRUE"} for i in range(each))
+        return rows, SimpleNamespace(source_family_id=f"family:{capability}:{seed}",
+                                     content_sha256=source_content_digest(rows))
+    context.draw_bound_rows = draw
+
+    def lessons(workers, executor):
+        lane = CandidateSourceLane(
+            selection, context, parent, 3, workers=workers, executor=executor,
+            metrics=SourcePrefetchMetrics(), policy_support_enabled=True)
+        return tuple(lane.lesson(step) for step in (1, 2, 3))
+
+    serial = lessons(0, None)
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        parallel = lessons(2, executor)
+    assert serial[0].direct == selection.offer.rows()
+    assert len({row["id"] for lesson in serial for row in lesson.direct}) == 3
+    assert [lesson.direct for lesson in parallel] == [lesson.direct for lesson in serial]
+    assert [lesson.source_seed for lesson in parallel] == [lesson.source_seed for lesson in serial]
+    assert len({lesson.source_seed for lesson in serial}) == 3
+    request = priority_source_request(
+        selection, context, parent, 2,
+        target_batch=(*draw(seed=29, capability="A.EDGE", each=1), 29))
+    assert request["source_family_id"] == "family:A.EDGE:29"

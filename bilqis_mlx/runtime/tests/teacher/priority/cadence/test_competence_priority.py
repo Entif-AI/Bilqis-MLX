@@ -13,7 +13,7 @@ from bilqis_mlx.runtime.priority_competence import (
     CapabilityCompetence, CompetenceScore, current_competence, instructional_members,
 )
 
-from bilqis_mlx.runtime.tests.teacher.priority.test_active_grade_cadence import (
+from bilqis_mlx.runtime.tests.teacher.priority.cadence.test_active_grade_cadence import (
     _capability, _epoch, _frontier, _obligations, _record_terminal,
 )
 
@@ -208,3 +208,32 @@ def test_recovery_rotates_equally_weak_members_after_rejected_attempts():
                             recovery_attempt_counts=((WEAK, 2),))
     assert recovery_members(state, MEMBERS, {WEAK: 99}, MEMBERS, scores) == (
         PERFECT, MEDIUM, UNMEASURED)
+
+
+def test_separated_reference_scores_supply_target_competence():
+    fixture = _accepted_fixture()
+    observation = fixture[0].outbox[0]["how_outcome"]
+    observation.update(
+        fixed_reference_scores=[(MEDIUM, 3, 2, 6), (PERFECT, 5, 6, 6),
+                                (WEAK, 3, 2, 6)],
+        fixed_reference_cohort_sha256=SHA)
+    competence = _project(fixture)
+    assert competence[MEDIUM].target.correct == 5
+    assert competence[MEDIUM].reference.correct == 2
+    rejection = _rejection(
+        fixture, MEDIUM, [(MEDIUM, 5, 6, 6), (WEAK, 2, 4, 6)],
+        fixed_reference_scores=[(MEDIUM, 2, 6, 6), (WEAK, 2, 4, 6)],
+        fixed_reference_cohort_sha256=SHA)
+    competence = _project(fixture, (rejection,))
+    assert competence[MEDIUM].reference.correct == 2
+    assert competence[MEDIUM].target.correct == 5
+    assert not competence[MEDIUM].reference_conflict
+
+
+def test_incomplete_reference_receipt_does_not_fall_back_to_mixed_scores():
+    fixture = _accepted_fixture()
+    observation = fixture[0].outbox[0]["how_outcome"]
+    observation["fixed_reference_scores"] = [(MEDIUM, 3, 2, 6)]
+    assert all(score == CapabilityCompetence() for score in _project(fixture).values())
+    observation["fixed_reference_cohort_sha256"] = SHA
+    assert all(score == CapabilityCompetence() for score in _project(fixture).values())

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 import time
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
@@ -59,6 +60,9 @@ class CandidateLessonRows:
     fresh_support_unavailable_reason: str | None = None
     fresh_support_depth_control: str | None = None
     prefetch_identity: str | None = None
+    weakness_unavailable: tuple[tuple[str, str], ...] = ()
+    source_seed: int | None = None
+    primary_lesson: object = None
 
     @property
     def delivered(self) -> tuple:
@@ -109,6 +113,12 @@ class CandidateSourceLane:
         self.policy_support_enabled = policy_support_enabled
         self.pending = {}
         self.rehearsal_custody = {}
+        self.weakness_unavailable = {}
+        self.primary_lessons = {}
+        # The ordered preparation prefix projects exposure for subsequent
+        # packets. Only executed steps enter the durable outcome.
+        self.weakness_exposures = dict(
+            getattr(rehearsal_plan, "weakness_exposures", ()))
         self.fresh_support_custody = {}
         source_registry = getattr(source_context, "source_registry", None)
         graph = getattr(source_context, "graph", None)
@@ -123,11 +133,39 @@ class CandidateSourceLane:
             for ordinal in range(1, min(workers, horizon) + 1):
                 self._submit(ordinal)
 
+    def _target_batch(self, ordinal):
+        offer = self.selection.offer
+        if not self.policy_support_enabled or ordinal == 1:
+            return offer.rows(), offer.source_authority, offer.source_seed
+        identity = self.selection.visit.identity.visit_id
+        seed = int(hashlib.sha256(
+            f"{identity}|{offer.source_seed}|target|{ordinal}".encode()
+        ).hexdigest()[:16], 16)
+        if (getattr(self.selection, "metadata", None) or {}).get("primary_lesson") is not None:
+            from bilqis_mlx.runtime.priority_lesson import prepare_step_primary_lesson
+            lesson = prepare_step_primary_lesson(
+                self.source_context, self.parent, self.selection, ordinal, seed)
+            self.primary_lessons[ordinal] = lesson
+            offer = lesson.offer
+            return offer.rows(), offer.source_authority, offer.source_seed
+        rows, authority = self.source_context.draw_bound_rows(
+            seed=seed, capability=offer.capability_id, each=offer.source_each)
+        return rows, authority, seed
+
     def _request(self, ordinal):
+        target_batch = self._target_batch(ordinal)
         rehearsal = (
             None if self.rehearsal_plan is None else
             materialize_rehearsal_rows(
-                self.source_context, self.rehearsal_plan, ordinal))
+                self.source_context, self.rehearsal_plan, ordinal,
+                reserved_rows=(*target_batch[0], *self.enrichment_rows),
+                exposure_counts=self.weakness_exposures))
+        if rehearsal is not None:
+            self.weakness_unavailable[ordinal] = rehearsal.weakness_unavailable
+            for binding in rehearsal.bindings:
+                key = binding.get("weakness_debt_key")
+                if key is not None:
+                    self.weakness_exposures[key] = self.weakness_exposures.get(key, 0) + 1
         self.rehearsal_custody[ordinal] = (
             () if rehearsal is None else rehearsal.authorities)
         fresh_support = None
@@ -138,14 +176,14 @@ class CandidateSourceLane:
             fresh_support = materialize_fresh_support(
                 self.source_context, self.selection, self.rehearsal_plan, ordinal,
                 reserved_rows=(
-                    *self.selection.offer.rows(), *rehearsal_rows,
+                    *target_batch[0], *rehearsal_rows,
                     *self.enrichment_rows))
             self.fresh_support_custody[ordinal] = fresh_support.authority
         return priority_source_request(
             self.selection, self.source_context, self.parent, ordinal,
             enrichment_rows=self.enrichment_rows,
             rehearsal_plan=self.rehearsal_plan, rehearsal=rehearsal,
-            fresh_support=fresh_support)
+            fresh_support=fresh_support, target_batch=target_batch)
 
     def _submit(self, ordinal):
         request = self._request(ordinal)
@@ -204,7 +242,9 @@ class CandidateSourceLane:
             tuple(request.get("rehearsal_bindings", ())),
             tuple(self.rehearsal_custody.pop(ordinal, ())),
             tuple(fresh_support), fresh_binding, fresh_authority,
-            fresh_reason, fresh_control, request["identity"])
+            fresh_reason, fresh_control, request["identity"],
+            self.weakness_unavailable.pop(ordinal, ()), request["source_seed"],
+            self.primary_lessons.pop(ordinal, None))
 
     def rows(self, ordinal: int):
         return self.lesson(ordinal).direct
