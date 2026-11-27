@@ -152,6 +152,11 @@ def _adamw_update(parent: AdamWStateTree, gradients: Mapping[str, mx.array],
     parameters, first, second, counts = _apply_adamw_updates(
         parent, gradients, participation, hyperparameters, decay,
         participation_authority)
+    # MLX is lazy: without an explicit boundary here the next candidate step
+    # can extend a graph that still reaches through every prior AdamW update.
+    # Materialize the complete successor state before it crosses the
+    # optimizer-step boundary so each step has bounded retained ancestry.
+    mx.eval(parameters, first, second, counts)
     if learning_first:
         return _issue_learning_first_state(parameters, first, second, counts)
     return AdamWStateTree(parameters, first, second, counts)

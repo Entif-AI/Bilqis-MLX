@@ -15,6 +15,10 @@ import subprocess
 import sys
 
 try:
+    from scripts.bamf.detached.resource_governor import (
+        DEFAULT_TRAINER_MEMORY_CEILING_GIB, GOVERNOR_MODEL, GOVERNOR_NAME,
+        TrainerMemoryPolicy,
+    )
     from scripts.bamf.detached.checked_launch import (
         CONTRACT_ENV, child_environment, prepare_checked_launch,
         read_checked_completion, read_checked_preflight, require_launch_contract,
@@ -29,6 +33,10 @@ try:
         _write_json,
     )
 except ModuleNotFoundError:  # direct execution from scripts/bamf
+    from detached.resource_governor import (
+        DEFAULT_TRAINER_MEMORY_CEILING_GIB, GOVERNOR_MODEL, GOVERNOR_NAME,
+        TrainerMemoryPolicy,
+    )
     from detached.checked_launch import (
         CONTRACT_ENV, child_environment, prepare_checked_launch,
         read_checked_completion, read_checked_preflight, require_launch_contract,
@@ -62,6 +70,12 @@ def _initial_receipt(args) -> dict:
     snapshot_sha256 = _tree_digest(workdir)
     mutation_guard_sha256 = _tree_digest(
         workdir, ignored_names=MUTATION_IGNORED_NAMES)
+    command_name = Path(args.command[0]).name.lower() if args.command else ""
+    governed = command_name.startswith("python")
+    policy = (
+        TrainerMemoryPolicy.from_environment(
+            getattr(args, "memory_ceiling_gib", DEFAULT_TRAINER_MEMORY_CEILING_GIB))
+        if governed else None)
     return {
         "schema": SCHEMA,
         "status": "RUNNING",
@@ -78,6 +92,12 @@ def _initial_receipt(args) -> dict:
         "raw_command_reason": getattr(args, "raw_command_reason", None),
         "log": str(log),
         "heartbeat_seconds": heartbeat_seconds,
+        "resource_governor": ({
+            "governor": GOVERNOR_NAME,
+            "model": GOVERNOR_MODEL,
+            "status": "ARMED",
+            "policy": policy.to_dict(),
+        } if policy is not None else None),
         "started_at": started,
     }
 
@@ -131,7 +151,7 @@ def _worker(args) -> int:
             environment[CONTRACT_ENV] = initial["probe_contract_sha256"]
         offset = stream.tell()
         try:
-            command_returncode = _run_child_with_heartbeats(
+            command_returncode, resource_governor = _run_child_with_heartbeats(
                 args, workdir=workdir, stream=stream, receipt=receipt, initial=initial,
                 heartbeat_seconds=heartbeat_seconds, environment=environment)
         except OSError as error:
@@ -153,6 +173,7 @@ def _worker(args) -> int:
         "status": "PASS" if returncode == 0 else "FAIL",
         "returncode": returncode,
         "command_returncode": command_returncode,
+        "resource_governor": resource_governor or initial.get("resource_governor"),
         "source_mutated": source_mutated,
         "final_snapshot_sha256": final_snapshot_sha256,
         "final_mutation_guard_sha256": final_mutation_guard_sha256,
@@ -204,6 +225,7 @@ def _launch(args) -> int:
         "--source-sha256", snapshot_receipt["source_sha256"],
         "--snapshot-sha256", snapshot_receipt["snapshot_sha256"],
         "--heartbeat-seconds", str(args.heartbeat_seconds),
+        "--memory-ceiling-gib", str(args.memory_ceiling_gib),
         "--log", str(args.log.resolve()),
         "--receipt", str(args.receipt.resolve()),
         "--pid-file", str(args.pid_file.resolve()),
@@ -238,6 +260,7 @@ def _launch(args) -> int:
         "log": str(args.log.resolve()),
         "receipt": str(args.receipt.resolve()),
         "pid_file": str(args.pid_file.resolve()),
+        "memory_ceiling_gib": args.memory_ceiling_gib,
         "continuation": (
             "After the desktop notification, return to the controlling chat and "
             f"ask it to resume from receipt {args.receipt.resolve()}"
@@ -263,6 +286,12 @@ def _parser() -> argparse.ArgumentParser:
         subparser.add_argument(
             "--heartbeat-seconds", type=float, default=DEFAULT_HEARTBEAT_SECONDS,
             help="Seconds between durable liveness records while the child is running.",
+        )
+        subparser.add_argument(
+            "--memory-ceiling-gib", type=float,
+            default=DEFAULT_TRAINER_MEMORY_CEILING_GIB,
+            help=("Physical-footprint policy ceiling for detached Python children. "
+                  "Deh Guhbohnayhituh trips below this ceiling to preserve headroom."),
         )
         subparser.add_argument("--no-notify", action="store_true")
         subparser.add_argument("--witness", type=Path,

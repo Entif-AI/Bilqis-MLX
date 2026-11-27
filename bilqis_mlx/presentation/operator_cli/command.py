@@ -12,6 +12,9 @@ from .lifecycle import _experiment_budget, _guard_independent_no_retention, _hum
 from .terminal import _prepare_live_board, _render_stopped_board, _report_operator_blocked
 from .explain import _explain_code
 from .bamf_resume_dispatch import _dispatch_bamf_resume
+from bilqis_mlx.runtime.trainer_resource_governor import (
+    governor_active, run_governed_train,
+)
 
 
 def dashboard(run_dir: Path):
@@ -203,7 +206,12 @@ def _main(args):
 
 
 def main(argv=None):
-    args=parse_args(argv)
+    raw_argv = list(sys.argv[1:] if argv is None else argv)
+    args=parse_args(raw_argv)
+    if (argv is None and args.action == "train" and args.human_run
+            and not args.dry_run and not governor_active()):
+        return run_governed_train(
+            raw_argv, run_dir=args.run_dir, ceiling_gib=args.memory_ceiling_gib)
     interrupt_guard = (
         _human_sigint_guard()
         if args.action == "train" and args.human_run and not args.dry_run

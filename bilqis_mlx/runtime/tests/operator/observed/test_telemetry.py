@@ -13,9 +13,22 @@ from bilqis_mlx.runtime.b11_source_execution_authority import (
     B11SourceExecutionAuthority, require_b11_source_execution_authority_current,
 )
 from bilqis_mlx.runtime.bamf_operator.telemetry import TrainerObservation
+from bilqis_mlx.runtime.memory_safety import ProcessMemorySnapshot
 
 
 class TrainerObservationTests(unittest.TestCase):
+    def test_completed_step_records_process_memory_low_water_without_mlx_sync(self):
+        with TemporaryDirectory() as tmp, unittest.mock.patch(
+                'bilqis_mlx.runtime.bamf_operator.telemetry.process_memory_snapshot',
+                return_value=ProcessMemorySnapshot(321, 123, 'test')):
+            root = Path(tmp)
+            obs = TrainerObservation(root, 1, heartbeat_seconds=60)
+            obs.complete_step(candidate_step=1, candidate_optimizer_step=8)
+
+        step = obs.record['candidate_steps'][-1]
+        self.assertEqual(step['physical_footprint_bytes'], 321)
+        self.assertEqual(step['rss_bytes'], 123)
+
     def test_bounded_lifecycle_and_exception(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)

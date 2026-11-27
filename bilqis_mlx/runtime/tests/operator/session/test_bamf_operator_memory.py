@@ -1,4 +1,4 @@
-"""Native session owns the existing MLX cache policy only under its writer lock."""
+"""Native session owns the MLX memory policy only under its writer lock."""
 from contextlib import contextmanager, ExitStack, nullcontext
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
@@ -79,8 +79,11 @@ def test_normal_session_covers_adoption_visits_and_stop_without_admission_reentr
     reentry.assert_not_called()
     assert state.mx.cache_limit == 987654
     assert state.mx.calls == [
+        ("set_memory_limit", 12 * 1024**3),
+        ("set_wired_limit", 12 * 1024**3),
         ("set_cache_limit", 0), ("clear_cache",),
-        ("clear_cache",), ("set_cache_limit", 987654)]
+        ("clear_cache",), ("set_cache_limit", 987654),
+        ("set_wired_limit", 789), ("set_memory_limit", 456)]
     assert bamf_operator_lock_held(state.root) is False
     assert state.current.retained_state.optimizer_step == 11
 
@@ -112,7 +115,9 @@ def test_visit_exception_restores_policy_and_prefetch_lifecycle(native_session):
     assert raised.value is failure
     assert lifecycle == ["start", "stop"]
     assert state.mx.cache_limit == 987654
-    assert state.mx.calls[-2:] == [("clear_cache",), ("set_cache_limit", 987654)]
+    assert state.mx.calls[-4:] == [
+        ("clear_cache",), ("set_cache_limit", 987654),
+        ("set_wired_limit", 789), ("set_memory_limit", 456)]
     state.stop.assert_not_called()
 
 
@@ -126,7 +131,9 @@ def test_writer_refusal_does_not_acquire_memory_policy(native_session):
 
 def test_invalid_bounds_does_not_acquire_memory_policy(native_session):
     with pytest.raises(BilqisError):
-        session.operate_bamf(native_session.root, steps_per_visit=17)
+        session.operate_bamf(
+            native_session.root,
+            steps_per_visit=session.MAX_CANDIDATE_HORIZON + 1)
     assert native_session.mx.calls == []
 
 

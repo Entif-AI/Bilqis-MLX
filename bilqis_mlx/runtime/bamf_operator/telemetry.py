@@ -15,6 +15,7 @@ import uuid
 from .performance import (
     PERFORMANCE_FIELDS, RETENTION_PROFILE_FIELDS, VISIT_PERFORMANCE_FIELDS,
 )
+from bilqis_mlx.runtime.memory_safety import process_memory_snapshot
 
 SCHEMA = 'bilqis.bamf.trainer-observed/v7'
 LEGACY_SCHEMA_V6 = 'bilqis.bamf.trainer-observed/v6'
@@ -78,6 +79,7 @@ class TrainerObservation:
             retention_broad_certification_trigger=None,
             peak_rss_bytes=None, disk_free_bytes=None, error_code=None,
             error_detail=None, candidate_steps=[], visit_evidence=None,
+            physical_footprint_bytes=None, rss_bytes=None,
             generated_grade_evidence=None, retention_stage_timings=[],
             learning_health=None, activity=None, activity_elapsed_ms=None,
             **{name: None for name in PERFORMANCE_FIELDS},
@@ -299,6 +301,16 @@ class TrainerObservation:
 
     def complete_step(self, **fields):
         """Freeze one completed step; heartbeat/finalization publishes it."""
+        try:
+            process_memory = process_memory_snapshot(os.getpid())
+        except (OSError, ValueError):
+            process_memory = None
+        if process_memory is not None:
+            fields = {
+                **fields,
+                'physical_footprint_bytes': process_memory.physical_footprint_bytes,
+                'rss_bytes': process_memory.rss_bytes,
+            }
         with self.lock:
             if not self.enabled:
                 return
@@ -310,7 +322,9 @@ class TrainerObservation:
                                 'publishing_wall_seconds'}]
             snapshot = {
                 key: self.record.get(key)
-                for key in ('candidate_step', 'candidate_optimizer_step', *step_fields)
+                for key in (
+                    'candidate_step', 'candidate_optimizer_step',
+                    'physical_footprint_bytes', 'rss_bytes', *step_fields)
             }
             history = [
                 item for item in self.record.get('candidate_steps', [])

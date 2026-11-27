@@ -7,8 +7,14 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
 import subprocess
 import time
+
+from .resource_governor import (
+    GIB, GOVERNOR_ENV, GOVERNOR_MODEL, GOVERNOR_NAME,
+    TRAINER_MEMORY_CEILING_ENV, TrainerMemoryPolicy, supervise_running_process,
+)
 
 
 SNAPSHOT_IGNORED_NAMES = frozenset({
@@ -196,10 +202,21 @@ def _notify(label: str, returncode: int) -> None:
 def _run_child_with_heartbeats(
     args, *, workdir: Path, stream, receipt: Path, initial: dict,
     heartbeat_seconds: float, environment: dict[str, str],
-) -> int:
+) -> tuple[int, dict | None]:
+    command_name = Path(args.command[0]).name.lower() if args.command else ""
+    governed = command_name.startswith("python")
+    policy = (
+        TrainerMemoryPolicy.from_environment(
+            getattr(args, "memory_ceiling_gib", None))
+        if governed else None)
+    if governed:
+        environment = dict(environment)
+        environment[GOVERNOR_ENV] = GOVERNOR_MODEL
+        environment[TRAINER_MEMORY_CEILING_ENV] = str(policy.ceiling_bytes / GIB)
     process = subprocess.Popen(
         args.command, cwd=workdir, stdin=subprocess.DEVNULL,
         stdout=stream, stderr=subprocess.STDOUT, env=environment,
+        start_new_session=True,
     )
     child_started = _utc_now()
     stream.write(
@@ -207,18 +224,52 @@ def _run_child_with_heartbeats(
          f"child_pid={process.pid}\n").encode()
     )
     child_started_monotonic = time.monotonic()
+    last_heartbeat = child_started_monotonic
+
+    def heartbeat(resource_governor=None):
+        nonlocal last_heartbeat
+        now = time.monotonic()
+        if now - last_heartbeat < heartbeat_seconds:
+            return
+        heartbeat_at = _utc_now()
+        elapsed_seconds = now - child_started_monotonic
+        stream.write(
+            (f"DETACHED_LONG_RUN_HEARTBEAT {heartbeat_at} label={args.label!r} "
+             f"child_pid={process.pid} elapsed_seconds={elapsed_seconds:.1f}\n").encode()
+        )
+        payload = {
+            **initial,
+            "last_heartbeat_at": heartbeat_at,
+            "elapsed_seconds": round(elapsed_seconds, 1),
+        }
+        if resource_governor is not None:
+            payload["resource_governor"] = resource_governor
+        _write_json(receipt, payload)
+        last_heartbeat = now
+
+    if governed:
+        def on_sample(footprint, maximum, count, warned):
+            heartbeat({
+                "governor": GOVERNOR_NAME,
+                "model": GOVERNOR_MODEL,
+                "status": "RUNNING",
+                "policy": policy.to_dict(),
+                "current_physical_footprint_bytes": footprint,
+                "max_physical_footprint_bytes": maximum,
+                "sample_count": count,
+                "warning_emitted": warned,
+            })
+
+        result = supervise_running_process(
+            process, policy=policy, on_sample=on_sample)
+        code = (
+            int(result.returncode or 0)
+            if result.status == "EXITED"
+            else 128 + signal.SIGKILL)
+        return code, result.to_dict()
+
     while True:
         try:
-            return process.wait(timeout=heartbeat_seconds)
+            return process.wait(timeout=heartbeat_seconds), None
         except subprocess.TimeoutExpired:
-            heartbeat_at = _utc_now()
-            elapsed_seconds = time.monotonic() - child_started_monotonic
-            stream.write(
-                (f"DETACHED_LONG_RUN_HEARTBEAT {heartbeat_at} label={args.label!r} "
-                 f"child_pid={process.pid} elapsed_seconds={elapsed_seconds:.1f}\n").encode()
-            )
-            _write_json(receipt, {
-                **initial,
-                "last_heartbeat_at": heartbeat_at,
-                "elapsed_seconds": round(elapsed_seconds, 1),
-            })
+            heartbeat()

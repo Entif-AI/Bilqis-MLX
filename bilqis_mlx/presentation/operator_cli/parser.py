@@ -4,6 +4,21 @@ from pathlib import Path
 import argparse
 import sys
 from .settings import DEFAULT_RUN
+from bilqis_mlx.errors import SCHOOL
+from bilqis_mlx.runtime.memory_safety import (
+    DEFAULT_TRAINER_MEMORY_CEILING_GIB,
+    MAX_TRAINER_MEMORY_CEILING_GIB,
+)
+
+
+def _memory_ceiling_gib(value: str) -> float:
+    try:
+        ceiling = float(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(SCHOOL.BAMF_RESOURCES.INVALID.code) from error
+    if not 0 < ceiling <= MAX_TRAINER_MEMORY_CEILING_GIB:
+        raise argparse.ArgumentTypeError(SCHOOL.BAMF_RESOURCES.INVALID.code)
+    return ceiling
 
 
 class _FoundationExplicitStore(argparse.Action):
@@ -129,6 +144,12 @@ def _add_training_execution_args(parser) -> None:
               "Teacher-owned interference policy may shorten it."))
     parser.add_argument("--max-visits", type=int, default=0,
                         help="Optional complete visit cap (default 0: use --minutes and disk reserve)")
+    parser.add_argument(
+        "--memory-ceiling-gib", type=_memory_ceiling_gib,
+        default=DEFAULT_TRAINER_MEMORY_CEILING_GIB,
+        help=("Maximum trainer memory policy in GiB. The external resource governor "
+              f"defaults to {DEFAULT_TRAINER_MEMORY_CEILING_GIB:g} GiB and refuses "
+              f"values above {MAX_TRAINER_MEMORY_CEILING_GIB:g} GiB."))
     parser.add_argument("--timing-trace", action="store_true",
                         help="Write low-overhead nanosecond timing markers under runs/.timing-traces")
     parser.add_argument("--source-prefetch-workers", type=int, choices=(0, 1, 2), default=2,
