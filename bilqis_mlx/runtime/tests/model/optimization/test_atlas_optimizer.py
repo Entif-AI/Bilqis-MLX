@@ -267,7 +267,10 @@ class AdamWCountsTests(unittest.TestCase):
         self.assertEqual(report.full_state_validations, 1)
         self.assertEqual(report.numpy_mask_readbacks, 0)
         self.assertEqual(report.optimizer_instances, 0)
-        self.assertEqual(report.explicit_eval_batches, 2)
+        # Admission materializes its validation/clipping witnesses, then the
+        # optimizer-step boundary must materialize the newly issued state so
+        # the next candidate step cannot retain lazy ancestry through it.
+        self.assertEqual(report.explicit_eval_batches, 3)
         self.assertGreater(report.wall_seconds, 0.)
 
     def test_clipping_rejects_nonfinite_norm_and_invalid_limit(self):
