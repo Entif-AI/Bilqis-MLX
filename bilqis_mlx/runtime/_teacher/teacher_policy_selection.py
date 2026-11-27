@@ -72,6 +72,21 @@ def _canary_decision(teacher, cap, school, rng, teacher_curriculum_scope,
     return canary
 
 
+def ordinary_previsit_diagnostics(option, *, structural_debt):
+    """Project bounded diagnostic categories from already-issued evidence."""
+    competence = getattr(option, "competence", None)
+
+    def deficit(score):
+        return None if score is None else score.correct < score.total
+
+    return {"native_previsit": {
+        "fixed_reference_deficit": deficit(getattr(competence, "reference", None)),
+        "target_sample_deficit": deficit(getattr(competence, "target", None)),
+        "reference_conflict": bool(getattr(competence, "reference_conflict", False)),
+        "structural_debt": structural_debt,
+    }}
+
+
 def select_visit_policy(engine, teacher, cap, school, rng, learning_settings,
                         teacher_curriculum_scope, previsit_diagnostics,
                         lesson_grade, total_capabilities=None,
@@ -113,6 +128,8 @@ def select_visit_policy(engine, teacher, cap, school, rng, learning_settings,
             metadata.update({
                 "legacy_policy_key": legacy_key,
                 "legacy_selection_reason": legacy_reason,
+                "legacy_diagnostic_context_consumed": metadata["diagnostic_context_consumed"],
+                "diagnostic_context_consumed": False,
                 "selection_reason": "VNEXT_CANARY",
                 "selection_policy": _teacher_vnext.SELECTION_POLICY,
             })

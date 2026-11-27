@@ -238,11 +238,14 @@ def carry_credit_to_successor(visit, successor, parent):
 
 def context_for_selection(
         release, program, grade, school, option, teacher, metadata,
-        total_capabilities):
+        total_capabilities, *, prepared_context=None):
     key = metadata['diagnostic_context_key']
     payload = teacher['causal_experiment']['diagnostic_contexts'][key]
-    context = selection_context(release, program, grade, school.stage,
-        option.context.scope, payload, option.context.capability_id)
+    context = (
+        selection_context(release, program, grade, school.stage,
+            option.context.scope, payload, option.context.capability_id)
+        if prepared_context is None else {**prepared_context, "diagnostics": payload}
+    )
     competence = getattr(option, 'competence', None)
     if competence is not None:
         context['competence_priority'] = competence.to_record()

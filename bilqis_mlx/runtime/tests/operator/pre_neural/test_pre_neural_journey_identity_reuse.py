@@ -14,6 +14,54 @@ from .pre_neural_journey_support import (
 
 
 class PreNeuralJourneyIdentityReuseTests(PreNeuralJourneySupport, unittest.TestCase):
+    def test_ordinary_teacher_offer_binds_actual_previsit_diagnostic_context(self):
+        from bilqis_mlx.learning.teacher_lineage import restore_teacher_lineage
+        from bilqis_mlx.runtime.bamf_operator.session_parts.evidence_mode import (
+            evidence_mode,
+        )
+        from bilqis_mlx.runtime.bamf_bundle.admission import load_accepted_generation
+
+        self.current, self.parent_graph = historical_school_release()
+        snapshot = portable_atlas_snapshot()
+        schema, features, atlas_selection = journey_source(snapshot)
+        with wide_shape_patch(len(snapshot.abi_entries)):
+            self.publish_matching_genesis(snapshot, schema, features)
+            pointer = (self.run / "bamf-state.json").read_bytes()
+            events = (self.run / "events.jsonl").read_bytes()
+            with self.journey_mounts(
+                    snapshot, schema, features, atlas_selection,
+                    patch_active_generated_grade=False), evidence_mode(strict=False):
+                parent, context, atlas_path, _ = _execution_context(self.run)
+                program = schedule_program_from_executable_release(context.release)
+                selected = select_foundation_priority_visit(
+                    self.run, context, atlas_path, program=program,
+                    school=accepted_priority_school(parent, program))
+            after = load_accepted_generation(self.run)
+
+        self.assertEqual(selected.status, "TEACHER_SELECTED")
+        how = selected.metadata["how_context"]
+        self.assertEqual(how["diagnostics"]["native_previsit_schema"],
+                         "bilqis.bamf.previsit-diagnostics/v1")
+        self.assertIsNone(how["diagnostics"]["warnings"])
+        self.assertIsNone(how["diagnostics"]["champion_candidates"])
+        self.assertIsNone(how["diagnostics"]["unresolved_misses"])
+        self.assertEqual(how["diagnostics"]["native_previsit"], {
+            "fixed_reference_deficit": None,
+            "target_sample_deficit": None,
+            "reference_conflict": False,
+            "structural_debt": None,
+        })
+        teacher = restore_teacher_lineage(
+            selected.visit.projection.teacher_state).teacher()
+        key = selected.metadata["diagnostic_context_key"]
+        self.assertEqual(how["diagnostic_context_key"], key)
+        self.assertEqual(
+            teacher["causal_experiment"]["diagnostic_contexts"][key],
+            how["diagnostics"])
+        self.assertEqual(after.retained_state.optimizer_step, 0)
+        self.assertEqual((self.run / "bamf-state.json").read_bytes(), pointer)
+        self.assertEqual((self.run / "events.jsonl").read_bytes(), events)
+
     def test_bound_accepted_parent_identity_is_reused_across_priority_hot_path(self):
         from bilqis_mlx.learning._atlas_candidate.identity_binding import (
             _reset_candidate_identity_metrics_for_tests,
